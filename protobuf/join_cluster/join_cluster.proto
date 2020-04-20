@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = ".;join_cluster";
+
+import "google/protobuf/empty.proto";
+
+package join_cluster;
+
+service RouteGuide {
+    rpc testRoute(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
