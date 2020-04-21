@@ -1,7 +1,7 @@
 package heartbeat
 
 import (
-	"emulating-k8s/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"log"
