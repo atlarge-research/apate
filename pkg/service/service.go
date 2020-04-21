@@ -9,43 +9,76 @@ import (
 	"net"
 )
 
-func CreateListenerAndServer(port int, tls bool) (listener net.Listener, server *grpc.Server) {
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+type GRPCServer struct {
+	listener net.Listener
+	Server *grpc.Server
+}
+
+type ConnectionInfo struct {
+	address string
+	port int
+	tls bool
+}
+
+func NewGRPServer(info *ConnectionInfo) *GRPCServer {
+	lis, server := createListenerAndServer(info)
+	return &GRPCServer{
+		listener: lis,
+		Server:   server,
+	}
+}
+
+func NewConnectionInfo(address string, port int, tls bool) *ConnectionInfo {
+	return &ConnectionInfo{
+		address: address,
+		port:    port,
+		tls:     tls,
+	}
+}
+
+func (s *GRPCServer) Serve() {
+	if err := s.Server.Serve(s.listener); err != nil {
+		log.Fatalf("Unable to serve: %v", err)
+	}
+}
+
+func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, server *grpc.Server) {
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", info.port))
 	var options []grpc.ServerOption
 
 	// Enable TLS if needed
-	if tls {
-		options = []grpc.ServerOption{GetServerTLS()}
+	if info.tls {
+		options = []grpc.ServerOption{getServerTLS()}
 	}
 
 	server = grpc.NewServer(options...)
 
 	if err != nil {
-		log.Fatalf("Failed to listen on port 8080: %v", err)
+		log.Fatalf("Failed to listen on port %d: %v", info.port, err)
 	}
 
 	return
 }
 
-func CreateConnection(address string, port int, tls bool) (conn *grpc.ClientConn) {
+func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
 
 	// Enable TLS if needed
-	if tls {
-		options = []grpc.DialOption{GetClientTLS()}
+	if info.tls {
+		options = []grpc.DialOption{getClientTLS()}
 	}
 
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", address, port), options...)
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", info.address, info.port), options...)
 
 	if err != nil {
-		log.Fatalf("Unable to connect to localhost:%d: %v", port, err)
+		log.Fatalf("Unable to connect to %s:%d: %v", info.address, info.port, err)
 	}
 
 	return
 }
 
 //TODO: Real TLS instead of test data
-func GetServerTLS() grpc.ServerOption {
+func getServerTLS() grpc.ServerOption {
 	creds, err := credentials.NewServerTLSFromFile(testdata.Path("server1.pem"), testdata.Path("server1.key"))
 
 	if err != nil {
@@ -55,7 +88,7 @@ func GetServerTLS() grpc.ServerOption {
 	return grpc.Creds(creds)
 }
 
-func GetClientTLS() grpc.DialOption {
+func getClientTLS() grpc.DialOption {
 	creds, err := credentials.NewClientTLSFromFile(testdata.Path("ca.pem"), "x.test.youtube.com")
 
 	if err != nil {
