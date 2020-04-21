@@ -6,164 +6,78 @@ import "google/protobuf/empty.proto";
 
 package apate.scenario;
 
+// This service will run on the Kubelets
 service ScenarioRegistrar {
+
+    // Adds a scenario to the current Kubelet
+    // This is called before starting the scenario, this way the Kubelets know what scenario will be playing next
     rpc registerScenario (Scenario) returns (google.protobuf.Empty) {}
 }
 
+// The top level object which defines how the different Kubelets will emulate certain deployments
 message Scenario {
+    // A scenario consists of multiple tasks that will be scheduled on a kubelet
     repeated Task task = 1;
 }
 
-message Task {
-    string name = 1;
-    int32 timestamp = 2;
-    repeated NodeGroup nodeGroupSet = 3;
-    Event event = 4;
-}
-
+// Defines a group of nodes which all have the same hardware
 message NodeGroup {
+    // Amount of nodes are in this group
     int32 nodeAmount = 1;
+
+    // How every node in this node group is configured
     message Node {
+        // The amount of RAM every node has
         int32 RAM = 1;
     };
 }
+message Task {
+    // The name of the task, can be used later to revert it
+    string name = 1;
 
-/*
-Node.
+    // Whether to revert the task with the given name
+    bool revert_task = 2;
 
-Required flags & their defaults:
-- dont_respond_to_ping = false, changes `Ping(context.Context) error` responses
+    // The timestamp on which this task will be executed
+    // Is in milliseconds since the scenario has started
+    int32 timestamp = 3;
 
-- CRUD responses, changes `PodLifecycleHandler` responses
-    - dont_respond_to_create = false
-    - dont_respond_to_update = false
-    - dont_respond_to_delete = false
-    - dont_respond_to_get = false
-    - dont_respond_to_get_pods = false
+    // The node groups on which this task will be executed
+    // Will be ignored when revert_task is true
+    repeated NodeGroup node_group_set = 4;
 
-- CRUD errors, changes `PodLifecycleHandler` responses
-    - error_on_create = false
-    - error_on_update = false
-    - error_on_delete = false
-    - error_on_get = false
-    - error_on_get_pods = false
-
-- Resource pressure, calls k8s API
-    - enable_pressure = false
-    - cpu_usage (percentage) = 0
-    - ram_usage (percentage) = 0
-    - storage_usage (percentage) = 0
-    - ephemeral_storage_usage (percentage) = 0
-
-- Latency, sleeps in responses
-    - global_latency = false
-    - global_latency_msec (msec) = 0
-    - ping_latency = false
-    - ping_latency_msec (msec) = 0
-    - crud_latency = false
-    - crud_latency_msec (msec) = 0
-
-Flags per event:
-- Node failure:
-    - dont_respond_to_ping = true
-    - dont_respond_to_crud = true (all of them)
-    - error_on_crud = false (all of them)
-    - resource_pressure = false (all of them)
-    - latency = false (all of them)
-
-- Selective failure
-    - No response, but keep heartbeat:
-        - dont_respond_to_ping = false
-        - dont_respond_to_crud = true (all of them)
-        - error_on_crud = false (all of them)
-        - enable_pressure = false
-        - latency = false (all of them)
-
-    - Response, but no heartbeat:
-        - dont_respond_to_ping = true
-        - dont_respond_to_crud = false (all of them)
-        - error_on_crud = false (all of them)
-        - enable_pressure = false
-        - latency = false (all of them)
-
-    - Fail on CRUD's:
-        - dont_respond_to_ping = false
-        - dont_respond_to_crud = false (all of them)
-        - error_on_crud = true (depending on type of CRUD)
-        - enable_pressure = false
-        - latency = false (all of them)
-
-- Sudden resource pressure:
-    - dont_respond_to_ping = false
-    - dont_respond_to_crud = false (all of them)
-    - error_on_crud = false (all of them)
-    - enable_pressure = true
-    - cpu_usage = 95
-    - latency = false (all of them)
-
-- Network
-    - Segregation:
-        - dont_respond_to_ping = true
-        - dont_respond_to_crud = true (all of them)
-        - error_on_crud = false (all of them)
-        - resource_pressure = false (all of them)
-        - latency = false (all of them)
-
-    - Latency:
-        - dont_respond_to_ping = false
-        - dont_respond_to_crud = false (all of them)
-        - error_on_crud = false (all of them)
-        - resource_pressure = false (all of them)
-        - global_latency = true (could also be ping / crud latency)
-        - global_latency_msec = 100 (could also be ping / crud latency)
----
-Pod.
-
-Notes on extra requirements:
-- Pod creation (extra: with preference) -> only supported at the beginning, creating pods later in the scenario will be a future feature
-
-Required flags:
-- error_on_crud = false, changes `PodLifecycleHandler` responses
-    - error_on_create
-    - error_on_create_percentage
-    - error_on_update
-    - error_on_update_percentage
-    - error_on_delete
-    - error_on_delete_percentage
-    - error_on_get
-    - error_on_get_percentage
-
-- pod_status (enum, [PodPending, PodRunning, PodSucceeded, PodFailed, PodUnknown]) = PodRunning
-
-- start_time (date) = original_start_time
-
-Flags per event:
-- Pod failure (e.g. creation):
-    - error_on_create = true
-    - error_on_create_percentage = 90
-    - pod_status = unchanged (left out)
-    - start_time = unchanged (left out)
-
-- Pod status update:
-    - error_on_crud = false (all of them)
-    - pod_status = x
-    - start_time = unchanged (left out)
-
-- Fake start time:
-    - error_on_crud = false (all of them)
-    - pod_status = unchanged (left out)
-    - start_time = x
-*/
-message Event {
-    NodeState node_state = 1;
-    message PodEvent {
-        string deployment = 1;
-        PodState pod_state = 2;
+    // The event belonging to this task
+    // Will be ignored when revert_task is true
+    oneof event {
+        NodeEvent node_event = 5;
+        PodEvent pod_event = 6;
     }
 }
 
+
+// An event that will be applied on a node
+message NodeEvent {
+    // The node state that will be applied to the node.
+    NodeState node_state = 1;
+}
+
+// An event that will be applied on pod(s)
+message PodEvent {
+    // The name of the deployment used to determine on which pod this event applies
+    string deployment = 1;
+
+    // The pod state that will be applied to the pod(s) defined by `deployment`.
+    PodState pod_state = 2;
+}
+
+// The node state that will be applied to the node.
 message NodeState {
+
+    // Indicates that the node will not respond to ping originating from k8s
     bool dont_respond_to_ping = 1;
+
+    // Defines if there will be a response to certain CRUD requests from k8s
+    // If a field in here is set to true, the corresponding CRUD request will timeout
     message CrudResponseState {
         bool dont_respond_to_create = 1;
         bool dont_respond_to_update = 2;
@@ -171,41 +85,80 @@ message NodeState {
         bool dont_respond_to_get = 4;
         bool dont_respond_to_get_pods = 5;
     }
-    message CrudErrorState {
-        bool error_on_create = 1;
-        bool error_on_update = 2;
-        bool error_on_delete = 3;
-        bool error_on_get = 4;
-        bool error_on_get_pods = 5;
-    }
-    message ResourcePressureState {
-        bool enable_pressure = 1;
-        int32 cpu_usage = 2;
-        int32 ram_usage = 3;
-        int32 storage_usage = 4;
-        int32 ephemeral_storage_usage = 5;
-    }
-    message LatencyState {
-        bool global_latency = 1;
-        int32 global_latency_msec = 2;
-        bool ping_latency = 3;
-        int32 ping_latency_msec = 4;
-        bool crud_latency = 5;
-        int32 crud_latency_msec = 6;
-    }
-}
 
-message PodState {
+    // Defines if there will be an error response to certain CRUD requests from k8s
+    // If a field in here is set to true, the corresponding CRUD request will return an error
+    // The percentage fields define what percentage of pods running on this node will be affected by the error
     message CrudErrorState {
         bool error_on_create = 1;
         int32 error_on_create_percentage = 2;
+
         bool error_on_update = 3;
         int32 error_on_update_percentage = 4;
+
         bool error_on_delete = 5;
         int32 error_on_delete_percentage = 6;
+
+        bool error_on_get = 7;
+        int32 error_on_get_percentage = 8;
+
+        bool error_on_get_pods = 9;
+    }
+
+    // Defines the amount of resources the node has in use
+    // Will default to 0% for all types of possible resources (corev1.ResourceName)
+    message ResourceState {
+        // Whether to enable the next fields
+        // If not enabled, the next fields will be ignored
+        bool enable_resource_alteration = 1;
+
+        // The percentage of CPU used
+        int32 cpu_usage = 2;
+
+        // The percentage of RAM used
+        int32 ram_usage = 3;
+
+        // The percentage of storage used
+        int32 storage_usage = 4;
+
+        // The percentage of ephermal storage used
+        int32 ephemeral_storage_usage = 5;
+    }
+
+    // Defines the amount of network latency the node experiences
+    // Will default to 0 msec
+    message LatencyState {
+        // Whether to enable latency
+        // If not enabled, the next field will be ignored
+        bool latency_enabled = 1;
+
+        // The amount of msec of latency
+        int32 latency_msec = 2;
+    }
+}
+
+// The pod state that will be applied a certain pod deployment
+// To which deployment this state if applied depends on the `deployment` in `PodEvent`
+message PodState {
+
+    // Defines if there will be an error response to certain CRUD requests from k8s
+    // If a field in here is set to true, the corresponding CRUD request will return an error
+    // The percentage fields define what percentage of pods of this deployment will be affected by the error
+    message CrudErrorState {
+        bool error_on_create = 1;
+        int32 error_on_create_percentage = 2;
+
+        bool error_on_update = 3;
+        int32 error_on_update_percentage = 4;
+
+        bool error_on_delete = 5;
+        int32 error_on_delete_percentage = 6;
+
         bool error_on_get = 7;
         int32 error_on_get_percentage = 8;
     }
+
+    // See corev1.PodPhase
     enum PodStatus {
         POD_PENDING = 0;
         POD_RUNNING = 1;
@@ -213,6 +166,17 @@ message PodState {
         POD_FAILED = 3;
         POD_UNKNOWN = 4;
     }
+
+    // The status of a certain percentage of pods in the current deployment
+    // Can be left empty to keep the status unchanged
+    // If left empty, the pod_status_percentage will be ignored
     PodStatus pod_status = 1;
-    string start_time = 2;
+
+    // The percentage of pods in the current deployment getting the new status
+    int32 pod_status_percentage = 2;
+
+    // The starting time of this pod (see corev1.PodStatus.StartTime)
+    // ISO8601 format
+    // Can be left empty to keep the starting time unchanged
+    string start_time = 3;
 }

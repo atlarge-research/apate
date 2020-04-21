@@ -6,6 +6,7 @@ import "google/protobuf/empty.proto";
 
 package apate.join_cluster;
 
+// This service will run on the Control Plane
 service JoinCluster {
 
     // Joins the node to the Apate cluster.
