@@ -1,3 +1,5 @@
+# Ignoring idea folder as we don't need to share the xml files as we are using Go, which provides everything for us
+.idea
 
 # Created by https://www.gitignore.io/api/go,vim,jetbrains
 # Edit at https://www.gitignore.io/?templates=go,vim,jetbrains
@@ -96,10 +98,10 @@ fabric.properties
 ### JetBrains Patch ###
 # Comment Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
 
-# *.iml
-# modules.xml
-# .idea/misc.xml
-# *.ipr
+*.iml
+modules.xml
+.idea/misc.xml
+*.ipr
 
 # Sonarlint plugin
 .idea/**/sonarlint/
