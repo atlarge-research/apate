@@ -4,11 +4,12 @@ go 1.14
 
 require (
 	github.com/golang/protobuf v1.4.0
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
-	golang.org/x/sys v0.0.0-20190422165155-953cdadca894 // indirect
-	golang.org/x/text v0.3.1-0.20181227161524-e6919f6577db // indirect
+	github.com/virtual-kubelet/node-cli v0.1.2
+	github.com/virtual-kubelet/virtual-kubelet v1.2.1
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
+	k8s.io/api v0.0.0
+	k8s.io/apimachinery v0.0.0
 )
 
 // TODO: Figure out why we want all these replacements
