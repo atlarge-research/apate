@@ -6,8 +6,9 @@ import (
 )
 
 func main() {
+
 	cb := cluster.Default()
-	c, err := cb.WithName("Apate").Create()
+	c, err := cb.WithName("Apate").ForceCreate()
 	if err != nil {
 		log.Fatalf("An error occured: %s", err.Error())
 	}
