@@ -2,17 +2,13 @@ package cluster
 
 import (
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 )
 
 func TestDefault(t *testing.T) {
 	clusterbuilder := Default()
 
-	v := reflect.ValueOf(clusterbuilder)
-	name := v.FieldByName("name")
-
-	assert.Equal(t, name.String(), "Apate")
+	assert.Equal(t, clusterbuilder.name, "Apate")
 }
 
 func TestWithName(t *testing.T) {
@@ -20,8 +16,14 @@ func TestWithName(t *testing.T) {
 
 	clusterbuilder.WithName("Test")
 
-	v := reflect.ValueOf(clusterbuilder)
-	name := v.FieldByName("name")
+	assert.Equal(t, clusterbuilder.name, "Test")
+}
 
-	assert.Equal(t, name.String(), "Test")
+func TestEmptyName(t *testing.T) {
+	clusterbuilder := New()
+
+	clusterbuilder.WithName("")
+
+	_, err := clusterbuilder.Create()
+	assert.Error(t, err);
 }

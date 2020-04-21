@@ -3,24 +3,26 @@
 package cluster
 
 import (
+	"control_plane/cluster/clustercreationinterface"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-// A Cluster object can be used to interact with kubernetes clusters.
+// A KubernetesCluster object can be used to interact with kubernetes clusters.
 // It abstracts away calls to the kubernetes client-go api.
-type Cluster struct {
-	name string
-	clientset *kubernetes.Clientset
+type KubernetesCluster struct {
+	name                     string
+	clusterCreationInterface clustercreationinterface.ClusterCreationInterface
+	clientset                *kubernetes.Clientset
 }
 
 // Used to delete a cluster
-func (c *Cluster) Delete() {
-	DeleteCluster(c.name)
+func (c KubernetesCluster) Delete() {
+	c.clusterCreationInterface.DeleteCluster(c.name)
 }
 
 // Returns the number of pods in the cluster, or an error if it couldn't get these.
-func (c *Cluster) GetNumberOfPods() (int, error) {
+func (c KubernetesCluster) GetNumberOfPods() (int, error) {
 	pods, err := c.clientset.CoreV1().Pods("").List(metav1.ListOptions{})
 	if err != nil {
 		return 0, err

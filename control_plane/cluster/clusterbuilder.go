@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"control_plane/cluster/clustercreationinterface"
 	"errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -9,7 +10,8 @@ import (
 
 // The ClusterBuilder creates a new cluster object used to manage a cluster.
 type ClusterBuilder struct {
-	name string
+	name                     string
+	clusterCreationInterface clustercreationinterface.ClusterCreationInterface
 }
 
 // The New function is used to create a new ClusterBuilder with all fields empty.
@@ -20,6 +22,7 @@ func New() (c ClusterBuilder) {
 // The Default function is used to create a new ClusterBuilder with all fields set to default values.
 func Default() (c ClusterBuilder) {
 	c.name = "Apate"
+	c.clusterCreationInterface = &clustercreationinterface.Kind{}
 	return c
 }
 
@@ -29,50 +32,58 @@ func (b * ClusterBuilder) WithName(name string) * ClusterBuilder {
 	return b
 }
 
+// The WithClusterCreationInterface function is used to enable the cluster to be built with a different
+// cluster creator.
+func (b * ClusterBuilder) WithClusterCreationInterface(clusterCreationInterface clustercreationinterface.ClusterCreationInterface) * ClusterBuilder {
+	b.clusterCreationInterface = clusterCreationInterface
+	return b
+}
+
 // Creates a new cluster based on the state of the ClusterBuilder.
 // Makes sure that old clusters with the same name as this one are deleted.
-func (b *ClusterBuilder) ForceCreate() (Cluster, error) {
+func (b *ClusterBuilder) ForceCreate() (KubernetesCluster, error) {
 	if b.name == "" {
-		return Cluster{}, errors.New("Tying to create a cluster with an empty name (\"\")")
+		return KubernetesCluster{}, errors.New("Tying to create a cluster with an empty name (\"\")")
 	}
 
-	DeleteCluster(b.name)
+	b.clusterCreationInterface.DeleteCluster(b.name)
 	return b.Create()
 }
 
 // Creates a new cluster based on the state of the ClusterBuilder.
-func (b *ClusterBuilder) Create() (Cluster, error) {
+func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 	if b.name == "" {
-		return Cluster{}, errors.New("Tying to create a cluster with an empty name (\"\")")
+		return KubernetesCluster{}, errors.New("Tying to create a cluster with an empty name (\"\")")
 	}
 
-	err := CreateCluster(b.name)
+	err := b.clusterCreationInterface.CreateCluster(b.name)
 	if err != nil {
 		// If something went wrong, there still could be a built cluster we can't interact with.
 		// delete the cluster to be safe for the next run, otherwise ForceCreate would be necessary
-		DeleteCluster(b.name)
-		return Cluster{}, err
+		b.clusterCreationInterface.DeleteCluster(b.name)
+		return KubernetesCluster{}, err
 	}
 
-	config, err := getConfigForContext("kind-" + b.name)
+	config, err := getConfigForContext(b.clusterCreationInterface.ClusterContext(b.name))
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
-		DeleteCluster(b.name)
-		return Cluster{}, err
+		b.clusterCreationInterface.DeleteCluster(b.name)
+		return KubernetesCluster{}, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
-		DeleteCluster(b.name)
-		return Cluster{}, err
+		b.clusterCreationInterface.DeleteCluster(b.name)
+		return KubernetesCluster{}, err
 	}
 
-	return Cluster {
-		name: b.name,
-		clientset: clientset,
+	return KubernetesCluster{
+		name:                     b.name,
+		clientset:                clientset,
+		clusterCreationInterface: b.clusterCreationInterface,
 	}, nil
 }
 
