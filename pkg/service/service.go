@@ -11,16 +11,16 @@ import (
 
 type GRPCServer struct {
 	listener net.Listener
-	Server *grpc.Server
+	Server   *grpc.Server
 }
 
 type ConnectionInfo struct {
 	address string
-	port int
-	tls bool
+	port    int
+	tls     bool
 }
 
-func NewGRPServer(info *ConnectionInfo) *GRPCServer {
+func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	lis, server := createListenerAndServer(info)
 	return &GRPCServer{
 		listener: lis,

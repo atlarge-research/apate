@@ -1,20 +1,20 @@
 package main
 
 import (
+	"context"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/heartbeat"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"golang.org/x/net/context"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 	"log"
 )
 
-func main()  {
+func main() {
 	// Create and delete cluster for now
 	createAndDeleteCluster()
 
 	log.Println("Starting Apate control plane")
 
-	// Start GRPC server/client
+	// Start gRPC server/client
 	startGRPC()
 }
 
@@ -22,14 +22,18 @@ func startGRPC() {
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
 
-	// Server
-	server := service.NewGRPServer(connectionInfo)
-	heartbeat.RegisterService(server)
+	// Service
+	server := service.NewGRPCServer(connectionInfo)
+	service.RegisterService(server)
 	server.Serve()
 
 	// Client
-	c := heartbeat.GetClient(connectionInfo)
-	defer c.Conn.Close()
+	c := service.GetClient(connectionInfo)
+	defer func() {
+		if err := c.Conn.Close(); err != nil {
+			log.Fatalf("Failed to close connection")
+		}
+	}()
 
 	res, err := c.Client.Ping(context.Background(), &heartbeat.HeartbeatMessage{Message: "ping"})
 
