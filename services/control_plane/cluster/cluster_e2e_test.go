@@ -22,7 +22,6 @@ func TestCreateCluster_e2e(t *testing.T) {
 	cluster.Delete()
 }
 
-
 func TestForceCreateCluster_e2e(t *testing.T) {
 	clusterInterface := KinD{}
 
@@ -33,7 +32,6 @@ func TestForceCreateCluster_e2e(t *testing.T) {
 	// Create a cluster
 	_, err := clusterBuilder.WithCreator(&clusterInterface).WithName("TestForceCreateCluster").Create()
 	assert.NoError(t, err)
-
 
 	// Now create another one. This should error
 	_, err = clusterBuilder.WithName("TestForceCreateCluster").Create()

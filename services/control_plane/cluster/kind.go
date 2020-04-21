@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/kind/pkg/cmd/kind"
 )
 
-type KinD struct {}
+type KinD struct{}
 
 // Creates a new cluster with a given name.
 func (KinD) CreateCluster(name string, kubeconfiglocation string) error {
