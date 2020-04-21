@@ -27,5 +27,5 @@ func (c KubernetesCluster) GetNumberOfPods() (int, error) {
 		return 0, err
 	}
 
-	return len(pods.Items),  nil
+	return len(pods.Items), nil
 }

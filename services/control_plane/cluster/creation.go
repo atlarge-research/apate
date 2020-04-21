@@ -1,10 +1,7 @@
-
 // Defines an interface used to set up a cluster.
 package cluster
 
-
 type ClusterCreator interface {
-
 
 	// Deletes a cluster with a given name.
 	//This should never error, and should do nothing if the cluster to be deleted did not exist.

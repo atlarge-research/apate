@@ -25,5 +25,5 @@ func TestEmptyName(t *testing.T) {
 	clusterbuilder.WithName("")
 
 	_, err := clusterbuilder.Create()
-	assert.Error(t, err);
+	assert.Error(t, err)
 }
