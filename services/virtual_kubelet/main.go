@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	ourprovider "github.com/atlarge-research/opendc-emulate-kubernetes/virtual_kubelet/provider"
+	ourprovider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
 	cli "github.com/virtual-kubelet/node-cli"
 	"github.com/virtual-kubelet/node-cli/opts"
 	"github.com/virtual-kubelet/node-cli/provider"

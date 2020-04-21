@@ -1,4 +1,4 @@
-module github.com/atlarge-research/opendc-emulate-kubernetes/virtual_kubelet
+module github.com/atlarge-research/opendc-emulate-kubernetes
 
 go 1.14
 
