@@ -55,6 +55,7 @@ func (*KinD) DeleteCluster(name string) error {
 		return err
 	}
 	// Only gets here after the cluster is deleted
+	return nil
 }
 
 // Returns the name of a context for kubernetes to use for a given cluster name.

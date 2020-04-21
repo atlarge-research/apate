@@ -9,8 +9,9 @@ require (
 	github.com/virtual-kubelet/virtual-kubelet v1.2.1
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
-	k8s.io/api v0.0.0
-	k8s.io/apimachinery v0.17.0
+	k8s.io/api v0.0.0                       // Will be replaced
+	k8s.io/apimachinery v0.17.0             // Will be replaced
+	k8s.io/client-go v10.0.0+incompatible   // Will be replaced
 	sigs.k8s.io/kind v0.7.0
 )
 
