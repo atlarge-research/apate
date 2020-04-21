@@ -1,4 +1,4 @@
-package clustercreationinterface
+package cluster
 
 import (
 	"sigs.k8s.io/kind/cmd/kind/app"
@@ -6,10 +6,10 @@ import (
 	"sigs.k8s.io/kind/pkg/cmd/kind"
 )
 
-type Kind struct {}
+type KinD struct {}
 
 // Creates a new cluster with a given name.
-func (Kind) CreateCluster(name string, kubeconfiglocation string) error {
+func (KinD) CreateCluster(name string, kubeconfiglocation string) error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 
@@ -38,7 +38,7 @@ func (Kind) CreateCluster(name string, kubeconfiglocation string) error {
 // Deletes a cluster with a given name.
 // This function never errors, even if the cluster didn't exist yet.
 // Therefore it can be used to ensure no cluster with a certain name exists.
-func (*Kind) DeleteCluster(name string) {
+func (*KinD) DeleteCluster(name string) {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 
@@ -57,6 +57,6 @@ func (*Kind) DeleteCluster(name string) {
 }
 
 // Returns the name of a context for kubernetes to use for a given cluster name.
-func (*Kind) ClusterContext(name string) string {
+func (*KinD) ClusterContext(name string) string {
 	return "kind-" + name
 }

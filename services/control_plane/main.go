@@ -1,13 +1,13 @@
 package main
 
 import (
-	"control_plane/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 	"log"
 )
 
 func main() {
-	clusterbuilder := cluster.Default()
-	c, err := clusterbuilder.WithName("Apate").Create()
+	cb := cluster.Default()
+	c, err := cb.WithName("Apate").Create()
 	if err != nil {
 		log.Fatalf("An error occured: %s", err.Error())
 	}

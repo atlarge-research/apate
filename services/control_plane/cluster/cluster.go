@@ -3,7 +3,6 @@
 package cluster
 
 import (
-	"control_plane/cluster/clustercreationinterface"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -12,8 +11,8 @@ import (
 // It abstracts away calls to the kubernetes client-go api.
 type KubernetesCluster struct {
 	name                     string
-	clusterCreationInterface clustercreationinterface.ClusterCreationInterface
-	clientset                *kubernetes.Clientset
+	clusterCreationInterface ClusterCreator
+	clientSet                *kubernetes.Clientset
 }
 
 // Used to delete a cluster
@@ -23,7 +22,7 @@ func (c KubernetesCluster) Delete() {
 
 // Returns the number of pods in the cluster, or an error if it couldn't get these.
 func (c KubernetesCluster) GetNumberOfPods() (int, error) {
-	pods, err := c.clientset.CoreV1().Pods("").List(metav1.ListOptions{})
+	pods, err := c.clientSet.CoreV1().Pods("").List(metav1.ListOptions{})
 	if err != nil {
 		return 0, err
 	}
