@@ -5,12 +5,12 @@ go 1.14
 require (
 	github.com/virtual-kubelet/node-cli v0.1.2
 	github.com/virtual-kubelet/virtual-kubelet v1.2.1
-	k8s.io/api v0.18.2
+	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 )
 
 // TODO: Figure out why we want all these replacements
-//       taken from: https://github.com/virtual-kubelet/cri/blob/master/go.mod#L24
+//       taken from: https://github.com/virtual-kubelet/virtual-kubelet/blob/master/go.mod#L48
 
 replace k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20190805144654-3d5bf3a310c1
 
