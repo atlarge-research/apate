@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"log"
 )
 
