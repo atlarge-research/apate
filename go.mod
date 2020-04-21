@@ -4,12 +4,15 @@ go 1.14
 
 require (
 	github.com/golang/protobuf v1.4.0
+	github.com/stretchr/testify v1.4.0
 	github.com/virtual-kubelet/node-cli v0.1.2
 	github.com/virtual-kubelet/virtual-kubelet v1.2.1
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
-	k8s.io/api v0.0.0
-	k8s.io/apimachinery v0.0.0
+	k8s.io/api v0.0.0                       // Will be replaced
+	k8s.io/apimachinery v0.17.0             // Will be replaced
+	k8s.io/client-go v10.0.0+incompatible   // Will be replaced
+	sigs.k8s.io/kind v0.7.0
 )
 
 // TODO: Figure out why we want all these replacements
