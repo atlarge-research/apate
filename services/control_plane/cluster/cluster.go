@@ -10,14 +10,14 @@ import (
 // A KubernetesCluster object can be used to interact with kubernetes clusters.
 // It abstracts away calls to the kubernetes client-go api.
 type KubernetesCluster struct {
-	name                     string
-	clusterCreationInterface ClusterCreator
-	clientSet                *kubernetes.Clientset
+	name      string
+	manager   Manager
+	clientSet *kubernetes.Clientset
 }
 
 // Used to delete a cluster
-func (c KubernetesCluster) Delete() {
-	c.clusterCreationInterface.DeleteCluster(c.name)
+func (c KubernetesCluster) Delete() error {
+	return c.manager.DeleteCluster(c.name)
 }
 
 // Returns the number of pods in the cluster, or an error if it couldn't get these.

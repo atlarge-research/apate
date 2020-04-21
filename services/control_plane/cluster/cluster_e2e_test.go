@@ -12,21 +12,21 @@ func TestCreateCluster_e2e(t *testing.T) {
 	clusterInterface := KinD{}
 
 	// Delete it before to be safe
-	clusterInterface.DeleteCluster("TestCreateCluster")
+	assert.NoError(t, clusterInterface.DeleteCluster("TestCreateCluster"))
 
 	clusterBuilder := Default()
 	cluster, err := clusterBuilder.WithCreator(&clusterInterface).WithName("TestCreateCluster").Create()
 
 	assert.NoError(t, err)
 
-	cluster.Delete()
+	assert.NoError(t, cluster.Delete())
 }
 
 func TestForceCreateCluster_e2e(t *testing.T) {
 	clusterInterface := KinD{}
 
 	// Delete it before to be safe
-	clusterInterface.DeleteCluster("TestForceCreateCluster")
+	assert.NoError(t, clusterInterface.DeleteCluster("TestForceCreateCluster"))
 
 	clusterBuilder := Default()
 	// Create a cluster
@@ -45,5 +45,5 @@ func TestForceCreateCluster_e2e(t *testing.T) {
 	//		 but more importantly: it might be useful to have a way that other Cluster structs with the same name
 	//		 as a force created one are marked as invalid so they can't be used to interact with the cluster anymore.
 
-	cluster.Delete()
+	assert.NoError(t, cluster.Delete())
 }

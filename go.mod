@@ -3,7 +3,6 @@ module github.com/atlarge-research/opendc-emulate-kubernetes
 go 1.14
 
 require (
-    sigs.k8s.io/kind v0.7.0
 	github.com/golang/protobuf v1.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/virtual-kubelet/node-cli v0.1.2
@@ -12,7 +11,7 @@ require (
 	google.golang.org/protobuf v1.21.0
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.17.0
-	k8s.io/client-go v10.0.0+incompatible
+	sigs.k8s.io/kind v0.7.0
 )
 
 // TODO: Figure out why we want all these replacements

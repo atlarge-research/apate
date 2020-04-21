@@ -14,11 +14,15 @@ func main() {
 
 	numberOfPods, err := c.GetNumberOfPods()
 	if err != nil {
-		c.Delete()
+		if err := c.Delete(); err != nil {
+			log.Printf("An error occured: %s", err.Error())
+		}
 		log.Fatalf("An error occured: %s", err.Error())
 	}
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)
 
-	c.Delete()
+	if err := c.Delete(); err != nil {
+		log.Fatalf("An error occured: %s", err.Error())
+	}
 }
