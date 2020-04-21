@@ -12,19 +12,19 @@ import (
 // The ClusterBuilder creates a new cluster object used to manage a cluster.
 type ClusterBuilder struct {
 	name               string
-	creator            ClusterCreator
+	manager            Manager
 	kubeConfigLocation string
 }
 
 // The New function is used to create a new ClusterBuilder with all fields empty.
-func New() (c ClusterBuilder) {
-	return c
+func New() ClusterBuilder {
+	return ClusterBuilder{}
 }
 
 // The Default function is used to create a new ClusterBuilder with all fields set to default values.
 func Default() (c ClusterBuilder) {
 	c.name = "Apate"
-	c.creator = &KinD{}
+	c.manager = &KinD{}
 	c.kubeConfigLocation = os.TempDir() + "/apate/config"
 	return c
 }
@@ -36,15 +36,15 @@ func (b *ClusterBuilder) WithName(name string) *ClusterBuilder {
 }
 
 // The WithConfigLocation function is used to give the cluster that is to be built a name.
-func (b *ClusterBuilder) WithConfigLocation(kubeconfiglocation string) *ClusterBuilder {
-	b.kubeConfigLocation = kubeconfiglocation
+func (b *ClusterBuilder) WithConfigLocation(kubeConfigLocation string) *ClusterBuilder {
+	b.kubeConfigLocation = kubeConfigLocation
 	return b
 }
 
 // The WithCreator function is used to enable the cluster to be built with a different
-// cluster creator.
-func (b *ClusterBuilder) WithCreator(creator ClusterCreator) *ClusterBuilder {
-	b.creator = creator
+// cluster manager.
+func (b *ClusterBuilder) WithCreator(creator Manager) *ClusterBuilder {
+	b.manager = creator
 	return b
 }
 
@@ -52,17 +52,19 @@ func (b *ClusterBuilder) WithCreator(creator ClusterCreator) *ClusterBuilder {
 // Makes sure that old clusters with the same name as this one are deleted.
 func (b *ClusterBuilder) ForceCreate() (KubernetesCluster, error) {
 	if b.name == "" {
-		return KubernetesCluster{}, errors.New("Tying to create a cluster with an empty name (\"\")")
+		return KubernetesCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
 	}
 
-	b.creator.DeleteCluster(b.name)
+	if err := b.manager.DeleteCluster(b.name); err != nil {
+		return KubernetesCluster{}, err
+	}
 	return b.Create()
 }
 
 // Creates a new cluster based on the state of the ClusterBuilder.
 func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 	if b.name == "" {
-		return KubernetesCluster{}, errors.New("Tying to create a cluster with an empty name (\"\")")
+		return KubernetesCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
 	}
 
 	if _, err := os.Stat(b.kubeConfigLocation); os.IsNotExist(err) {
@@ -71,19 +73,23 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		}
 	}
 
-	err := b.creator.CreateCluster(b.name, b.kubeConfigLocation)
+	err := b.manager.CreateCluster(b.name, b.kubeConfigLocation)
 	if err != nil {
 		// If something went wrong, there still could be a built cluster we can't interact with.
 		// delete the cluster to be safe for the next run, otherwise ForceCreate would be necessary
-		b.creator.DeleteCluster(b.name)
+		if err := b.manager.DeleteCluster(b.name); err != nil {
+			return KubernetesCluster{}, err
+		}
 		return KubernetesCluster{}, err
 	}
 
-	config, err := getConfigForContext(b.creator.ClusterContext(b.name), b.kubeConfigLocation)
+	config, err := getConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
-		b.creator.DeleteCluster(b.name)
+		if err := b.manager.DeleteCluster(b.name); err != nil {
+			return KubernetesCluster{}, err
+		}
 		return KubernetesCluster{}, err
 	}
 
@@ -91,14 +97,16 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
-		b.creator.DeleteCluster(b.name)
+		if err := b.manager.DeleteCluster(b.name); err != nil {
+			return KubernetesCluster{}, err
+		}
 		return KubernetesCluster{}, err
 	}
 
 	return KubernetesCluster{
-		name:                     b.name,
-		clientSet:                clientSet,
-		clusterCreationInterface: b.creator,
+		name:      b.name,
+		clientSet: clientSet,
+		manager:   b.manager,
 	}, nil
 }
 

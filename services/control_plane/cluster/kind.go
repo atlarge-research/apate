@@ -9,7 +9,7 @@ import (
 type KinD struct{}
 
 // Creates a new cluster with a given name.
-func (KinD) CreateCluster(name string, kubeconfiglocation string) error {
+func (KinD) CreateCluster(name string, kubeConfigLocation string) error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 
@@ -19,9 +19,8 @@ func (KinD) CreateCluster(name string, kubeconfiglocation string) error {
 	}
 
 	args = append(args, "--name", name)
-	args = append(args, "--kubeconfig", kubeconfiglocation)
+	args = append(args, "--kubeconfig", kubeConfigLocation)
 
-	// TODO: Avoid kind overwriting the global config file.
 	// Set up a cluster
 	// Can't simply call Run as is done in Delete since we want to get error messages back.
 	// Run just logs the error and returns.
@@ -38,7 +37,7 @@ func (KinD) CreateCluster(name string, kubeconfiglocation string) error {
 // Deletes a cluster with a given name.
 // This function never errors, even if the cluster didn't exist yet.
 // Therefore it can be used to ensure no cluster with a certain name exists.
-func (*KinD) DeleteCluster(name string) {
+func (*KinD) DeleteCluster(name string) error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 
@@ -52,7 +51,9 @@ func (*KinD) DeleteCluster(name string) {
 	// Deletes the cluster
 	// As far as I could test this call never errors (it just doesn't do anything
 	// when the cluster doesn't exist) so I don't think the system used in CreateCluster is necessary.
-	app.Run(logger, cmd.StandardIOStreams(), args)
+	if err := app.Run(logger, cmd.StandardIOStreams(), args); err != nil {
+		return err
+	}
 	// Only gets here after the cluster is deleted
 }
 
