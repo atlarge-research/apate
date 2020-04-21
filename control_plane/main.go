@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	clusterbuilder := cluster.New()
+	clusterbuilder := cluster.Default()
 	c, err := clusterbuilder.WithName("Apate").Create()
 	if err != nil {
 		log.Fatalf("An error occured: %s", err.Error())

@@ -6,12 +6,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"os"
+	"path"
 )
 
 // The ClusterBuilder creates a new cluster object used to manage a cluster.
 type ClusterBuilder struct {
 	name                     string
 	clusterCreationInterface clustercreationinterface.ClusterCreationInterface
+	kubeconfiglocation       string
 }
 
 // The New function is used to create a new ClusterBuilder with all fields empty.
@@ -23,18 +26,25 @@ func New() (c ClusterBuilder) {
 func Default() (c ClusterBuilder) {
 	c.name = "Apate"
 	c.clusterCreationInterface = &clustercreationinterface.Kind{}
+	c.kubeconfiglocation = os.TempDir() + "/apate/config"
 	return c
 }
 
 // The WithName function is used to give the cluster that is to be built a name.
-func (b * ClusterBuilder) WithName(name string) * ClusterBuilder {
+func (b *ClusterBuilder) WithName(name string) *ClusterBuilder {
 	b.name = name
+	return b
+}
+
+// The WithConfigLocation function is used to give the cluster that is to be built a name.
+func (b *ClusterBuilder) WithConfigLocation(kubeconfiglocation string) *ClusterBuilder {
+	b.kubeconfiglocation = kubeconfiglocation
 	return b
 }
 
 // The WithClusterCreationInterface function is used to enable the cluster to be built with a different
 // cluster creator.
-func (b * ClusterBuilder) WithClusterCreationInterface(clusterCreationInterface clustercreationinterface.ClusterCreationInterface) * ClusterBuilder {
+func (b *ClusterBuilder) WithClusterCreationInterface(clusterCreationInterface clustercreationinterface.ClusterCreationInterface) *ClusterBuilder {
 	b.clusterCreationInterface = clusterCreationInterface
 	return b
 }
@@ -56,7 +66,11 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		return KubernetesCluster{}, errors.New("Tying to create a cluster with an empty name (\"\")")
 	}
 
-	err := b.clusterCreationInterface.CreateCluster(b.name)
+	if _, err := os.Stat(b.kubeconfiglocation); os.IsNotExist(err) {
+		os.MkdirAll(path.Dir(b.kubeconfiglocation), os.ModePerm)
+	}
+
+	err := b.clusterCreationInterface.CreateCluster(b.name, b.kubeconfiglocation)
 	if err != nil {
 		// If something went wrong, there still could be a built cluster we can't interact with.
 		// delete the cluster to be safe for the next run, otherwise ForceCreate would be necessary
@@ -64,7 +78,7 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		return KubernetesCluster{}, err
 	}
 
-	config, err := getConfigForContext(b.clusterCreationInterface.ClusterContext(b.name))
+	config, err := getConfigForContext(b.clusterCreationInterface.ClusterContext(b.name), b.kubeconfiglocation)
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
@@ -88,10 +102,11 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 }
 
 // Gets a kubernetes client configuration for the context given.
-func getConfigForContext(context string) (*rest.Config, error) {
+func getConfigForContext(context string, kubeconfiglocation string) (*rest.Config, error) {
 	// Create a default config rules struct
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
+	rules.ExplicitPath = "/tmp/apate/config"
 
 	// Override with defaults (this call might not be necessary since the defaults are already set above?)
 	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
@@ -106,4 +121,3 @@ func getConfigForContext(context string) (*rest.Config, error) {
 
 	return config, nil
 }
-

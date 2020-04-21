@@ -12,7 +12,7 @@ type ClusterCreationInterface interface {
 
 	// Should delete a cluster with a certain name.
 	// This may error, and should error when a cluster with that name already exists.
-	CreateCluster(name string) error
+	CreateCluster(name string, kubeconfiglocation string) error
 
 	// Returns the name of a context for kubernetes to use for a given cluster name.
 	ClusterContext(name string) string

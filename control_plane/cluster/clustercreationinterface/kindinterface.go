@@ -9,7 +9,7 @@ import (
 type Kind struct {}
 
 // Creates a new cluster with a given name.
-func (Kind) CreateCluster(name string) error {
+func (Kind) CreateCluster(name string, kubeconfiglocation string) error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 
@@ -19,7 +19,7 @@ func (Kind) CreateCluster(name string) error {
 	}
 
 	args = append(args, "--name", name)
-	//args = append(args, "--kubeconfig", )
+	args = append(args, "--kubeconfig", kubeconfiglocation)
 
 	// TODO: Avoid kind overwriting the global config file.
 	// Set up a cluster
