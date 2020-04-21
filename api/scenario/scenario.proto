@@ -130,15 +130,15 @@ message NodeState {
         int32 ephemeral_storage_usage = 5;
     }
 
-    // Defines the amount of network latency the node experiences
+    // Defines the amount of added network latency the node experiences
     // Will default to 0 msec
-    message LatencyState {
-        // Whether to enable latency
+    message AddedLatencyState {
+        // Whether to enable added latency
         // If not enabled, the next field will be ignored
-        bool latency_enabled = 1;
+        bool added_latency_enabled = 1;
 
         // The amount of msec of latency
-        int32 latency_msec = 2;
+        int32 added_latency_msec = 2;
     }
 }
 
