@@ -2,9 +2,8 @@ module github.com/atlarge-research/opendc-emulate-kubernetes
 
 go 1.14
 
-require sigs.k8s.io/kind v0.7.0
-
 require (
+    sigs.k8s.io/kind v0.7.0
 	github.com/golang/protobuf v1.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/virtual-kubelet/node-cli v0.1.2
