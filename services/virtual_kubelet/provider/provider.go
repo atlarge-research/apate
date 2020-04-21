@@ -1,11 +1,13 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	vkprov "github.com/virtual-kubelet/node-cli/provider"
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	"io"
+	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,6 +18,7 @@ type VKProvider struct {
 	Pods map[types.UID]*corev1.Pod
 }
 
+// Returns the provider but with the vk type instead of our own.
 func CreateProvider() vkprov.Provider {
 	return &VKProvider{}
 }
@@ -38,10 +41,7 @@ func (p *VKProvider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 	return nil
 }
 
-// GetPod retrieves a pod by name from the provider (can be cached).
-// The Pod returned is expected to be immutable, and may be accessed
-// concurrently outside of the calling goroutine. Therefore it is recommended
-// to return a version after DeepCopy.
+// GetPod retrieves a pod by name.
 func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
 
 	// TODO: think about better structure for p.Pods
@@ -54,18 +54,12 @@ func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev
 	return nil, errors.New("unable to find pod")
 }
 
-// GetPodStatus retrieves the status of a pod by name from the provider.
-// The PodStatus returned is expected to be immutable, and may be accessed
-// concurrently outside of the calling goroutine. Therefore it is recommended
-// to return a version after DeepCopy.
+// GetPodStatus retrieves the status of a pod by name.
 func (p *VKProvider) GetPodStatus(ctx context.Context, namespace, name string) (*corev1.PodStatus, error) {
 	return &corev1.PodStatus{}, nil
 }
 
-// GetPods retrieves a list of all pods running on the provider (can be cached).
-// The Pods returned are expected to be immutable, and may be accessed
-// concurrently outside of the calling goroutine. Therefore it is recommended
-// to return a version after DeepCopy.
+// GetPods retrieves a list of all pods running.
 func (p *VKProvider) GetPods(context.Context) ([]*corev1.Pod, error) {
 
 	// TODO: Improve
@@ -78,14 +72,19 @@ func (p *VKProvider) GetPods(context.Context) ([]*corev1.Pod, error) {
 	return arr, nil
 }
 
+// GetContainerLogs retrieves the log of a specific container.
 func (p *VKProvider) GetContainerLogs(ctx context.Context, namespace, podName, containerName string, opts api.ContainerLogOpts) (io.ReadCloser, error) {
-	panic("implement me")
+	// We return empty string as the emulated containers don't have a log.
+	return ioutil.NopCloser(bytes.NewReader([]byte(""))), nil
 }
 
+// RunInContainer retrieves the log of a specific container.
 func (p *VKProvider) RunInContainer(ctx context.Context, namespace, podName, containerName string, cmd []string, attach api.AttachIO) error {
-	panic("implement me")
+	// There is no actual process running in the containers, so we can't do anything.
+	return nil
 }
 
+// ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
 func (p *VKProvider) ConfigureNode(ctx context.Context, v *corev1.Node) {
 
 	var cpu resource.Quantity
