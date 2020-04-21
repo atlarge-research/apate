@@ -3,8 +3,11 @@ module github.com/atlarge-research/opendc-emulate-kubernetes
 go 1.14
 
 require (
+	github.com/golang/protobuf v1.4.0
 	github.com/virtual-kubelet/node-cli v0.1.2
 	github.com/virtual-kubelet/virtual-kubelet v1.2.1
+	google.golang.org/grpc v1.28.1
+	google.golang.org/protobuf v1.21.0
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 )
