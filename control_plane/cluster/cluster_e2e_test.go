@@ -1,16 +1,22 @@
 package cluster
 
 import (
+	"control_plane/cluster/clustercreationinterface"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestCreateCluster(t *testing.T) {
+// I specifically give clusters the name of their test,
+// so even if tests are ran in parallel there won't be a problem.
+
+func TestCreateCluster_e2e(t *testing.T) {
+	clusterInterface := clustercreationinterface.Kind{}
+
 	// Delete it before to be safe
-	DeleteCluster("Apate")
+	clusterInterface.DeleteCluster("TestCreateCluster")
 
 	clusterbuilder := New()
-	cluster, err := clusterbuilder.WithName("Apate").Create()
+	cluster, err := clusterbuilder.WithClusterCreationInterface(&clusterInterface).WithName("TestCreateCluster").Create()
 
 	assert.NoError(t, err)
 
@@ -18,21 +24,24 @@ func TestCreateCluster(t *testing.T) {
 }
 
 
-func TestForceCreateCluster(t *testing.T) {
+func TestForceCreateCluster_e2e(t *testing.T) {
+	clusterInterface := clustercreationinterface.Kind{}
+
 	// Delete it before to be safe
-	DeleteCluster("Apate")
+	clusterInterface.DeleteCluster("TestForceCreateCluster")
 
 	clusterbuilder := New()
 	// Create a cluster
-	_, err := clusterbuilder.WithName("Apate").Create()
+	_, err := clusterbuilder.WithClusterCreationInterface(&clusterInterface).WithName("TestForceCreateCluster").Create()
 	assert.NoError(t, err)
 
+
 	// Now create another one. This should error
-	_, err = clusterbuilder.WithName("Apate").Create()
+	_, err = clusterbuilder.WithName("TestForceCreateCluster").Create()
 	assert.Error(t, err)
 
 	// Now force create one. This should not error but instead delete the old one.
-	cluster, err := clusterbuilder.WithName("Apate").ForceCreate()
+	cluster, err := clusterbuilder.WithName("TestForceCreateCluster").ForceCreate()
 	assert.NoError(t, err)
 
 	// TODO: There's currently no way to test if the old cluster was actually deleted (but it kinda has to be)
