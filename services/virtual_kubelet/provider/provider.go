@@ -1,3 +1,4 @@
+// Package provider implements the virtual kubelet provider emulate to facilitate emulating pods.
 package provider
 
 import (
@@ -19,7 +20,7 @@ type VKProvider struct {
 	Pods map[types.UID]*corev1.Pod
 }
 
-// Returns the provider but with the vk type instead of our own.
+// CreateProvider returns the provider but with the vk type instead of our own.
 func CreateProvider() vkprov.Provider {
 	return &VKProvider{}
 }
