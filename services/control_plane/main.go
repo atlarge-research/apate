@@ -58,7 +58,7 @@ func scheduleOnNodes(sc *privateScenario.Scenario, c *cluster.KubernetesCluster)
 		}
 
 		if err := scenarioClient.Conn.Close(); err != nil {
-			log.Fatalf("Failed to close connection")
+			log.Fatal("Failed to close connection")
 		}
 	}
 }
