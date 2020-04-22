@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"log"
+
 	privateScenario "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	cpService "github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/service"
-	"log"
 )
 
 func main() {
@@ -26,15 +27,15 @@ func createCluster() cluster.KubernetesCluster {
 	cb := cluster.Default()
 	c, err := cb.WithName("Apate").ForceCreate()
 	if err != nil {
-		log.Fatalf("An error occured: %s", err.Error())
+		log.Fatalf("An error occurred: %s", err.Error())
 	}
 
 	numberOfPods, err := c.GetNumberOfPods()
 	if err != nil {
 		if err := c.Delete(); err != nil {
-			log.Printf("An error occured: %s", err.Error())
+			log.Printf("An error occurred: %s", err.Error())
 		}
-		log.Fatalf("An error occured: %s", err.Error())
+		log.Fatalf("An error occurred: %s", err.Error())
 	}
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)
@@ -43,7 +44,6 @@ func createCluster() cluster.KubernetesCluster {
 }
 
 func scheduleOnNodes(sc *privateScenario.Scenario, c *cluster.KubernetesCluster) {
-
 	for _, port := range c.GetNodePorts() {
 		// Connection settings
 		connectionInfo := service.NewConnectionInfo("localhost", port, true)

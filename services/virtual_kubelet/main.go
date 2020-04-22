@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/service"
-	cli "github.com/virtual-kubelet/node-cli"
-	"github.com/virtual-kubelet/node-cli/opts"
-	"github.com/virtual-kubelet/node-cli/provider"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	cli "github.com/virtual-kubelet/node-cli"
+	"github.com/virtual-kubelet/node-cli/opts"
+	"github.com/virtual-kubelet/node-cli/provider"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/service"
 )
 
 var (
@@ -22,7 +24,7 @@ var (
 )
 
 func main() {
-	//startVK()
+	startVK()
 	startGRPC()
 }
 
