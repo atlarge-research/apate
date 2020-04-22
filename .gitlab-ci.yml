@@ -57,9 +57,13 @@ test:
   before_script:
     - go mod download
   script:
-    - docker run hello-world
-# FIXME: this needs glibc:
-#    - go test -race -short ./... # Test for race conditions in small tests as race condition testing is slow
     - go test -covermode=atomic -coverprofile=cover.cov ./...
     - go tool cover -func=cover.cov
 
+race:
+  stage: test
+  image: golang:1.14
+  before_script:
+    - go mod download
+  script: # Test for race conditions in small tests as race condition testing is slow
+    - go test -race -short ./...
