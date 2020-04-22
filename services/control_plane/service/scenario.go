@@ -1,4 +1,4 @@
-package client
+package service
 
 import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
