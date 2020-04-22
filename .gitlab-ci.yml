@@ -1,1 +1,79 @@
-# Created placeholder CI file to stop Auto DevOps
+stages:
+  - prepare
+  - build
+  - verify
+  - test
+  - deploy
+
+variables:
+  DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
+  GOPATH: "$CI_PROJECT_DIR/.go"
+
+default:
+  image: $DIND_GO_IMAGE
+  before_script:
+    - mkdir -p .go
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+
+prepare-build-image:
+  stage: prepare
+  image: docker:latest
+  only:
+    changes:
+      - ci/build-image/Dockerfile
+      - .gitlab-ci.yml
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - cd ./ci/build-image
+  script:
+    - docker build --pull -t "$DIND_GO_IMAGE" .
+    - docker push "$DIND_GO_IMAGE"
+
+build:
+  stage: build
+  before_script:
+    - go mod download
+  script:
+    - go install ./...
+
+static-analaysis:
+  stage: verify
+  needs: [build]
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+  allow_failure: true
+  before_script:
+    # Use default .golangci.yml file from the image if one is not present in the project root.
+    - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'
+  script:
+    - golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+    paths:
+      - gl-code-quality-report.json
+
+test:
+  stage: test
+  needs: [build]
+  services:
+    - docker:dind
+  coverage: /^total:.+\)\s+(\d+.?\d*)%$/
+  before_script:
+    - go mod download
+  script:
+    - go test -covermode=atomic -coverprofile=cover.cov ./...
+    - go tool cover -func=cover.cov
+
+race:
+  stage: test
+  needs: [build]
+  image: golang:1.14
+  before_script:
+    - go mod download
+  script: # Test for race conditions in small tests as race condition testing is slow
+    - go test -race -short ./...
