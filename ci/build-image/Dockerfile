@@ -2,10 +2,12 @@
 # But switched out alpine for docker as base image
 FROM docker
 
-RUN apk add --no-cache ca-certificates go
+RUN apk add --no-cache ca-certificates go git
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
+
+RUN go get -u github.com/jstemmer/go-junit-report
