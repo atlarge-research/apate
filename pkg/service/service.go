@@ -9,17 +9,20 @@ import (
 	"net"
 )
 
+// GRPCServer represents the gRPC server and listener
 type GRPCServer struct {
 	listener net.Listener
 	Server   *grpc.Server
 }
 
+// ConnectionInfo contains all information required for connecting to a service
 type ConnectionInfo struct {
 	address string
 	port    int
 	tls     bool
 }
 
+// NewGRPCServer creates new gGRP server based on connection information
 func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	lis, server := createListenerAndServer(info)
 	return &GRPCServer{
@@ -28,6 +31,7 @@ func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	}
 }
 
+// NewConnectionInfo creates new connection information struct
 func NewConnectionInfo(address string, port int, tls bool) *ConnectionInfo {
 	return &ConnectionInfo{
 		address: address,
@@ -36,6 +40,7 @@ func NewConnectionInfo(address string, port int, tls bool) *ConnectionInfo {
 	}
 }
 
+// Serve starts listening for incoming requests
 func (s *GRPCServer) Serve() {
 	if err := s.Server.Serve(s.listener); err != nil {
 		log.Fatalf("Unable to serve: %v", err)
@@ -60,6 +65,7 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 	return
 }
 
+// CreateClientConnection creates a connection to a remote service with the given connection information
 func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
 
