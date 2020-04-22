@@ -1,12 +1,14 @@
+// Package service provides an a wrapper for connection information and a small wrapper around the grpc server
 package service
 
 import (
 	"fmt"
+	"log"
+	"net"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/testdata"
-	"log"
-	"net"
 )
 
 // GRPCServer represents the gRPC server and listener

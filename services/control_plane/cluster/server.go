@@ -1,9 +1,11 @@
 package cluster
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"github.com/google/uuid"
 	"sync"
+
+	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
 //TODO: Add more information for node

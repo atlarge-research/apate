@@ -2,18 +2,20 @@ package services
 
 import (
 	"context"
+	"log"
+
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/join_cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
-	"github.com/golang/protobuf/ptypes/empty"
-	"log"
 )
 
 type joinClusterService struct {
 	cluster *cluster.ApateCluster
 }
 
-// RegisterJoinClusterService registers a new heartbeatService with the given gRPC server
+// RegisterJoinClusterService registers a new joinClusterService with the given gRPC server
 func RegisterJoinClusterService(server *service.GRPCServer, cluster *cluster.ApateCluster) {
 	join_cluster.RegisterJoinClusterServer(server.Server, &joinClusterService{
 		cluster: cluster,
