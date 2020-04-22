@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/server"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/service"
 	cli "github.com/virtual-kubelet/node-cli"
 	"github.com/virtual-kubelet/node-cli/opts"
 	"github.com/virtual-kubelet/node-cli/provider"

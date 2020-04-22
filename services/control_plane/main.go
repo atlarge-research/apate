@@ -5,7 +5,7 @@ import (
 	privateScenario "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/client"
+	cpService "github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/service"
 	"log"
 )
 
@@ -44,12 +44,12 @@ func createCluster() cluster.KubernetesCluster {
 
 func scheduleOnPods(sc *privateScenario.Scenario, c *cluster.KubernetesCluster) {
 
-	for _, port := range c.GetPodPorts() {
+	for _, port := range c.GetNodePorts() {
 		// Connection settings
 		connectionInfo := service.NewConnectionInfo("localhost", port, true)
 
 		// Client
-		scenarioClient := client.GetScenarioClient(connectionInfo)
+		scenarioClient := cpService.GetScenarioClient(connectionInfo)
 
 		_, err := scenarioClient.Client.StartScenario(context.Background(), sc)
 
