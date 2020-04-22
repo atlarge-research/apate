@@ -18,6 +18,10 @@ default:
 prepare-build-image:
   stage: prepare
   image: docker:latest
+  only:
+    changes:
+      - ci/build-image/Dockerfile
+      - .gitlab-ci.yml
   services:
     - docker:dind
   before_script:
