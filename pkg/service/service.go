@@ -17,7 +17,7 @@ type GRPCServer struct {
 	Server   *grpc.Server
 }
 
-// ConnectionInfo contains all information required for connecting to a service
+// ConnectionInfo contains all information required for connecting to a services
 type ConnectionInfo struct {
 	address string
 	port    int
@@ -67,7 +67,7 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 	return
 }
 
-// CreateClientConnection creates a connection to a remote service with the given connection information
+// CreateClientConnection creates a connection to a remote services with the given connection information
 func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
 

@@ -10,6 +10,10 @@ import (
 // so even if tests are ran in parallel there won't be a problem.
 
 func TestCreateCluster_e2e(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping e2e test")
+	}
+
 	clusterInterface := KinD{}
 
 	// Delete it before to be safe
@@ -24,6 +28,10 @@ func TestCreateCluster_e2e(t *testing.T) {
 }
 
 func TestForceCreateCluster_e2e(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping e2e test")
+	}
+
 	clusterInterface := KinD{}
 
 	// Delete it before to be safe

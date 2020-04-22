@@ -1,3 +1,5 @@
+// Package cluster provides a way to maintain state for the apate cluster, and other various services
+// related to the apate cluster
 package cluster
 
 import (

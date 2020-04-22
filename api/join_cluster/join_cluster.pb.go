@@ -8,6 +8,9 @@ package join_cluster
 
 import (
 	context "context"
+	reflect "reflect"
+	sync "sync"
+
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
@@ -15,8 +18,6 @@ import (
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -189,7 +190,7 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// JoinClusterClient is the client API for JoinCluster service.
+// JoinClusterClient is the client API for JoinCluster services.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type JoinClusterClient interface {
@@ -216,7 +217,7 @@ func (c *joinClusterClient) JoinCluster(ctx context.Context, in *empty.Empty, op
 	return out, nil
 }
 
-// JoinClusterServer is the server API for JoinCluster service.
+// JoinClusterServer is the server API for JoinCluster services.
 type JoinClusterServer interface {
 	// Joins the node to the Apate cluster.
 	// Will return information needed to identify yourself
