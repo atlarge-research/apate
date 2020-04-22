@@ -19,7 +19,7 @@ func main() {
 		Task:      nil,
 		StartTime: 0,
 	}
-	scheduleOnPods(sc, &c)
+	scheduleOnNodes(sc, &c)
 }
 
 func createCluster() cluster.KubernetesCluster {
@@ -42,7 +42,7 @@ func createCluster() cluster.KubernetesCluster {
 	return c
 }
 
-func scheduleOnPods(sc *privateScenario.Scenario, c *cluster.KubernetesCluster) {
+func scheduleOnNodes(sc *privateScenario.Scenario, c *cluster.KubernetesCluster) {
 
 	for _, port := range c.GetNodePorts() {
 		// Connection settings
