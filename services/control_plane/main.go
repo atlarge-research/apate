@@ -1,11 +1,12 @@
 package main
 
 import (
+	"log"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	apatecluster "github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/services"
-	"log"
 )
 
 func main() {

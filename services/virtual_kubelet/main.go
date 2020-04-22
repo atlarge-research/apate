@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
-	ourprovider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
+	"log"
+	"strings"
+
 	cli "github.com/virtual-kubelet/node-cli"
 	"github.com/virtual-kubelet/node-cli/opts"
 	"github.com/virtual-kubelet/node-cli/provider"
-	"log"
-	"strings"
+
+	ourprovider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
 )
 
 var (

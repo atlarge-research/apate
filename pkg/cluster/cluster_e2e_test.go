@@ -1,8 +1,9 @@
 package cluster
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // I specifically give clusters the name of their test,
