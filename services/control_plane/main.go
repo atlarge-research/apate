@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+
 	// Create and delete cluster for now
 	createAndDeleteCluster()
 
@@ -45,7 +46,6 @@ func startGRPC() {
 }
 
 func createAndDeleteCluster() {
-
 	cb := cluster.Default()
 	c, err := cb.WithName("Apate").ForceCreate()
 	if err != nil {
