@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario";
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/internal";
 
 import "google/protobuf/empty.proto";
 
-package apate.scenario;
+package apate.scenario.internal;
 
 // This service will run on the Kubelets
 service ScenarioHandler {
@@ -25,17 +25,6 @@ message Scenario {
     int32 start_time = 2;
 }
 
-// Defines a group of nodes which all have the same hardware
-message NodeGroup {
-    // Amount of nodes are in this group
-    int32 nodeAmount = 1;
-
-    // How every node in this node group is configured
-    message Node {
-        // The amount of RAM every node has
-        int32 RAM = 1;
-    };
-}
 message Task {
     // The name of the task, can be used later to revert it
     string name = 1;
@@ -47,9 +36,9 @@ message Task {
     // Is in milliseconds since the scenario has started
     int32 timestamp = 3;
 
-    // The node groups on which this task will be executed
+    // The UUID of the nodes on which this task will be executed
     // Will be ignored when revert_task is true
-    repeated NodeGroup node_group_set = 4;
+    repeated string node_set = 4;
 
     // The event belonging to this task
     // Will be ignored when revert_task is true
