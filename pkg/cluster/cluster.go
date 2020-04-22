@@ -29,3 +29,13 @@ func (c KubernetesCluster) GetNumberOfPods() (int, error) {
 
 	return len(pods.Items), nil
 }
+
+
+
+// TODO: Spawns a new container. Parameters TBD. (issue #8)
+// TODO: should this be blocking?
+func (c KubernetesCluster) SpawnContainer() error {
+
+
+	return nil
+}

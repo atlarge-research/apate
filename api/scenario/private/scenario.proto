@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/internal";
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private";
 
 import "google/protobuf/empty.proto";
 

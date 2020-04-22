@@ -10,10 +10,12 @@ require (
 	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
+	gopkg.in/yaml.v2 v2.2.7
 	k8s.io/api v0.0.0 // Will be replaced
 	k8s.io/apimachinery v0.17.0 // Will be replaced
 	k8s.io/client-go v10.0.0+incompatible // Will be replaced
 	sigs.k8s.io/kind v0.7.0
+	sigs.k8s.io/yaml v1.1.0
 )
 
 // TODO: Figure out why we want all these replacements
