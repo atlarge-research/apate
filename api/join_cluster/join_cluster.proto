@@ -11,13 +11,13 @@ service JoinCluster {
 
     // Joins the node to the Apate cluster.
     // Will return information needed to identify yourself
-    // And to join the k8s cluster.
+    // And to join the kubernetes cluster.
     rpc joinCluster (google.protobuf.Empty) returns (JoinInformation) {}
 }
 
 message JoinInformation {
-    // The join token needed to join the actual k8s cluster
-    string k8sJoinToken = 1;
+    // The join token needed to join the actual kubernetes cluster
+    string kubernetesJoinToken = 1;
 
     // The UUID that will be used from the control plane to identify this node
     string nodeUUID = 2;
