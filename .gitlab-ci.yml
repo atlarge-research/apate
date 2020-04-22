@@ -43,6 +43,7 @@ build:
 
 static-analaysis:
   stage: verify
+  needs: [build]
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
   allow_failure: true
   before_script:
@@ -58,6 +59,7 @@ static-analaysis:
 
 test:
   stage: test
+  needs: [build]
   services:
     - docker:dind
   coverage: /^total:.+\)\s+(\d+.?\d*)%$/
@@ -69,6 +71,7 @@ test:
 
 race:
   stage: test
+  needs: [build]
   image: golang:1.14
   before_script:
     - go mod download
