@@ -7,13 +7,16 @@ stages:
 
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
+  GOPATH: "$CI_PROJECT_DIR/.go"
 
 default:
   image: $DIND_GO_IMAGE
+  before_script:
+    - mkdir -p .go
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
-      - /go/pkg/mod/
+      - .go/pkg/mod/
 
 prepare-build-image:
   stage: prepare
