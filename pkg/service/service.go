@@ -2,11 +2,12 @@ package service
 
 import (
 	"fmt"
+	"log"
+	"net"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/testdata"
-	"log"
-	"net"
 )
 
 type GRPCServer struct {
