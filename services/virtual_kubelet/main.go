@@ -58,7 +58,7 @@ func startGRPC() {
 	// Connection settings
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
-		log.Fatalf("Port not found in env")
+		log.Fatal("Port not found in env")
 	}
 
 	connectionInfo := service.NewConnectionInfo("localhost", port, true)
