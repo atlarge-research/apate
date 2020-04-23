@@ -30,7 +30,7 @@ func createCluster() cluster.KubernetesCluster {
 		log.Fatalf("An error occurred: %s", err.Error())
 	}
 
-	numberOfPods, err := c.GetNumberOfPods()
+	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
 		if err1 := c.Delete(); err1 != nil {
 			err = err1
