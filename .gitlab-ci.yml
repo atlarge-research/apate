@@ -21,6 +21,7 @@ license_scanning:
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
   GOPATH: "$CI_PROJECT_DIR/.go"
+  DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
 
 default:
   image: $DIND_GO_IMAGE
