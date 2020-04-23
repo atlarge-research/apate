@@ -18,16 +18,20 @@ func main() {
 	log.Println("Starting Apate control plane")
 
 	// Create apate cluster state
-	apateCluster := apatecluster.NewApateCluster()
+	//apateCluster := apatecluster.NewApateCluster()
 
 	// Start gRPC server/client
-	startGRPC(apateCluster)
+	//startGRPC(&apateCluster)
 
-	sc := &private.Scenario{
-		Task:      nil,
-		StartTime: 0,
+	//sc := &private.Scenario{
+	//	Task:      nil,
+	//	StartTime: 0,
+	//}
+	//scheduleOnNodes(sc, &c)
+
+	if deleteErr := c.Delete(); deleteErr != nil {
+		log.Printf("An error occurred: %s", deleteErr.Error())
 	}
-	scheduleOnNodes(sc, &c)
 }
 
 func startGRPC(apateCluster *apatecluster.ApateCluster) {
@@ -53,10 +57,6 @@ func createCluster() cluster.KubernetesCluster {
 
 	numberOfPods, err := c.GetNumberOfPods()
 	if err != nil {
-		if deleteErr := c.Delete(); deleteErr != nil {
-			log.Printf("An error occurred: %s", deleteErr.Error())
-		}
-
 		log.Fatalf("An error occurred: %s", err.Error())
 	}
 

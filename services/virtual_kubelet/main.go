@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/golang/protobuf/ptypes/empty"
 	"log"
 	"os"
 	"strconv"
@@ -24,8 +25,26 @@ var (
 )
 
 func main() {
-	startVK()
-	startGRPC()
+	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
+
+	joinApateCluster(connectionInfo)
+	//startVK()
+	//startGRPC()
+}
+
+func joinApateCluster(connectionInfo *service.ConnectionInfo) {
+	c := vkService.GetJoinClusterClient(connectionInfo)
+	defer func() {
+		_ = c.Conn.Close()
+	}()
+
+	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
+
+	if err != nil {
+		log.Fatalf("Unable to join apate cluster: %v", err)
+	}
+
+	log.Printf("Joined apate cluster with token %s and uuid %s", res.KubernetesJoinToken, res.NodeUUID)
 }
 
 func startVK() {
