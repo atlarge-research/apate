@@ -6,9 +6,10 @@ import (
 	"sigs.k8s.io/kind/pkg/cmd/kind"
 )
 
+// KinD is a struct implementing Manager for KinD clusters.
 type KinD struct{}
 
-// Creates a new cluster with a given name.
+// CreateCluster creates a new cluster with a given name.
 func (KinD) CreateCluster(name string, kubeConfigLocation string) error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
@@ -34,7 +35,7 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string) error {
 	return nil
 }
 
-// Deletes a cluster with a given name.
+// DeleteCluster deletes a cluster with a given name.
 // This function never errors, even if the cluster didn't exist yet.
 // Therefore it can be used to ensure no cluster with a certain name exists.
 func (*KinD) DeleteCluster(name string) error {
@@ -58,7 +59,7 @@ func (*KinD) DeleteCluster(name string) error {
 	return nil
 }
 
-// Returns the name of a context for kubernetes to use for a given cluster name.
+// ClusterContext returns the name of a context for kubernetes to use for a given cluster name.
 func (*KinD) ClusterContext(name string) string {
 	return "kind-" + name
 }

@@ -10,48 +10,48 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// The ClusterBuilder creates a new cluster object used to manage a cluster.
-type ClusterBuilder struct {
+// Builder allows for the creation of KubernetesClusters.
+type Builder struct {
 	name               string
 	manager            Manager
 	kubeConfigLocation string
 }
 
-// The New function is used to create a new ClusterBuilder with all fields empty.
-func New() ClusterBuilder {
-	return ClusterBuilder{}
+// New is used to create a new Builder with all fields empty.
+func New() Builder {
+	return Builder{}
 }
 
-// The Default function is used to create a new ClusterBuilder with all fields set to default values.
-func Default() (c ClusterBuilder) {
+// Default is used to create a new Builder with all fields set to default values.
+func Default() (c Builder) {
 	c.name = "Apate"
 	c.manager = &KinD{}
 	c.kubeConfigLocation = os.TempDir() + "/apate/scenario"
 	return c
 }
 
-// The WithName function is used to give the cluster that is to be built a name.
-func (b *ClusterBuilder) WithName(name string) *ClusterBuilder {
+// WithName is used to give the cluster that is to be built a name.
+func (b *Builder) WithName(name string) *Builder {
 	b.name = name
 	return b
 }
 
-// The WithConfigLocation function is used to give the cluster that is to be built a name.
-func (b *ClusterBuilder) WithConfigLocation(kubeConfigLocation string) *ClusterBuilder {
+// WithConfigLocation is used to give the cluster that is to be built a name.
+func (b *Builder) WithConfigLocation(kubeConfigLocation string) *Builder {
 	b.kubeConfigLocation = kubeConfigLocation
 	return b
 }
 
-// The WithCreator function is used to enable the cluster to be built with a different
+// WithCreator is used to enable the cluster to be built with a different
 // cluster manager.
-func (b *ClusterBuilder) WithCreator(creator Manager) *ClusterBuilder {
+func (b *Builder) WithCreator(creator Manager) *Builder {
 	b.manager = creator
 	return b
 }
 
-// Creates a new cluster based on the state of the ClusterBuilder.
+// ForceCreate creates a new cluster based on the state of the Builder.
 // Makes sure that old clusters with the same name as this one are deleted.
-func (b *ClusterBuilder) ForceCreate() (KubernetesCluster, error) {
+func (b *Builder) ForceCreate() (KubernetesCluster, error) {
 	if b.name == "" {
 		return KubernetesCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
 	}
@@ -62,8 +62,8 @@ func (b *ClusterBuilder) ForceCreate() (KubernetesCluster, error) {
 	return b.Create()
 }
 
-// Creates a new cluster based on the state of the ClusterBuilder.
-func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
+// Create creates a new cluster based on the state of the Builder.
+func (b *Builder) Create() (KubernetesCluster, error) {
 	if b.name == "" {
 		return KubernetesCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
 	}
@@ -78,8 +78,8 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 	if err != nil {
 		// If something went wrong, there still could be a built cluster we can't interact with.
 		// delete the cluster to be safe for the next run, otherwise ForceCreate would be necessary
-		if err := b.manager.DeleteCluster(b.name); err != nil {
-			return KubernetesCluster{}, err
+		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
+			err = err1
 		}
 		return KubernetesCluster{}, err
 	}
@@ -88,8 +88,8 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
-		if err := b.manager.DeleteCluster(b.name); err != nil {
-			return KubernetesCluster{}, err
+		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
+			err = err1
 		}
 		return KubernetesCluster{}, err
 	}
@@ -98,8 +98,8 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
-		if err := b.manager.DeleteCluster(b.name); err != nil {
-			return KubernetesCluster{}, err
+		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
+			err = err1
 		}
 		return KubernetesCluster{}, err
 	}

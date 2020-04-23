@@ -1,13 +1,14 @@
-package normalize
+package normalise
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
-	"gotest.tools/assert"
 	"testing"
+
+	"gotest.tools/assert"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 )
 
 func TestIterNodes(t *testing.T) {
-
 	node1 := public.Node{
 		Nodetype:   "test1",
 		Ram:        "",
@@ -40,24 +41,24 @@ func TestIterNodes(t *testing.T) {
 		Amount:    42,
 	}
 
-	scenario := public.Scenario {
-		Nodes: []*public.Node {
+	scenario := public.Scenario{
+		Nodes: []*public.Node{
 			&node1,
 			&node2,
 		},
-		Nodegroups: []*public.NodeGroup {
+		Nodegroups: []*public.NodeGroup{
 			&nodegroup1,
 			&nodegroup2,
 			&nodegroup3,
 		},
-		Tasks:      nil,
+		Tasks: nil,
 	}
 
 	nodecounter := 0
 
-	IterNodes(scenario, func(_ int) {
-		nodecounter += 1
+	IterNodes(&scenario, func(_ int) {
+		nodecounter++
 	})
 
-	assert.Equal(t, nodecounter,111)
+	assert.Equal(t, nodecounter, 111)
 }

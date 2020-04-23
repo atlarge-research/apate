@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/cli/apate/app"
 	"os"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/cli/apate/app"
 )
 
 func main() {

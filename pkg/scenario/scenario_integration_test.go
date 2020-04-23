@@ -2,14 +2,15 @@ package scenario
 
 import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalize"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
 	"testing"
 )
 
 func TestScenarioIntegration(t *testing.T) {
-
 	// CLI
 
 	scenario, err := deserialize.YamlScenario{}.FromBytes([]byte(`
@@ -50,8 +51,8 @@ tasks:
 
 	var uuids []uuid.UUID
 
-	normalize.IterNodes(scenario.GetScenario(), func(_ int) {
-		nodecounter += 1
+	normalise.IterNodes(scenario.GetScenario(), func(_ int) {
+		nodecounter++
 
 		// Nodes would be spawned here
 		uuids = append(uuids, uuid.New())
@@ -59,7 +60,7 @@ tasks:
 
 	assert.Equal(t, nodecounter, 52)
 
-	ps, err := normalize.GetPrivateScenario(scenario.GetScenario(), uuids)
+	ps, err := normalise.GetPrivateScenario(scenario.GetScenario(), uuids)
 	assert.NoError(t, err)
 
 	// Should be 0 because this is set when the scenario is started.

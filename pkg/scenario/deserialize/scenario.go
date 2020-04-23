@@ -1,3 +1,5 @@
+// Package deserialize provides methods and types to deserialize various kinds of
+// configuration file formats to a public Scenario.
 package deserialize
 
 import (
@@ -15,5 +17,5 @@ type Deserializer interface {
 	FromBytes(data []byte) (Deserializer, error)
 
 	// Gets the internal public.Scenario to for example be sent over gRPC.
-	GetScenario() (public.Scenario)
+	GetScenario() *public.Scenario
 }
