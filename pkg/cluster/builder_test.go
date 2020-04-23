@@ -28,3 +28,12 @@ func TestEmptyName(t *testing.T) {
 	_, err := clusterbuilder.Create()
 	assert.Error(t, err)
 }
+
+func TestEmptyNameForce(t *testing.T) {
+	clusterbuilder := New()
+
+	clusterbuilder.WithName("")
+
+	_, err := clusterbuilder.ForceCreate()
+	assert.Error(t, err)
+}
