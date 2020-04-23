@@ -9,12 +9,17 @@ stages:
 include:
   - template: Dependency-Scanning.gitlab-ci.yml
   - template: License-Scanning.gitlab-ci.yml
+  - template: SAST.gitlab-ci.yml
 
 dependency_scanning:
   stage: verify
   needs: [build]
 
 license_scanning:
+  stage: verify
+  needs: [build]
+
+sast:
   stage: verify
   needs: [build]
 
