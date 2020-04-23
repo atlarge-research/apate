@@ -1,13 +1,12 @@
 package deserialize
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 	"io/ioutil"
 )
 
-type JsonScenario struct {
+type  JsonScenario struct {
 	scenario public.Scenario
 }
 
@@ -28,6 +27,6 @@ func (JsonScenario) FromBytes(data []byte) (Deserializer, error) {
 	return JsonScenario{scenario}, nil
 }
 
-func (s JsonScenario) Send(client public.ScenarioSenderClient,  ctx context.Context) (*public.SendScenarioResponse, error) {
-	return client.SendScenario(ctx, &s.scenario)
+func (s JsonScenario) GetScenario() public.Scenario {
+	return s.scenario
 }

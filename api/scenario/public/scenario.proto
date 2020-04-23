@@ -14,7 +14,7 @@ message Scenario {
     repeated Node nodes = 1;
     repeated NodeGroup nodegroups = 2;
     // A scenario consists of an number of tasks.
-    repeated Task task = 3;
+    repeated Task tasks = 3;
 }
 
 message Task {
@@ -31,7 +31,7 @@ message Task {
 
     // Which nodes this task applies to
     // This field should not be set when revert is true
-    repeated string nodeset = 4;
+    repeated string nodegroups = 4;
 }
 
 message Node {
