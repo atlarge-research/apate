@@ -47,31 +47,29 @@ func TestTimestampInvalidPostfixInvalid(t *testing.T) {
 }
 
 func TestTimestampSecondsPostfixInvalid(t *testing.T) {
-	time, err := desugarTimestamp("a42s")
-	assert.NoError(t, err)
-	assert.Equal(t, time, 42000)
+	_, err := desugarTimestamp("a42s")
+	assert.Error(t, err)
+
 }
 
 func TestTimestampMilliSecondsPostfixInvalid(t *testing.T) {
-	time, err := desugarTimestamp("a42ms")
-	assert.NoError(t, err)
-	assert.Equal(t, time, 42)
+	_, err := desugarTimestamp("a42ms")
+	assert.Error(t, err)
+
 }
 
 func TestTimestampMinutePostfixInvalid(t *testing.T) {
-	time, err := desugarTimestamp("a42m")
-	assert.NoError(t, err)
-	assert.Equal(t, time, 42*60*1000)
+	_, err := desugarTimestamp("a42m")
+	assert.Error(t, err)
 }
 
 func TestTimestampHourPostfixInvalid(t *testing.T) {
-	time, err := desugarTimestamp("a42h")
-	assert.NoError(t, err)
-	assert.Equal(t, time, 42*3600*1000)
+	_, err := desugarTimestamp("a42h")
+	assert.Error(t, err)
+
 }
 
 func TestTimestampNoPostfixInvalid(t *testing.T) {
-	time, err := desugarTimestamp("a42")
-	assert.NoError(t, err)
-	assert.Equal(t, time, 42000)
+	_, err := desugarTimestamp("a42")
+	assert.Error(t, err)
 }
