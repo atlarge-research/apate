@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	provider2 "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/services"
-	"github.com/virtual-kubelet/virtual-kubelet/node"
-	"k8s.io/client-go/kubernetes"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node"
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	provider2 "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/services"
 )
 
 var (
@@ -31,7 +33,9 @@ func main() {
 	ctx, nc, cancel := getVirtualKubelet(location, kubeContext)
 
 	log.Println("Joining kubernetes cluster")
-	go nc.Run(ctx)
+	go func() {
+		_ = nc.Run(ctx)
+	}()
 
 	// Start gRPC server
 	log.Println("Now accepting requests")
