@@ -2,75 +2,68 @@ package main
 
 import (
 	"context"
-	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	provider2 "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/services"
+	"github.com/virtual-kubelet/virtual-kubelet/node"
+	"k8s.io/client-go/kubernetes"
 	"log"
 	"os"
 	"strconv"
-	"strings"
-
-	cli "github.com/virtual-kubelet/node-cli"
-	"github.com/virtual-kubelet/node-cli/opts"
-	"github.com/virtual-kubelet/node-cli/provider"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/services"
 )
 
 var (
-	buildVersion = "N/A"
-	buildTime    = "N/A"
-	k8sVersion   = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
-	providerName = "changeme"
+	k8sVersion = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
 )
 
 func main() {
 	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
 
-	joinApateCluster(connectionInfo)
-	//startVK()
+	location := os.TempDir() + "/apate/vk/config"
+
+	// Join the apate cluster and start the kubelet
+	kubeCtx, _ := joinApateCluster(location, connectionInfo)
+	startVirtualKubelet(location, kubeCtx)
+
+	// Start serving gRPC request
 	//startGRPC()
 }
 
-func joinApateCluster(connectionInfo *service.ConnectionInfo) {
+func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
 	c := vkService.GetJoinClusterClient(connectionInfo)
 	defer func() {
 		_ = c.Conn.Close()
 	}()
 
-	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
+	ctx, uuid, err := c.JoinCluster(location)
 
+	// TODO: Better error handling
 	if err != nil {
-		log.Fatalf("Unable to join apate cluster: %v", err)
+		log.Fatalf("Unable to join cluster: %v", err)
 	}
 
-	log.Printf("Joined apate cluster with token %s and uuid %s", res.KubernetesJoinToken, res.NodeUUID)
+	log.Printf("Joined apate cluster with uuid %s", uuid)
+
+	return ctx, uuid
 }
 
-func startVK() {
+func startVirtualKubelet(location string, kubeCtx string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ctx = cli.ContextWithCancelOnSignal(ctx)
 
-	o := opts.New()
-	o.Provider = providerName
-	o.Version = strings.Join([]string{k8sVersion, providerName, buildVersion}, "-")
+	config, _ := cluster.GetConfigForContext(kubeCtx, location)
+	client := kubernetes.NewForConfigOrDie(config)
+	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
+		cluster.CreateKubernetesNode(ctx,
+			"virtual-kubelet",
+			"agent",
+			"apatelet",
+			provider2.CreateProvider(),
+			k8sVersion),
+		client.CoreV1().Nodes())
 
-	node, err := cli.New(ctx,
-		cli.WithBaseOpts(o),
-		cli.WithCLIVersion(buildVersion, buildTime),
-		cli.WithProvider(providerName, func(cfg provider.InitConfig) (provider.Provider, error) {
-			return vkProvider.CreateProvider(), nil
-		}),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := node.Run(); err != nil {
-		log.Fatal(err)
-	}
+	nc.Run(ctx)
 }
 
 func startGRPC() {

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"net"
 
@@ -33,8 +34,10 @@ func (s *joinClusterService) JoinCluster(ctx context.Context, _ *empty.Empty) (*
 	p, _ := peer.FromContext(ctx)
 	addr := p.Addr.(*net.TCPAddr)
 	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), addr.Port, false)
-
 	log.Printf("Received request to join apate cluster from %v\n", connectionInfo)
+
+	// Retrieving kube config
+	config := getKubeConfigData("/tmp/apate/config")
 
 	// Get connection information and create node
 	node := cluster.NewNode(connectionInfo)
@@ -44,7 +47,19 @@ func (s *joinClusterService) JoinCluster(ctx context.Context, _ *empty.Empty) (*
 	log.Printf("Added node to apate cluster: %v\n", node)
 
 	return &join_cluster.JoinInformation{
-		KubernetesJoinToken: "TODO",
-		NodeUUID:            node.UUID.String(),
+		KubeConfig:  config,
+		KubeContext: "kind-Apate",
+		NodeUUID:    node.UUID.String(),
 	}, nil
+}
+
+func getKubeConfigData(path string) []byte {
+	data, err := ioutil.ReadFile(path)
+
+	// TODO: Better error handling
+	if err != nil {
+		log.Fatalf("Could not read kube config: %v", err)
+	}
+
+	return data
 }

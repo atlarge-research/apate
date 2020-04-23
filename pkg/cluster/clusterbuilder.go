@@ -1,7 +1,11 @@
 package cluster
 
 import (
+	"context"
 	"errors"
+	"github.com/virtual-kubelet/node-cli/provider"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path"
 
@@ -84,7 +88,7 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		return KubernetesCluster{}, err
 	}
 
-	config, err := getConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
+	config, err := GetConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
@@ -112,7 +116,7 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 }
 
 // Gets a kubernetes client configuration for the context given.
-func getConfigForContext(context string, kubeConfigLocation string) (*rest.Config, error) {
+func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Config, error) {
 	// Create a default config rules struct
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
@@ -130,4 +134,33 @@ func getConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 	}
 
 	return config, nil
+}
+
+// CreateKubernetesNode creates a kubernetes api object representing a node
+func CreateKubernetesNode(ctx context.Context, nodeType string, role string, name string,
+	provider provider.Provider, version string) *corev1.Node {
+	taints := make([]corev1.Taint, 0)
+
+	node := &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: map[string]string{
+				"type":                   nodeType,
+				"kubernetes.io/role":     role,
+				"kubernetes.io/hostname": name,
+			},
+		},
+		Spec: corev1.NodeSpec{
+			Taints: taints,
+		},
+		Status: corev1.NodeStatus{
+			NodeInfo: corev1.NodeSystemInfo{
+				Architecture:   "amd64",
+				KubeletVersion: version,
+			},
+		},
+	}
+
+	provider.ConfigureNode(ctx, node)
+	return node
 }
