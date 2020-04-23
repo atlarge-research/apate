@@ -1,8 +1,9 @@
 package deserialize
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
+	"github.com/ghodss/yaml"
 	"io/ioutil"
-	"sigs.k8s.io/yaml"
 )
 
 type YamlScenario struct {
@@ -20,10 +21,9 @@ func (s YamlScenario) FromFile(filename string) (Deserializer, error) {
 }
 
 func (s YamlScenario) FromBytes(data []byte) (Deserializer, error) {
-	json, err := yaml.JSONToYAML(data)
-	if err != nil {
-		return YamlScenario{}, err
+	var scenario public.Scenario
+	if err := yaml.Unmarshal(data, &scenario); err != nil {
+		return JsonScenario{}, err
 	}
-
-	return JsonScenario{}.FromBytes(json)
+	return YamlScenario{JsonScenario{scenario}}, nil
 }

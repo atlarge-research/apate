@@ -3,19 +3,20 @@ module github.com/atlarge-research/opendc-emulate-kubernetes
 go 1.14
 
 require (
+	github.com/ghodss/yaml v1.0.0
+	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/protobuf v1.4.0
+	github.com/google/uuid v1.0.0
 	github.com/stretchr/testify v1.4.0
 	github.com/virtual-kubelet/node-cli v0.1.2
 	github.com/virtual-kubelet/virtual-kubelet v1.2.1
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
-	gopkg.in/yaml.v2 v2.2.7
+	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.0.0 // Will be replaced
 	k8s.io/apimachinery v0.17.0 // Will be replaced
 	k8s.io/client-go v10.0.0+incompatible // Will be replaced
 	sigs.k8s.io/kind v0.7.0
-	sigs.k8s.io/yaml v1.1.0
 )
 
 // TODO: Figure out why we want all these replacements
