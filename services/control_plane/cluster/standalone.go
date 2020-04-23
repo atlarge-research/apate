@@ -60,3 +60,11 @@ func (c *apateClusterStandalone) GetNodes() ([]Node, error) {
 
 	return nodes, nil
 }
+
+func (c *apateClusterStandalone) ClearNodes() error {
+	c.nodeLock.Lock()
+	defer c.nodeLock.Unlock()
+
+	c.nodes = make(map[uuid.UUID]Node)
+	return nil
+}

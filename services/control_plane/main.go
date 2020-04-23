@@ -47,19 +47,22 @@ func main() {
 	log.Printf("Apate control plane stopped")
 }
 
-func shutdown(_ *apatecluster.ApateCluster, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
+func shutdown(cluster *apatecluster.ApateCluster, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
 	log.Println("Stopping Apate control plane")
 
 	log.Println("Stopping API")
 	server.Server.Stop()
 
 	// TODO: Actual cleanup for other nodes, for now just wipe state
+	if err := (*cluster).ClearNodes(); err != nil {
+		log.Printf("An error occurred while cleaning the apate cluster: %s", err.Error())
+	}
 
 	// TODO: Cleanup /tmp/ dir we used for kube config etc
 
 	log.Println("Stopping kubernetes control plane")
 	if err := kubernetesCluster.Delete(); err != nil {
-		log.Printf("An error occurred: %s", err.Error())
+		log.Printf("An error occurred while deleting the kubernetes cluster: %s", err.Error())
 	}
 }
 

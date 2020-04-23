@@ -37,4 +37,7 @@ type ApateCluster interface {
 
 	// GetNodes returns an array containing all nodes in the apate cluster
 	GetNodes() ([]Node, error)
+
+	// ClearNodes removes all nodes from the apate cluster
+	ClearNodes() error
 }
