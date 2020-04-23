@@ -1,11 +1,12 @@
-package normalize
+package normalise
 
 import (
 	"fmt"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 )
 
-func desugarNodeSet(nodeset []string, nodegroups []*public.NodeGroup) ([]string, error){
+func desugarNodeSet(nodeset []string, nodegroups []*public.NodeGroup) ([]string, error) {
 	if len(nodeset) == 1 && nodeset[0] == "all" {
 		result := make([]string, 0, len(nodegroups))
 
@@ -20,7 +21,7 @@ func desugarNodeSet(nodeset []string, nodegroups []*public.NodeGroup) ([]string,
 
 	for _, name := range nodeset {
 		if had[name] {
-			return nodeset, fmt.Errorf("Duplicate node group name %s in task", name)
+			return nodeset, fmt.Errorf("duplicate node group name %s in task", name)
 		}
 
 		had[name] = true

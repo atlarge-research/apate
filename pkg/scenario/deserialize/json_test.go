@@ -1,12 +1,13 @@
 package deserialize
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDeserializeJson(t *testing.T) {
-	scenario, err := JsonScenario{}.FromBytes([]byte(`
+	scenario, err := JSONScenario{}.FromBytes([]byte(`
 {
 	"nodes" : [
 		{

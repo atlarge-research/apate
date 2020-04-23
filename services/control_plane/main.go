@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-
 	// Create and delete cluster for now
 	c := createCluster()
 
@@ -33,8 +32,8 @@ func createCluster() cluster.KubernetesCluster {
 
 	numberOfPods, err := c.GetNumberOfPods()
 	if err != nil {
-		if err := c.Delete(); err != nil {
-			log.Printf("An error occurred: %s", err.Error())
+		if err1 := c.Delete(); err1 != nil {
+			err = err1
 		}
 		log.Fatalf("An error occurred: %s", err.Error())
 	}

@@ -2,31 +2,37 @@ package deserialize
 
 import (
 	"encoding/json"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 	"io/ioutil"
+	"path/filepath"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 )
 
-type  JsonScenario struct {
-	scenario public.Scenario
+// JSONScenario is a struct with methods to deserialize JSON configurations.
+type JSONScenario struct {
+	scenario *public.Scenario
 }
 
-func (s JsonScenario) FromFile(filename string) (Deserializer, error) {
-	data, err := ioutil.ReadFile(filename)
+// FromFile creates a new JSONScenario from a file in yaml format.
+func (s JSONScenario) FromFile(filename string) (Deserializer, error) {
+	data, err := ioutil.ReadFile(filepath.Clean(filename))
 	if err != nil {
-		return JsonScenario{}, err
+		return JSONScenario{}, err
 	}
 
 	return s.FromBytes(data)
 }
 
-func (JsonScenario) FromBytes(data []byte) (Deserializer, error) {
+// FromBytes creates a new JSONScenario from a byte array of data.
+func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
 	var scenario public.Scenario
 	if err := json.Unmarshal(data, &scenario); err != nil {
-		return JsonScenario{}, err
+		return JSONScenario{}, err
 	}
-	return JsonScenario{scenario}, nil
+	return JSONScenario{&scenario}, nil
 }
 
-func (s JsonScenario) GetScenario() public.Scenario {
+// GetScenario returns the inner stored public scenario.
+func (s JSONScenario) GetScenario() *public.Scenario {
 	return s.scenario
 }

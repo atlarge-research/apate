@@ -1,8 +1,9 @@
-package normalize
+package normalise
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTimestampSecondsPostfix(t *testing.T) {
@@ -20,13 +21,13 @@ func TestTimestampMilliSecondsPostfix(t *testing.T) {
 func TestTimestampMinutePostfix(t *testing.T) {
 	time, err := desugarTimestamp("42m")
 	assert.NoError(t, err)
-	assert.Equal(t, time, 42 * 60 * 1000)
+	assert.Equal(t, time, 42*60*1000)
 }
 
 func TestTimestampHourPostfix(t *testing.T) {
 	time, err := desugarTimestamp("42h")
 	assert.NoError(t, err)
-	assert.Equal(t, time, 42 * 3600 * 1000)
+	assert.Equal(t, time, 42*3600*1000)
 }
 
 func TestTimestampNoPostfix(t *testing.T) {

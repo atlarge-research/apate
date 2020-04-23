@@ -1,4 +1,4 @@
-package normalize
+package normalise
 
 import (
 	"fmt"
@@ -15,13 +15,12 @@ import (
 // 		- <int>m				Minutes after the start of the scenario
 //		- <int>h				Hours after the start of the scenario
 func desugarTimestamp(time string) (int, error) {
-
 	// First remove all leading and trailing spaces
 	time = strings.TrimSpace(time)
 
 	// postfix 1 and 2
-	p1 := time[len(time) - 1]
-	p2 := time[len(time) - 2]
+	p1 := time[len(time)-1]
+	p2 := time[len(time)-2]
 
 	var v int
 
@@ -52,7 +51,7 @@ func desugarTimestamp(time string) (int, error) {
 			v = int(fv * 1000)
 
 		default:
-			return 0, fmt.Errorf("Couldn't decode postfix. Possible values are ms, s, m, h or no postfix. (%s)", time)
+			return 0, fmt.Errorf("couldn't decode postfix. Possible values are ms, s, m, h or no postfix (%s)", time)
 		}
 	case 'm':
 		// Minutes (take everything before the last char and convert to int)
@@ -73,7 +72,7 @@ func desugarTimestamp(time string) (int, error) {
 		}
 
 		// multiply by 1000 * 60 * 60 to go to milliseconds.
-		v = int(iv * 60  * 60 * 1000)
+		v = int(iv * 60 * 60 * 1000)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		// I match on numbers or . here (. for floats) to be more descriptive in error messages.
 		// Otherwise invalid postfixes would result in integer conversion errors.
@@ -87,7 +86,7 @@ func desugarTimestamp(time string) (int, error) {
 		// multiply by 1000 to go to milliseconds, then round to the nearest ms
 		v = int(fv * 1000)
 	default:
-		return 0, fmt.Errorf("Couldn't decode postfix. Possible values are ms, s, m, h or no postfix. (%s)", time)
+		return 0, fmt.Errorf("couldn't decode postfix. Possible values are ms, s, m, h or no postfix (%s)", time)
 	}
 
 	return v, nil

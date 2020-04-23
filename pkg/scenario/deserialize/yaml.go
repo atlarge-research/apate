@@ -1,18 +1,22 @@
 package deserialize
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
-	"github.com/ghodss/yaml"
 	"io/ioutil"
+	"path/filepath"
+
+	"github.com/ghodss/yaml"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 )
 
+// YamlScenario is a struct with methods to deserialize Yaml configurations.
 type YamlScenario struct {
-	JsonScenario
+	JSONScenario
 }
 
+// FromFile creates a new YamlScenario from a file in yaml format.
 func (s YamlScenario) FromFile(filename string) (Deserializer, error) {
-
-	data, err := ioutil.ReadFile(filename)
+	data, err := ioutil.ReadFile(filepath.Clean(filename))
 	if err != nil {
 		return YamlScenario{}, err
 	}
@@ -20,10 +24,11 @@ func (s YamlScenario) FromFile(filename string) (Deserializer, error) {
 	return s.FromBytes(data)
 }
 
+// FromBytes creates a new YamlScenario from a byte array of data.
 func (s YamlScenario) FromBytes(data []byte) (Deserializer, error) {
 	var scenario public.Scenario
 	if err := yaml.Unmarshal(data, &scenario); err != nil {
-		return JsonScenario{}, err
+		return JSONScenario{}, err
 	}
-	return YamlScenario{JsonScenario{scenario}}, nil
+	return YamlScenario{JSONScenario{&scenario}}, nil
 }

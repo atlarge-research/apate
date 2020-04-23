@@ -1,5 +1,5 @@
 // Package cluster provides an interface to manage a kubernetes cluster with the help of
-// kind en kubernetes' client-go modules. Use the ClusterBuilder to create a new cluster.
+// kind en kubernetes' client-go modules. Use the Builder to create a new cluster.
 package cluster
 
 import (
@@ -15,12 +15,12 @@ type KubernetesCluster struct {
 	clientSet *kubernetes.Clientset
 }
 
-// Used to delete a cluster
+// Delete can be used to delete a cluster
 func (c KubernetesCluster) Delete() error {
 	return c.manager.DeleteCluster(c.name)
 }
 
-// Returns the number of pods in the cluster, or an error if it couldn't get these.
+// GetNumberOfPods returns the number of pods in the cluster, or an error if it couldn't get these.
 func (c KubernetesCluster) GetNumberOfPods() (int, error) {
 	pods, err := c.clientSet.CoreV1().Pods("").List(metav1.ListOptions{})
 	if err != nil {
@@ -30,7 +30,7 @@ func (c KubernetesCluster) GetNumberOfPods() (int, error) {
 	return len(pods.Items), nil
 }
 
-
+// GetNodePorts gets the ports of a node.
 func (c KubernetesCluster) GetNodePorts() []int {
 	return []int{8081, 8082, 8083}
 }
