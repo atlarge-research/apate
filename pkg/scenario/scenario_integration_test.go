@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestScenarioIntegration(t *testing.T) {
+func TestScenario(t *testing.T) {
 	// CLI
 
 	scenario, err := deserialize.YamlScenario{}.FromBytes([]byte(`
