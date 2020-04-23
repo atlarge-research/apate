@@ -20,6 +20,12 @@ var (
 	k8sVersion = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
 )
 
+func init() {
+	// Enable line numbers in logging
+	// Enables date time flags & file name + line
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
 	log.Println("Starting Apate virtual kubelet")
 
