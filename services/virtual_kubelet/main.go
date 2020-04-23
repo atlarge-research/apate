@@ -23,6 +23,12 @@ var (
 	providerName = "changeme"
 )
 
+func init() {
+	// Enable line numbers in logging
+	// Enables date time flags & file name + line
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
 	startVK()
 	startGRPC()
