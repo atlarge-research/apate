@@ -90,6 +90,8 @@ test:
   artifacts:
     reports:
       junit: report.xml
+    paths:
+      - cover.cov
 
 race:
   stage: test
