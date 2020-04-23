@@ -16,3 +16,6 @@ test:
 
 test-race:
 	go test -race -short ./...
+
+docker_build:
+	docker build -f services/virtual_kubelet/Dockerfile -t virtual_kubelet .

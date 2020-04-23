@@ -22,6 +22,10 @@ func main() {
 
 	log.Println("Starting Apate control plane")
 
+	if err := cluster.SpawnNodes(); err != nil {
+		log.Fatal(err)
+	}
+
 	sc := &privateScenario.Scenario{
 		Task:      nil,
 		StartTime: 0,
@@ -35,16 +39,6 @@ func createCluster() cluster.KubernetesCluster {
 	if err != nil {
 		log.Fatalf("An error occurred: %s", err.Error())
 	}
-
-	numberOfPods, err := c.GetNumberOfPods()
-	if err != nil {
-		if err := c.Delete(); err != nil {
-			log.Printf("An error occurred: %s", err.Error())
-		}
-		log.Fatalf("An error occurred: %s", err.Error())
-	}
-
-	log.Printf("There are %d pods in the cluster", numberOfPods)
 
 	return c
 }
