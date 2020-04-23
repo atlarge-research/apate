@@ -4,7 +4,7 @@ option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/s
 
 import "google/protobuf/empty.proto";
 
-package apate.scenario.internal;
+package apate.scenario.private;
 
 // This service will run on the Kubelets
 service ScenarioHandler {

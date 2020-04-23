@@ -1,13 +1,15 @@
+// Package provider implements the virtual kubelet provider emulate to facilitate emulating pods.
 package provider
 
 import (
 	"bytes"
 	"context"
 	"errors"
-	vkprov "github.com/virtual-kubelet/node-cli/provider"
-	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	"io"
 	"io/ioutil"
+
+	vkprov "github.com/virtual-kubelet/node-cli/provider"
+	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,7 +20,7 @@ type VKProvider struct {
 	Pods map[types.UID]*corev1.Pod
 }
 
-// Returns the provider but with the vk type instead of our own.
+// CreateProvider returns the provider but with the vk type instead of our own.
 func CreateProvider() vkprov.Provider {
 	return &VKProvider{}
 }
@@ -43,7 +45,6 @@ func (p *VKProvider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 // GetPod retrieves a pod by name.
 func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
-
 	// TODO: think about better structure for p.Pods
 	for _, element := range p.Pods {
 		if element.Namespace == namespace && element.Name == name {
@@ -61,7 +62,6 @@ func (p *VKProvider) GetPodStatus(ctx context.Context, namespace, name string) (
 
 // GetPods retrieves a list of all pods running.
 func (p *VKProvider) GetPods(context.Context) ([]*corev1.Pod, error) {
-
 	// TODO: Improve
 	var arr []*corev1.Pod
 
@@ -86,7 +86,6 @@ func (p *VKProvider) RunInContainer(ctx context.Context, namespace, podName, con
 
 // ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
 func (p *VKProvider) ConfigureNode(ctx context.Context, v *corev1.Node) {
-
 	var cpu resource.Quantity
 	cpu.Set(1000)
 
