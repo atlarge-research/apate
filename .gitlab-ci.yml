@@ -1,13 +1,32 @@
 stages:
   - prepare
   - build
-  - verify
   - test
+  - verify
   - deploy
+
+# Enable some gitlab templates for nice integrations
+include:
+  - template: Dependency-Scanning.gitlab-ci.yml
+  - template: License-Scanning.gitlab-ci.yml
+  - template: SAST.gitlab-ci.yml
+
+dependency_scanning:
+  stage: verify
+  needs: [build]
+
+license_scanning:
+  stage: verify
+  needs: [build]
+
+sast:
+  stage: verify
+  needs: [build]
 
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
   GOPATH: "$CI_PROJECT_DIR/.go"
+  DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
 
 default:
   image: $DIND_GO_IMAGE
@@ -41,7 +60,7 @@ build:
   script:
     - go install ./...
 
-static-analaysis:
+static-analysis:
   stage: verify
   needs: [build]
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
