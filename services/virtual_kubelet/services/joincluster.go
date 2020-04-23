@@ -9,27 +9,27 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/join_cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/cluster_operations"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
-// JoinClusterClient is the client for the JoinClusterService containing the connection and gRPC client
-type JoinClusterClient struct {
+// ClusterOperationClient is the client for the ClusterOperationService containing the connection and gRPC client
+type ClusterOperationClient struct {
 	Conn   *grpc.ClientConn
-	Client join_cluster.JoinClusterClient
+	Client cluster_ops.ClusterOperationsClient
 }
 
 // GetJoinClusterClient returns client for the JoinClusterService
-func GetJoinClusterClient(info *service.ConnectionInfo) *JoinClusterClient {
+func GetJoinClusterClient(info *service.ConnectionInfo) *ClusterOperationClient {
 	conn := service.CreateClientConnection(info)
-	return &JoinClusterClient{
+	return &ClusterOperationClient{
 		Conn:   conn,
-		Client: join_cluster.NewJoinClusterClient(conn),
+		Client: cluster_ops.NewClusterOperationsClient(conn),
 	}
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the kube context and uuid
-func (c *JoinClusterClient) JoinCluster(location string) (string, string, error) {
+func (c *ClusterOperationClient) JoinCluster(location string) (string, string, error) {
 	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
 
 	if err != nil {
@@ -50,4 +50,9 @@ func (c *JoinClusterClient) JoinCluster(location string) (string, string, error)
 	}
 
 	return res.KubeContext, res.NodeUUID, nil
+}
+
+func (c *ClusterOperationClient) LeaveCluster(uuid string) error {
+	_, err := c.Client.LeaveCluster(context.Background(), &cluster_ops.LeaveInformation{NodeUUID: uuid})
+	return err
 }

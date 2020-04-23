@@ -29,7 +29,7 @@ func main() {
 
 	// Join the apate cluster and start the kubelet
 	log.Println("Joining apate cluster")
-	kubeContext, _ := joinApateCluster(location, connectionInfo)
+	kubeContext, uuid := joinApateCluster(location, connectionInfo)
 	ctx, nc, cancel := getVirtualKubelet(location, kubeContext)
 
 	log.Println("Joining kubernetes cluster")
@@ -48,7 +48,7 @@ func main() {
 
 	go func() {
 		<-signals
-		shutdown(server, cancel)
+		shutdown(server, cancel, connectionInfo, uuid)
 		stopped <- true
 	}()
 
@@ -60,25 +60,35 @@ func main() {
 	log.Println("Apate virtual kubelet stopped")
 }
 
-func shutdown(server *service.GRPCServer, cancel context.CancelFunc) {
+func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) {
 	log.Println("Stopping Apate virtual kubelet")
 
 	log.Println("Stopping API")
 	server.Server.Stop()
 
+	log.Println("Leaving clusters (apate & k8s)")
+
+	// TODO: Maybe leave k8s? Or will control plane do that?
+	client := vkService.GetJoinClusterClient(connectionInfo)
+	defer func() {
+		_ = client.Conn.Close()
+	}()
+
+	if err := client.LeaveCluster(uuid); err != nil {
+		log.Printf("An error occurred while leaving the clusters (apate & k8s): %s", err.Error())
+	}
+
 	log.Println("Stopping provider")
 	cancel()
-
-	// TODO: Send message to control plane which deletes us from cluster (both apate and k8s)
 }
 
 func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
-	c := vkService.GetJoinClusterClient(connectionInfo)
+	client := vkService.GetJoinClusterClient(connectionInfo)
 	defer func() {
-		_ = c.Conn.Close()
+		_ = client.Conn.Close()
 	}()
 
-	ctx, uuid, err := c.JoinCluster(location)
+	ctx, uuid, err := client.JoinCluster(location)
 
 	// TODO: Better error handling
 	if err != nil {
