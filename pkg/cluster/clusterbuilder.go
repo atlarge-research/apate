@@ -2,11 +2,12 @@ package cluster
 
 import (
 	"errors"
+	"os"
+	"path"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"path"
 )
 
 // The ClusterBuilder creates a new cluster object used to manage a cluster.

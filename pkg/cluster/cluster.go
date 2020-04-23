@@ -31,11 +31,6 @@ func (c KubernetesCluster) GetNumberOfPods() (int, error) {
 }
 
 
-
-// TODO: Spawns a new container. Parameters TBD. (issue #8)
-// TODO: should this be blocking?
-func (c KubernetesCluster) SpawnContainer() error {
-
-
-	return nil
+func (c KubernetesCluster) GetNodePorts() []int {
+	return []int{8081, 8082, 8083}
 }
