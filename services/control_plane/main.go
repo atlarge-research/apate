@@ -16,7 +16,7 @@ func main() {
 
 	log.Println("Starting Apate control plane")
 
-	if err := cluster.SpawnNode(0); err != nil {
+	if err := cluster.SpawnNodes(); err != nil {
 		log.Fatal(err)
 	}
 
