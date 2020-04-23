@@ -5,6 +5,11 @@ stages:
   - test
   - deploy
 
+# Enable some gitlab templates for nice integrations
+include:
+  - template: Dependency-Scanning.gitlab-ci.yml
+  - template: License-Scanning.gitlab-ci.yml
+
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
   GOPATH: "$CI_PROJECT_DIR/.go"
@@ -41,7 +46,7 @@ build:
   script:
     - go install ./...
 
-static-analaysis:
+static-analysis:
   stage: verify
   needs: [build]
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
