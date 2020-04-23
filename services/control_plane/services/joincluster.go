@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/cluster_operations"
+	cluster_ops "github.com/atlarge-research/opendc-emulate-kubernetes/api/cluster_operations"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 )
