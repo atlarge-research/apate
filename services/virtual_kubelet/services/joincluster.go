@@ -1,7 +1,12 @@
 package services
 
 import (
+	"context"
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
+	"io/ioutil"
+	"os"
+	"path"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/join_cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -20,4 +25,24 @@ func GetJoinClusterClient(info *service.ConnectionInfo) *JoinClusterClient {
 		Conn:   conn,
 		Client: join_cluster.NewJoinClusterClient(conn),
 	}
+}
+
+// JoinCluster joins the apate cluster, saves the received kube config and returns the kube context and uuid
+func (c *JoinClusterClient) JoinCluster(location string) (string, string, error) {
+	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
+
+	if err != nil {
+		return "", "", nil
+	}
+
+	if _, err := os.Stat(location); os.IsNotExist(err) {
+		if err := os.MkdirAll(path.Dir(location), os.ModePerm); err != nil {
+			return "", "", err
+		}
+	}
+
+	// Save kube config
+	ioutil.WriteFile(location, res.KubeConfig, 0644)
+
+	return res.KubeContext, res.NodeUUID, nil
 }

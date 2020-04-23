@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
@@ -12,29 +15,53 @@ import (
 )
 
 func main() {
-	// Create and delete cluster for now
-	c := createCluster()
-
 	log.Println("Starting Apate control plane")
 
+	// Create kubernetes cluster
+	log.Println("Starting kubernetes control plane")
+	kubernetesCluster := createCluster()
+
 	// Create apate cluster state
-	//apateCluster := apatecluster.NewApateCluster()
+	apateCluster := apatecluster.NewApateCluster()
 
-	// Start gRPC server/client
-	//startGRPC(&apateCluster)
+	// Start gRPC server
+	log.Println("Now accepting requests")
+	server := createGRPC(&apateCluster)
 
-	//sc := &private.Scenario{
-	//	Task:      nil,
-	//	StartTime: 0,
-	//}
-	//scheduleOnNodes(sc, &c)
+	// Handle signals
+	signals := make(chan os.Signal, 1)
+	stopped := make(chan bool, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	if deleteErr := c.Delete(); deleteErr != nil {
-		log.Printf("An error occurred: %s", deleteErr.Error())
+	go func() {
+		<-signals
+		shutdown(&apateCluster, &kubernetesCluster, server)
+		stopped <- true
+	}()
+
+	// Start serving request
+	server.Serve()
+
+	// Stop the server on signal
+	<-stopped
+	log.Printf("Apate control plane stopped")
+}
+
+func shutdown(_ *apatecluster.ApateCluster, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
+	log.Println("Stopping Apate control plane")
+
+	log.Println("Stopping API")
+	server.Server.Stop()
+
+	// TODO: Actual cleanup for other nodes, for now just wipe state
+
+	log.Println("Stopping kubernetes control plane")
+	if err := kubernetesCluster.Delete(); err != nil {
+		log.Printf("An error occurred: %s", err.Error())
 	}
 }
 
-func startGRPC(apateCluster *apatecluster.ApateCluster) {
+func createGRPC(apateCluster *apatecluster.ApateCluster) *service.GRPCServer {
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
 
@@ -44,8 +71,7 @@ func startGRPC(apateCluster *apatecluster.ApateCluster) {
 	// Add services
 	services.RegisterJoinClusterService(server, apateCluster)
 
-	// Start serving request
-	server.Serve()
+	return server
 }
 
 func createCluster() cluster.KubernetesCluster {
