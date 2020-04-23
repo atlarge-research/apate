@@ -21,8 +21,8 @@ func (c KubernetesCluster) Delete() error {
 }
 
 // GetNumberOfPods returns the number of pods in the cluster, or an error if it couldn't get these.
-func (c KubernetesCluster) GetNumberOfPods() (int, error) {
-	pods, err := c.clientSet.CoreV1().Pods("").List(metav1.ListOptions{})
+func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
+	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return 0, err
 	}
