@@ -108,6 +108,7 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		name:      b.name,
 		clientSet: clientSet,
 		manager:   b.manager,
+		config:    config,
 	}, nil
 }
 

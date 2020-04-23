@@ -3,6 +3,7 @@ module github.com/atlarge-research/opendc-emulate-kubernetes
 go 1.14
 
 require (
+	github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0
 	github.com/golang/protobuf v1.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/virtual-kubelet/node-cli v0.1.2
