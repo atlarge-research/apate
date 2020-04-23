@@ -9,7 +9,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/cluster_operations"
+	cluster_ops "github.com/atlarge-research/opendc-emulate-kubernetes/api/cluster_operations"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
@@ -52,6 +52,7 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, string, e
 	return res.KubeContext, res.NodeUUID, nil
 }
 
+// LeaveCluster signals to the apate control panel that this node is leaving the cluster
 func (c *ClusterOperationClient) LeaveCluster(uuid string) error {
 	_, err := c.Client.LeaveCluster(context.Background(), &cluster_ops.LeaveInformation{NodeUUID: uuid})
 	return err
