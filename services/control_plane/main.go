@@ -14,6 +14,12 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/services"
 )
 
+func init() {
+	// Enable line numbers in logging
+	// Enables date time flags & file name + line
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
 	log.Println("Starting Apate control plane")
 
