@@ -32,7 +32,7 @@ func (c *JoinClusterClient) JoinCluster(location string) (string, string, error)
 	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
 
 	if err != nil {
-		return "", "", nil
+		return "", "", err
 	}
 
 	if _, err := os.Stat(location); os.IsNotExist(err) {

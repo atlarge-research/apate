@@ -55,6 +55,8 @@ func shutdown(_ *apatecluster.ApateCluster, kubernetesCluster *cluster.Kubernete
 
 	// TODO: Actual cleanup for other nodes, for now just wipe state
 
+	// TODO: Cleanup /tmp/ dir we used for kube config etc
+
 	log.Println("Stopping kubernetes control plane")
 	if err := kubernetesCluster.Delete(); err != nil {
 		log.Printf("An error occurred: %s", err.Error())
@@ -62,6 +64,7 @@ func shutdown(_ *apatecluster.ApateCluster, kubernetesCluster *cluster.Kubernete
 }
 
 func createGRPC(apateCluster *apatecluster.ApateCluster) *service.GRPCServer {
+	// TODO: Get grpc settings from env
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
 
