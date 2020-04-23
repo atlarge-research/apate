@@ -10,7 +10,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"log"
 	"os"
-	"strconv"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -18,16 +19,53 @@ var (
 )
 
 func main() {
-	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
+	log.Println("Starting Apate virtual kubelet")
 
+	// TODO: Get these from envvars
+	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
 	location := os.TempDir() + "/apate/vk/config"
 
 	// Join the apate cluster and start the kubelet
-	kubeCtx, _ := joinApateCluster(location, connectionInfo)
-	startVirtualKubelet(location, kubeCtx)
+	log.Println("Joining apate cluster")
+	kubeContext, _ := joinApateCluster(location, connectionInfo)
+	ctx, nc, cancel := getVirtualKubelet(location, kubeContext)
 
-	// Start serving gRPC request
-	//startGRPC()
+	log.Println("Joining kubernetes cluster")
+	go nc.Run(ctx)
+
+	// Start gRPC server
+	log.Println("Now accepting requests")
+	server := createGRPC()
+
+	// Handle signals
+	signals := make(chan os.Signal, 1)
+	stopped := make(chan bool, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-signals
+		shutdown(server, cancel)
+		stopped <- true
+	}()
+
+	// Start serving request
+	server.Serve()
+
+	// Stop the server on signal
+	<-stopped
+	log.Println("Apate virtual kubelet stopped")
+}
+
+func shutdown(server *service.GRPCServer, cancel context.CancelFunc) {
+	log.Println("Stopping Apate virtual kubelet")
+
+	log.Println("Stopping API")
+	server.Server.Stop()
+
+	log.Println("Stopping provider")
+	cancel()
+
+	// TODO: Send message to control plane which deletes us from cluster (both apate and k8s)
 }
 
 func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
@@ -48,11 +86,10 @@ func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (
 	return ctx, uuid
 }
 
-func startVirtualKubelet(location string, kubeCtx string) {
+func getVirtualKubelet(location string, kubeContext string) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
-	config, _ := cluster.GetConfigForContext(kubeCtx, location)
+	config, _ := cluster.GetConfigForContext(kubeContext, location)
 	client := kubernetes.NewForConfigOrDie(config)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
 		cluster.CreateKubernetesNode(ctx,
@@ -63,20 +100,19 @@ func startVirtualKubelet(location string, kubeCtx string) {
 			k8sVersion),
 		client.CoreV1().Nodes())
 
-	nc.Run(ctx)
+	return ctx, nc, cancel
 }
 
-func startGRPC() {
+func createGRPC() *service.GRPCServer {
+	// TODO: Get grpc settings from env
 	// Connection settings
-	port, err := strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
-		log.Fatal("Port not found in env")
-	}
+	connectionInfo := service.NewConnectionInfo("localhost", 8081, true)
 
-	connectionInfo := service.NewConnectionInfo("localhost", port, true)
-
-	// Service
+	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)
+
+	// Add services
 	vkService.RegisterScenarioService(server)
-	server.Serve()
+
+	return server
 }
