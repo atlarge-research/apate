@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
+	"path/filepath"
 
 	"google.golang.org/grpc/peer"
 
@@ -36,14 +38,20 @@ func (s *joinClusterService) JoinCluster(ctx context.Context, _ *empty.Empty) (*
 	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), addr.Port, false)
 	log.Printf("Received request to join apate cluster from %v\n", connectionInfo)
 
+	//TODO: Retrieve path from somewhere else
 	// Retrieving kube config
-	config := getKubeConfigData("/tmp/apate/config")
+	config := getKubeConfigData("/apate/config")
 
 	// Get connection information and create node
 	node := cluster.NewNode(connectionInfo)
 
 	// Add to apate cluster
-	(*s.cluster).AddNode(node)
+	err := (*s.cluster).AddNode(node)
+
+	if err != nil {
+		return nil, err
+	}
+
 	log.Printf("Added node to apate cluster: %v\n", node)
 
 	return &join_cluster.JoinInformation{
@@ -54,7 +62,7 @@ func (s *joinClusterService) JoinCluster(ctx context.Context, _ *empty.Empty) (*
 }
 
 func getKubeConfigData(path string) []byte {
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(filepath.Join(os.TempDir(), filepath.Clean(path)))
 
 	// TODO: Better error handling
 	if err != nil {

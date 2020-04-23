@@ -2,11 +2,12 @@ package services
 
 import (
 	"context"
-	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/join_cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -35,14 +36,18 @@ func (c *JoinClusterClient) JoinCluster(location string) (string, string, error)
 		return "", "", err
 	}
 
-	if _, err := os.Stat(location); os.IsNotExist(err) {
-		if err := os.MkdirAll(path.Dir(location), os.ModePerm); err != nil {
+	if _, err = os.Stat(location); os.IsNotExist(err) {
+		if err = os.MkdirAll(path.Dir(location), os.ModePerm); err != nil {
 			return "", "", err
 		}
 	}
 
 	// Save kube config
-	ioutil.WriteFile(location, res.KubeConfig, 0644)
+	err = ioutil.WriteFile(location, res.KubeConfig, 0644)
+
+	if err != nil {
+		return "", "", err
+	}
 
 	return res.KubeContext, res.NodeUUID, nil
 }
