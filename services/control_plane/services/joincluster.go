@@ -3,6 +3,9 @@ package services
 import (
 	"context"
 	"log"
+	"net"
+
+	"google.golang.org/grpc/peer"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -23,18 +26,21 @@ func RegisterJoinClusterService(server *service.GRPCServer, cluster *cluster.Apa
 }
 
 // JoinCluster accepts an incoming request from a virtual kubelet to join the cluster
-func (s *joinClusterService) JoinCluster(context.Context, *empty.Empty) (*join_cluster.JoinInformation, error) {
+func (s *joinClusterService) JoinCluster(ctx context.Context, _ *empty.Empty) (*join_cluster.JoinInformation, error) {
 	//TODO: TLS bool from somewhere?
 
 	// Get connection information
-	connectionInfo := *service.NewConnectionInfo("localhost", 8080, false)
+	p, _ := peer.FromContext(ctx)
+	addr := p.Addr.(*net.TCPAddr)
+	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), addr.Port, false)
+
 	log.Printf("Received request to join apate cluster from %v\n", connectionInfo)
 
 	// Get connection information and create node
 	node := cluster.NewNode(connectionInfo)
 
 	// Add to apate cluster
-	s.cluster.AddNode(node)
+	(*s.cluster).AddNode(node)
 	log.Printf("Added node to apate cluster: %v\n", node)
 
 	return &join_cluster.JoinInformation{
