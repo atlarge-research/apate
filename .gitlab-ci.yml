@@ -1,14 +1,22 @@
 stages:
   - prepare
   - build
-  - verify
   - test
+  - verify
   - deploy
 
 # Enable some gitlab templates for nice integrations
 include:
   - template: Dependency-Scanning.gitlab-ci.yml
   - template: License-Scanning.gitlab-ci.yml
+
+dependency_scanning:
+  stage: verify
+  needs: [build]
+
+license_scanning:
+  stage: verify
+  needs: [build]
 
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
