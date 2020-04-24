@@ -14,14 +14,13 @@ import (
 )
 
 const (
-	address = "localhost:8083"
+	defaultControlPlaneAddress = "localhost:8083"
 )
 
 func main() {
 	// TODO: Do arg parsing here with a proper library.
 
 	args := os.Args[1:]
-
 	if len(args) < 1 {
 		log.Fatalf("Please give a scenario filename as first argument")
 	}
@@ -35,8 +34,19 @@ func main() {
 
 	log.Printf("Dialling server")
 
-	ctx, cancel, conn := createClient()
-	defer conn.Close()
+	var controlPlaneAddress string
+	if len(args) == 1 {
+		controlPlaneAddress = defaultControlPlaneAddress
+	} else {
+		controlPlaneAddress = args[1]
+	}
+
+	ctx, cancel, conn := createClient(controlPlaneAddress)
+	defer func() {
+		if err = conn.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	defer cancel()
 
 	// Initial call: load the scenario
@@ -57,9 +67,9 @@ func main() {
 	}
 }
 
-func createClient() (context.Context, context.CancelFunc, *grpc.ClientConn) {
+func createClient(controlPlaneAddress string) (context.Context, context.CancelFunc, *grpc.ClientConn) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, controlPlaneAddress, grpc.WithInsecure())
 
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)

@@ -56,7 +56,7 @@ func TestDeserializeJson(t *testing.T) {
 	assert.Equal(t, 1, len(scenario.GetScenario().Nodes))
 
 	assert.Equal(t, "testnode", scenario.GetScenario().Nodes[0].NodeType)
-	assert.Equal(t, "2G", scenario.GetScenario().Nodes[0].Ram)
-	assert.Equal(t, int32(42), scenario.GetScenario().Nodes[0].CpuPercent)
+	assert.Equal(t, "2G", scenario.GetScenario().Nodes[0].RAM)
+	assert.Equal(t, int32(42), scenario.GetScenario().Nodes[0].CPUPercent)
 	assert.Equal(t, int32(42), scenario.GetScenario().Nodes[0].MaxPods)
 }

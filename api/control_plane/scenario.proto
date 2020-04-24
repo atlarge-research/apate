@@ -49,10 +49,10 @@ message Node {
 
     // The amount of ram a node gets.
     // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
-    string ram = 2;
+    string RAM = 2;
 
     // Percentage of cpu allocated to a node.
-    int32 cpu_percent = 3;
+    int32 CPU_percent = 3;
 
     // Maximum number of pods per node.
     int32 max_pods = 4;

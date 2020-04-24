@@ -17,10 +17,6 @@ import (
 func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.KubeletScenario, []NodeResources, error) {
 	r := kubelet.KubeletScenario{}
 
-	// This function does not need to set this field. This is set by the control plane
-	// Whenever the scenario is started.
-	r.StartTime = 0
-
 	nodeResources := make([]NodeResources, 0)
 	uuidsPerNodeGroup := make(map[string][]uuid.UUID)
 
@@ -36,7 +32,7 @@ func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.Kubelet
 			id := uuid.New()
 
 			nodeType := nodeTypeName[nodeGroup.NodeType]
-			memory, err := units.RAMInBytes(nodeType.Ram)
+			memory, err := units.RAMInBytes(nodeType.RAM)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -44,7 +40,7 @@ func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.Kubelet
 			nodeResources = append(nodeResources, NodeResources{
 				id,
 				memory,
-				int(nodeType.CpuPercent),
+				int(nodeType.CPUPercent),
 				int(nodeType.MaxPods),
 			})
 

@@ -4,14 +4,14 @@ import (
 	"context"
 	"log"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalisation"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/clients"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/store"
+
+	"github.com/golang/protobuf/ptypes/empty"
 )
 
 type scenarioService struct {

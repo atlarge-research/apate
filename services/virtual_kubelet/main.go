@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/clients"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
