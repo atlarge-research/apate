@@ -135,7 +135,7 @@ tags
 # Persistent undo
 [._]*.un~
 
-# Coc scenario directory
+# Coc configuration directory
 .vim
 
 # End of https://www.gitignore.io/api/go,vim,jetbrains
