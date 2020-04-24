@@ -10,17 +10,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Node contains all information used for creating an equivalent kubernetes node
-type Node struct {
+// NodeInfo contains all information used for creating an equivalent kubernetes node
+type NodeInfo struct {
 	nodeType string
 	role     string
 	name     string
 	version  string
 }
 
-// NewNode create a new Node
-func NewNode(nodeType string, role string, name string, version string) *Node {
-	return &Node{
+// NewNode create a new NodeInfo
+func NewNode(nodeType string, role string, name string, version string) *NodeInfo {
+	return &NodeInfo{
 		nodeType: nodeType,
 		role:     role,
 		name:     name,
@@ -50,7 +50,7 @@ func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 }
 
 // CreateKubernetesNode creates a kubernetes api object representing a node
-func CreateKubernetesNode(ctx context.Context, node Node, provider provider.Provider) *corev1.Node {
+func CreateKubernetesNode(ctx context.Context, node NodeInfo, provider provider.Provider) *corev1.Node {
 	taints := make([]corev1.Taint, 0)
 
 	kubernetesNode := &corev1.Node{
