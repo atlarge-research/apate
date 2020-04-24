@@ -8,7 +8,7 @@ import (
 
 //TODO: Add more information for node
 
-// Node represents a virtual kubelet in the Apate cluster
+// Node represents a Apatelet in the Apate cluster
 type Node struct {
 	ConnectionInfo service.ConnectionInfo
 	UUID           uuid.UUID
