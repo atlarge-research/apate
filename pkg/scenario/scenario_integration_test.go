@@ -3,6 +3,7 @@ package scenario
 import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -22,10 +23,10 @@ nodes:
 
 node_groups:
     - group_name: testgroup1
-      nodetype: testnode
+      node_type: testnode
       amount: 42
     - group_name: testgroup2
-      nodetype: testnode
+      node_type: testnode
       amount: 10
 
 tasks:
@@ -49,18 +50,18 @@ tasks:
 
 	nodecounter := 0
 
-	var uuids []uuid.UUID
+	var nodes []cluster.Node
 
 	normalise.IterNodes(scenario.GetScenario(), func(_ int) {
 		nodecounter++
 
 		// Nodes would be spawned here
-		uuids = append(uuids, uuid.New())
+		nodes = append(nodes, cluster.Node{UUID: uuid.New()})
 	})
 
 	assert.Equal(t, nodecounter, 52)
 
-	ps, err := normalise.GetPrivateScenario(scenario.GetScenario(), uuids)
+	ps, _, err := normalise.NormaliseScenario(scenario.GetScenario(), nodes)
 	assert.NoError(t, err)
 
 	// Should be 0 because this is set when the scenario is started.
