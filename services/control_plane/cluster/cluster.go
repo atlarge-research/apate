@@ -1,26 +1,12 @@
+// Package cluster provides state to the apate cluster
 package cluster
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/google/uuid"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
-
-//TODO: Add more information for node
-
-// Node represents a virtual kubelet in the Apate cluster
-type Node struct {
-	connectionInfo service.ConnectionInfo
-	UUID           uuid.UUID
-}
-
-// NewNode creates a new Node based on the given connection information
-func NewNode(info service.ConnectionInfo) *Node {
-	return &Node{
-		connectionInfo: info,
-		UUID:           uuid.New(),
-	}
-}
 
 //TODO: Multi-master soon :tm:
 
@@ -40,4 +26,74 @@ type ApateCluster interface {
 
 	// ClearNodes removes all nodes from the apate cluster
 	ClearNodes() error
+}
+
+type apateClusterStandalone struct {
+	nodes    map[uuid.UUID]Node
+	nodeLock sync.RWMutex
+}
+
+// NewApateCluster creates a new empty cluster
+func NewApateCluster() ApateCluster {
+	return &apateClusterStandalone{
+		nodes: make(map[uuid.UUID]Node),
+	}
+}
+
+// AddNode adds the given Node to the apate cluster
+func (c *apateClusterStandalone) AddNode(node *Node) error {
+	c.nodeLock.Lock()
+	defer c.nodeLock.Unlock()
+
+	// Check if node already exists (uuid collision)
+	if _, ok := c.nodes[node.UUID]; ok {
+		return fmt.Errorf("node with uuid '%s' already exists", node.UUID.String())
+	}
+
+	c.nodes[node.UUID] = *node
+
+	return nil
+}
+
+// RemoveNode removes the given Node from the apate cluster
+func (c *apateClusterStandalone) RemoveNode(node *Node) error {
+	c.nodeLock.Lock()
+	defer c.nodeLock.Unlock()
+
+	delete(c.nodes, node.UUID)
+	return nil
+}
+
+// GetNode returns the node with the given uuid
+func (c *apateClusterStandalone) GetNode(uuid uuid.UUID) (Node, error) {
+	c.nodeLock.RLock()
+	defer c.nodeLock.RUnlock()
+
+	if node, ok := c.nodes[uuid]; ok {
+		return node, nil
+	}
+
+	return Node{}, fmt.Errorf("node with uuid '%s' not found", uuid.String())
+}
+
+// GetNodes returns an array containing all nodes in the apate cluster
+func (c *apateClusterStandalone) GetNodes() ([]Node, error) {
+	c.nodeLock.RLock()
+	defer c.nodeLock.RUnlock()
+
+	nodes := make([]Node, 0, len(c.nodes))
+
+	for _, node := range c.nodes {
+		nodes = append(nodes, node)
+	}
+
+	return nodes, nil
+}
+
+func (c *apateClusterStandalone) ClearNodes() error {
+	c.nodeLock.Lock()
+	defer c.nodeLock.Unlock()
+
+	c.nodes = make(map[uuid.UUID]Node)
+	return nil
 }
