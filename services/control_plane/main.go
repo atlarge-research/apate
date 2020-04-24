@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	apatecluster "github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
@@ -81,7 +79,7 @@ func createGRPC(apateCluster *apatecluster.ApateCluster) *service.GRPCServer {
 	server := service.NewGRPCServer(connectionInfo)
 
 	// Add services
-	services.RegisterJoinClusterService(server, apateCluster)
+	services.RegisterClusterOperationService(server, apateCluster)
 
 	return server
 }
@@ -103,22 +101,22 @@ func createCluster() cluster.KubernetesCluster {
 	return c
 }
 
-func scheduleOnNodes(sc *private.Scenario, c *cluster.KubernetesCluster) {
-	for _, port := range c.GetNodePorts() {
-		// Connection settings
-		connectionInfo := service.NewConnectionInfo("localhost", port, true)
-
-		// Client
-		scenarioClient := services.GetScenarioClient(connectionInfo)
-
-		_, err := scenarioClient.Client.StartScenario(context.Background(), sc)
-
-		if err != nil {
-			log.Fatalf("Could not complete call: %v", err)
-		}
-
-		if err := scenarioClient.Conn.Close(); err != nil {
-			log.Fatal("Failed to close connection")
-		}
-	}
-}
+//func scheduleOnNodes(sc *private.Scenario, c *cluster.KubernetesCluster) {
+//	for _, port := range c.GetNodePorts() {
+//		// Connection settings
+//		connectionInfo := service.NewConnectionInfo("localhost", port, true)
+//
+//		// Client
+//		scenarioClient := services.GetScenarioClient(connectionInfo)
+//
+//		_, err := scenarioClient.Client.StartScenario(context.Background(), sc)
+//
+//		if err != nil {
+//			log.Fatalf("Could not complete call: %v", err)
+//		}
+//
+//		if err := scenarioClient.Conn.Close(); err != nil {
+//			log.Fatal("Failed to close connection")
+//		}
+//	}
+//}

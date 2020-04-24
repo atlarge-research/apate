@@ -1,18 +1,11 @@
 package cluster
 
 import (
-	"context"
 	"errors"
 	"os"
 	"path"
 
-	"github.com/virtual-kubelet/node-cli/provider"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 // The ClusterBuilder creates a new cluster object used to manage a cluster.
@@ -114,54 +107,4 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		clientSet: clientSet,
 		manager:   b.manager,
 	}, nil
-}
-
-// Gets a kubernetes client configuration for the context given.
-func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Config, error) {
-	// Create a default config rules struct
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
-	rules.ExplicitPath = kubeConfigLocation
-
-	// Override with defaults (this call might not be necessary since the defaults are already set above?)
-	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
-	// But set the context to our own context while overriding
-	overrides.CurrentContext = context
-
-	// Now create the actual configuration
-	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
-}
-
-// CreateKubernetesNode creates a kubernetes api object representing a node
-func CreateKubernetesNode(ctx context.Context, nodeType string, role string, name string,
-	provider provider.Provider, version string) *corev1.Node {
-	taints := make([]corev1.Taint, 0)
-
-	node := &corev1.Node{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
-				"type":                   nodeType,
-				"kubernetes.io/role":     role,
-				"kubernetes.io/hostname": name,
-			},
-		},
-		Spec: corev1.NodeSpec{
-			Taints: taints,
-		},
-		Status: corev1.NodeStatus{
-			NodeInfo: corev1.NodeSystemInfo{
-				Architecture:   "amd64",
-				KubeletVersion: version,
-			},
-		},
-	}
-
-	provider.ConfigureNode(ctx, node)
-	return node
 }
