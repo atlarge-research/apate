@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 	"log"
 	"os"
 	"os/signal"
@@ -43,6 +44,9 @@ func main() {
 		stopped <- true
 	}()
 
+	// Register listeners
+	public.RegisterScenarioSenderServer(server.Server, &services.SendScenarioServer{})
+
 	// Start serving request
 	server.Serve()
 
@@ -73,7 +77,7 @@ func shutdown(cluster *apatecluster.ApateCluster, kubernetesCluster *cluster.Kub
 func createGRPC(apateCluster *apatecluster.ApateCluster) *service.GRPCServer {
 	// TODO: Get grpc settings from env
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo("localhost", 8080, true)
+	connectionInfo := service.NewConnectionInfo("localhost", 8083, true)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)

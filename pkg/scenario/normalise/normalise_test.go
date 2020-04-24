@@ -54,11 +54,6 @@ func TestIterNodes(t *testing.T) {
 		Tasks: nil,
 	}
 
-	nodecounter := 0
-
-	IterNodes(&scenario, func(_ int) {
-		nodecounter++
-	})
-
-	assert.Equal(t, nodecounter, 111)
+	nodecount := NumNodes(&scenario)
+	assert.Equal(t, nodecount, 111)
 }

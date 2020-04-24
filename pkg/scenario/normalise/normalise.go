@@ -2,14 +2,16 @@
 package normalise
 
 import (
+	"time"
+
+	"github.com/docker/go-units"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
-	"github.com/docker/go-units"
-	"time"
 )
 
-// IterNodes returns only the part of a scenario relevant to creating nodes.
+// NumNodes returns only the part of a scenario relevant to creating nodes.
 // This is necessary because it's impossible to entirely normalise a
 // scenario without knowing the UUIDs of each spawned node. They need to
 // be spawned first. They can be spawned based on this function.
@@ -18,15 +20,15 @@ import (
 // (potentially very many) nodes in for example an array would be extremely inefficient.
 // Especially because most of the nodes are the same. Using a channel it's possible to
 // return a reference to the same node multiple times
-func IterNodes(scenario *public.Scenario, callback func(i int)) {
+func NumNodes(scenario *public.Scenario) int {
+	nodes := 0
+
 	// Iterate over every nodegroup
 	for _, nodegroup := range scenario.GetNodeGroups() {
-		// Yield every type of node as many times as the `amount` field
-		// in the nodegroup says.
-		for i := 0; i < int(nodegroup.Amount); i++ {
-			callback(i)
-		}
+		nodes += int(nodegroup.Amount)
 	}
+
+	return nodes
 }
 
 // NormaliseScenario takes a public scenario and turns it into a private scenario. Normalises the structure and resolves named references.

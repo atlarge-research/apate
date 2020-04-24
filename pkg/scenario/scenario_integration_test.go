@@ -4,8 +4,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
-
 	"github.com/google/uuid"
+
 	"github.com/stretchr/testify/assert"
 
 	"testing"
@@ -48,18 +48,16 @@ tasks:
 
 	// Control plane
 
-	nodecounter := 0
 
-	var nodes []cluster.Node
 
-	normalise.IterNodes(scenario.GetScenario(), func(_ int) {
-		nodecounter++
+	nodecount := normalise.NumNodes(scenario.GetScenario())
 
-		// Nodes would be spawned here
+	assert.Equal(t, nodecount, 52)
+
+	nodes := make([]cluster.Node, 0, nodecount)
+	for i := 0; i < nodecount; i++ {
 		nodes = append(nodes, cluster.Node{UUID: uuid.New()})
-	})
-
-	assert.Equal(t, nodecounter, 52)
+	}
 
 	ps, _, err := normalise.NormaliseScenario(scenario.GetScenario(), nodes)
 	assert.NoError(t, err)

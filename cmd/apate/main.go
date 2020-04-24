@@ -1,11 +1,13 @@
 package main
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/cmd"
+	"log"
 	"os"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/app"
 )
 
 func main() {
-	app.Main(os.Args[1:])
+	if err := cmd.Run(os.Args[1:]); err != nil {
+		log.Fatalf("An error occured: %s", err)
+	}
 }
