@@ -1,3 +1,6 @@
+.floo
+.flooignore
+
 # Ignoring idea folder as we don't need to share the xml files as we are using Go, which provides everything for us
 .idea
 
