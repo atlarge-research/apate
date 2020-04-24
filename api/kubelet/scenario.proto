@@ -1,21 +1,21 @@
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private";
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet";
 
 import "google/protobuf/empty.proto";
 
-package apate.scenario.private;
+package apate.kubelet;
 
 // This service will run on the Kubelets
-service ScenarioHandler {
+service Scenario {
 
     // Starts a scenario on the current Kubelet
     // This will be called on every Kubelet
-    rpc startScenario (Scenario) returns (google.protobuf.Empty) {}
+    rpc startScenario (KubeletScenario) returns (google.protobuf.Empty) {}
 }
 
 // The top level object which defines how the different Kubelets will emulate certain deployments
-message Scenario {
+message KubeletScenario {
     // A scenario consists of multiple tasks that will be scheduled on a kubelet
     repeated Task task = 1;
 

@@ -3,7 +3,7 @@ package scenario
 import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/store"
 	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
@@ -52,9 +52,9 @@ tasks:
 
 	assert.Equal(t, nodecount, 52)
 
-	nodes := make([]cluster.Node, 0, nodecount)
+	nodes := make([]store.Node, 0, nodecount)
 	for i := 0; i < nodecount; i++ {
-		nodes = append(nodes, cluster.Node{UUID: uuid.New()})
+		nodes = append(nodes, store.Node{UUID: uuid.New()})
 	}
 
 	ps, _, err := normalise.NormaliseScenario(scenario.GetScenario(), nodes)

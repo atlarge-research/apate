@@ -11,7 +11,7 @@ import (
 )
 
 // SpawnNodes spawns multiple Virtual-Kubelet Docker containers
-func SpawnNodes() error {
+func SpawnNodes(amountOfNodes int) error {
 	var err error
 
 	ctx := context.Background()
@@ -30,7 +30,7 @@ func SpawnNodes() error {
 	}
 
 	// TODO actually iterate over nodes
-	for i := range []int{1} {
+	for i := 0; i < amountOfNodes; i++ {
 		if err := spawnNode(ctx, cli, hostname, i); err != nil {
 			return err
 		}
