@@ -21,8 +21,8 @@ type clusterOperationService struct {
 	cluster *cluster.ApateCluster
 }
 
-// RegisterJoinClusterService registers a new clusterOperationService with the given gRPC server
-func RegisterJoinClusterService(server *service.GRPCServer, cluster *cluster.ApateCluster) {
+// RegisterClusterOperationService registers a new clusterOperationService with the given gRPC server
+func RegisterClusterOperationService(server *service.GRPCServer, cluster *cluster.ApateCluster) {
 	cluster_ops.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
 		cluster: cluster,
 	})
