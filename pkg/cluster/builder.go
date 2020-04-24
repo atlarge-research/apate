@@ -83,6 +83,7 @@ func (b *Builder) Create() (KubernetesCluster, error) {
 	}
 
 	config, err := GetConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
+
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
