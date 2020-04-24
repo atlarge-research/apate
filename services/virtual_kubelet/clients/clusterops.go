@@ -1,11 +1,13 @@
+// Package clients contains all the GRPC clients that can be used by the control plane
 package clients
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"

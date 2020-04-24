@@ -1,11 +1,12 @@
-// Package cluster provides state to the apate cluster
+// Package store provides state to the apate cluster
 package store
 
 import (
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
 	"sync"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalisation"
 
 	"github.com/google/uuid"
 )
@@ -30,7 +31,7 @@ type Store interface {
 	ClearNodes() error
 
 	// AddResourcesToQueue adds a node resource to the queue
-	AddResourcesToQueue([]normalise.NodeResources) error
+	AddResourcesToQueue([]normalisation.NodeResources) error
 
 	// AddKubeletScenario the kubeletscenario to the store
 	AddKubeletScenario(*kubelet.KubeletScenario) error
@@ -38,7 +39,6 @@ type Store interface {
 	// GetKubeletScenario gets the kubelet scenario
 	GetKubeletScenario() (*kubelet.KubeletScenario, error)
 }
-
 
 type store struct {
 	nodes    map[uuid.UUID]Node
@@ -110,14 +110,14 @@ func (c *store) ClearNodes() error {
 	return nil
 }
 
-func (c *store) AddResourcesToQueue(resources []normalise.NodeResources) error {
-	panic("awdawdadawda")
+func (c *store) AddResourcesToQueue(resources []normalisation.NodeResources) error {
+	return nil
 }
 
 func (c *store) AddKubeletScenario(scenario *kubelet.KubeletScenario) error {
-	panic("implement me")
+	return nil
 }
 
 func (c *store) GetKubeletScenario() (*kubelet.KubeletScenario, error) {
-	panic("implement me")
+	return nil, nil
 }

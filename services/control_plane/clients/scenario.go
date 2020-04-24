@@ -1,9 +1,10 @@
-// Package services contains all the clients and servers for the services
+// Package clients contains all the GRPC clients that can be used by the control plane
 package clients
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
 	"google.golang.org/grpc"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )

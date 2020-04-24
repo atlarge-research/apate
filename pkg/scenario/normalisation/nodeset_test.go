@@ -1,8 +1,9 @@
-package normalise
+package normalisation
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 
 	"testing"
 )
@@ -60,14 +61,20 @@ func TestDesugarNode(t *testing.T) {
 }
 
 func TestDesugarNodeSetDuplicate(t *testing.T) {
-	_, err := desugarNodeGroups([]string{
+	r, err := desugarNodeGroups([]string{
 		"test1",
 		"test2",
 		"test3",
 		"test3",
 	}, nodegroups)
 
-	assert.Error(t, err)
+	assert.NoError(t, err)
+
+	assert.Equal(t, r, []string{
+		"test1",
+		"test2",
+		"test3",
+	})
 }
 
 func TestDesugarNodeSetNotPresent(t *testing.T) {

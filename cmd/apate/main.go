@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
-	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
 	"log"
 	"os"
 	"time"
+
+	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
 )
 
 const (
@@ -31,17 +33,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Dialing server")
+	log.Printf("Dialling server")
 
-	ctx, cancel, conn := createClient(err)
+	ctx, cancel, conn := createClient()
 	defer conn.Close()
-
-	ctx, cancel = context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
 	// Initial call: load the scenario
 	scenarioClient := control_plane.NewScenarioClient(conn)
-	r, err := scenarioClient.LoadScenario(ctx, yaml.GetScenario())
+	_, err = scenarioClient.LoadScenario(ctx, yaml.GetScenario())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,13 +55,10 @@ func main() {
 	if _, err := scenarioClient.StartScenario(ctx, new(empty.Empty)); err != nil {
 		log.Fatal(err)
 	}
-
-	log.Print(r)
 }
 
-func createClient(err error) (context.Context, context.CancelFunc, *grpc.ClientConn) {
+func createClient() (context.Context, context.CancelFunc, *grpc.ClientConn) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure())
 
 	if err != nil {

@@ -73,7 +73,7 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.KubernetesCluster, 
 func createGRPC(createdStore *store.Store) *service.GRPCServer {
 	// TODO: Get grpc settings from env
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo("localhost", 8083, true)
+	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)
@@ -102,4 +102,3 @@ func createCluster() cluster.KubernetesCluster {
 
 	return c
 }
-

@@ -1,9 +1,10 @@
-package normalise
+package normalisation
 
 import (
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"strings"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 )
 
 // This string can be used in the configuration to select all nodes there are
@@ -15,13 +16,13 @@ func desugarNodeGroups(nodeSet []string, nodeGroups []*control_plane.NodeGroup) 
 	onlyHasAllNodesString := len(nodeSet) == 1 && nodeSet[0] == allNodesString
 	if onlyHasAllNodesString {
 		return desugarAll(nodeGroups), nil
-	} else {
-		returnedNodes, err := removeDuplicates(nodeSet, nodeGroups)
-		if err != nil {
-			return nil, err
-		}
-		return returnedNodes, nil
 	}
+
+	returnedNodes, err := removeDuplicates(nodeSet, nodeGroups)
+	if err != nil {
+		return nil, err
+	}
+	return returnedNodes, nil
 }
 
 func removeDuplicates(nodeSet []string, nodeGroups []*control_plane.NodeGroup) ([]string, error) {

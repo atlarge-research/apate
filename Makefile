@@ -14,6 +14,9 @@ lint-fix:
 test:
 	go test ./...
 
+test_short:
+	go test -short ./...
+
 test-race:
 	go test -race -short ./...
 
