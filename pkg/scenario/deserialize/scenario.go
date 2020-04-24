@@ -3,7 +3,7 @@
 package deserialize
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 )
 
 // A Deserializer is any struct that has the ability to take either
@@ -17,5 +17,5 @@ type Deserializer interface {
 	FromBytes(data []byte) (Deserializer, error)
 
 	// Gets the internal public.Scenario to for example be sent over gRPC.
-	GetScenario() *control_plane.PublicScenario
+	GetScenario() (*controlplane.PublicScenario, error)
 }

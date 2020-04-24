@@ -1,32 +1,32 @@
-package normalisation
+package normalization
 
 import (
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
 	"testing"
 )
 
-var nodegroup1 = control_plane.NodeGroup{
+var nodegroup1 = controlplane.NodeGroup{
 	GroupName: "test1",
 	NodeType:  "test",
 	Amount:    10,
 }
 
-var nodegroup2 = control_plane.NodeGroup{
+var nodegroup2 = controlplane.NodeGroup{
 	GroupName: "test2",
 	NodeType:  "test",
 	Amount:    10,
 }
 
-var nodegroup3 = control_plane.NodeGroup{
+var nodegroup3 = controlplane.NodeGroup{
 	GroupName: "test3",
 	NodeType:  "test",
 	Amount:    10,
 }
 
-var nodegroups = []*control_plane.NodeGroup{
+var nodegroups = []*controlplane.NodeGroup{
 	&nodegroup1,
 	&nodegroup2,
 	&nodegroup3,

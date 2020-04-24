@@ -1,10 +1,10 @@
-package normalisation
+package normalization
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 )
 
 // This string can be used in the configuration to select all nodes there are
@@ -12,7 +12,7 @@ const allNodesString = "all"
 
 // desugarNodeGroups takes a list of node names and verifies that all these nodes exist
 // and that no duplicates exist in the nodeset. (to make it actually a set)
-func desugarNodeGroups(nodeSet []string, nodeGroups []*control_plane.NodeGroup) ([]string, error) {
+func desugarNodeGroups(nodeSet []string, nodeGroups []*controlplane.NodeGroup) ([]string, error) {
 	onlyHasAllNodesString := len(nodeSet) == 1 && nodeSet[0] == allNodesString
 	if onlyHasAllNodesString {
 		return desugarAll(nodeGroups), nil
@@ -25,7 +25,7 @@ func desugarNodeGroups(nodeSet []string, nodeGroups []*control_plane.NodeGroup) 
 	return returnedNodes, nil
 }
 
-func removeDuplicates(nodeSet []string, nodeGroups []*control_plane.NodeGroup) ([]string, error) {
+func removeDuplicates(nodeSet []string, nodeGroups []*controlplane.NodeGroup) ([]string, error) {
 	groupNameSet := make(map[string]bool)
 	for _, group := range nodeGroups {
 		groupNameSet[group.GroupName] = true
@@ -54,7 +54,7 @@ func removeDuplicates(nodeSet []string, nodeGroups []*control_plane.NodeGroup) (
 	return returnedNodes, nil
 }
 
-func desugarAll(nodeGroups []*control_plane.NodeGroup) []string {
+func desugarAll(nodeGroups []*controlplane.NodeGroup) []string {
 	result := make([]string, 0, len(nodeGroups))
 
 	for _, group := range nodeGroups {

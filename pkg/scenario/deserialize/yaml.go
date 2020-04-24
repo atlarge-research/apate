@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
 	"github.com/ghodss/yaml"
 )
@@ -26,7 +26,7 @@ func (s YamlScenario) FromFile(filename string) (Deserializer, error) {
 
 // FromBytes creates a new YamlScenario from a byte array of data.
 func (s YamlScenario) FromBytes(data []byte) (Deserializer, error) {
-	var scenario control_plane.PublicScenario
+	var scenario controlplane.PublicScenario
 	if err := yaml.Unmarshal(data, &scenario); err != nil {
 		return JSONScenario{}, err
 	}

@@ -9,14 +9,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
 	"google.golang.org/grpc/peer"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/store"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
 type clusterOperationService struct {
@@ -25,13 +25,13 @@ type clusterOperationService struct {
 
 // RegisterClusterOperationService registers a new clusterOperationService with the given gRPC server
 func RegisterClusterOperationService(server *service.GRPCServer, cluster *store.Store) {
-	control_plane.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
+	controlplane.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
 		cluster: cluster,
 	})
 }
 
 // JoinCluster accepts an incoming request from a virtual kubelet to join the cluster
-func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empty) (*control_plane.JoinInformation, error) {
+func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empty) (*controlplane.JoinInformation, error) {
 	//TODO: TLS bool from somewhere?
 
 	// TODO: Check if node is already joined based on remote address
@@ -57,7 +57,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 
 	log.Printf("Added node to apate cluster: %v\n", node)
 
-	return &control_plane.JoinInformation{
+	return &controlplane.JoinInformation{
 		KubeConfig:  config,
 		KubeContext: "kind-Apate",
 		NodeUUID:    node.UUID.String(),
@@ -66,7 +66,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 
 // LeaveCluster removes the node from the cluster
 // This will maybe also remove it from k8s itself, TBD
-func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformation *control_plane.LeaveInformation) (*empty.Empty, error) {
+func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformation *controlplane.LeaveInformation) (*empty.Empty, error) {
 	// TODO: Maybe check if the remote address is still the same? idk
 
 	// TODO: Remove node from cluster and maybe from k8s too?

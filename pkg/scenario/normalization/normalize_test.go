@@ -1,4 +1,4 @@
-package normalisation
+package normalization
 
 import (
 	"testing"
@@ -49,7 +49,10 @@ tasks:
 `))
 	assert.NoError(t, err)
 
-	ps, nodes, err := NormaliseScenario(scenario.GetScenario())
+	getScenario, err := scenario.GetScenario()
+	assert.NoError(t, err)
+
+	ps, nodes, err := NormalizeScenario(getScenario)
 	assert.NoError(t, err)
 
 	// Should be 0 because this is set when the scenario is started.
@@ -78,11 +81,11 @@ tasks:
 
 		switch node.RAM {
 		case 2 * units.GiB:
-			assert.Equal(t, 42, node.CPUPercent)
+			assert.Equal(t, 42, node.CPU)
 			assert.Equal(t, 42, node.MaxPods)
 			alreadySeenType1++
 		case 42 * units.GiB:
-			assert.Equal(t, 24, node.CPUPercent)
+			assert.Equal(t, 24, node.CPU)
 			assert.Equal(t, 24, node.MaxPods)
 			alreadySeenType2++
 		default:

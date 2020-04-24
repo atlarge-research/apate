@@ -1,20 +1,20 @@
-// Package normalisation provides functions to normalise and decode public scenarios.
-package normalisation
+// Package normalization provides functions to normalize and decode public scenarios.
+package normalization
 
 import (
 	"time"
 
 	"github.com/google/uuid"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
 
 	"github.com/docker/go-units"
 )
 
-// NormaliseScenario takes a public scenario and turns it into a private scenario.
-// Normalises the structure and resolves named references.
-func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.KubeletScenario, []NodeResources, error) {
+// NormalizeScenario takes a public scenario and turns it into a private scenario.
+// Normalizes the structure and resolves named references.
+func NormalizeScenario(scenario *controlplane.PublicScenario) (*kubelet.KubeletScenario, []NodeResources, error) {
 	r := kubelet.KubeletScenario{}
 
 	nodeResources := make([]NodeResources, 0)
@@ -22,7 +22,7 @@ func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.Kubelet
 
 	// First make a lookup mapping nodeType strings to node types.
 	// This makes later lookup O(1)
-	nodeTypeName := make(map[string]*control_plane.Node)
+	nodeTypeName := make(map[string]*controlplane.Node)
 	for _, nodeType := range scenario.GetNodes() {
 		nodeTypeName[nodeType.NodeType] = nodeType
 	}
@@ -40,7 +40,7 @@ func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.Kubelet
 			nodeResources = append(nodeResources, NodeResources{
 				id,
 				memory,
-				int(nodeType.CPUPercent),
+				int(nodeType.CPU),
 				int(nodeType.MaxPods),
 			})
 

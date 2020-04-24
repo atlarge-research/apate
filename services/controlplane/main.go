@@ -8,8 +8,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/services"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/store"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
 func init() {

@@ -1,40 +1,43 @@
-// Package cluster provides state to the apate cluster
-package cluster
+// Package store provides state to the apate cluster
+package store
 
 import (
 	"fmt"
 	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalisation"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
 	"github.com/google/uuid"
 )
 
 //TODO: Multi-master soon :tm:
 
-// Store represents the entire apate cluster
+// Store represents the store of the control plane
 type Store interface {
-	// AddNode adds the given Node to the apate cluster
+	// AddNode adds the given Node to the Apate cluster
 	AddNode(*Node) error
 
-	// RemoveNode removes the given Node from the apate cluster
+	// RemoveNode removes the given Node from the Apate cluster
 	RemoveNode(*Node) error
 
 	// GetNode returns the node with the given uuid
 	GetNode(uuid.UUID) (Node, error)
 
-	// GetNodes returns an array containing all nodes in the apate cluster
+	// GetNodes returns an array containing all nodes in the Apate cluster
 	GetNodes() ([]Node, error)
 
-	// ClearNodes removes all nodes from the apate cluster
+	// ClearNodes removes all nodes from the Apate cluster
 	ClearNodes() error
 
-	// AddResourceQueue adds a node resource to the queue
-	AddResourceQueue([]normalisation.NodeResources) error
+	// AddResourcesToQueue adds a node resource to the queue
+	AddResourcesToQueue([]normalization.NodeResources) error
 
 	// AddKubeletScenario the kubeletscenario to the store
 	AddKubeletScenario(*kubelet.KubeletScenario) error
+
+	// GetKubeletScenario gets the kubelet scenario
+	GetKubeletScenario() (*kubelet.KubeletScenario, error)
 }
 
 type store struct {
@@ -42,14 +45,14 @@ type store struct {
 	nodeLock sync.RWMutex
 }
 
-// NewApateCluster creates a new empty cluster
-func NewApateCluster() Store {
+// NewStore creates a new empty cluster
+func NewStore() Store {
 	return &store{
 		nodes: make(map[uuid.UUID]Node),
 	}
 }
 
-// AddNode adds the given Node to the apate cluster
+// AddNode adds the given Node to the Apate cluster
 func (c *store) AddNode(node *Node) error {
 	c.nodeLock.Lock()
 	defer c.nodeLock.Unlock()
@@ -64,7 +67,7 @@ func (c *store) AddNode(node *Node) error {
 	return nil
 }
 
-// RemoveNode removes the given Node from the apate cluster
+// RemoveNode removes the given Node from the Apate cluster
 func (c *store) RemoveNode(node *Node) error {
 	c.nodeLock.Lock()
 	defer c.nodeLock.Unlock()
@@ -85,7 +88,7 @@ func (c *store) GetNode(uuid uuid.UUID) (Node, error) {
 	return Node{}, fmt.Errorf("node with uuid '%s' not found", uuid.String())
 }
 
-// GetNodes returns an array containing all nodes in the apate cluster
+// GetNodes returns an array containing all nodes in the Apate cluster
 func (c *store) GetNodes() ([]Node, error) {
 	c.nodeLock.RLock()
 	defer c.nodeLock.RUnlock()
@@ -107,10 +110,14 @@ func (c *store) ClearNodes() error {
 	return nil
 }
 
-func (c *store) AddResourceQueue(resources []normalisation.NodeResources) error {
-	panic("awdawdadawda")
+func (c *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
+	return nil
 }
 
 func (c *store) AddKubeletScenario(scenario *kubelet.KubeletScenario) error {
-	panic("implement me")
+	return nil
+}
+
+func (c *store) GetKubeletScenario() (*kubelet.KubeletScenario, error) {
+	return nil, nil
 }

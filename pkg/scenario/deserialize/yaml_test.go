@@ -28,25 +28,29 @@ tasks:
 
 	assert.NoError(t, err)
 
-	assert.NotNil(t, scenario.GetScenario().NodeGroups)
-	assert.NotNil(t, scenario.GetScenario().Nodes)
-	assert.NotNil(t, scenario.GetScenario().Tasks)
-	assert.Equal(t, 1, len(scenario.GetScenario().Tasks))
+	obtainedScenario, err := scenario.GetScenario()
 
-	assert.Equal(t, "testtask", scenario.GetScenario().Tasks[0].Name)
-	assert.Equal(t, "10s", scenario.GetScenario().Tasks[0].Time)
-	assert.Equal(t, 1, len(scenario.GetScenario().Tasks[0].NodeGroups))
-	assert.Equal(t, "testgroup", scenario.GetScenario().Tasks[0].NodeGroups[0])
+	assert.NoError(t, err)
 
-	assert.Equal(t, 1, len(scenario.GetScenario().NodeGroups))
-	assert.Equal(t, "testgroup", scenario.GetScenario().NodeGroups[0].GroupName)
-	assert.Equal(t, "testnode", scenario.GetScenario().NodeGroups[0].NodeType)
-	assert.Equal(t, int32(42), scenario.GetScenario().NodeGroups[0].Amount)
+	assert.NotNil(t, obtainedScenario.NodeGroups)
+	assert.NotNil(t, obtainedScenario.Nodes)
+	assert.NotNil(t, obtainedScenario.Tasks)
+	assert.Equal(t, 1, len(obtainedScenario.Tasks))
 
-	assert.Equal(t, 1, len(scenario.GetScenario().Nodes))
+	assert.Equal(t, "testtask", obtainedScenario.Tasks[0].Name)
+	assert.Equal(t, "10s", obtainedScenario.Tasks[0].Time)
+	assert.Equal(t, 1, len(obtainedScenario.Tasks[0].NodeGroups))
+	assert.Equal(t, "testgroup", obtainedScenario.Tasks[0].NodeGroups[0])
 
-	assert.Equal(t, "testnode", scenario.GetScenario().Nodes[0].NodeType)
-	assert.Equal(t, "2G", scenario.GetScenario().Nodes[0].RAM)
-	assert.Equal(t, int32(42), scenario.GetScenario().Nodes[0].CPUPercent)
-	assert.Equal(t, int32(42), scenario.GetScenario().Nodes[0].MaxPods)
+	assert.Equal(t, 1, len(obtainedScenario.NodeGroups))
+	assert.Equal(t, "testgroup", obtainedScenario.NodeGroups[0].GroupName)
+	assert.Equal(t, "testnode", obtainedScenario.NodeGroups[0].NodeType)
+	assert.Equal(t, int32(42), obtainedScenario.NodeGroups[0].Amount)
+
+	assert.Equal(t, 1, len(obtainedScenario.Nodes))
+
+	assert.Equal(t, "testnode", obtainedScenario.Nodes[0].NodeType)
+	assert.Equal(t, "2G", obtainedScenario.Nodes[0].RAM)
+	assert.Equal(t, int32(42), obtainedScenario.Nodes[0].CPU)
+	assert.Equal(t, int32(42), obtainedScenario.Nodes[0].MaxPods)
 }

@@ -1,5 +1,5 @@
-// Package clients contains all the GRPC clients that can be used by the control plane
-package clients
+// Package kubelet contains all the GRPC clients that can be used to interact with the kubelet
+package kubelet
 
 import (
 	"google.golang.org/grpc"
