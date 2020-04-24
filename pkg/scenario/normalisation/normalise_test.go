@@ -53,18 +53,18 @@ tasks:
 	assert.NoError(t, err)
 
 	// Should be 0 because this is set when the scenario is started.
-	assert.Equal(t, ps.StartTime, int32(0))
-	assert.Equal(t, len(ps.Task), 3)
-	assert.Equal(t, ps.Task[0].Name, "testtask1")
-	assert.Equal(t, ps.Task[0].RevertTask, false)
-	assert.Equal(t, len(ps.Task[0].NodeSet), 42)
+	assert.Equal(t, int32(0), ps.StartTime)
+	assert.Equal(t, 3, len(ps.Task))
+	assert.Equal(t, "testtask1", ps.Task[0].Name)
+	assert.Equal(t, false, ps.Task[0].RevertTask)
+	assert.Equal(t, 42, len(ps.Task[0].NodeSet))
 
-	assert.Equal(t, ps.Task[1].Name, "testtask2")
-	assert.Equal(t, ps.Task[1].RevertTask, false)
-	assert.Equal(t, len(ps.Task[1].NodeSet), 52)
+	assert.Equal(t, "testtask2", ps.Task[1].Name)
+	assert.Equal(t, false, ps.Task[1].RevertTask)
+	assert.Equal(t, 52, len(ps.Task[1].NodeSet))
 
-	assert.Equal(t, ps.Task[2].Name, "testtask2")
-	assert.Equal(t, ps.Task[2].RevertTask, true)
+	assert.Equal(t, "testtask2", ps.Task[2].Name)
+	assert.Equal(t, true, ps.Task[2].RevertTask)
 
 	assert.Equal(t, 52, len(nodes))
 
@@ -78,12 +78,12 @@ tasks:
 
 		switch node.RAM {
 		case 2 * units.GiB:
-			assert.Equal(t, node.CPUPercent, 42)
-			assert.Equal(t, node.MaxPods, 42)
+			assert.Equal(t, 42, node.CPUPercent)
+			assert.Equal(t, 42, node.MaxPods)
 			alreadySeenType1++
 		case 42 * units.GiB:
-			assert.Equal(t, node.CPUPercent, 24)
-			assert.Equal(t, node.MaxPods, 24)
+			assert.Equal(t, 24, node.CPUPercent)
+			assert.Equal(t, 24, node.MaxPods)
 			alreadySeenType2++
 		default:
 			assert.Fail(t, "This unit doesn't exist")

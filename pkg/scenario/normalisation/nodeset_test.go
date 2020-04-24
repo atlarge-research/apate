@@ -40,10 +40,10 @@ func TestDesugarNodeSetAll(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, r, []string{
+	assert.Equal(t, []string{
 		"test1",
 		"test2",
-	})
+	}, r)
 }
 
 func TestDesugarNode(t *testing.T) {
@@ -53,11 +53,11 @@ func TestDesugarNode(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, r, []string{
+	assert.Equal(t, []string{
 		"test1",
 		"test2",
 		"test3",
-	})
+	}, r)
 }
 
 func TestDesugarNodeSetDuplicate(t *testing.T) {
@@ -70,11 +70,11 @@ func TestDesugarNodeSetDuplicate(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, r, []string{
+	assert.Equal(t, []string{
 		"test1",
 		"test2",
 		"test3",
-	})
+	}, r)
 }
 
 func TestDesugarNodeSetNotPresent(t *testing.T) {

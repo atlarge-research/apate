@@ -9,7 +9,7 @@ import (
 func TestDefault(t *testing.T) {
 	clusterbuilder := Default()
 
-	assert.Equal(t, clusterbuilder.name, "Apate")
+	assert.Equal(t, "Apate", clusterbuilder.name)
 }
 
 func TestWithName(t *testing.T) {
@@ -17,7 +17,7 @@ func TestWithName(t *testing.T) {
 
 	clusterbuilder.WithName("Test")
 
-	assert.Equal(t, clusterbuilder.name, "Test")
+	assert.Equal(t, "Test", clusterbuilder.name)
 }
 
 func TestEmptyName(t *testing.T) {
