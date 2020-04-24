@@ -10,11 +10,21 @@ import (
 	cpService "github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/service"
 )
 
+func init() {
+	// Enable line numbers in logging
+	// Enables date time flags & file name + line
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
 	// Create and delete cluster for now
 	c := createCluster()
 
 	log.Println("Starting Apate control plane")
+
+	if err := cluster.SpawnNodes(); err != nil {
+		log.Fatal(err)
+	}
 
 	sc := &privateScenario.Scenario{
 		Task:      nil,

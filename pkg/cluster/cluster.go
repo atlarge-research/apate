@@ -5,6 +5,7 @@ package cluster
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 // A KubernetesCluster object can be used to interact with kubernetes clusters.
@@ -13,6 +14,7 @@ type KubernetesCluster struct {
 	name      string
 	manager   Manager
 	clientSet *kubernetes.Clientset
+	config    *rest.Config
 }
 
 // Delete can be used to delete a cluster

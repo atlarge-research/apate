@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0
 	github.com/golang/protobuf v1.4.0
 	github.com/google/uuid v1.0.0
 	github.com/stretchr/testify v1.4.0
