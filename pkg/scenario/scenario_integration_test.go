@@ -48,8 +48,6 @@ tasks:
 
 	// Control plane
 
-
-
 	nodecount := normalise.NumNodes(scenario.GetScenario())
 
 	assert.Equal(t, nodecount, 52)

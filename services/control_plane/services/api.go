@@ -15,5 +15,3 @@ func (s *SendScenarioServer) SendScenario(ctx context.Context, scenario *public.
 
 	return nil, nil
 }
-
-

@@ -18,11 +18,11 @@ import (
 )
 
 type clusterOperationService struct {
-	cluster *cluster.ApateCluster
+	cluster *cluster.Store
 }
 
 // RegisterClusterOperationService registers a new clusterOperationService with the given gRPC server
-func RegisterClusterOperationService(server *service.GRPCServer, cluster *cluster.ApateCluster) {
+func RegisterClusterOperationService(server *service.GRPCServer, cluster *cluster.Store) {
 	cluster_ops.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
 		cluster: cluster,
 	})
