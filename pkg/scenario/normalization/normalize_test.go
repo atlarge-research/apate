@@ -17,11 +17,11 @@ func TestScenario(t *testing.T) {
 nodes:
     - node_type: testnode
       ram: 2G
-      cpu_percent: 42
+      cpu: 42
       max_pods: 42
     - node_type: testnode2
       ram: 42G
-      cpu_percent: 24
+      cpu: 24
       max_pods: 24
 
 node_groups:
