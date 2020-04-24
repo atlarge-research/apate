@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 	"log"
 	"os"
 	"os/signal"
@@ -9,8 +8,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	apatecluster "github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/services"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/store"
 )
 
 func init() {
@@ -27,11 +26,11 @@ func main() {
 	kubernetesCluster := createCluster()
 
 	// Create apate cluster state
-	apateCluster := apatecluster.NewApateCluster()
+	createdStore := store.NewStore()
 
 	// Start gRPC server
 	log.Println("Now accepting requests")
-	server := createGRPC(&apateCluster)
+	server := createGRPC(&createdStore)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -40,12 +39,9 @@ func main() {
 
 	go func() {
 		<-signals
-		shutdown(&apateCluster, &kubernetesCluster, server)
+		shutdown(&createdStore, &kubernetesCluster, server)
 		stopped <- true
 	}()
-
-	// Register listeners
-	public.RegisterScenarioSenderServer(server.Server, &services.SendScenarioServer{})
 
 	// Start serving request
 	server.Serve()
@@ -55,26 +51,26 @@ func main() {
 	log.Printf("Apate control plane stopped")
 }
 
-func shutdown(cluster *apatecluster.Store, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
+func shutdown(store *store.Store, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
 	log.Println("Stopping Apate control plane")
 
 	log.Println("Stopping API")
 	server.Server.Stop()
 
 	// TODO: Actual cleanup for other nodes, for now just wipe state
-	if err := (*cluster).ClearNodes(); err != nil {
-		log.Printf("An error occurred while cleaning the apate cluster: %s", err.Error())
+	if err := (*store).ClearNodes(); err != nil {
+		log.Printf("An error occurred while cleaning the apate store: %s", err.Error())
 	}
 
 	// TODO: Cleanup /tmp/ dir we used for kube config etc
 
 	log.Println("Stopping kubernetes control plane")
 	if err := kubernetesCluster.Delete(); err != nil {
-		log.Printf("An error occurred while deleting the kubernetes cluster: %s", err.Error())
+		log.Printf("An error occurred while deleting the kubernetes store: %s", err.Error())
 	}
 }
 
-func createGRPC(apateCluster *apatecluster.Store) *service.GRPCServer {
+func createGRPC(createdStore *store.Store) *service.GRPCServer {
 	// TODO: Get grpc settings from env
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, true)
@@ -83,7 +79,9 @@ func createGRPC(apateCluster *apatecluster.Store) *service.GRPCServer {
 	server := service.NewGRPCServer(connectionInfo)
 
 	// Add services
-	services.RegisterClusterOperationService(server, apateCluster)
+	services.RegisterStatusService(server, createdStore)
+	services.RegisterScenarioService(server, createdStore)
+	services.RegisterClusterOperationService(server, createdStore)
 
 	return server
 }
@@ -105,22 +103,3 @@ func createCluster() cluster.KubernetesCluster {
 	return c
 }
 
-//func scheduleOnNodes(sc *private.Scenario, c *cluster.KubernetesCluster) {
-//	for _, port := range c.GetNodePorts() {
-//		// Connection settings
-//		connectionInfo := service.NewConnectionInfo("localhost", port, true)
-//
-//		// Client
-//		scenarioClient := services.GetScenarioClient(connectionInfo)
-//
-//		_, err := scenarioClient.Client.StartScenario(context.Background(), sc)
-//
-//		if err != nil {
-//			log.Fatalf("Could not complete call: %v", err)
-//		}
-//
-//		if err := scenarioClient.Conn.Close(); err != nil {
-//			log.Fatal("Failed to close connection")
-//		}
-//	}
-//}

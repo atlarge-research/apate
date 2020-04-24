@@ -1,5 +1,5 @@
 // Package cluster provides state to the apate cluster
-package cluster
+package store
 
 import (
 	"fmt"
@@ -29,11 +29,14 @@ type Store interface {
 	// ClearNodes removes all nodes from the apate cluster
 	ClearNodes() error
 
-	// AddResourceQueue adds a node resource to the queue
-	AddResourceQueue([]normalise.NodeResources) error
+	// AddResourcesToQueue adds a node resource to the queue
+	AddResourcesToQueue([]normalise.NodeResources) error
 
 	// AddKubeletScenario the kubeletscenario to the store
 	AddKubeletScenario(*kubelet.KubeletScenario) error
+
+	// GetKubeletScenario gets the kubelet scenario
+	GetKubeletScenario() (*kubelet.KubeletScenario, error)
 }
 
 
@@ -42,8 +45,8 @@ type store struct {
 	nodeLock sync.RWMutex
 }
 
-// NewApateCluster creates a new empty cluster
-func NewApateCluster() Store {
+// NewStore creates a new empty cluster
+func NewStore() Store {
 	return &store{
 		nodes: make(map[uuid.UUID]Node),
 	}
@@ -107,10 +110,14 @@ func (c *store) ClearNodes() error {
 	return nil
 }
 
-func (c *store) AddResourceQueue(resources []normalise.NodeResources) error {
+func (c *store) AddResourcesToQueue(resources []normalise.NodeResources) error {
 	panic("awdawdadawda")
 }
 
 func (c *store) AddKubeletScenario(scenario *kubelet.KubeletScenario) error {
+	panic("implement me")
+}
+
+func (c *store) GetKubeletScenario() (*kubelet.KubeletScenario, error) {
 	panic("implement me")
 }

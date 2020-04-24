@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/cluster_ops";
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane";
 
 import "google/protobuf/empty.proto";
 
-package apate.cluster_ops;
+package apate.control_plane;
 
 // This service will run on the Control Plane
 service ClusterOperations {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/clients"
 	"log"
 	"os"
 	"os/signal"
@@ -78,7 +79,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	log.Println("Leaving clusters (apate & k8s)")
 
 	// TODO: Maybe leave k8s? Or will control plane do that?
-	client := vkService.GetClusterOperationClient(connectionInfo)
+	client := clients.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
@@ -92,7 +93,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 }
 
 func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
-	client := vkService.GetClusterOperationClient(connectionInfo)
+	client := clients.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()

@@ -2,112 +2,89 @@
 package normalise
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/docker/go-units"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 )
 
-// NumNodes returns only the part of a scenario relevant to creating nodes.
-// This is necessary because it's impossible to entirely normalise a
-// scenario without knowing the UUIDs of each spawned node. They need to
-// be spawned first. They can be spawned based on this function.
-//
-// This function returns a iterable channel. This is useful because storing all
-// (potentially very many) nodes in for example an array would be extremely inefficient.
-// Especially because most of the nodes are the same. Using a channel it's possible to
-// return a reference to the same node multiple times
-func NumNodes(scenario *public.Scenario) int {
-	nodes := 0
-
-	// Iterate over every nodegroup
-	for _, nodegroup := range scenario.GetNodeGroups() {
-		nodes += int(nodegroup.Amount)
-	}
-
-	return nodes
-}
-
-// NormaliseScenario takes a public scenario and turns it into a private scenario. Normalises the structure and resolves named references.
-func NormaliseScenario(scenario *public.Scenario, nodes []cluster.Node) (*private.Scenario, map[cluster.Node]NodeResources, error) {
-	r := private.Scenario{}
+// NormaliseScenario takes a public scenario and turns it into a private scenario.
+// Normalises the structure and resolves named references.
+func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.KubeletScenario, []NodeResources, error) {
+	r := kubelet.KubeletScenario{}
 
 	// This function does not need to set this field. This is set by the control plane
 	// Whenever the scenario is started.
 	r.StartTime = 0
 
-	groups := make(map[string][]string)
-	resources := make(map[cluster.Node]NodeResources)
+	nodeResources := make([]NodeResources, 0)
+	uuidsPerNodeGroup := make(map[string][]uuid.UUID)
 
-	nodetypes := make(map[string]*public.Node)
-	// First make a lookup mapping nodetype strings to node types.
+	// First make a lookup mapping nodeType strings to node types.
 	// This makes later lookup O(1)
-	for _, nodetype := range scenario.GetNodes() {
-		nodetypes[nodetype.NodeType] = nodetype
+	nodeTypeName := make(map[string]*control_plane.Node)
+	for _, nodeType := range scenario.GetNodes() {
+		nodeTypeName[nodeType.NodeType] = nodeType
 	}
 
-	// A variable holding which  ode was used last.
-	// With this, every node can get a new node.
-	index := 0
+	for _, nodeGroup := range scenario.NodeGroups {
+		for i := 0; i < int(nodeGroup.Amount); i++ {
+			id := uuid.New()
 
-	for _, nodegroup := range scenario.NodeGroups {
-		for i := 0; i < int(nodegroup.Amount); i++ {
-			node := nodes[index]
-			index++
-
-			groups[nodegroup.GroupName] = append(groups[nodegroup.GroupName], node.UUID.String())
-
-			nodetype := nodetypes[nodegroup.NodeType]
-			memory, err := units.RAMInBytes(nodetype.Ram)
+			nodeType := nodeTypeName[nodeGroup.NodeType]
+			memory, err := units.RAMInBytes(nodeType.Ram)
 			if err != nil {
 				return nil, nil, err
 			}
 
-			resources[node] = NodeResources{
+			nodeResources = append(nodeResources, NodeResources{
+				id,
 				memory,
-				int(nodetype.CpuPercent),
-				int(nodetype.MaxPods),
-			}
+				int(nodeType.CpuPercent),
+				int(nodeType.MaxPods),
+			})
+
+			uuidsPerNodeGroup[nodeGroup.GroupName] = append(uuidsPerNodeGroup[nodeGroup.GroupName], id)
 		}
 	}
 
-	var tasks []*private.Task
+	var tasks []*kubelet.Task
 
 	for _, task := range scenario.Tasks {
-		// Desugar the timestamp postfix.
-		time, err := desugarTimestamp(task.Time)
+		timestamp, err := desugarTimestamp(task.Time)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		// Decode the "all" node name, also verify that all names in the nodeset exist and
+		// Decode the "all" node name, also verify that all names in the nodeSet exist and
 		// that there are no duplicates in the set.
-		nodegroupnames, err := desugarNodeSet(task.NodeGroups, scenario.NodeGroups)
+		nodeGroupNames, err := desugarNodeGroups(task.NodeGroups, scenario.NodeGroups)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		var nodeset []string
+		var nodeSet []string
 
-		for _, name := range nodegroupnames {
-			nodeset = append(nodeset, groups[name]...)
+		for _, name := range nodeGroupNames {
+			for _, nodeUuid := range uuidsPerNodeGroup[name] {
+				nodeSet = append(nodeSet, nodeUuid.String())
+			}
 		}
 
-		tasks = append(tasks, &private.Task{
+		tasks = append(tasks, &kubelet.Task{
 			Name:       task.Name,
 			RevertTask: task.Revert,
-			Timestamp:  int32(time),
-			NodeSet:    nodeset,
-			Event:      nil,
+			Timestamp:  int32(timestamp),
+			NodeSet:    nodeSet,
+			Event:      nil, // TODO actually add events
 		})
 	}
 
 	r.Task = tasks
 
-	return &r, nil, nil
+	return &r, nodeResources, nil
 }
 
 func desugarTimestamp(t string) (int, error) {

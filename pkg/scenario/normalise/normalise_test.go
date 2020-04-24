@@ -1,59 +1,55 @@
 package normalise
 
 import (
+	scenario2 "github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"testing"
 
 	"gotest.tools/assert"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 )
 
 func TestIterNodes(t *testing.T) {
-	node1 := public.Node{
+	node1 := scenario2.Node{
 		NodeType:   "test1",
 		Ram:        "",
 		CpuPercent: 0,
 		MaxPods:    0,
 	}
 
-	node2 := public.Node{
+	node2 := scenario2.Node{
 		NodeType:   "test2",
 		Ram:        "",
 		CpuPercent: 0,
 		MaxPods:    0,
 	}
 
-	nodegroup1 := public.NodeGroup{
+	nodegroup1 := scenario2.NodeGroup{
 		GroupName: "testgroup1",
 		NodeType:  "test1",
 		Amount:    27,
 	}
 
-	nodegroup2 := public.NodeGroup{
+	nodegroup2 := scenario2.NodeGroup{
 		GroupName: "testgroup2",
 		NodeType:  "test1",
 		Amount:    42,
 	}
 
-	nodegroup3 := public.NodeGroup{
+	nodegroup3 := scenario2.NodeGroup{
 		GroupName: "testgroup3",
 		NodeType:  "test2",
 		Amount:    42,
 	}
 
-	scenario := public.Scenario{
-		Nodes: []*public.Node{
+	scenario := scenario2.Scenario{
+		Nodes: []*scenario2.Node{
 			&node1,
 			&node2,
 		},
-		NodeGroups: []*public.NodeGroup{
+		NodeGroups: []*scenario2.NodeGroup{
 			&nodegroup1,
 			&nodegroup2,
 			&nodegroup3,
 		},
 		Tasks: nil,
 	}
-
-	nodecount := NumNodes(&scenario)
-	assert.Equal(t, nodecount, 111)
 }

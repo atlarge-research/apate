@@ -2,43 +2,42 @@ package normalise
 
 import (
 	"fmt"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"strings"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 )
 
 // This string can be used in the configuration to select all nodes there are
 const allNodesString = "all"
 
-// desugarNodeSet takes a list of node names and verifies that all these nodes exist
+// desugarNodeGroups takes a list of node names and verifies that all these nodes exist
 // and that no duplicates exist in the nodeset. (to make it actually a set)
-func desugarNodeSet(nodeset []string, nodegroups []*public.NodeGroup) ([]string, error) {
-	if len(nodeset) == 1 && nodeset[0] == allNodesString {
-		result := make([]string, 0, len(nodegroups))
-
-		for _, group := range nodegroups {
-			result = append(result, group.GroupName)
+func desugarNodeGroups(nodeSet []string, nodeGroups []*control_plane.NodeGroup) ([]string, error) {
+	onlyHasAllNodesString := len(nodeSet) == 1 && nodeSet[0] == allNodesString
+	if onlyHasAllNodesString {
+		return desugarAll(nodeGroups), nil
+	} else {
+		returnedNodes, err := removeDuplicates(nodeSet, nodeGroups)
+		if err != nil {
+			return nil, err
 		}
+		return returnedNodes, nil
+	}
+}
 
-		return result, nil
+func removeDuplicates(nodeSet []string, nodeGroups []*control_plane.NodeGroup) ([]string, error) {
+	groupNameSet := make(map[string]bool)
+	for _, group := range nodeGroups {
+		groupNameSet[group.GroupName] = true
 	}
 
-	groupnameset := make(map[string]bool)
-	for _, group := range nodegroups {
-		groupnameset[group.GroupName] = true
-	}
+	alreadySeen := make(map[string]bool)
+	returnedNodes := make([]string, 0, len(nodeSet))
 
-	had := make(map[string]bool)
-	newnodeset := make([]string, 0, len(nodeset))
-
-	for _, name := range nodeset {
+	for _, name := range nodeSet {
 		name = strings.TrimSpace(name)
 
-		if had[name] {
-			return nil, fmt.Errorf("duplicate node group name %s in task", name)
-		}
-
-		if !groupnameset[name] {
+		// If the current groupName is not an existing groupName, error
+		if !groupNameSet[name] {
 			if name == allNodesString {
 				return nil, fmt.Errorf("can only use '%s' as the only nodegroup", allNodesString)
 			}
@@ -46,9 +45,20 @@ func desugarNodeSet(nodeset []string, nodegroups []*public.NodeGroup) ([]string,
 			return nil, fmt.Errorf("group name %s doesn't exist", name)
 		}
 
-		newnodeset = append(newnodeset, name)
-		had[name] = true
+		if !alreadySeen[name] {
+			returnedNodes = append(returnedNodes, name)
+			alreadySeen[name] = true
+		}
+	}
+	return returnedNodes, nil
+}
+
+func desugarAll(nodeGroups []*control_plane.NodeGroup) []string {
+	result := make([]string, 0, len(nodeGroups))
+
+	for _, group := range nodeGroups {
+		result = append(result, group.GroupName)
 	}
 
-	return nodeset, nil
+	return result
 }
