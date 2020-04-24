@@ -19,7 +19,7 @@ import (
 // return a reference to the same node multiple times
 func IterNodes(scenario *public.Scenario, callback func(i int)) {
 	// Iterate over every nodegroup
-	for _, nodegroup := range scenario.GetNodegroups() {
+	for _, nodegroup := range scenario.GetNodeGroups() {
 		// Yield every type of node as many times as the `amount` field
 		// in the nodegroup says.
 		for i := 0; i < int(nodegroup.Amount); i++ {
@@ -42,12 +42,12 @@ func GetPrivateScenario(scenario *public.Scenario, uuids []uuid.UUID) (*private.
 	// With this, every node can get a new uuid.
 	uuidindex := 0
 
-	for _, nodegroup := range scenario.Nodegroups {
+	for _, nodegroup := range scenario.NodeGroups {
 		for i := 0; i < int(nodegroup.Amount); i++ {
 			id := uuids[uuidindex]
 			uuidindex++
 
-			groups[nodegroup.Groupname] = append(groups[nodegroup.Groupname], id.String())
+			groups[nodegroup.GroupName] = append(groups[nodegroup.GroupName], id.String())
 		}
 	}
 
@@ -59,7 +59,7 @@ func GetPrivateScenario(scenario *public.Scenario, uuids []uuid.UUID) (*private.
 			return nil, err
 		}
 
-		nodegroupnames, err := desugarNodeSet(task.Nodegroups, scenario.Nodegroups)
+		nodegroupnames, err := desugarNodeSet(task.NodeGroups, scenario.NodeGroups)
 		if err != nil {
 			return nil, err
 		}

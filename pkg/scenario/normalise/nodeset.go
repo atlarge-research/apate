@@ -13,7 +13,7 @@ func desugarNodeSet(nodeset []string, nodegroups []*public.NodeGroup) ([]string,
 		result := make([]string, 0, len(nodegroups))
 
 		for _, group := range nodegroups {
-			result = append(result, group.Groupname)
+			result = append(result, group.GroupName)
 		}
 
 		return result, nil
@@ -21,7 +21,7 @@ func desugarNodeSet(nodeset []string, nodegroups []*public.NodeGroup) ([]string,
 
 	groupnameset := make(map[string]bool)
 	for _, group := range nodegroups {
-		groupnameset[group.Groupname] = true
+		groupnameset[group.GroupName] = true
 	}
 
 	had := make(map[string]bool)

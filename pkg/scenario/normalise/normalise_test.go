@@ -10,34 +10,34 @@ import (
 
 func TestIterNodes(t *testing.T) {
 	node1 := public.Node{
-		Nodetype:   "test1",
+		NodeType:   "test1",
 		Ram:        "",
 		CpuPercent: 0,
 		MaxPods:    0,
 	}
 
 	node2 := public.Node{
-		Nodetype:   "test2",
+		NodeType:   "test2",
 		Ram:        "",
 		CpuPercent: 0,
 		MaxPods:    0,
 	}
 
 	nodegroup1 := public.NodeGroup{
-		Groupname: "testgroup1",
-		Nodetype:  "test1",
+		GroupName: "testgroup1",
+		NodeType:  "test1",
 		Amount:    27,
 	}
 
 	nodegroup2 := public.NodeGroup{
-		Groupname: "testgroup2",
-		Nodetype:  "test1",
+		GroupName: "testgroup2",
+		NodeType:  "test1",
 		Amount:    42,
 	}
 
 	nodegroup3 := public.NodeGroup{
-		Groupname: "testgroup3",
-		Nodetype:  "test2",
+		GroupName: "testgroup3",
+		NodeType:  "test2",
 		Amount:    42,
 	}
 
@@ -46,7 +46,7 @@ func TestIterNodes(t *testing.T) {
 			&node1,
 			&node2,
 		},
-		Nodegroups: []*public.NodeGroup{
+		NodeGroups: []*public.NodeGroup{
 			&nodegroup1,
 			&nodegroup2,
 			&nodegroup3,

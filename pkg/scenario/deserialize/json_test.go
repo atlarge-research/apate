@@ -11,16 +11,16 @@ func TestDeserializeJson(t *testing.T) {
 {
 	"nodes" : [
 		{
-			"nodetype": "testnode",
+			"node_type": "testnode",
 			"ram": "2G",
 			"cpu_percent": 42,
 			"max_pods": 42
 		}
 	],
-	"nodegroups" : [
+	"node_groups" : [
 		{
-			"groupname": "testgroup",
-			"nodetype": "testnode",
+			"group_name": "testgroup",
+			"node_type": "testnode",
 			"amount": 42
 		}
 	],
@@ -28,7 +28,7 @@ func TestDeserializeJson(t *testing.T) {
 		{
 			"name": "testtask",
 			"time": "10s",
-			"nodegroups": [
+			"node_groups": [
 				"testgroup"
 			]
 		}
@@ -38,24 +38,24 @@ func TestDeserializeJson(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.NotNil(t, scenario.GetScenario().Nodegroups)
+	assert.NotNil(t, scenario.GetScenario().NodeGroups)
 	assert.NotNil(t, scenario.GetScenario().Nodes)
 	assert.NotNil(t, scenario.GetScenario().Tasks)
 	assert.Equal(t, len(scenario.GetScenario().Tasks), 1)
 
 	assert.Equal(t, scenario.GetScenario().Tasks[0].Name, "testtask")
 	assert.Equal(t, scenario.GetScenario().Tasks[0].Time, "10s")
-	assert.Equal(t, len(scenario.GetScenario().Tasks[0].Nodegroups), 1)
-	assert.Equal(t, scenario.GetScenario().Tasks[0].Nodegroups[0], "testgroup")
+	assert.Equal(t, len(scenario.GetScenario().Tasks[0].NodeGroups), 1)
+	assert.Equal(t, scenario.GetScenario().Tasks[0].NodeGroups[0], "testgroup")
 
-	assert.Equal(t, len(scenario.GetScenario().Nodegroups), 1)
-	assert.Equal(t, scenario.GetScenario().Nodegroups[0].Groupname, "testgroup")
-	assert.Equal(t, scenario.GetScenario().Nodegroups[0].Nodetype, "testnode")
-	assert.Equal(t, scenario.GetScenario().Nodegroups[0].Amount, int32(42))
+	assert.Equal(t, len(scenario.GetScenario().NodeGroups), 1)
+	assert.Equal(t, scenario.GetScenario().NodeGroups[0].GroupName, "testgroup")
+	assert.Equal(t, scenario.GetScenario().NodeGroups[0].NodeType, "testnode")
+	assert.Equal(t, scenario.GetScenario().NodeGroups[0].Amount, int32(42))
 
 	assert.Equal(t, len(scenario.GetScenario().Nodes), 1)
 
-	assert.Equal(t, scenario.GetScenario().Nodes[0].Nodetype, "testnode")
+	assert.Equal(t, scenario.GetScenario().Nodes[0].NodeType, "testnode")
 	assert.Equal(t, scenario.GetScenario().Nodes[0].Ram, "2G")
 	assert.Equal(t, scenario.GetScenario().Nodes[0].CpuPercent, int32(42))
 	assert.Equal(t, scenario.GetScenario().Nodes[0].MaxPods, int32(42))

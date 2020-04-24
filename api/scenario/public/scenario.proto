@@ -10,13 +10,19 @@ message SendScenarioResponse {
 
 }
 
+// Scenario represents a full scenario as given in the scenario configuration file.
+// It can be easily constructed from yaml or json (pkg/scenario/deserialize) and has to be
+// converted to a private scenario (pkg/scenario/normalize).
 message Scenario {
+    // List of node types.
     repeated Node nodes = 1;
-    repeated NodeGroup nodegroups = 2;
+    // List of node groups.
+    repeated NodeGroup node_groups = 2;
     // A scenario consists of an number of tasks.
     repeated Task tasks = 3;
 }
 
+// A task is a part of a scenario describing what happens at a certain point in time.
 message Task {
     /// The name of a task can be used to revert it.
     string name = 1;
@@ -31,12 +37,12 @@ message Task {
 
     // Which nodes this task applies to
     // This field should not be set when revert is true
-    repeated string nodegroups = 4;
+    repeated string node_groups = 4;
 }
 
 message Node {
     // The type of the node. This can be referred to in nodegroups.
-    string nodetype = 1;
+    string node_type = 1;
 
     // The amount of ram a node gets.
     // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
@@ -54,10 +60,10 @@ message Node {
 message NodeGroup {
 
     // The name of the group. This can be referred to in scenarios.
-    string groupname = 1;
+    string group_name = 1;
 
     // The type of node in this group.
-    string nodetype = 3;
+    string node_type = 3;
 
     // How many times you want this type of node.
     int32 amount = 2;
