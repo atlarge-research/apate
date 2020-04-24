@@ -1,5 +1,5 @@
-// Package service contains all the clients and servers for the services
-package service
+// Package services contains all the clients and servers for the services
+package services
 
 import (
 	"google.golang.org/grpc"
