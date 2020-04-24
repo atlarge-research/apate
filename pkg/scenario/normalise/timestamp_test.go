@@ -49,13 +49,11 @@ func TestTimestampInvalidPostfixInvalid(t *testing.T) {
 func TestTimestampSecondsPostfixInvalid(t *testing.T) {
 	_, err := desugarTimestamp("a42s")
 	assert.Error(t, err)
-
 }
 
 func TestTimestampMilliSecondsPostfixInvalid(t *testing.T) {
 	_, err := desugarTimestamp("a42ms")
 	assert.Error(t, err)
-
 }
 
 func TestTimestampMinutePostfixInvalid(t *testing.T) {
@@ -66,7 +64,6 @@ func TestTimestampMinutePostfixInvalid(t *testing.T) {
 func TestTimestampHourPostfixInvalid(t *testing.T) {
 	_, err := desugarTimestamp("a42h")
 	assert.Error(t, err)
-
 }
 
 func TestTimestampNoPostfixInvalid(t *testing.T) {
