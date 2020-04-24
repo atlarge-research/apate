@@ -2,6 +2,8 @@
 package provider
 
 import (
+	"github.com/virtual-kubelet/virtual-kubelet/node/api"
+
 	"bytes"
 	"context"
 	"errors"
@@ -9,7 +11,6 @@ import (
 	"io/ioutil"
 
 	vkprov "github.com/virtual-kubelet/node-cli/provider"
-	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
