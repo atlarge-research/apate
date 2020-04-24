@@ -143,6 +143,9 @@ linters-settings:
     ignore-words:
       - k8s
       - Kubernetes
+      - normalize
+      - normalization
+      - normalizes
   lll:
     # max line length, lines longer will be reported. Default is 120.
     # '\t' is counted as 1 character by default, and can be changed with the tab-width option
@@ -256,7 +259,6 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    - unused
     - whitespace
   # don't enable:
   # - errcheck
@@ -286,6 +288,7 @@ issues:
         - errcheck
         - dupl
         - gosec
+        - unused
 
     # Exclude known linters from partially hard-vendored code,
     # which is impossible to exclude via "nolint" comments.

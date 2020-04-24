@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,6 +26,32 @@ func TestCreateCluster_e2e(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, cluster.Delete())
+}
+
+func TestCreateClusterNoFolder_e2e(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping e2e test")
+	}
+
+	clusterInterface := KinD{}
+
+	// Delete it before to be safe
+	assert.NoError(t, clusterInterface.DeleteCluster("TestCreateClusterNoFolder"))
+
+	_ = os.RemoveAll("/tmp/TestCreateClusterNoFolder_e2e")
+
+	clusterBuilder := Default()
+	cluster, err := clusterBuilder.
+		WithCreator(&clusterInterface).
+		WithName("TestCreateClusterNoFolder").
+		WithConfigLocation("/tmp/TestCreateClusterNoFolder_e2e").
+		Create()
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, cluster.Delete())
+
+	_ = os.RemoveAll("/tmp/TestCreateClusterNoFolder_e2e")
 }
 
 func TestForceCreateCluster_e2e(t *testing.T) {
