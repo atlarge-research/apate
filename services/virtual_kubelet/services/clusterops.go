@@ -19,8 +19,8 @@ type ClusterOperationClient struct {
 	Client cluster_ops.ClusterOperationsClient
 }
 
-// GetJoinClusterClient returns client for the JoinClusterService
-func GetJoinClusterClient(info *service.ConnectionInfo) *ClusterOperationClient {
+// GetClusterOperationClient returns client for the JoinClusterService
+func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationClient {
 	conn := service.CreateClientConnection(info)
 	return &ClusterOperationClient{
 		Conn:   conn,

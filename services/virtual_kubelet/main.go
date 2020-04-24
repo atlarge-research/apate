@@ -12,7 +12,7 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	provider2 "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
+	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/services"
 )
 
@@ -40,7 +40,10 @@ func main() {
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
-		_ = nc.Run(ctx)
+		// TODO: Notify master / proper logging
+		if err := nc.Run(ctx); err != nil {
+			log.Fatalf("Unable to start apatelet: %v", err)
+		}
 	}()
 
 	// Start gRPC server
@@ -75,7 +78,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	log.Println("Leaving clusters (apate & k8s)")
 
 	// TODO: Maybe leave k8s? Or will control plane do that?
-	client := vkService.GetJoinClusterClient(connectionInfo)
+	client := vkService.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
@@ -89,7 +92,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 }
 
 func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
-	client := vkService.GetJoinClusterClient(connectionInfo)
+	client := vkService.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
@@ -111,13 +114,9 @@ func getVirtualKubelet(location string, kubeContext string) (context.Context, *n
 
 	config, _ := cluster.GetConfigForContext(kubeContext, location)
 	client := kubernetes.NewForConfigOrDie(config)
+	n := cluster.NewNode("virtual-kubelet", "agent", "apatelet", k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
-		cluster.CreateKubernetesNode(ctx,
-			"virtual-kubelet",
-			"agent",
-			"apatelet",
-			provider2.CreateProvider(),
-			k8sVersion),
+		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider()),
 		client.CoreV1().Nodes())
 
 	return ctx, nc, cancel
