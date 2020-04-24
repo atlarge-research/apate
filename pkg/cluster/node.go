@@ -49,6 +49,7 @@ func pullImage(ctx context.Context, cli *client.Client) error {
 }
 
 func spawnNode(ctx context.Context, cli *client.Client, hostname string, nodeIndex int) error {
+	// TODO check if exists
 	c, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "virtual_kubelet:latest",
 		Env: []string{
