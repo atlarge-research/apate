@@ -6,8 +6,6 @@ import (
 	"path"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 // The ClusterBuilder creates a new cluster object used to manage a cluster.
@@ -84,7 +82,7 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		return KubernetesCluster{}, err
 	}
 
-	config, err := getConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
+	config, err := GetConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
 	if err != nil {
 		// If something went wrong, delete the cluster for the next run,
 		// otherwise ForceCreate would be necessary
@@ -110,25 +108,4 @@ func (b *ClusterBuilder) Create() (KubernetesCluster, error) {
 		manager:   b.manager,
 		config:    config,
 	}, nil
-}
-
-// Gets a kubernetes client configuration for the context given.
-func getConfigForContext(context string, kubeConfigLocation string) (*rest.Config, error) {
-	// Create a default config rules struct
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
-	rules.ExplicitPath = kubeConfigLocation
-
-	// Override with defaults (this call might not be necessary since the defaults are already set above?)
-	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
-	// But set the context to our own context while overriding
-	overrides.CurrentContext = context
-
-	// Now create the actual configuration
-	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
 }
