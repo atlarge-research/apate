@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/cli/apate/app"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/app"
 )
 
 func main() {
