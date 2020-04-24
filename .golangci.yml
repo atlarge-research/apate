@@ -143,6 +143,9 @@ linters-settings:
     ignore-words:
       - k8s
       - Kubernetes
+      - normalize
+      - normalization
+      - normalizes
   lll:
     # max line length, lines longer will be reported. Default is 120.
     # '\t' is counted as 1 character by default, and can be changed with the tab-width option
@@ -154,13 +157,13 @@ linters-settings:
     # XXX: if you enable this setting, unused will report a lot of false-positives in text editors:
     # if it's called for subdir of a project it can't find funcs usages. All text editor integrations
     # with golangci-lint call it on a directory with the changed file.
-    check-exported: true
+    check-exported: false
   unparam:
     # Inspect exported functions, default is false. Set to true if no external program/library imports your code.
     # XXX: if you enable this setting, unparam will report a lot of false-positives in text editors:
     # if it's called for subdir of a project it can't find external interfaces. All text editor integrations
     # with golangci-lint call it on a directory with the changed file.
-    check-exported: true
+    check-exported: false
   nakedret:
     # make an issue if func has more lines of code than this setting and it has naked returns; default is 30
     max-func-lines: 30
@@ -256,7 +259,6 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    - unused
     - whitespace
   # don't enable:
   # - errcheck

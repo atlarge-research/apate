@@ -1,6 +1,7 @@
-// Defines an interface used to set up a cluster.
+// Package cluster defines an interface used to set up a cluster.
 package cluster
 
+// Manager provides methods to manage a cluster. Currently only implemented for KinD.
 type Manager interface {
 
 	// Deletes a cluster with a given name.

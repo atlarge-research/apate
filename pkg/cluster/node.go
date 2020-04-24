@@ -11,7 +11,7 @@ import (
 )
 
 // SpawnNodes spawns multiple Virtual-Kubelet Docker containers
-func SpawnNodes() error {
+func SpawnNodes(amountOfNodes int) error {
 	var err error
 
 	ctx := context.Background()
@@ -29,8 +29,8 @@ func SpawnNodes() error {
 		return err
 	}
 
-	// TODO actually iterate over nodes
-	for i := range []int{1} {
+	// TODO async
+	for i := 0; i < amountOfNodes; i++ {
 		if err := spawnNode(ctx, cli, hostname, i); err != nil {
 			return err
 		}
@@ -49,6 +49,7 @@ func pullImage(ctx context.Context, cli *client.Client) error {
 }
 
 func spawnNode(ctx context.Context, cli *client.Client, hostname string, nodeIndex int) error {
+	// TODO check if exists
 	c, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "virtual_kubelet:latest",
 		Env: []string{
