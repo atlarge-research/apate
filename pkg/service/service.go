@@ -1,4 +1,4 @@
-// Package service provides a GRPC service. TODO: Tim?
+// Package service provides an a wrapper for connection information and a small wrapper around the grpc server
 package service
 
 import (
@@ -11,20 +11,20 @@ import (
 	"google.golang.org/grpc/testdata"
 )
 
-// GRPCServer is a GRPC server. TODO: Tim
+// GRPCServer represents the gRPC server and listener
 type GRPCServer struct {
 	listener net.Listener
 	Server   *grpc.Server
 }
 
-// ConnectionInfo gives connection info TODO: Tim
+// ConnectionInfo contains all information required for connecting to a services
 type ConnectionInfo struct {
 	address string
 	port    int
 	tls     bool
 }
 
-// NewGRPCServer creates a new GRPC server. TODO: Tim (maybe put the server in it's own file and just call this New so you get server.New())
+// NewGRPCServer creates new gGRP server based on connection information
 func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	lis, server := createListenerAndServer(info)
 	return &GRPCServer{
@@ -33,7 +33,7 @@ func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	}
 }
 
-// NewConnectionInfo gets information about new connections. TODO: Tim
+// NewConnectionInfo creates new connection information struct
 func NewConnectionInfo(address string, port int, tls bool) *ConnectionInfo {
 	return &ConnectionInfo{
 		address: address,
@@ -42,7 +42,7 @@ func NewConnectionInfo(address string, port int, tls bool) *ConnectionInfo {
 	}
 }
 
-// Serve starts serving the GRPC server TODO: Tim
+// Serve starts listening for incoming requests
 func (s *GRPCServer) Serve() {
 	if err := s.Server.Serve(s.listener); err != nil {
 		log.Fatalf("Unable to serve: %v", err)
@@ -67,7 +67,7 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 	return
 }
 
-// CreateClientConnection creates a new client connection. TODO: Tim
+// CreateClientConnection creates a connection to a remote services with the given connection information
 func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
 

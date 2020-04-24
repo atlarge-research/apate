@@ -1,5 +1,5 @@
-// Package service contains all the clients and servers for the services
-package service
+// Package services contains all the clients and servers for the services
+package services
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func RegisterScenarioService(server *service.GRPCServer) {
 
 // TODO implement for real
 // StartScenario starts a given scenario on the current Kubelet
-func (s *scenarioHandlerService) StartScenario(ctx context.Context, scenario *private.Scenario) (*empty.Empty, error) {
+func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *private.Scenario) (*empty.Empty, error) {
 	log.Print("Received scenario with start time ", scenario.StartTime, " and ", len(scenario.Task), " tasks")
 	return new(empty.Empty), nil
 }
