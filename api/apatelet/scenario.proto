@@ -1,26 +1,26 @@
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet";
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet";
 
 import "google/protobuf/empty.proto";
 
-package apate.kubelet;
+package apate.apatelet;
 
-// This service will run on the Kubelets
+// This service will run on the Apatelets
 service Scenario {
 
-    // Starts a scenario on the current Kubelet
-    // This will be called on every Kubelet
-    rpc startScenario (KubeletScenario) returns (google.protobuf.Empty) {}
+    // Starts a scenario on the current Apatelet
+    // This will be called on every Apatelet
+    rpc startScenario (ApateletScenario) returns (google.protobuf.Empty) {}
 }
 
-// The top level object which defines how the different Kubelets will emulate certain deployments
-message KubeletScenario {
-    // A scenario consists of multiple tasks that will be scheduled on a kubelet
+// The top level object which defines how the different Apatelet will emulate certain deployments
+message ApateletScenario {
+    // A scenario consists of multiple tasks that will be scheduled on a Apatelet
     repeated Task task = 1;
 
     // A unix time stamp indicating when this scenario will start
-    // Should be enough time such that every Kubelet has received the startScenario request
+    // Should be enough time such that every Apatelet has received the startScenario request
     // The task timestamps will be relative to this time
     int32 start_time = 2;
 }

@@ -30,7 +30,7 @@ func RegisterClusterOperationService(server *service.GRPCServer, cluster *store.
 	})
 }
 
-// JoinCluster accepts an incoming request from a virtual kubelet to join the cluster
+// JoinCluster accepts an incoming request from an Apatelet to join the cluster
 func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empty) (*controlplane.JoinInformation, error) {
 	//TODO: TLS bool from somewhere?
 
