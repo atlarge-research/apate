@@ -4,12 +4,13 @@ import (
 	"context"
 	"log"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/kubelet"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalisation"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/store"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 
 	"github.com/golang/protobuf/ptypes/empty"
 )
@@ -20,13 +21,13 @@ type scenarioService struct {
 
 // RegisterScenarioService registers a new scenarioService with the given gRPC server
 func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
-	control_plane.RegisterScenarioServer(server.Server, &scenarioService{store: store})
+	controlplane.RegisterScenarioServer(server.Server, &scenarioService{store: store})
 }
 
-func (s *scenarioService) LoadScenario(_ context.Context, scenario *control_plane.PublicScenario) (*empty.Empty, error) {
+func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane.PublicScenario) (*empty.Empty, error) {
 	log.Printf("Loading new scenario")
 
-	normalisedScenario, resources, err := normalisation.NormaliseScenario(scenario)
+	normalizedScenario, resources, err := normalization.NormalizeScenario(scenario)
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -38,7 +39,7 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *control_plan
 		return nil, err
 	}
 
-	if err := (*s.store).AddKubeletScenario(normalisedScenario); err != nil {
+	if err := (*s.store).AddKubeletScenario(normalizedScenario); err != nil {
 		log.Print(err)
 		return nil, err
 	}
@@ -51,7 +52,7 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *control_plan
 	return new(empty.Empty), nil
 }
 
-func (s *scenarioService) StartScenario(_ context.Context, _ *empty.Empty) (*empty.Empty, error) {
+func (s *scenarioService) StartScenario(context.Context, *empty.Empty) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		log.Print(err)
@@ -65,7 +66,7 @@ func (s *scenarioService) StartScenario(_ context.Context, _ *empty.Empty) (*emp
 	}
 
 	for _, node := range nodes {
-		scenarioClient := clients.GetScenarioClient(&node.ConnectionInfo)
+		scenarioClient := kubelet.GetScenarioClient(&node.ConnectionInfo)
 		_, err := scenarioClient.Client.StartScenario(context.Background(), kubeletScenario)
 
 		if err != nil {

@@ -4,22 +4,24 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
+	"strconv"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
 const (
-	defaultControlPlaneAddress = "localhost:8083"
+	defaultControlPlaneAddress = "localhost"
+	defaultControlPlanePort    = 8083
 )
 
 func main() {
-	// TODO: Do arg parsing here with a proper library.
+	var err error
 
+	// TODO: Do arg parsing here with a proper library.
 	args := os.Args[1:]
 	if len(args) < 1 {
 		log.Fatalf("Please give a scenario filename as first argument")
@@ -34,6 +36,7 @@ func main() {
 
 	log.Printf("Dialling server")
 
+	// TODO: Do arg parsing here with a proper library.
 	var controlPlaneAddress string
 	if len(args) == 1 {
 		controlPlaneAddress = defaultControlPlaneAddress
@@ -41,41 +44,44 @@ func main() {
 		controlPlaneAddress = args[1]
 	}
 
-	ctx, cancel, conn := createClient(controlPlaneAddress)
-	defer func() {
-		if err = conn.Close(); err != nil {
+	var controlPlanePort int
+	if len(args) == 2 {
+		controlPlanePort = defaultControlPlanePort
+	} else {
+		controlPlanePort, err = strconv.Atoi(args[2])
+		if err != nil {
 			log.Fatal(err)
 		}
-	}()
-	defer cancel()
+	}
+
+	info := &service.ConnectionInfo{
+		Address: controlPlaneAddress,
+		Port:    controlPlanePort,
+		TLS:     false,
+	}
+
+	ctx := context.Background()
 
 	// Initial call: load the scenario
-	scenarioClient := control_plane.NewScenarioClient(conn)
-	_, err = scenarioClient.LoadScenario(ctx, yaml.GetScenario())
+	scenarioClient := controlplane.GetScenarioClient(info)
+
+	scenario, err := yaml.GetScenario()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	statusClient := control_plane.NewStatusClient(conn)
-	_, err = statusClient.Status(ctx, new(empty.Empty)) // TODO poll for status
+	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if _, err := scenarioClient.StartScenario(ctx, new(empty.Empty)); err != nil {
+	statusClient := controlplane.GetStatusClient(info)
+	_, err = statusClient.Client.Status(ctx, new(empty.Empty)) // TODO poll for status
+	if err != nil {
 		log.Fatal(err)
 	}
-}
 
-func createClient(controlPlaneAddress string) (context.Context, context.CancelFunc, *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	conn, err := grpc.DialContext(ctx, controlPlaneAddress, grpc.WithInsecure())
-
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+	if _, err := scenarioClient.Client.StartScenario(ctx, new(empty.Empty)); err != nil {
+		log.Fatal(err)
 	}
-
-	log.Printf("Registering client")
-
-	return ctx, cancel, conn
 }

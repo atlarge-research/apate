@@ -7,15 +7,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/services"
+	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtualkubelet/provider"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtualkubelet/services"
 )
 
 var (
@@ -80,7 +80,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	log.Println("Leaving clusters (apate & k8s)")
 
 	// TODO: Maybe leave k8s? Or will control plane do that?
-	client := clients.GetClusterOperationClient(connectionInfo)
+	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
@@ -94,7 +94,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 }
 
 func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
-	client := clients.GetClusterOperationClient(connectionInfo)
+	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()

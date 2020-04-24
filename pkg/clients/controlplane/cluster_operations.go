@@ -1,4 +1,5 @@
-package services
+// Package controlplane contains all the GRPC clients that can be used to interact with the control plane
+package controlplane
 
 import (
 	"context"
@@ -6,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
@@ -17,7 +18,7 @@ import (
 // ClusterOperationClient is the client for the ClusterOperationService containing the connection and gRPC client
 type ClusterOperationClient struct {
 	Conn   *grpc.ClientConn
-	Client control_plane.ClusterOperationsClient
+	Client controlplane.ClusterOperationsClient
 }
 
 // GetClusterOperationClient returns client for the JoinClusterService
@@ -25,7 +26,7 @@ func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationCl
 	conn := service.CreateClientConnection(info)
 	return &ClusterOperationClient{
 		Conn:   conn,
-		Client: control_plane.NewClusterOperationsClient(conn),
+		Client: controlplane.NewClusterOperationsClient(conn),
 	}
 }
 
@@ -55,6 +56,6 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, string, e
 
 // LeaveCluster signals to the apate control panel that this node is leaving the cluster
 func (c *ClusterOperationClient) LeaveCluster(uuid string) error {
-	_, err := c.Client.LeaveCluster(context.Background(), &control_plane.LeaveInformation{NodeUUID: uuid})
+	_, err := c.Client.LeaveCluster(context.Background(), &controlplane.LeaveInformation{NodeUUID: uuid})
 	return err
 }

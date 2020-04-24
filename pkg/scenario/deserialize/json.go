@@ -2,15 +2,16 @@ package deserialize
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 )
 
 // JSONScenario is a struct with methods to deserialize JSON configurations.
 type JSONScenario struct {
-	scenario *control_plane.PublicScenario
+	scenario *controlplane.PublicScenario
 }
 
 // FromFile creates a new JSONScenario from a file in yaml format.
@@ -25,7 +26,7 @@ func (s JSONScenario) FromFile(filename string) (Deserializer, error) {
 
 // FromBytes creates a new JSONScenario from a byte array of data.
 func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
-	var scenario control_plane.PublicScenario
+	var scenario controlplane.PublicScenario
 	if err := json.Unmarshal(data, &scenario); err != nil {
 		return JSONScenario{}, err
 	}
@@ -33,6 +34,9 @@ func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
 }
 
 // GetScenario returns the inner stored public scenario.
-func (s JSONScenario) GetScenario() *control_plane.PublicScenario {
-	return s.scenario
+func (s JSONScenario) GetScenario() (*controlplane.PublicScenario, error) {
+	if s.scenario == nil {
+		return nil, errors.New("scenario is not set yet")
+	}
+	return s.scenario, nil
 }
