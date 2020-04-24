@@ -31,7 +31,3 @@ func (c KubernetesCluster) GetNumberOfPods() (int, error) {
 
 	return len(pods.Items), nil
 }
-
-func (c KubernetesCluster) GetNodePorts() []int {
-	return []int{8081, 8082, 8083}
-}

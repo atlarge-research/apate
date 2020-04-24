@@ -1,3 +1,4 @@
+// Package service provides an a wrapper for connection information and a small wrapper around the grpc server
 package service
 
 import (
@@ -10,17 +11,13 @@ import (
 	"google.golang.org/grpc/testdata"
 )
 
+// GRPCServer represents the gRPC server and listener
 type GRPCServer struct {
 	listener net.Listener
 	Server   *grpc.Server
 }
 
-type ConnectionInfo struct {
-	address string
-	port    int
-	tls     bool
-}
-
+// NewGRPCServer creates new gGRP server based on connection information
 func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	lis, server := createListenerAndServer(info)
 	return &GRPCServer{
@@ -29,14 +26,7 @@ func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	}
 }
 
-func NewConnectionInfo(address string, port int, tls bool) *ConnectionInfo {
-	return &ConnectionInfo{
-		address: address,
-		port:    port,
-		tls:     tls,
-	}
-}
-
+// Serve starts listening for incoming requests
 func (s *GRPCServer) Serve() {
 	if err := s.Server.Serve(s.listener); err != nil {
 		log.Fatalf("Unable to serve: %v", err)
@@ -61,6 +51,18 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 	return
 }
 
+//TODO: Real TLS instead of test data
+func getServerTLS() grpc.ServerOption {
+	creds, err := credentials.NewServerTLSFromFile(testdata.Path("server1.pem"), testdata.Path("server1.key"))
+
+	if err != nil {
+		log.Fatalf("Failed to create TLS credentials: %v", err)
+	}
+
+	return grpc.Creds(creds)
+}
+
+// CreateClientConnection creates a connection to a remote services with the given connection information
 func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
 
@@ -76,17 +78,6 @@ func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	}
 
 	return
-}
-
-//TODO: Real TLS instead of test data
-func getServerTLS() grpc.ServerOption {
-	creds, err := credentials.NewServerTLSFromFile(testdata.Path("server1.pem"), testdata.Path("server1.key"))
-
-	if err != nil {
-		log.Fatalf("Failed to create TLS credentials: %v", err)
-	}
-
-	return grpc.Creds(creds)
 }
 
 func getClientTLS() grpc.DialOption {

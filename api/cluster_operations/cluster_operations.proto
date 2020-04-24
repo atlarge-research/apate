@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/cluster_ops";
+
+import "google/protobuf/empty.proto";
+
+package apate.cluster_ops;
+
+// This service will run on the Control Plane
+service ClusterOperations {
+
+    // Joins the node to the Apate cluster.
+    // Will return information needed to identify yourself
+    // And to join the kubernetes cluster.
+    rpc joinCluster (google.protobuf.Empty) returns (JoinInformation) {}
+
+    // Removes the node from the cluster
+    rpc leaveCluster (LeaveInformation) returns (google.protobuf.Empty) {}
+}
+
+message JoinInformation {
+    // The kube config which can be used to join the kubernetes cluster
+    bytes kubeConfig = 1;
+
+    // The context used for joining the cluster
+    string kubeContext = 2;
+
+    // The UUID that will be used from the control plane to identify this node
+    string nodeUUID = 3;
+}
+
+message LeaveInformation {
+    // The UUID that is be used from the control plane to identify this node
+    string nodeUUID = 1;
+}
