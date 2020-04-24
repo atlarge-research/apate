@@ -15,28 +15,28 @@ func TestScenario(t *testing.T) {
 
 	scenario, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
-    - nodetype: testnode
+    - node_type: testnode
       ram: 2G
       cpu_percent: 42
       max_pods: 42
 
-nodegroups:
-    - groupname: testgroup1
+node_groups:
+    - group_name: testgroup1
       nodetype: testnode
       amount: 42
-    - groupname: testgroup2
+    - group_name: testgroup2
       nodetype: testnode
       amount: 10
 
 tasks:
     - name: testtask1
       time: 10s
-      nodegroups: 
+      node_groups: 
           - testgroup1
 
     - name: testtask2
       time: 10s
-      nodegroups: 
+      node_groups: 
           - all
 
     - name: testtask2

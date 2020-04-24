@@ -9,20 +9,20 @@ import (
 )
 
 var nodegroup1 = public.NodeGroup{
-	Groupname: "test1",
-	Nodetype:  "test",
+	GroupName: "test1",
+	NodeType:  "test",
 	Amount:    10,
 }
 
 var nodegroup2 = public.NodeGroup{
-	Groupname: "test2",
-	Nodetype:  "test",
+	GroupName: "test2",
+	NodeType:  "test",
 	Amount:    10,
 }
 
 var nodegroup3 = public.NodeGroup{
-	Groupname: "test3",
-	Nodetype:  "test",
+	GroupName: "test3",
+	NodeType:  "test",
 	Amount:    10,
 }
 
