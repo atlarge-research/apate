@@ -40,6 +40,9 @@ func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 	// But set the context to our own context while overriding
 	overrides.CurrentContext = context
 
+	// You could override server ip/host here with this:
+	// overrides.ClusterInfo.Server
+
 	// Now create the actual configuration
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
 	if err != nil {
