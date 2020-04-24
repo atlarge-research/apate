@@ -5,6 +5,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
+	"github.com/docker/go-units"
+	"time"
 )
 
 // IterNodes returns only the part of a scenario relevant to creating nodes.
@@ -57,7 +59,7 @@ func NormaliseScenario(scenario *public.Scenario, nodes []cluster.Node) (*privat
 			groups[nodegroup.GroupName] = append(groups[nodegroup.GroupName], node.UUID.String())
 
 			nodetype := nodetypes[nodegroup.NodeType]
-			memory, err := desugarMemory(nodetype.Ram)
+			memory, err := units.RAMInBytes(nodetype.Ram)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -104,4 +106,13 @@ func NormaliseScenario(scenario *public.Scenario, nodes []cluster.Node) (*privat
 	r.Task = tasks
 
 	return &r, nil, nil
+}
+
+func desugarTimestamp(t string) (int, error) {
+	duration, err := time.ParseDuration(t)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(duration.Milliseconds()), nil
 }
