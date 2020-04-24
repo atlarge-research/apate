@@ -13,7 +13,7 @@ func TestDeserializeJson(t *testing.T) {
 		{
 			"node_type": "testnode",
 			"ram": "2G",
-			"cpu_percent": 42,
+			"cpu": 42,
 			"max_pods": 42
 		}
 	],

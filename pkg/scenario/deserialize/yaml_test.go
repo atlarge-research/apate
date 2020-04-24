@@ -11,7 +11,7 @@ func TestDeserializeYaml(t *testing.T) {
 nodes:
     - node_type: testnode
       ram: 2G
-      cpu_percent: 42
+      cpu: 42
       max_pods: 42
 
 node_groups:
