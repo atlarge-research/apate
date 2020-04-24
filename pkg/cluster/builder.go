@@ -26,7 +26,7 @@ func New() Builder {
 func Default() (c Builder) {
 	c.name = "Apate"
 	c.manager = &KinD{}
-	c.kubeConfigLocation = os.TempDir() + "/apate/scenario"
+	c.kubeConfigLocation = os.TempDir() + "/apate/config"
 	return c
 }
 
@@ -111,9 +111,9 @@ func (b *Builder) Create() (KubernetesCluster, error) {
 	}, nil
 }
 
-// Gets a kubernetes client scenario for the context given.
+// Gets a kubernetes client config for the context given.
 func getConfigForContext(context string, kubeConfigLocation string) (*rest.Config, error) {
-	// Create a default scenario rules struct
+	// Create a default config rules struct
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
 	rules.ExplicitPath = kubeConfigLocation
@@ -123,7 +123,7 @@ func getConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 	// But set the context to our own context while overriding
 	overrides.CurrentContext = context
 
-	// Now create the actual scenario
+	// Now create the actual config
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
 	if err != nil {
 		return nil, err
