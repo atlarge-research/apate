@@ -81,3 +81,12 @@ func TestDesugarNodeSetNotPresent(t *testing.T) {
 
 	assert.Error(t, err)
 }
+
+func TestDesugarNodeSetMultipleAll(t *testing.T) {
+	_, err := desugarNodeSet([]string{
+		"all",
+		"test1",
+	}, nodegroups)
+
+	assert.Error(t, err)
+}

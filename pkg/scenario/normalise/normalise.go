@@ -2,10 +2,9 @@
 package normalise
 
 import (
-	"github.com/google/uuid"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/private"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario/public"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/cluster"
 )
 
 // IterNodes returns only the part of a scenario relevant to creating nodes.
@@ -28,8 +27,8 @@ func IterNodes(scenario *public.Scenario, callback func(i int)) {
 	}
 }
 
-// GetPrivateScenario takes a public scenario and turns it into a private scenario. Normalises the structure and resolves named references.
-func GetPrivateScenario(scenario *public.Scenario, uuids []uuid.UUID) (*private.Scenario, error) {
+// NormaliseScenario takes a public scenario and turns it into a private scenario. Normalises the structure and resolves named references.
+func NormaliseScenario(scenario *public.Scenario, nodes []cluster.Node) (*private.Scenario, map[cluster.Node]NodeResources, error) {
 	r := private.Scenario{}
 
 	// This function does not need to set this field. This is set by the control plane
@@ -37,31 +36,54 @@ func GetPrivateScenario(scenario *public.Scenario, uuids []uuid.UUID) (*private.
 	r.StartTime = 0
 
 	groups := make(map[string][]string)
+	resources := make(map[cluster.Node]NodeResources)
 
-	// A variable holding which uuid was used last.
-	// With this, every node can get a new uuid.
-	uuidindex := 0
+	nodetypes := make(map[string]*public.Node)
+	// First make a lookup mapping nodetype strings to node types.
+	// This makes later lookup O(1)
+	for _, nodetype := range scenario.GetNodes() {
+		nodetypes[nodetype.NodeType] = nodetype
+	}
+
+	// A variable holding which  ode was used last.
+	// With this, every node can get a new node.
+	index := 0
 
 	for _, nodegroup := range scenario.NodeGroups {
 		for i := 0; i < int(nodegroup.Amount); i++ {
-			id := uuids[uuidindex]
-			uuidindex++
+			node := nodes[index]
+			index++
 
-			groups[nodegroup.GroupName] = append(groups[nodegroup.GroupName], id.String())
+			groups[nodegroup.GroupName] = append(groups[nodegroup.GroupName], node.UUID.String())
+
+			nodetype := nodetypes[nodegroup.NodeType]
+			memory, err := desugarMemory(nodetype.Ram)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			resources[node] = NodeResources{
+				memory,
+				int(nodetype.CpuPercent),
+				int(nodetype.MaxPods),
+			}
 		}
 	}
 
 	var tasks []*private.Task
 
 	for _, task := range scenario.Tasks {
+		// Desugar the timestamp postfix.
 		time, err := desugarTimestamp(task.Time)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
+		// Decode the "all" node name, also verify that all names in the nodeset exist and
+		// that there are no duplicates in the set.
 		nodegroupnames, err := desugarNodeSet(task.NodeGroups, scenario.NodeGroups)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		var nodeset []string
@@ -81,5 +103,5 @@ func GetPrivateScenario(scenario *public.Scenario, uuids []uuid.UUID) (*private.
 
 	r.Task = tasks
 
-	return &r, nil
+	return &r, nil, nil
 }

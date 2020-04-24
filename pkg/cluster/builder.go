@@ -129,7 +129,7 @@ func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 	// But set the context to our own context while overriding
 	overrides.CurrentContext = context
 
-	// Now create the actual config
+	// Now create the actual configuration
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
 	if err != nil {
 		return nil, err
@@ -137,7 +137,6 @@ func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 
 	return config, nil
 }
-
 // CreateKubernetesNode creates a kubernetes api object representing a node
 func CreateKubernetesNode(ctx context.Context, nodeType string, role string, name string,
 	provider provider.Provider, version string) *corev1.Node {

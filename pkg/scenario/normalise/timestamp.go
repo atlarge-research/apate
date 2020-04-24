@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // Takes a timestamp as given in a public.scenario and desugars it into an integer milliseconds.
@@ -19,8 +20,8 @@ func desugarTimestamp(time string) (int, error) {
 	time = strings.TrimSpace(time)
 
 	// postfix 1 and 2
-	p1 := time[len(time)-1]
-	p2 := time[len(time)-2]
+	p1 := unicode.ToLower(rune(time[len(time)-1]))
+	p2 := unicode.ToLower(rune(time[len(time)-2]))
 
 	var v int
 
