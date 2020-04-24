@@ -31,9 +31,3 @@ func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
 
 	return len(pods.Items), nil
 }
-
-// GetNodePorts gets the ports of a node.
-// TODO: Delete
-func (c KubernetesCluster) GetNodePorts() []int {
-	return []int{8081, 8082, 8083}
-}
