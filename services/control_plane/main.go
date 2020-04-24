@@ -55,7 +55,7 @@ func main() {
 	log.Printf("Apate control plane stopped")
 }
 
-func shutdown(cluster *apatecluster.ApateCluster, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
+func shutdown(cluster *apatecluster.Store, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
 	log.Println("Stopping Apate control plane")
 
 	log.Println("Stopping API")
@@ -74,7 +74,7 @@ func shutdown(cluster *apatecluster.ApateCluster, kubernetesCluster *cluster.Kub
 	}
 }
 
-func createGRPC(apateCluster *apatecluster.ApateCluster) *service.GRPCServer {
+func createGRPC(apateCluster *apatecluster.Store) *service.GRPCServer {
 	// TODO: Get grpc settings from env
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, true)

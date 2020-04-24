@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	address     = "localhost:8083"
+	address = "localhost:8083"
 )
 
 func Run(args []string) error {
@@ -29,11 +29,9 @@ func Run(args []string) error {
 
 	log.Printf("Dialing server")
 
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(1 * time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(1*time.Second))
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure())
-
 
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)

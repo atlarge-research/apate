@@ -3,6 +3,7 @@ package cluster
 
 import (
 	"fmt"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
 	"sync"
 
 	"github.com/google/uuid"
@@ -10,8 +11,8 @@ import (
 
 //TODO: Multi-master soon :tm:
 
-// ApateCluster represents the entire apate cluster
-type ApateCluster interface {
+// Store represents the entire apate cluster
+type Store interface {
 	// AddNode adds the given Node to the apate cluster
 	AddNode(*Node) error
 
@@ -26,6 +27,9 @@ type ApateCluster interface {
 
 	// ClearNodes removes all nodes from the apate cluster
 	ClearNodes() error
+
+	// AddResourceQueue adds a node resource to the queue
+	AddResourceQueue(normalise.NodeResources) error
 }
 
 type apateClusterStandalone struct {
@@ -34,7 +38,7 @@ type apateClusterStandalone struct {
 }
 
 // NewApateCluster creates a new empty cluster
-func NewApateCluster() ApateCluster {
+func NewApateCluster() Store {
 	return &apateClusterStandalone{
 		nodes: make(map[uuid.UUID]Node),
 	}
@@ -96,4 +100,8 @@ func (c *apateClusterStandalone) ClearNodes() error {
 
 	c.nodes = make(map[uuid.UUID]Node)
 	return nil
+}
+
+func (c *apateClusterStandalone) AddResourceQueue(resources normalise.NodeResources) error {
+	panic("awdawdadawda")
 }
