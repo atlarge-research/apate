@@ -2,39 +2,49 @@ package services
 
 import (
 	"context"
+	"log"
+
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalisation"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/clients"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/control_plane/store"
-	"github.com/golang/protobuf/ptypes/empty"
-	"log"
 )
 
 type scenarioService struct {
 	store *store.Store
 }
 
+// RegisterScenarioService registers a new scenarioService with the given gRPC server
 func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
 	control_plane.RegisterScenarioServer(server.Server, &scenarioService{store: store})
 }
 
 func (s *scenarioService) LoadScenario(_ context.Context, scenario *control_plane.PublicScenario) (*empty.Empty, error) {
-	normalisedScenario, resources, err := normalise.NormaliseScenario(scenario)
+	log.Printf("Loading new scenario")
+
+	normalisedScenario, resources, err := normalisation.NormaliseScenario(scenario)
 	if err != nil {
+		log.Print(err)
 		return nil, err
 	}
 
+	log.Printf("Adding %v to the queue", len(resources))
 	if err := (*s.store).AddResourcesToQueue(resources); err != nil {
+		log.Print(err)
 		return nil, err
 	}
 
 	if err := (*s.store).AddKubeletScenario(normalisedScenario); err != nil {
+		log.Print(err)
 		return nil, err
 	}
 
 	if err := cluster.SpawnNodes(len(resources)); err != nil {
+		log.Print(err)
 		return nil, err
 	}
 
@@ -44,11 +54,13 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *control_plan
 func (s *scenarioService) StartScenario(_ context.Context, _ *empty.Empty) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
+		log.Print(err)
 		return nil, err
 	}
 
 	kubeletScenario, err := (*s.store).GetKubeletScenario()
 	if err != nil {
+		log.Print(err)
 		return nil, err
 	}
 

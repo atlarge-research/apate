@@ -4,7 +4,7 @@ package service
 type ConnectionInfo struct {
 	Address string
 	Port    int
-	Tls     bool
+	TLS     bool
 }
 
 // NewConnectionInfo creates new connection information struct
@@ -12,6 +12,6 @@ func NewConnectionInfo(address string, port int, tls bool) *ConnectionInfo {
 	return &ConnectionInfo{
 		Address: address,
 		Port:    port,
-		Tls:     tls,
+		TLS:     tls,
 	}
 }

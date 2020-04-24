@@ -2,10 +2,11 @@ package services
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"

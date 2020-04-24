@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/clients"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/virtual_kubelet/clients"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
@@ -31,7 +32,7 @@ func main() {
 	log.Println("Starting Apate virtual kubelet")
 
 	// TODO: Get these from envvars
-	connectionInfo := service.NewConnectionInfo("localhost", 8083, true)
+	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
 	location := os.TempDir() + "/apate/vk/config"
 
 	// Join the apate cluster and start the kubelet
@@ -126,7 +127,7 @@ func getVirtualKubelet(location string, kubeContext string) (context.Context, *n
 func createGRPC() *service.GRPCServer {
 	// TODO: Get grpc settings from env
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo("localhost", 8083, true)
+	connectionInfo := service.NewConnectionInfo("localhost", 8081, true)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)

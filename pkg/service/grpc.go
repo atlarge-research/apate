@@ -38,7 +38,7 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 	var options []grpc.ServerOption
 
 	// Enable TLS if needed
-	if info.Tls {
+	if info.TLS {
 		options = []grpc.ServerOption{getServerTLS()}
 	}
 
@@ -67,7 +67,7 @@ func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
 
 	// Enable TLS if needed
-	if info.Tls {
+	if info.TLS {
 		options = []grpc.DialOption{getClientTLS()}
 	}
 

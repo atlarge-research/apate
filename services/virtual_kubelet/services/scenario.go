@@ -3,8 +3,9 @@ package services
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
 	"log"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
 
 	"github.com/golang/protobuf/ptypes/empty"
 

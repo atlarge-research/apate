@@ -1,9 +1,10 @@
 package deserialize
 
 import (
-	scenario2 "github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 
 	"github.com/ghodss/yaml"
 )
@@ -25,7 +26,7 @@ func (s YamlScenario) FromFile(filename string) (Deserializer, error) {
 
 // FromBytes creates a new YamlScenario from a byte array of data.
 func (s YamlScenario) FromBytes(data []byte) (Deserializer, error) {
-	var scenario scenario2.Scenario
+	var scenario control_plane.PublicScenario
 	if err := yaml.Unmarshal(data, &scenario); err != nil {
 		return JSONScenario{}, err
 	}

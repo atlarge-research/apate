@@ -3,9 +3,10 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalise"
 	"sync"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalisation"
 
 	"github.com/google/uuid"
 )
@@ -30,12 +31,11 @@ type Store interface {
 	ClearNodes() error
 
 	// AddResourceQueue adds a node resource to the queue
-	AddResourceQueue([]normalise.NodeResources) error
+	AddResourceQueue([]normalisation.NodeResources) error
 
 	// AddKubeletScenario the kubeletscenario to the store
 	AddKubeletScenario(*kubelet.KubeletScenario) error
 }
-
 
 type store struct {
 	nodes    map[uuid.UUID]Node
@@ -107,7 +107,7 @@ func (c *store) ClearNodes() error {
 	return nil
 }
 
-func (c *store) AddResourceQueue(resources []normalise.NodeResources) error {
+func (c *store) AddResourceQueue(resources []normalisation.NodeResources) error {
 	panic("awdawdadawda")
 }
 

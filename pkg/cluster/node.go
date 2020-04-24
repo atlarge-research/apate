@@ -29,7 +29,7 @@ func SpawnNodes(amountOfNodes int) error {
 		return err
 	}
 
-	// TODO actually iterate over nodes
+	// TODO async
 	for i := 0; i < amountOfNodes; i++ {
 		if err := spawnNode(ctx, cli, hostname, i); err != nil {
 			return err

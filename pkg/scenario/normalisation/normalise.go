@@ -1,11 +1,13 @@
-// Package normalise provides functions to normalise and decode public scenarios.
-package normalise
+// Package normalisation provides functions to normalise and decode public scenarios.
+package normalisation
 
 import (
+	"time"
+
+	"github.com/google/uuid"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/control_plane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
-	"github.com/google/uuid"
-	"time"
 
 	"github.com/docker/go-units"
 )
@@ -68,8 +70,8 @@ func NormaliseScenario(scenario *control_plane.PublicScenario) (*kubelet.Kubelet
 		var nodeSet []string
 
 		for _, name := range nodeGroupNames {
-			for _, nodeUuid := range uuidsPerNodeGroup[name] {
-				nodeSet = append(nodeSet, nodeUuid.String())
+			for _, nodeUUID := range uuidsPerNodeGroup[name] {
+				nodeSet = append(nodeSet, nodeUUID.String())
 			}
 		}
 
