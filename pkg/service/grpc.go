@@ -34,18 +34,18 @@ func (s *GRPCServer) Serve() {
 }
 
 func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, server *grpc.Server) {
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", info.port))
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", info.Port))
 	var options []grpc.ServerOption
 
 	// Enable TLS if needed
-	if info.tls {
+	if info.TLS {
 		options = []grpc.ServerOption{getServerTLS()}
 	}
 
 	server = grpc.NewServer(options...)
 
 	if err != nil {
-		log.Fatalf("Failed to listen on port %d: %v", info.port, err)
+		log.Fatalf("Failed to listen on Port %d: %v", info.Port, err)
 	}
 
 	return
@@ -67,14 +67,14 @@ func CreateClientConnection(info *ConnectionInfo) (conn *grpc.ClientConn) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
 
 	// Enable TLS if needed
-	if info.tls {
+	if info.TLS {
 		options = []grpc.DialOption{getClientTLS()}
 	}
 
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", info.address, info.port), options...)
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", info.Address, info.Port), options...)
 
 	if err != nil {
-		log.Fatalf("Unable to connect to %s:%d: %v", info.address, info.port, err)
+		log.Fatalf("Unable to connect to %s:%d: %v", info.Address, info.Port, err)
 	}
 
 	return
