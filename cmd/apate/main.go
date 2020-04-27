@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/urfave/cli/v2"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
@@ -19,41 +21,78 @@ const (
 )
 
 func main() {
-	var err error
+	var scenarioFileLocation string
+	var controlPlaneAddress string
+	var controlPlanePort int
 
-	// TODO: Do arg parsing here with a proper library.
-	args := os.Args[1:]
-	if len(args) < 1 {
-		log.Fatalf("Please give a scenario filename as first argument")
+	app := &cli.App{
+		Name:  "apate-cli",
+		Usage: "Control the Apate control plane.",
+		Commands: []*cli.Command{
+			{
+				Name:  "run",
+				Usage: "Runs a given scenario file on the Apate cluster",
+				Action: func(c *cli.Context) error {
+					return runScenario(scenarioFileLocation, controlPlaneAddress, controlPlanePort)
+				},
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "scenario",
+						Usage:       "Load the scenario from `FILE`",
+						Destination: &scenarioFileLocation,
+						Required:    true,
+					},
+					&cli.StringFlag{
+						Name:        "address",
+						Usage:       "The address of the control plane",
+						Destination: &controlPlaneAddress,
+						Value:       defaultControlPlaneAddress,
+						DefaultText: defaultControlPlaneAddress,
+						Required:    false,
+					},
+					&cli.IntFlag{
+						Name:        "port",
+						Usage:       "The port of the control plane",
+						Destination: &controlPlanePort,
+						Value:       defaultControlPlanePort,
+						DefaultText: strconv.Itoa(defaultControlPlanePort),
+						Required:    false,
+					},
+				},
+			},
+		},
 	}
 
-	log.Printf("Parsing yaml file")
-
-	yaml, err := deserialize.YamlScenario{}.FromFile(args[0])
+	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
-	log.Printf("Dialling server")
+func runScenario(scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int) error {
+	var deserializer deserialize.Deserializer
+	var err error
 
-	// TODO: Do arg parsing here with a proper library.
-	var controlPlaneAddress string
-	if len(args) == 1 {
-		controlPlaneAddress = defaultControlPlaneAddress
-	} else {
-		controlPlaneAddress = args[1]
-	}
+	if scenarioFileLocation == "-" {
+		// Read the file given by stdin
+		var bytes []byte
 
-	var controlPlanePort int
-	if len(args) == 2 {
-		controlPlanePort = defaultControlPlanePort
-	} else {
-		controlPlanePort, err = strconv.Atoi(args[2])
+		bytes, err = ioutil.ReadAll(os.Stdin)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
+
+		deserializer, err = deserialize.YamlScenario{}.FromBytes(bytes)
+	} else {
+		// Read the file given by the argument
+		deserializer, err = deserialize.YamlScenario{}.FromFile(scenarioFileLocation)
 	}
 
+	if err != nil {
+		return err
+	}
+
+	// The connectionInfo that will be used to connect to the control plane
 	info := &service.ConnectionInfo{
 		Address: controlPlaneAddress,
 		Port:    controlPlanePort,
@@ -65,23 +104,27 @@ func main() {
 	// Initial call: load the scenario
 	scenarioClient := controlplane.GetScenarioClient(info)
 
-	scenario, err := yaml.GetScenario()
+	scenario, err := deserializer.GetScenario()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
+	// Next: keep polling until the control plane is happy
 	statusClient := controlplane.GetStatusClient(info)
 	_, err = statusClient.Client.Status(ctx, new(empty.Empty)) // TODO poll for status
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
+	// Finally: actually start the scenario
 	if _, err := scenarioClient.Client.StartScenario(ctx, new(empty.Empty)); err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }
