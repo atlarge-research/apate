@@ -1,14 +1,14 @@
 package services
 
 import (
+	"context"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
-	"io"
 	"log"
+	"time"
 )
 
 type healthService struct {
@@ -19,27 +19,36 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 	log.Println("Starting new health stream")
 
 	ctx := server.Context()
+	ctx, _ = context.WithDeadline(ctx, time.Now().Add(time.Minute*10)) // Disconnect after 10 minutes
 
 	var id uuid.UUID
 
+	cnt := 0
+
 	for {
-		// Exit if context is done
-		select {
-		case <-ctx.Done():
-			_ = (*h.store).SetNodeStatus(id, health.Status_UNHEALTHY)
-			return ctx.Err()
-		default:
+		if cnt > 2 {
+			break
 		}
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+		c := make(chan bool)
+		// Exit if context is done
+		go func() {
+			select {
+			case <-ctx.Done():
+				_ = (*h.store).SetNodeStatus(id, health.Status_DISCONNECTED)
+			case <-c:
+				cancel()
+			}
+		}()
 
 		// receive data
 		req, err := server.Recv()
+		c <- true
 
-		if err == io.EOF {
-			log.Println("stopping a stream due to EOF")
-			break
-		}
 		if err != nil {
 			log.Println("Receive error")
+			cnt++
 			continue
 		}
 
@@ -49,13 +58,20 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 			break
 		}
 
+		if err = (*h.store).SetNodeStatus(id, req.Status); err != nil {
+			log.Println(err)
+			continue
+		}
+
 		if err := server.Send(&empty.Empty{}); err != nil {
 			log.Println("send error")
+			cnt++
+			continue
 		}
 	}
 
 	// If the loop is broken -> node unhealthy
-	if err := (*h.store).SetNodeStatus(id, health.Status_UNHEALTHY); err != nil {
+	if err := (*h.store).SetNodeStatus(id, health.Status_DISCONNECTED); err != nil {
 		log.Println(err)
 	}
 
