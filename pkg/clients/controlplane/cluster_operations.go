@@ -7,6 +7,10 @@ import (
 	"os"
 	"path"
 
+	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -30,17 +34,17 @@ func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationCl
 	}
 }
 
-// JoinCluster joins the apate cluster, saves the received kube config and returns the kube context and uuid
-func (c *ClusterOperationClient) JoinCluster(location string) (string, string, error) {
+// JoinCluster joins the apate cluster, saves the received kube config and returns the kube context and node resources
+func (c *ClusterOperationClient) JoinCluster(location string) (string, *normalization.NodeResources, error) {
 	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
 
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
 	if _, err = os.Stat(location); os.IsNotExist(err) {
 		if err = os.MkdirAll(path.Dir(location), os.ModePerm); err != nil {
-			return "", "", err
+			return "", nil, err
 		}
 	}
 
@@ -48,10 +52,15 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, string, e
 	err = ioutil.WriteFile(location, res.KubeConfig, 0644)
 
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
-	return res.KubeContext, res.NodeUuid, nil
+	return res.KubeContext, &normalization.NodeResources{
+		UUID:    uuid.MustParse(res.NodeUuid), // TODO: Do we want MustParse or check for error?
+		RAM:     res.Hardware.Ram,
+		CPU:     res.Hardware.Cpu,
+		MaxPods: res.Hardware.MaxPods,
+	}, nil
 }
 
 // LeaveCluster signals to the apate control panel that this node is leaving the cluster

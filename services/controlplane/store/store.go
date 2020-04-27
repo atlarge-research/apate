@@ -139,7 +139,10 @@ func (c *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
 		return nil, errors.New("no NodeResources available for this apatelet")
 	}
 
-	return c.resourceQueue.Front().Value.(*normalization.NodeResources), nil
+	res := c.resourceQueue.Front()
+	c.resourceQueue.Remove(res)
+
+	return res.Value.(*normalization.NodeResources), nil
 }
 
 func (c *store) SetApateletScenario(scenario *apatelet.ApateletScenario) error {
