@@ -21,6 +21,7 @@ license_scanning:
 
 sast:
   stage: verify
+  tags: [xirion]
   needs: [build]
 
 variables:
