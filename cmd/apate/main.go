@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -69,8 +70,24 @@ func main() {
 }
 
 func runScenario(scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int) error {
-	// Read the file given by the argument
-	yaml, err := deserialize.YamlScenario{}.FromFile(scenarioFileLocation)
+	var deserializer deserialize.Deserializer
+	var err error
+
+	if scenarioFileLocation == "-" {
+		// Read the file given by stdin
+		var bytes []byte
+
+		bytes, err = ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			return err
+		}
+
+		deserializer, err = deserialize.YamlScenario{}.FromBytes(bytes)
+	} else {
+		// Read the file given by the argument
+		deserializer, err = deserialize.YamlScenario{}.FromFile(scenarioFileLocation)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -87,7 +104,7 @@ func runScenario(scenarioFileLocation string, controlPlaneAddress string, contro
 	// Initial call: load the scenario
 	scenarioClient := controlplane.GetScenarioClient(info)
 
-	scenario, err := yaml.GetScenario()
+	scenario, err := deserializer.GetScenario()
 	if err != nil {
 		return err
 	}
