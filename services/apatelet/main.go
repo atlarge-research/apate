@@ -1,23 +1,22 @@
 package main
 
 import (
-	"context"
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-
-	"github.com/virtual-kubelet/virtual-kubelet/node"
-	"k8s.io/client-go/kubernetes"
-
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node"
+	"k8s.io/client-go/kubernetes"
+
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -44,13 +43,7 @@ func main() {
 	// Setup health status
 	hc := health.GetClient(connectionInfo, uuid)
 	hc.SetStatus(healthpb.Status_UNKNOWN)
-	hc.StartStream(func(err error) {
-		hc.StartStream(func(err error) {
-			hc.StartStream(func(err error) {
-				log.Fatal(err)
-			})
-		})
-	})
+	hc.StartStreamWithRetry(3)
 
 	// start the Apatelet
 	ctx, nc, cancel := getApatelet(location, kubeContext)

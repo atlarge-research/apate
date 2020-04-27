@@ -2,13 +2,15 @@ package services
 
 import (
 	"context"
+	"log"
+	"time"
+
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/uuid"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/google/uuid"
-	"log"
-	"time"
 )
 
 type healthService struct {
@@ -18,8 +20,7 @@ type healthService struct {
 func (h healthService) HealthStream(server health.Health_HealthStreamServer) error {
 	log.Println("Starting new health stream")
 
-	ctx := server.Context()
-	ctx, _ = context.WithDeadline(ctx, time.Now().Add(time.Minute*10)) // Disconnect after 10 minutes
+	octx := server.Context()
 
 	var id uuid.UUID
 
@@ -30,7 +31,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 			break
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+		ctx, cancel := context.WithTimeout(octx, time.Second*15)
 		c := make(chan bool)
 		// Exit if context is done
 		go func() {
@@ -63,6 +64,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 			continue
 		}
 
+		// Send heartbeat back
 		if err := server.Send(&empty.Empty{}); err != nil {
 			log.Println("send error")
 			cnt++
@@ -78,6 +80,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 	return nil
 }
 
+// RegisterHealthService registers the HealthService on a GRPCServer
 func RegisterHealthService(server *service.GRPCServer, store *store.Store) {
 	health.RegisterHealthServer(server.Server, &healthService{store: store})
 }

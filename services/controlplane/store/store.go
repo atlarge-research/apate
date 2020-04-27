@@ -3,8 +3,9 @@ package store
 
 import (
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"sync"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
