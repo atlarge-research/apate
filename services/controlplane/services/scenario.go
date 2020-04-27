@@ -39,7 +39,7 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane
 		return nil, err
 	}
 
-	if err := (*s.store).AddApateletScenario(normalizedScenario); err != nil {
+	if err := (*s.store).SetApateletScenario(normalizedScenario); err != nil {
 		log.Print(err)
 		return nil, err
 	}

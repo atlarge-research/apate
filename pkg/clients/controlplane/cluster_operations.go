@@ -51,11 +51,11 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, string, e
 		return "", "", err
 	}
 
-	return res.KubeContext, res.NodeUUID, nil
+	return res.KubeContext, res.NodeUuid, nil
 }
 
 // LeaveCluster signals to the apate control panel that this node is leaving the cluster
 func (c *ClusterOperationClient) LeaveCluster(uuid string) error {
-	_, err := c.Client.LeaveCluster(context.Background(), &controlplane.LeaveInformation{NodeUUID: uuid})
+	_, err := c.Client.LeaveCluster(context.Background(), &controlplane.LeaveInformation{NodeUuid: uuid})
 	return err
 }
