@@ -1,16 +1,19 @@
+// Package health provides the client side gRPC API for the healthcheck service
 package health
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"google.golang.org/grpc"
-	"io"
 	"log"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
+// Client holds all the information used to communicate with the server
 type Client struct {
 	Conn   *grpc.ClientConn
 	Client health.HealthClient
@@ -20,17 +23,31 @@ type Client struct {
 	statusLock sync.RWMutex
 }
 
-func GetClient(info *service.ConnectionInfo, UUID string) *Client {
+// GetClient creates a new health client
+func GetClient(info *service.ConnectionInfo, uuid string) *Client {
 	conn := service.CreateClientConnection(info)
 
 	return &Client{
 		Conn:   conn,
 		Client: health.NewHealthClient(conn),
-		uuid:   UUID,
+		uuid:   uuid,
 		status: health.Status_UNKNOWN,
 	}
 }
 
+// StartStreamWithRetry calls StartStream but will retry n times to re-establish a connection
+func (c *Client) StartStreamWithRetry(n int) {
+	c.StartStream(func(err error) {
+		if n < 1 {
+			log.Fatal(err)
+			return
+		}
+		log.Println(err)
+		n--
+	})
+}
+
+// StartStream starts the bidirectional health stream, errCallback is called upon any error
 func (c *Client) StartStream(errCallback func(error)) {
 	ctx := context.Background()
 	stream, err := c.Client.HealthStream(ctx)
@@ -57,17 +74,16 @@ func (c *Client) StartStream(errCallback func(error)) {
 
 	// Receive heartbeat from server
 	go func() {
-		cnt := 0
 		for {
-			ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, time.Second*15)
 			c := make(chan bool)
 			go func() {
 				select {
 				case <-ctx.Done():
-					// oof
+					// timeout reached
 					errCallback(ctx.Err())
 				case <-c:
-					// anti-oof
 					cancel()
 				}
 			}()
@@ -75,26 +91,14 @@ func (c *Client) StartStream(errCallback func(error)) {
 			c <- true
 
 			// Stream dead
-			if err == io.EOF {
+			if err == nil {
 				errCallback(err)
-			}
-
-			// Other error?
-			if err != nil {
-				cnt++
-				log.Print("error in recv")
-
-				if cnt > 2 {
-					errCallback(err)
-				}
-				continue
 			}
 		}
 	}()
-
-	return
 }
 
+// SetStatus sets the internal health status which is reported back to the control plane
 func (c *Client) SetStatus(s health.Status) {
 	c.statusLock.Lock()
 	defer c.statusLock.Unlock()
