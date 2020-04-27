@@ -25,7 +25,7 @@ sast:
 
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
-  VK_IMAGE: "$CI_REGISTRY_IMAGE/virtual-kubelet"
+  VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
 
@@ -112,5 +112,5 @@ deploy-vk:
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build -f services/virtual_kubelet/Dockerfile -t $VK_IMAGE .
+    - docker build -f services/apatelet/Dockerfile -t $VK_IMAGE .
     - docker push "$VK_IMAGE"

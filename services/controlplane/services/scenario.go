@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/kubelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
@@ -39,7 +39,7 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane
 		return nil, err
 	}
 
-	if err := (*s.store).AddKubeletScenario(normalizedScenario); err != nil {
+	if err := (*s.store).AddApateletScenario(normalizedScenario); err != nil {
 		log.Print(err)
 		return nil, err
 	}
@@ -59,15 +59,15 @@ func (s *scenarioService) StartScenario(context.Context, *empty.Empty) (*empty.E
 		return nil, err
 	}
 
-	kubeletScenario, err := (*s.store).GetKubeletScenario()
+	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {
 		log.Print(err)
 		return nil, err
 	}
 
 	for _, node := range nodes {
-		scenarioClient := kubelet.GetScenarioClient(&node.ConnectionInfo)
-		_, err := scenarioClient.Client.StartScenario(context.Background(), kubeletScenario)
+		scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
+		_, err := scenarioClient.Client.StartScenario(context.Background(), apateletScenario)
 
 		if err != nil {
 			log.Fatalf("Could not complete call: %v", err)

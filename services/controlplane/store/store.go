@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
 	"github.com/google/uuid"
@@ -33,11 +33,11 @@ type Store interface {
 	// AddResourcesToQueue adds a node resource to the queue
 	AddResourcesToQueue([]normalization.NodeResources) error
 
-	// AddKubeletScenario the kubeletscenario to the store
-	AddKubeletScenario(*kubelet.KubeletScenario) error
+	// AddApateletScenario adds the ApateletScenario to the store
+	AddApateletScenario(*apatelet.ApateletScenario) error
 
-	// GetKubeletScenario gets the kubelet scenario
-	GetKubeletScenario() (*kubelet.KubeletScenario, error)
+	// GetApateletScenario gets the ApateletScenario
+	GetApateletScenario() (*apatelet.ApateletScenario, error)
 }
 
 type store struct {
@@ -114,10 +114,10 @@ func (c *store) AddResourcesToQueue(resources []normalization.NodeResources) err
 	return nil
 }
 
-func (c *store) AddKubeletScenario(scenario *kubelet.KubeletScenario) error {
+func (c *store) AddApateletScenario(scenario *apatelet.ApateletScenario) error {
 	return nil
 }
 
-func (c *store) GetKubeletScenario() (*kubelet.KubeletScenario, error) {
+func (c *store) GetApateletScenario() (*apatelet.ApateletScenario, error) {
 	return nil, nil
 }
