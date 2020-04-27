@@ -81,12 +81,12 @@ tasks:
 
 		switch node.RAM {
 		case 2 * units.GiB:
-			assert.Equal(t, int32(42), node.CPU)
-			assert.Equal(t, int32(42), node.MaxPods)
+			assert.Equal(t, int64(42), node.CPU)
+			assert.Equal(t, int64(42), node.MaxPods)
 			alreadySeenType1++
 		case 42 * units.GiB:
-			assert.Equal(t, int32(24), node.CPU)
-			assert.Equal(t, int32(24), node.MaxPods)
+			assert.Equal(t, int64(24), node.CPU)
+			assert.Equal(t, int64(24), node.MaxPods)
 			alreadySeenType2++
 		default:
 			assert.Fail(t, "This unit doesn't exist")

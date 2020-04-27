@@ -23,10 +23,10 @@ message NodeHardware {
     int64 ram = 1;
 
     // The amount of milli CPUs in Kubernetes
-    int32 cpu = 2;
+    int64 cpu = 2;
 
     // The max amount of pods in Kubernetes
-    int32 max_pods = 3;
+    int64 max_pods = 3;
 }
 
 message JoinInformation {

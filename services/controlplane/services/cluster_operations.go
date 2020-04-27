@@ -72,7 +72,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 		KubeConfig:  config,
 		KubeContext: "kind-Apate",
 		NodeUuid:    node.UUID.String(),
-		Hardware:    &controlplane.NodeHardware{
+		Hardware: &controlplane.NodeHardware{
 			Ram:     nodeResources.RAM,
 			Cpu:     nodeResources.CPU,
 			MaxPods: nodeResources.MaxPods,
