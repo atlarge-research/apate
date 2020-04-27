@@ -5,7 +5,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -17,12 +17,12 @@ type scenarioHandlerService struct{}
 
 // RegisterScenarioService registers the scenarioHandlerService to the given GRPCServer
 func RegisterScenarioService(server *service.GRPCServer) {
-	kubelet.RegisterScenarioServer(server.Server, &scenarioHandlerService{})
+	apatelet.RegisterScenarioServer(server.Server, &scenarioHandlerService{})
 }
 
 // TODO implement for real
-// StartScenario starts a given scenario on the current Kubelet
-func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *kubelet.KubeletScenario) (*empty.Empty, error) {
+// StartScenario starts a given scenario on the current Apatelet
+func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *apatelet.ApateletScenario) (*empty.Empty, error) {
 	log.Print("Received scenario with start time ", scenario.StartTime, " and ", len(scenario.Task), " tasks")
 	return new(empty.Empty), nil
 }

@@ -14,8 +14,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtualkubelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/virtualkubelet/services"
+	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
 )
 
 var (
@@ -29,16 +29,16 @@ func init() {
 }
 
 func main() {
-	log.Println("Starting Apate virtual kubelet")
+	log.Println("Starting Apatelet")
 
 	// TODO: Get these from envvars
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
 	location := os.TempDir() + "/apate/vk/config"
 
-	// Join the apate cluster and start the kubelet
+	// Join the apate cluster and start the Apatelet
 	log.Println("Joining apate cluster")
 	kubeContext, uuid := joinApateCluster(location, connectionInfo)
-	ctx, nc, cancel := getVirtualKubelet(location, kubeContext)
+	ctx, nc, cancel := getApatelet(location, kubeContext)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -68,11 +68,11 @@ func main() {
 
 	// Stop the server on signal
 	<-stopped
-	log.Println("Apate virtual kubelet stopped")
+	log.Println("Apatelet stopped")
 }
 
 func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) {
-	log.Println("Stopping Apate virtual kubelet")
+	log.Println("Stopping Apatelet")
 
 	log.Println("Stopping API")
 	server.Server.Stop()
@@ -111,12 +111,12 @@ func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (
 	return ctx, uuid
 }
 
-func getVirtualKubelet(location string, kubeContext string) (context.Context, *node.NodeController, context.CancelFunc) {
+func getApatelet(location string, kubeContext string) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	config, _ := cluster.GetConfigForContext(kubeContext, location)
 	client := kubernetes.NewForConfigOrDie(config)
-	n := cluster.NewNode("virtual-kubelet", "agent", "apatelet", k8sVersion)
+	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
 		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider()),
 		client.CoreV1().Nodes())

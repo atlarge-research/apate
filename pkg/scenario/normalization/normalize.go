@@ -6,16 +6,16 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/kubelet"
 
 	"github.com/docker/go-units"
 )
 
 // NormalizeScenario takes a public scenario and turns it into a private scenario.
 // Normalizes the structure and resolves named references.
-func NormalizeScenario(scenario *controlplane.PublicScenario) (*kubelet.KubeletScenario, []NodeResources, error) {
-	r := kubelet.KubeletScenario{}
+func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.ApateletScenario, []NodeResources, error) {
+	r := apatelet.ApateletScenario{}
 
 	nodeResources := make([]NodeResources, 0)
 	uuidsPerNodeGroup := make(map[string][]uuid.UUID)
@@ -48,7 +48,7 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*kubelet.KubeletS
 		}
 	}
 
-	var tasks []*kubelet.Task
+	var tasks []*apatelet.Task
 
 	for _, task := range scenario.Tasks {
 		timestamp, err := desugarTimestamp(task.Time)
@@ -71,7 +71,7 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*kubelet.KubeletS
 			}
 		}
 
-		tasks = append(tasks, &kubelet.Task{
+		tasks = append(tasks, &apatelet.Task{
 			Name:       task.Name,
 			RevertTask: task.Revert,
 			Timestamp:  int32(timestamp),

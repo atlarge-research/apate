@@ -25,12 +25,12 @@ test_race:
 	go test -race -short ./...
 
 docker_build_vk:
-	docker build -f services/virtual_kubelet/Dockerfile -t virtual_kubelet .
+	docker build -f services/apatelet/Dockerfile -t apatelet .
 
 docker_build_cp:
-	docker build -f ./services/control_plane/Dockerfile -t control_plane .
+	docker build -f ./services/controlplane/Dockerfile -t controlplane .
 
 docker_build: docker_build_cp docker_build_vk
 
 run_cp: docker_build_cp
-	docker run --network host -v /var/run/docker.sock:/var/run/docker.sock control_plane
+	docker run --network host -v /var/run/docker.sock:/var/run/docker.sock controlplane
