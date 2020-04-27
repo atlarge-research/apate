@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/health";
+
+import "google/protobuf/empty.proto";
+
+package apate.health;
+
+enum Status {
+    UNKNOWN = 0;
+    HEALTHY = 1;
+    UNHEALTHY = 2;
+}
+
+message NodeStatus {
+    string nodeUUID = 1;
+    Status Status = 2;
+}
+
+service Health {
+    rpc HealthStream (stream NodeStatus) returns (stream google.protobuf.Empty) {}
+}

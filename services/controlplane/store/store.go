@@ -3,6 +3,7 @@ package store
 
 import (
 	"fmt"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
@@ -23,6 +24,8 @@ type Store interface {
 
 	// GetNode returns the node with the given uuid
 	GetNode(uuid.UUID) (Node, error)
+
+	SetNodeStatus(uuid.UUID, health.Status) error
 
 	// GetNodes returns an array containing all nodes in the Apate cluster
 	GetNodes() ([]Node, error)
@@ -53,71 +56,83 @@ func NewStore() Store {
 }
 
 // AddNode adds the given Node to the Apate cluster
-func (c *store) AddNode(node *Node) error {
-	c.nodeLock.Lock()
-	defer c.nodeLock.Unlock()
+func (s *store) AddNode(node *Node) error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
 
 	// Check if node already exists (uuid collision)
-	if _, ok := c.nodes[node.UUID]; ok {
+	if _, ok := s.nodes[node.UUID]; ok {
 		return fmt.Errorf("node with uuid '%s' already exists", node.UUID.String())
 	}
 
-	c.nodes[node.UUID] = *node
+	s.nodes[node.UUID] = *node
 
 	return nil
 }
 
 // RemoveNode removes the given Node from the Apate cluster
-func (c *store) RemoveNode(node *Node) error {
-	c.nodeLock.Lock()
-	defer c.nodeLock.Unlock()
+func (s *store) RemoveNode(node *Node) error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
 
-	delete(c.nodes, node.UUID)
+	delete(s.nodes, node.UUID)
 	return nil
 }
 
 // GetNode returns the node with the given uuid
-func (c *store) GetNode(uuid uuid.UUID) (Node, error) {
-	c.nodeLock.RLock()
-	defer c.nodeLock.RUnlock()
+func (s *store) GetNode(uuid uuid.UUID) (Node, error) {
+	s.nodeLock.RLock()
+	defer s.nodeLock.RUnlock()
 
-	if node, ok := c.nodes[uuid]; ok {
+	if node, ok := s.nodes[uuid]; ok {
 		return node, nil
 	}
 
 	return Node{}, fmt.Errorf("node with uuid '%s' not found", uuid.String())
 }
 
+func (s *store) SetNodeStatus(uuid uuid.UUID, status health.Status) error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
+
+	if node, ok := s.nodes[uuid]; !ok {
+		node.Status = status
+		return nil
+	}
+
+	return fmt.Errorf("node with uuid '%s' not found", uuid.String())
+}
+
 // GetNodes returns an array containing all nodes in the Apate cluster
-func (c *store) GetNodes() ([]Node, error) {
-	c.nodeLock.RLock()
-	defer c.nodeLock.RUnlock()
+func (s *store) GetNodes() ([]Node, error) {
+	s.nodeLock.RLock()
+	defer s.nodeLock.RUnlock()
 
-	nodes := make([]Node, 0, len(c.nodes))
+	nodes := make([]Node, 0, len(s.nodes))
 
-	for _, node := range c.nodes {
+	for _, node := range s.nodes {
 		nodes = append(nodes, node)
 	}
 
 	return nodes, nil
 }
 
-func (c *store) ClearNodes() error {
-	c.nodeLock.Lock()
-	defer c.nodeLock.Unlock()
+func (s *store) ClearNodes() error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
 
-	c.nodes = make(map[uuid.UUID]Node)
+	s.nodes = make(map[uuid.UUID]Node)
 	return nil
 }
 
-func (c *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
+func (s *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
 	return nil
 }
 
-func (c *store) AddApateletScenario(scenario *apatelet.ApateletScenario) error {
+func (s *store) AddApateletScenario(scenario *apatelet.ApateletScenario) error {
 	return nil
 }
 
-func (c *store) GetApateletScenario() (*apatelet.ApateletScenario, error) {
+func (s *store) GetApateletScenario() (*apatelet.ApateletScenario, error) {
 	return nil, nil
 }

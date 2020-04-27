@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -20,5 +21,19 @@ func RegisterStatusService(server *service.GRPCServer, store *store.Store) {
 }
 
 func (s statusService) Status(_ context.Context, _ *empty.Empty) (*controlplane.ClusterStatus, error) {
-	return &controlplane.ClusterStatus{HealthyNodes: 5}, nil
+
+	nodes, err := (*s.store).GetNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	// OPTIMIZE
+	var cnt int32
+	for _, node := range nodes {
+		if node.Status == health.Status_HEALTHY {
+			cnt++
+		}
+	}
+
+	return &controlplane.ClusterStatus{HealthyNodes: cnt}, nil
 }
