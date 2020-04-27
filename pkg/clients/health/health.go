@@ -5,8 +5,10 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"google.golang.org/grpc"
+	"io"
 	"log"
 	"sync"
+	"time"
 )
 
 type Client struct {
@@ -45,22 +47,47 @@ func (c *Client) StartStream(errCallback func(error)) {
 				NodeUUID: c.uuid,
 				Status:   c.status,
 			})
+			c.statusLock.RUnlock()
 
 			if err != nil {
 				errCallback(err)
 			}
-
-			c.statusLock.RUnlock()
 		}
 	}()
 
 	// Receive heartbeat from server
 	go func() {
+		cnt := 0
 		for {
+			ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+			c := make(chan bool)
+			go func() {
+				select {
+				case <-ctx.Done():
+					// oof
+					errCallback(ctx.Err())
+				case <-c:
+					// anti-oof
+					cancel()
+				}
+			}()
 			_, err := stream.Recv()
-			if err != nil {
-				log.Print("error in recv")
+			c <- true
+
+			// Stream dead
+			if err == io.EOF {
 				errCallback(err)
+			}
+
+			// Other error?
+			if err != nil {
+				cnt++
+				log.Print("error in recv")
+
+				if cnt > 2 {
+					errCallback(err)
+				}
+				continue
 			}
 		}
 	}()

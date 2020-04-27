@@ -45,7 +45,11 @@ func main() {
 	hc := health.GetClient(connectionInfo, uuid)
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	hc.StartStream(func(err error) {
-		log.Fatal(err)
+		hc.StartStream(func(err error) {
+			hc.StartStream(func(err error) {
+				log.Fatal(err)
+			})
+		})
 	})
 
 	// start the Apatelet

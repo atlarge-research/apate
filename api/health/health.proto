@@ -10,6 +10,7 @@ enum Status {
     UNKNOWN = 0;
     HEALTHY = 1;
     UNHEALTHY = 2;
+    DISCONNECTED = 3;
 }
 
 message NodeStatus {
