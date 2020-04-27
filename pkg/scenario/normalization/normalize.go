@@ -40,8 +40,8 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.Apatele
 			nodeResources = append(nodeResources, NodeResources{
 				id,
 				memory,
-				int(nodeType.CPU),
-				int(nodeType.MaxPods),
+				nodeType.CPU,
+				nodeType.MaxPods,
 			})
 
 			uuidsPerNodeGroup[nodeGroup.GroupName] = append(uuidsPerNodeGroup[nodeGroup.GroupName], id)

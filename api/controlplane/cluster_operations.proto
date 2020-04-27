@@ -18,18 +18,32 @@ service ClusterOperations {
     rpc leaveCluster (LeaveInformation) returns (google.protobuf.Empty) {}
 }
 
+message NodeHardware {
+    // The amount of bytes of RAM
+    int64 ram = 1;
+
+    // The amount of milli CPUs in Kubernetes
+    int32 cpu = 2;
+
+    // The max amount of pods in Kubernetes
+    int32 max_pods = 3;
+}
+
 message JoinInformation {
     // The kube config which can be used to join the kubernetes cluster
-    bytes kubeConfig = 1;
+    bytes kube_config = 1;
 
     // The context used for joining the cluster
-    string kubeContext = 2;
+    string kube_context = 2;
 
     // The UUID that will be used from the control plane to identify this node
-    string nodeUUID = 3;
+    string node_uuid = 3;
+
+    // The hardware that was 'allocated' to the apatelet
+    NodeHardware hardware = 4;
 }
 
 message LeaveInformation {
     // The UUID that is be used from the control plane to identify this node
-    string nodeUUID = 1;
+    string node_uuid = 1;
 }

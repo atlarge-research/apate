@@ -11,8 +11,8 @@ type NodeResources struct {
 	RAM int64
 
 	// The amount of milli CPUs in Kubernetes
-	CPU int
+	CPU int32
 
 	// The max amount of pods in Kubernetes
-	MaxPods int
+	MaxPods int32
 }
