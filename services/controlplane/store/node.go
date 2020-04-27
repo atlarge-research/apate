@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ import (
 type Node struct {
 	ConnectionInfo service.ConnectionInfo
 	UUID           uuid.UUID
+	Status         health.Status
 }
 
 // NewNode creates a new Node based on the given connection information
@@ -19,5 +21,6 @@ func NewNode(info service.ConnectionInfo) *Node {
 	return &Node{
 		ConnectionInfo: info,
 		UUID:           uuid.New(),
+		Status:         health.Status_UNKNOWN,
 	}
 }

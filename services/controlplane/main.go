@@ -82,6 +82,7 @@ func createGRPC(createdStore *store.Store) *service.GRPCServer {
 	services.RegisterStatusService(server, createdStore)
 	services.RegisterScenarioService(server, createdStore)
 	services.RegisterClusterOperationService(server, createdStore)
+	services.RegisterHealthService(server, createdStore)
 
 	return server
 }

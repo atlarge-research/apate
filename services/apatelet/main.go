@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	"log"
 	"os"
 	"os/signal"
@@ -35,9 +37,18 @@ func main() {
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
 	location := os.TempDir() + "/apate/vk/config"
 
-	// Join the apate cluster and start the Apatelet
+	// Join the apate cluster
 	log.Println("Joining apate cluster")
 	kubeContext, uuid := joinApateCluster(location, connectionInfo)
+
+	// Setup health status
+	hc := health.GetClient(connectionInfo, uuid)
+	hc.SetStatus(healthpb.Status_UNKNOWN)
+	hc.StartStream(func(err error) {
+		log.Fatal(err)
+	})
+
+	// start the Apatelet
 	ctx, nc, cancel := getApatelet(location, kubeContext)
 
 	log.Println("Joining kubernetes cluster")
@@ -51,6 +62,7 @@ func main() {
 	// Start gRPC server
 	log.Println("Now accepting requests")
 	server := createGRPC()
+	hc.SetStatus(healthpb.Status_HEALTHY)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
