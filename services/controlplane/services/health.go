@@ -37,6 +37,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 		go func() {
 			select {
 			case <-ctx.Done():
+				cnt++
 				_ = (*h.store).SetNodeStatus(id, health.Status_DISCONNECTED)
 			case <-c:
 				cancel()
@@ -53,7 +54,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 			continue
 		}
 
-		id, err = uuid.Parse(req.NodeUUID)
+		id, err = uuid.Parse(req.NodeUuid)
 		if err != nil {
 			log.Println("stopping a stream due to invalid uuid")
 			break
@@ -74,8 +75,11 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 	// If the loop is broken -> node unhealthy
 	if err := (*h.store).SetNodeStatus(id, health.Status_DISCONNECTED); err != nil {
-		log.Println(err)
+		log.Print(err)
 	}
+
+	// TODO: We should stop the scenario here (here as in here in time not place)
+	log.Println("Node healthcheck disconnected...")
 
 	return nil
 }

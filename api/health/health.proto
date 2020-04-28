@@ -14,7 +14,7 @@ enum Status {
 }
 
 message NodeStatus {
-    string nodeUUID = 1;
+    string node_uuid = 1;
     Status Status = 2;
 }
 
