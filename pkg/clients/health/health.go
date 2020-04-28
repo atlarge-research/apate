@@ -37,7 +37,8 @@ func GetClient(info *service.ConnectionInfo, uuid string) *Client {
 
 // StartStreamWithRetry calls StartStream but will retry n times to re-establish a connection
 func (c *Client) StartStreamWithRetry(n int) {
-	c.StartStream(func(err error) {
+	ctx := context.Background()
+	c.StartStream(ctx, func(err error) {
 		if n < 1 {
 			log.Fatal(err)
 			return
@@ -48,8 +49,7 @@ func (c *Client) StartStreamWithRetry(n int) {
 }
 
 // StartStream starts the bidirectional health stream, errCallback is called upon any error
-func (c *Client) StartStream(errCallback func(error)) {
-	ctx := context.Background()
+func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 	stream, err := c.Client.HealthStream(ctx)
 	if err != nil {
 		log.Print("can't connect")
