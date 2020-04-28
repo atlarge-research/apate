@@ -38,8 +38,11 @@ run_cp: docker_build_cp
 protobuf:
 	shopt -s globstar && protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ ./api/**/*.proto
 
-MOCK_TARGETS := ./api/health/mock_health/health_mock.go
+MOCK_TARGETS := ./api/health/mock_health/health_mock.go ./services/controlplane/store/store_mock/store_mock.go
 mockgen: $(MOCK_TARGETS)
 
 ./api/health/mock_health/health_mock.go: ./api/health/health.pb.go
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/api/health Health_HealthStreamClient,HealthClient > $@
+	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/api/health Health_HealthStreamClient,HealthClient,Health_HealthStreamServer > $@
+
+./services/controlplane/store/mock_store/store_mock.go: ./services/controlplane/store/store.go
+	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store Store > $@
