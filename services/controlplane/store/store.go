@@ -96,7 +96,7 @@ func (s *store) SetNodeStatus(uuid uuid.UUID, status health.Status) error {
 	s.nodeLock.Lock()
 	defer s.nodeLock.Unlock()
 
-	if node, ok := s.nodes[uuid]; !ok {
+	if node, ok := s.nodes[uuid]; ok {
 		node.Status = status
 		return nil
 	}

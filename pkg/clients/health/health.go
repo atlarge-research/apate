@@ -61,7 +61,7 @@ func (c *Client) StartStream(errCallback func(error)) {
 		for {
 			c.statusLock.RLock()
 			err = stream.Send(&health.NodeStatus{
-				NodeUUID: c.uuid,
+				NodeUuid: c.uuid,
 				Status:   c.status,
 			})
 			c.statusLock.RUnlock()
@@ -91,7 +91,7 @@ func (c *Client) StartStream(errCallback func(error)) {
 			c <- true
 
 			// Stream dead
-			if err == nil {
+			if err != nil {
 				errCallback(err)
 			}
 		}
