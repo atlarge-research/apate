@@ -34,7 +34,7 @@ const _ = proto.ProtoPackageIsVersion4
 type Status int32
 
 const (
-	Status_UNKNOWN   Status = 0 // no communication
+	Status_UNKNOWN   Status = 0 // Unknown state: no communication or still starting up
 	Status_HEALTHY   Status = 1 // When everything is fine
 	Status_UNHEALTHY Status = 2 // When an apatelet is encountering errors but not down
 )
