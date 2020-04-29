@@ -42,3 +42,16 @@ docker_build: docker_build_cp docker_build_vk
 
 run_cp: docker_build_cp
 	docker run --network host -v /var/run/docker.sock:/var/run/docker.sock controlplane
+
+protobuf:
+	shopt -s globstar && protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ ./api/**/*.proto
+
+
+# Generates the various mocks
+mockgen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go
+
+./api/health/mock_health/health_mock.go: ./api/health/health.pb.go
+	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/api/health Health_HealthStreamClient,HealthClient,Health_HealthStreamServer > $@
+
+./services/controlplane/store/mock_store/store_mock.go: ./services/controlplane/store/store.go
+	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store Store > $@

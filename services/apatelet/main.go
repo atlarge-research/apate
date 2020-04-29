@@ -1,23 +1,23 @@
 package main
 
 import (
+	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node"
+	"k8s.io/client-go/kubernetes"
+
 	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-
-	"github.com/virtual-kubelet/virtual-kubelet/node"
-	"k8s.io/client-go/kubernetes"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
 )
 
 var (
@@ -37,9 +37,16 @@ func main() {
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
 	location := os.TempDir() + "/apate/vk/config"
 
-	// Join the apate cluster and start the Apatelet
+	// Join the apate cluster
 	log.Println("Joining apate cluster")
 	kubeContext, res := joinApateCluster(location, connectionInfo)
+
+	// Setup health status
+	hc := health.GetClient(connectionInfo, res.UUID.String())
+	hc.SetStatus(healthpb.Status_UNKNOWN)
+	hc.StartStreamWithRetry(3)
+
+	// Start the Apatelet
 	ctx, nc, cancel := createNodeController(location, kubeContext, res)
 
 	log.Println("Joining kubernetes cluster")
@@ -53,6 +60,7 @@ func main() {
 	// Start gRPC server
 	log.Println("Now accepting requests")
 	server := createGRPC()
+	hc.SetStatus(healthpb.Status_HEALTHY)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)

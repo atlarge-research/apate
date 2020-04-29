@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
@@ -25,6 +27,9 @@ type Store interface {
 
 	// GetNode returns the node with the given uuid
 	GetNode(uuid.UUID) (Node, error)
+
+	// SetNodeStatus sets the status of the node with the given uuid
+	SetNodeStatus(uuid.UUID, health.Status) error
 
 	// GetNodes returns an array containing all nodes in the Apate cluster
 	GetNodes() ([]Node, error)
@@ -61,102 +66,112 @@ func NewStore() Store {
 	}
 }
 
-func (c *store) AddNode(node *Node) error {
-	c.nodeLock.Lock()
-	defer c.nodeLock.Unlock()
+func (s *store) AddNode(node *Node) error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
 
 	// Check if node already exists (uuid collision)
-	if _, ok := c.nodes[node.UUID]; ok {
+	if _, ok := s.nodes[node.UUID]; ok {
 		return fmt.Errorf("node with uuid '%s' already exists", node.UUID.String())
 	}
 
-	c.nodes[node.UUID] = *node
+	s.nodes[node.UUID] = *node
 
 	return nil
 }
 
-func (c *store) RemoveNode(node *Node) error {
-	c.nodeLock.Lock()
-	defer c.nodeLock.Unlock()
+func (s *store) RemoveNode(node *Node) error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
 
-	delete(c.nodes, node.UUID)
+	delete(s.nodes, node.UUID)
 	return nil
 }
 
-func (c *store) GetNode(uuid uuid.UUID) (Node, error) {
-	c.nodeLock.RLock()
-	defer c.nodeLock.RUnlock()
+func (s *store) GetNode(uuid uuid.UUID) (Node, error) {
+	s.nodeLock.RLock()
+	defer s.nodeLock.RUnlock()
 
-	if node, ok := c.nodes[uuid]; ok {
+	if node, ok := s.nodes[uuid]; ok {
 		return node, nil
 	}
 
 	return Node{}, fmt.Errorf("node with uuid '%s' not found", uuid.String())
 }
 
-func (c *store) GetNodes() ([]Node, error) {
-	c.nodeLock.RLock()
-	defer c.nodeLock.RUnlock()
+func (s *store) SetNodeStatus(uuid uuid.UUID, status health.Status) error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
 
-	nodes := make([]Node, 0, len(c.nodes))
+	if node, ok := s.nodes[uuid]; ok {
+		node.Status = status
+		return nil
+	}
 
-	for _, node := range c.nodes {
+	return fmt.Errorf("node with uuid '%s' not found", uuid.String())
+}
+
+func (s *store) GetNodes() ([]Node, error) {
+	s.nodeLock.RLock()
+	defer s.nodeLock.RUnlock()
+
+	nodes := make([]Node, 0, len(s.nodes))
+
+	for _, node := range s.nodes {
 		nodes = append(nodes, node)
 	}
 
 	return nodes, nil
 }
 
-func (c *store) ClearNodes() error {
-	c.nodeLock.Lock()
-	defer c.nodeLock.Unlock()
+func (s *store) ClearNodes() error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
 
-	c.nodes = make(map[uuid.UUID]Node)
+	s.nodes = make(map[uuid.UUID]Node)
 	return nil
 }
 
-func (c *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
-	c.resourceLock.Lock()
-	defer c.resourceLock.Unlock()
+func (s *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
+	s.resourceLock.Lock()
+	defer s.resourceLock.Unlock()
 
 	for _, res := range resources {
 		res := res
-		c.resourceQueue.PushBack(&res)
+		s.resourceQueue.PushBack(&res)
 	}
-
 	return nil
 }
 
-func (c *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
-	c.resourceLock.Lock()
-	defer c.resourceLock.Unlock()
+func (s *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
+	s.resourceLock.Lock()
+	defer s.resourceLock.Unlock()
 
-	if c.resourceQueue.Len() == 0 {
+	if s.resourceQueue.Len() == 0 {
 		return nil, errors.New("no NodeResources available for this apatelet")
 	}
 
-	res := c.resourceQueue.Front()
-	c.resourceQueue.Remove(res)
+	res := s.resourceQueue.Front()
+	s.resourceQueue.Remove(res)
 
 	return res.Value.(*normalization.NodeResources), nil
 }
 
-func (c *store) SetApateletScenario(scenario *apatelet.ApateletScenario) error {
-	c.scenarioLock.Lock()
-	defer c.scenarioLock.Unlock()
+func (s *store) SetApateletScenario(scenario *apatelet.ApateletScenario) error {
+	s.scenarioLock.Lock()
+	defer s.scenarioLock.Unlock()
 
-	c.scenario = scenario
-
+	s.scenario = scenario
 	return nil
 }
 
-func (c *store) GetApateletScenario() (*apatelet.ApateletScenario, error) {
-	c.scenarioLock.RLock()
-	defer c.scenarioLock.RUnlock()
+func (s *store) GetApateletScenario() (*apatelet.ApateletScenario, error) {
+	s.scenarioLock.RLock()
+	defer s.scenarioLock.RUnlock()
 
-	if c.scenario == nil {
+	if s.scenario == nil {
 		return nil, errors.New("no scenario available yet")
 	}
 
-	return c.scenario, nil
+	return s.scenario, nil
 }
