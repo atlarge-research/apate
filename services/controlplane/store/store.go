@@ -61,7 +61,6 @@ func NewStore() Store {
 	}
 }
 
-// AddNode adds the given Node to the Apate cluster
 func (c *store) AddNode(node *Node) error {
 	c.nodeLock.Lock()
 	defer c.nodeLock.Unlock()
@@ -76,7 +75,6 @@ func (c *store) AddNode(node *Node) error {
 	return nil
 }
 
-// RemoveNode removes the given Node from the Apate cluster
 func (c *store) RemoveNode(node *Node) error {
 	c.nodeLock.Lock()
 	defer c.nodeLock.Unlock()
@@ -85,7 +83,6 @@ func (c *store) RemoveNode(node *Node) error {
 	return nil
 }
 
-// GetNode returns the node with the given uuid
 func (c *store) GetNode(uuid uuid.UUID) (Node, error) {
 	c.nodeLock.RLock()
 	defer c.nodeLock.RUnlock()
@@ -97,7 +94,6 @@ func (c *store) GetNode(uuid uuid.UUID) (Node, error) {
 	return Node{}, fmt.Errorf("node with uuid '%s' not found", uuid.String())
 }
 
-// GetNodes returns an array containing all nodes in the Apate cluster
 func (c *store) GetNodes() ([]Node, error) {
 	c.nodeLock.RLock()
 	defer c.nodeLock.RUnlock()
