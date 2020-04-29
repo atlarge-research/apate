@@ -40,7 +40,7 @@ func main() {
 	// Join the apate cluster and start the Apatelet
 	log.Println("Joining apate cluster")
 	kubeContext, res := joinApateCluster(location, connectionInfo)
-	ctx, nc, cancel := getApatelet(location, kubeContext, res)
+	ctx, nc, cancel := createNodeController(location, kubeContext, res)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -113,7 +113,7 @@ func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (
 	return ctx, res
 }
 
-func getApatelet(location string, kubeContext string, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(location string, kubeContext string, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	config, _ := cluster.GetConfigForContext(kubeContext, location)
