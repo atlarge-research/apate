@@ -1,10 +1,13 @@
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
+package apate.controlplane;
 
 import "google/protobuf/empty.proto";
 
-package apate.controlplane;
+import "controlplane/events/node_events.proto";
+import "controlplane/events/shared_events.proto";
+import "controlplane/events/pod_events.proto";
 
 service Scenario {
     rpc loadScenario (PublicScenario) returns (google.protobuf.Empty) {}
@@ -41,6 +44,29 @@ message Task {
     // Which nodes this task applies to
     // This field should not be set when revert is true
     repeated string node_groups = 4;
+
+    oneof event {
+        // Node events
+        NodeFailure node_failure = 5;
+
+        NetworkSegregation network_segregation = 6;
+        NetworkLatency network_latency = 7;
+
+        TimeoutKeepHeartbeat timeout_keep_heartbeat = 8;
+        NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 9;
+
+        LifecycleTimeout node_lifecycle_timeout = 10;
+        LifecycleErrorResponse node_lifecycle_error = 11;
+
+        ResourcePressure resource_pressure = 12;
+
+        // Pod events
+        LifecycleTimeout pod_lifecycle_timeout = 13;
+        LifecycleErrorResponse pod_lifecycle_error = 14;
+
+        PodStatusUpdate pod_status_update = 15;
+        PodStartTimeUpdate pod_start_time_update = 16;
+    }
 }
 
 message Node {
