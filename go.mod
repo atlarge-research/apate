@@ -4,9 +4,13 @@ go 1.14
 
 require (
 	github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0
+	github.com/docker/go-units v0.3.3
+	github.com/ghodss/yaml v1.0.0
+	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.4.0
 	github.com/google/uuid v1.1.1
 	github.com/stretchr/testify v1.4.0
+	github.com/urfave/cli/v2 v2.2.0
 	github.com/virtual-kubelet/node-cli v0.1.2
 	github.com/virtual-kubelet/virtual-kubelet v1.2.1
 	google.golang.org/grpc v1.28.1

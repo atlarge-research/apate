@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
+
+import "google/protobuf/empty.proto";
+
+package apate.controlplane;
+
+// This service will run on the Control Plane
+service ClusterOperations {
+
+    // Joins the node to the Apate cluster.
+    // Will return information needed to identify yourself
+    // And to join the kubernetes cluster.
+    rpc joinCluster (google.protobuf.Empty) returns (JoinInformation) {}
+
+    // Removes the node from the cluster
+    rpc leaveCluster (LeaveInformation) returns (google.protobuf.Empty) {}
+}
+
+message NodeHardware {
+    // The amount of bytes of memory
+    int64 memory = 1;
+
+    // The amount of milli CPUs in Kubernetes
+    int64 cpu = 2;
+
+    // The max amount of pods in Kubernetes
+    int64 max_pods = 3;
+}
+
+message JoinInformation {
+    // The kube config which can be used to join the kubernetes cluster
+    bytes kube_config = 1;
+
+    // The context used for joining the cluster
+    string kube_context = 2;
+
+    // The UUID that will be used from the control plane to identify this node
+    string node_uuid = 3;
+
+    // The hardware that was 'allocated' to the apatelet
+    NodeHardware hardware = 4;
+}
+
+message LeaveInformation {
+    // The UUID that is be used from the control plane to identify this node
+    string node_uuid = 1;
+}
