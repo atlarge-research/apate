@@ -36,7 +36,7 @@ func TestHealthStream(t *testing.T) {
 	server.EXPECT().Context().Return(ctx)
 
 	// We return an error on send so both methods should be called thrice
-	server.EXPECT().Recv().Return(&msg, nil).Times(3)
+	server.EXPECT().Recv().Return(&msg, nil).MinTimes(1)
 	server.EXPECT().Send(gomock.Any()).Return(errors.New("some error")).Times(3)
 
 	// Just accept all store calls
