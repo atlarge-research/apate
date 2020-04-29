@@ -16,11 +16,11 @@ func TestScenario(t *testing.T) {
 	scenario, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
     - node_type: testnode
-      ram: 2G
+      memory: 2G
       cpu: 42
       max_pods: 42
     - node_type: testnode2
-      ram: 42G
+      memory: 42G
       cpu: 24
       max_pods: 24
 
@@ -79,14 +79,14 @@ tasks:
 		assert.False(t, alreadySeenUUID[node.UUID])
 		alreadySeenUUID[node.UUID] = true
 
-		switch node.RAM {
+		switch node.Memory {
 		case 2 * units.GiB:
-			assert.Equal(t, 42, node.CPU)
-			assert.Equal(t, 42, node.MaxPods)
+			assert.Equal(t, int64(42), node.CPU)
+			assert.Equal(t, int64(42), node.MaxPods)
 			alreadySeenType1++
 		case 42 * units.GiB:
-			assert.Equal(t, 24, node.CPU)
-			assert.Equal(t, 24, node.MaxPods)
+			assert.Equal(t, int64(24), node.CPU)
+			assert.Equal(t, int64(24), node.MaxPods)
 			alreadySeenType2++
 		default:
 			assert.Fail(t, "This unit doesn't exist")

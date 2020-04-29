@@ -5,6 +5,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
@@ -38,15 +39,15 @@ func main() {
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	kubeContext, uuid := joinApateCluster(location, connectionInfo)
+	kubeContext, res := joinApateCluster(location, connectionInfo)
 
 	// Setup health status
-	hc := health.GetClient(connectionInfo, uuid)
+	hc := health.GetClient(connectionInfo, res.UUID.String())
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	hc.StartStreamWithRetry(3)
 
 	// Start the Apatelet
-	ctx, nc, cancel := getApatelet(location, kubeContext)
+	ctx, nc, cancel := createNodeController(location, kubeContext, res)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -68,7 +69,7 @@ func main() {
 
 	go func() {
 		<-signals
-		shutdown(server, cancel, connectionInfo, uuid)
+		shutdown(server, cancel, connectionInfo, res.UUID.String())
 		stopped <- true
 	}()
 
@@ -102,32 +103,32 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	cancel()
 }
 
-func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
+func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, *normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	ctx, uuid, err := client.JoinCluster(location)
+	ctx, res, err := client.JoinCluster(location)
 
 	// TODO: Better error handling
 	if err != nil {
 		log.Fatalf("Unable to join cluster: %v", err)
 	}
 
-	log.Printf("Joined apate cluster with uuid %s", uuid)
+	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return ctx, uuid
+	return ctx, res
 }
 
-func getApatelet(location string, kubeContext string) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(location string, kubeContext string, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	config, _ := cluster.GetConfigForContext(kubeContext, location)
 	client := kubernetes.NewForConfigOrDie(config)
 	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
-		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider()),
+		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res)),
 		client.CoreV1().Nodes())
 
 	return ctx, nc, cancel

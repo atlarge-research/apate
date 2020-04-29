@@ -2,6 +2,8 @@
 package store
 
 import (
+	"container/list"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -38,16 +40,23 @@ type Store interface {
 	// AddResourcesToQueue adds a node resource to the queue
 	AddResourcesToQueue([]normalization.NodeResources) error
 
-	// AddApateletScenario adds the ApateletScenario to the store
-	AddApateletScenario(*apatelet.ApateletScenario) error
+	// GetResourceFromQueue returns the first NodeResources struct in the list
+	GetResourceFromQueue() (*normalization.NodeResources, error)
+
+	// SetApateletScenario adds the ApateletScenario to the store
+	SetApateletScenario(*apatelet.ApateletScenario) error
 
 	// GetApateletScenario gets the ApateletScenario
 	GetApateletScenario() (*apatelet.ApateletScenario, error)
 }
 
 type store struct {
-	nodes    map[uuid.UUID]Node
-	nodeLock sync.RWMutex
+	nodes         map[uuid.UUID]Node
+	nodeLock      sync.RWMutex
+	resourceQueue list.List
+	resourceLock  sync.Mutex
+	scenario      *apatelet.ApateletScenario
+	scenarioLock  sync.RWMutex
 }
 
 // NewStore creates a new empty cluster
@@ -57,7 +66,6 @@ func NewStore() Store {
 	}
 }
 
-// AddNode adds the given Node to the Apate cluster
 func (s *store) AddNode(node *Node) error {
 	s.nodeLock.Lock()
 	defer s.nodeLock.Unlock()
@@ -72,7 +80,6 @@ func (s *store) AddNode(node *Node) error {
 	return nil
 }
 
-// RemoveNode removes the given Node from the Apate cluster
 func (s *store) RemoveNode(node *Node) error {
 	s.nodeLock.Lock()
 	defer s.nodeLock.Unlock()
@@ -81,7 +88,6 @@ func (s *store) RemoveNode(node *Node) error {
 	return nil
 }
 
-// GetNode returns the node with the given uuid
 func (s *store) GetNode(uuid uuid.UUID) (Node, error) {
 	s.nodeLock.RLock()
 	defer s.nodeLock.RUnlock()
@@ -105,7 +111,6 @@ func (s *store) SetNodeStatus(uuid uuid.UUID, status health.Status) error {
 	return fmt.Errorf("node with uuid '%s' not found", uuid.String())
 }
 
-// GetNodes returns an array containing all nodes in the Apate cluster
 func (s *store) GetNodes() ([]Node, error) {
 	s.nodeLock.RLock()
 	defer s.nodeLock.RUnlock()
@@ -128,13 +133,45 @@ func (s *store) ClearNodes() error {
 }
 
 func (s *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
+	s.resourceLock.Lock()
+	defer s.resourceLock.Unlock()
+
+	for _, res := range resources {
+		res := res
+		s.resourceQueue.PushBack(&res)
+	}
 	return nil
 }
 
-func (s *store) AddApateletScenario(scenario *apatelet.ApateletScenario) error {
+func (s *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
+	s.resourceLock.Lock()
+	defer s.resourceLock.Unlock()
+
+	if s.resourceQueue.Len() == 0 {
+		return nil, errors.New("no NodeResources available for this apatelet")
+	}
+
+	res := s.resourceQueue.Front()
+	s.resourceQueue.Remove(res)
+
+	return res.Value.(*normalization.NodeResources), nil
+}
+
+func (s *store) SetApateletScenario(scenario *apatelet.ApateletScenario) error {
+	s.scenarioLock.Lock()
+	defer s.scenarioLock.Unlock()
+
+	s.scenario = scenario
 	return nil
 }
 
 func (s *store) GetApateletScenario() (*apatelet.ApateletScenario, error) {
-	return nil, nil
+	s.scenarioLock.RLock()
+	defer s.scenarioLock.RUnlock()
+
+	if s.scenario == nil {
+		return nil, errors.New("no scenario available yet")
+	}
+
+	return s.scenario, nil
 }
