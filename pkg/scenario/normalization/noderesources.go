@@ -7,12 +7,12 @@ type NodeResources struct {
 	// The UUID of the node
 	UUID uuid.UUID
 
-	// The amount of bytes of RAM
-	RAM int64
+	// The amount of bytes of memory
+	Memory int64
 
 	// The amount of milli CPUs in Kubernetes
-	CPU int
+	CPU int64
 
 	// The max amount of pods in Kubernetes
-	MaxPods int
+	MaxPods int64
 }
