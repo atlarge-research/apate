@@ -46,7 +46,6 @@ run_cp: docker_build_cp
 protobuf:
 	shopt -s globstar && protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ ./api/**/*.proto
 
-
 # Generates the various mocks
 mockgen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go
 

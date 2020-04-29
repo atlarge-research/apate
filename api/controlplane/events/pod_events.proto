@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events";
+package apate.controlplane;
+
+message PodStatusUpdate {
+    PodStatus new_status = 1;
+}
+
+message PodStartTimeUpdate {
+    string new_start_time = 1;
+}
+
+enum PodStatus {
+    POD_PENDING = 0;
+    POD_RUNNING = 1;
+    POD_SUCCEEDED = 2;
+    POD_FAILED = 3;
+    POD_UNKNOWN = 4;
+}
