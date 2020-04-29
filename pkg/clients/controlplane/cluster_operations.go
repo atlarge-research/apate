@@ -51,7 +51,7 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, *normaliz
 	}
 
 	// Save kube config
-	err = ioutil.WriteFile(location, res.KubeConfig, 0600)
+	err = ioutil.WriteFile(location, res.KubeConfig, 0o600)
 
 	// Check for write error
 	if err != nil {
