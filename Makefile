@@ -24,6 +24,14 @@ test_short:
 test_race:
 	go test -race -short ./...
 
+test_cover:
+	go test -coverprofile cover.out ./...
+	go tool cover -html=cover.out
+
+test_cover_short:
+	go test -short -coverprofile cover.out ./...
+	go tool cover -html=cover.out
+
 docker_build_vk:
 	docker build -f services/apatelet/Dockerfile -t apatelet .
 

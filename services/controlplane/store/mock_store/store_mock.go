@@ -37,20 +37,6 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// AddApateletScenario mocks base method
-func (m *MockStore) AddApateletScenario(arg0 *apatelet.ApateletScenario) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddApateletScenario", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddApateletScenario indicates an expected call of AddApateletScenario
-func (mr *MockStoreMockRecorder) AddApateletScenario(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddApateletScenario", reflect.TypeOf((*MockStore)(nil).AddApateletScenario), arg0)
-}
-
 // AddNode mocks base method
 func (m *MockStore) AddNode(arg0 *store.Node) error {
 	m.ctrl.T.Helper()
@@ -138,6 +124,21 @@ func (mr *MockStoreMockRecorder) GetNodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodes", reflect.TypeOf((*MockStore)(nil).GetNodes))
 }
 
+// GetResourceFromQueue mocks base method
+func (m *MockStore) GetResourceFromQueue() (*normalization.NodeResources, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetResourceFromQueue")
+	ret0, _ := ret[0].(*normalization.NodeResources)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetResourceFromQueue indicates an expected call of GetResourceFromQueue
+func (mr *MockStoreMockRecorder) GetResourceFromQueue() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResourceFromQueue", reflect.TypeOf((*MockStore)(nil).GetResourceFromQueue))
+}
+
 // RemoveNode mocks base method
 func (m *MockStore) RemoveNode(arg0 *store.Node) error {
 	m.ctrl.T.Helper()
@@ -150,6 +151,20 @@ func (m *MockStore) RemoveNode(arg0 *store.Node) error {
 func (mr *MockStoreMockRecorder) RemoveNode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNode", reflect.TypeOf((*MockStore)(nil).RemoveNode), arg0)
+}
+
+// SetApateletScenario mocks base method
+func (m *MockStore) SetApateletScenario(arg0 *apatelet.ApateletScenario) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetApateletScenario", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetApateletScenario indicates an expected call of SetApateletScenario
+func (mr *MockStoreMockRecorder) SetApateletScenario(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetApateletScenario", reflect.TypeOf((*MockStore)(nil).SetApateletScenario), arg0)
 }
 
 // SetNodeStatus mocks base method

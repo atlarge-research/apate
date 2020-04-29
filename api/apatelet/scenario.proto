@@ -109,8 +109,8 @@ message NodeState {
         // The percentage of CPU used
         int32 cpu_usage = 2;
 
-        // The percentage of RAM used
-        int32 ram_usage = 3;
+        // The percentage of memory used
+        int32 memory_usage = 3;
 
         // The percentage of storage used
         int32 storage_usage = 4;
