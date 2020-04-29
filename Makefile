@@ -1,6 +1,6 @@
 GO111MODULE=on
 
-all: build lint test
+all: build protobuf mockgen lint test docker_build
 
 build:
 	go build ./...
@@ -16,7 +16,7 @@ lint_fix:
 	golangci-lint run --fix
 
 test:
-	go test ./...
+	go test -v ./...
 
 test_short:
 	go test -short ./...
@@ -43,9 +43,9 @@ docker_build: docker_build_cp docker_build_vk
 run_cp: docker_build_cp
 	docker run --network host -v /var/run/docker.sock:/var/run/docker.sock controlplane
 
-protobuf:
-	shopt -s globstar && protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ ./api/**/*.proto
 
+protobuf:
+	protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find . -type f -name "*.proto" -print`
 
 # Generates the various mocks
 mockgen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go
