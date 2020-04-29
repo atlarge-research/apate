@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/grpc"
@@ -23,6 +24,9 @@ type Client struct {
 	statusLock sync.RWMutex
 }
 
+const sendInterval = 1 * time.Second
+const recvTimeout = 5 * time.Second
+
 // GetClient creates a new health client
 func GetClient(info *service.ConnectionInfo, uuid string) *Client {
 	conn := service.CreateClientConnection(info)
@@ -36,15 +40,15 @@ func GetClient(info *service.ConnectionInfo, uuid string) *Client {
 }
 
 // StartStreamWithRetry calls StartStream but will retry n times to re-establish a connection
-func (c *Client) StartStreamWithRetry(n int) {
+func (c *Client) StartStreamWithRetry(n int32) {
 	ctx := context.Background()
 	c.StartStream(ctx, func(err error) {
-		if n < 1 {
+		if atomic.LoadInt32(&n) < 1 {
 			log.Fatal(err)
 			return
 		}
 		log.Println(err)
-		n--
+		atomic.AddInt32(&n, -1)
 	})
 }
 
@@ -52,7 +56,6 @@ func (c *Client) StartStreamWithRetry(n int) {
 func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 	stream, err := c.Client.HealthStream(ctx)
 	if err != nil {
-		log.Print("can't connect")
 		errCallback(err)
 	}
 
@@ -69,6 +72,8 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 			if err != nil {
 				errCallback(err)
 			}
+
+			time.Sleep(sendInterval)
 		}
 	}()
 
@@ -76,7 +81,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 	go func() {
 		for {
 			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, time.Second*15)
+			ctx, cancel = context.WithTimeout(ctx, recvTimeout)
 			c := make(chan bool)
 			go func() {
 				select {

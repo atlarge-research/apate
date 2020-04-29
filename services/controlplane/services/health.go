@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"log"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -17,28 +18,37 @@ type healthService struct {
 	store *store.Store
 }
 
+const sendInterval = 1 * time.Second
+const recvTimeout = 5 * time.Second
+const maxNetworkErrors = 3
+
 func (h healthService) HealthStream(server health.Health_HealthStreamServer) error {
 	log.Println("Starting new health stream")
 
+	// Outer/Original context
 	octx := server.Context()
 
 	var id uuid.UUID
 
-	cnt := 0
+	// Keeps track of consecutive network errors
+	var cnt int32 = 0
+
+	// Sends a heartbeat to the client
+	go h.sendHeartbeat(server, &cnt)
 
 	for {
-		if cnt > 2 {
+		if atomic.LoadInt32(&cnt) >= maxNetworkErrors {
 			break
 		}
 
-		ctx, cancel := context.WithTimeout(octx, time.Second*15)
+		ctx, cancel := context.WithTimeout(octx, recvTimeout)
 		c := make(chan bool)
 		// Exit if context is done
 		go func() {
 			select {
 			case <-ctx.Done():
-				cnt++
-				_ = (*h.store).SetNodeStatus(id, health.Status_DISCONNECTED)
+				atomic.AddInt32(&cnt, 1)
+				_ = (*h.store).SetNodeStatus(id, health.Status_UNKNOWN)
 			case <-c:
 				cancel()
 			}
@@ -50,7 +60,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 		if err != nil {
 			log.Println("Receive error")
-			cnt++
+			atomic.AddInt32(&cnt, 1)
 			continue
 		}
 
@@ -62,19 +72,13 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 		if err = (*h.store).SetNodeStatus(id, req.Status); err != nil {
 			log.Println(err)
-			continue
 		}
 
-		// Send heartbeat back
-		if err := server.Send(&empty.Empty{}); err != nil {
-			log.Println("send error")
-			cnt++
-			continue
-		}
+		atomic.StoreInt32(&cnt, 0)
 	}
 
 	// If the loop is broken -> node unhealthy
-	if err := (*h.store).SetNodeStatus(id, health.Status_DISCONNECTED); err != nil {
+	if err := (*h.store).SetNodeStatus(id, health.Status_UNKNOWN); err != nil {
 		log.Print(err)
 	}
 
@@ -82,6 +86,20 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 	log.Println("Node healthcheck disconnected...")
 
 	return nil
+}
+
+func (h healthService) sendHeartbeat(server health.Health_HealthStreamServer, cnt *int32) {
+	for {
+		if atomic.LoadInt32(cnt) >= maxNetworkErrors {
+			return
+		}
+
+		if err := server.Send(&empty.Empty{}); err != nil {
+			log.Println("send error")
+			atomic.AddInt32(cnt, 1)
+		}
+		time.Sleep(sendInterval)
+	}
 }
 
 // RegisterHealthService registers the HealthService on a GRPCServer
