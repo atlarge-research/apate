@@ -6,18 +6,21 @@ import "google/protobuf/empty.proto";
 
 package apate.health;
 
+// The various states that an Apatelet may be
 enum Status {
-    UNKNOWN = 0;
-    HEALTHY = 1;
-    UNHEALTHY = 2;
-    DISCONNECTED = 3;
+    UNKNOWN = 0;        // Unknown state: no communication or still starting up
+    HEALTHY = 1;        // When everything is fine
+    UNHEALTHY = 2;      // When an apatelet is encountering errors but not down
 }
 
+// The message an Apatelet will stream to the control plane informing it about its status
 message NodeStatus {
     string node_uuid = 1;
     Status Status = 2;
 }
 
+// The actual gRPC service using these messages.
+// The control plane just streams empty messages as a kind of heartbeat.
 service Health {
     rpc HealthStream (stream NodeStatus) returns (stream google.protobuf.Empty) {}
 }
