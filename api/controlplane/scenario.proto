@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
+
+import "google/protobuf/empty.proto";
+
+package apate.controlplane;
+
+service Scenario {
+    rpc loadScenario (PublicScenario) returns (google.protobuf.Empty) {}
+    rpc startScenario (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+// Scenario represents a full scenario as given in the scenario configuration file.
+// It can be easily constructed from yaml or json (pkg/scenario/deserialize) and has to be
+// converted to a private scenario (pkg/scenario/normalize).
+message PublicScenario {
+    // List of node types.
+    repeated Node nodes = 1;
+
+    // List of node groups.
+    repeated NodeGroup node_groups = 2;
+
+    // A scenario consists of an number of tasks.
+    repeated Task tasks = 3;
+}
+
+// A task is a part of a scenario describing what happens at a certain point in time.
+message Task {
+    /// The name of a task can be used to revert it.
+    string name = 1;
+
+    // Time offset after the start of the scenario
+    // Specify as string with unit like 10s, 2h, 20ms.
+    // If no unit is given, defaults to seconds.
+    string time = 2;
+
+    // Revert the task
+    bool revert = 3;
+
+    // Which nodes this task applies to
+    // This field should not be set when revert is true
+    repeated string node_groups = 4;
+}
+
+message Node {
+    // The type of the node. This can be referred to in nodegroups.
+    string node_type = 1;
+
+    // The amount of memory a node gets.
+    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
+    string memory = 2;
+
+    // The amount of milli CPUs allocated to the node
+    int64 cpu = 3;
+
+    // Maximum number of pods per node.
+    int64 max_pods = 4;
+}
+
+// A node group specifies a group of many nodes with the same properties.
+// A nodegroup refers to a node and how many times that type of node is needed.
+message NodeGroup {
+
+    // The name of the group. This can be referred to in scenarios.
+    string group_name = 1;
+
+    // The type of node in this group.
+    string node_type = 2;
+
+    // How many times you want this type of node.
+    int32 amount = 3;
+}
+

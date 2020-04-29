@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
+
+import "google/protobuf/empty.proto";
+
+package apate.controlplane;
+
+service Status {
+    rpc status (google.protobuf.Empty) returns (ClusterStatus) {}
+}
+
+message ClusterStatus {
+    int32 healthy_nodes = 1;
+}
