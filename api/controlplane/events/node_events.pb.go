@@ -25,7 +25,7 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
-// This node fails
+// This node fails, so every request times out
 type NodeFailure struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -64,45 +64,6 @@ func (*NodeFailure) Descriptor() ([]byte, []int) {
 	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{0}
 }
 
-// The node will be segregated, so every request will timeout
-type NetworkSegregation struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *NetworkSegregation) Reset() {
-	*x = NetworkSegregation{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_controlplane_events_node_events_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *NetworkSegregation) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NetworkSegregation) ProtoMessage() {}
-
-func (x *NetworkSegregation) ProtoReflect() protoreflect.Message {
-	mi := &file_controlplane_events_node_events_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NetworkSegregation.ProtoReflect.Descriptor instead.
-func (*NetworkSegregation) Descriptor() ([]byte, []int) {
-	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{1}
-}
-
 // Apply latency to every request
 type NetworkLatency struct {
 	state         protoimpl.MessageState
@@ -115,7 +76,7 @@ type NetworkLatency struct {
 func (x *NetworkLatency) Reset() {
 	*x = NetworkLatency{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_controlplane_events_node_events_proto_msgTypes[2]
+		mi := &file_controlplane_events_node_events_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -128,7 +89,7 @@ func (x *NetworkLatency) String() string {
 func (*NetworkLatency) ProtoMessage() {}
 
 func (x *NetworkLatency) ProtoReflect() protoreflect.Message {
-	mi := &file_controlplane_events_node_events_proto_msgTypes[2]
+	mi := &file_controlplane_events_node_events_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -141,7 +102,7 @@ func (x *NetworkLatency) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkLatency.ProtoReflect.Descriptor instead.
 func (*NetworkLatency) Descriptor() ([]byte, []int) {
-	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{2}
+	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NetworkLatency) GetLatencyMsec() int32 {
@@ -161,7 +122,7 @@ type TimeoutKeepHeartbeat struct {
 func (x *TimeoutKeepHeartbeat) Reset() {
 	*x = TimeoutKeepHeartbeat{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_controlplane_events_node_events_proto_msgTypes[3]
+		mi := &file_controlplane_events_node_events_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -174,7 +135,7 @@ func (x *TimeoutKeepHeartbeat) String() string {
 func (*TimeoutKeepHeartbeat) ProtoMessage() {}
 
 func (x *TimeoutKeepHeartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_controlplane_events_node_events_proto_msgTypes[3]
+	mi := &file_controlplane_events_node_events_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +148,7 @@ func (x *TimeoutKeepHeartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeoutKeepHeartbeat.ProtoReflect.Descriptor instead.
 func (*TimeoutKeepHeartbeat) Descriptor() ([]byte, []int) {
-	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{3}
+	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{2}
 }
 
 // We only apply timeout to ping / heartbeat
@@ -200,7 +161,7 @@ type NoTimeoutNoHeartbeat struct {
 func (x *NoTimeoutNoHeartbeat) Reset() {
 	*x = NoTimeoutNoHeartbeat{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_controlplane_events_node_events_proto_msgTypes[4]
+		mi := &file_controlplane_events_node_events_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -213,7 +174,7 @@ func (x *NoTimeoutNoHeartbeat) String() string {
 func (*NoTimeoutNoHeartbeat) ProtoMessage() {}
 
 func (x *NoTimeoutNoHeartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_controlplane_events_node_events_proto_msgTypes[4]
+	mi := &file_controlplane_events_node_events_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -226,7 +187,7 @@ func (x *NoTimeoutNoHeartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NoTimeoutNoHeartbeat.ProtoReflect.Descriptor instead.
 func (*NoTimeoutNoHeartbeat) Descriptor() ([]byte, []int) {
-	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{4}
+	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{3}
 }
 
 // Apply resource pressure to this node
@@ -237,8 +198,8 @@ type ResourcePressure struct {
 
 	// The percentage of CPU used
 	CpuUsage int32 `protobuf:"varint,1,opt,name=cpu_usage,json=cpuUsage,proto3" json:"cpu_usage,omitempty"`
-	// The percentage of RAM used
-	RamUsage int32 `protobuf:"varint,2,opt,name=ram_usage,json=ramUsage,proto3" json:"ram_usage,omitempty"`
+	// The percentage of memory used
+	MemoryUsage int32 `protobuf:"varint,2,opt,name=memory_usage,json=memoryUsage,proto3" json:"memory_usage,omitempty"`
 	// The percentage of storage used
 	StorageUsage int32 `protobuf:"varint,3,opt,name=storage_usage,json=storageUsage,proto3" json:"storage_usage,omitempty"`
 	// The percentage of ephermal storage used
@@ -248,7 +209,7 @@ type ResourcePressure struct {
 func (x *ResourcePressure) Reset() {
 	*x = ResourcePressure{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_controlplane_events_node_events_proto_msgTypes[5]
+		mi := &file_controlplane_events_node_events_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -261,7 +222,7 @@ func (x *ResourcePressure) String() string {
 func (*ResourcePressure) ProtoMessage() {}
 
 func (x *ResourcePressure) ProtoReflect() protoreflect.Message {
-	mi := &file_controlplane_events_node_events_proto_msgTypes[5]
+	mi := &file_controlplane_events_node_events_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -274,7 +235,7 @@ func (x *ResourcePressure) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourcePressure.ProtoReflect.Descriptor instead.
 func (*ResourcePressure) Descriptor() ([]byte, []int) {
-	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{5}
+	return file_controlplane_events_node_events_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ResourcePressure) GetCpuUsage() int32 {
@@ -284,9 +245,9 @@ func (x *ResourcePressure) GetCpuUsage() int32 {
 	return 0
 }
 
-func (x *ResourcePressure) GetRamUsage() int32 {
+func (x *ResourcePressure) GetMemoryUsage() int32 {
 	if x != nil {
-		return x.RamUsage
+		return x.MemoryUsage
 	}
 	return 0
 }
@@ -312,19 +273,18 @@ var file_controlplane_events_node_events_proto_rawDesc = []byte{
 	0x76, 0x65, 0x6e, 0x74, 0x73, 0x2f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74,
 	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x12, 0x61, 0x70, 0x61, 0x74, 0x65, 0x2e, 0x63,
 	0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x22, 0x0d, 0x0a, 0x0b, 0x4e,
-	0x6f, 0x64, 0x65, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x22, 0x14, 0x0a, 0x12, 0x4e, 0x65,
-	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x53, 0x65, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x22, 0x33, 0x0a, 0x0e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x4c, 0x61, 0x74, 0x65, 0x6e,
-	0x63, 0x79, 0x12, 0x21, 0x0a, 0x0c, 0x6c, 0x61, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x5f, 0x6d, 0x73,
-	0x65, 0x63, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0b, 0x6c, 0x61, 0x74, 0x65, 0x6e, 0x63,
-	0x79, 0x4d, 0x73, 0x65, 0x63, 0x22, 0x16, 0x0a, 0x14, 0x54, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74,
-	0x4b, 0x65, 0x65, 0x70, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x22, 0x16, 0x0a,
-	0x14, 0x4e, 0x6f, 0x54, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x4e, 0x6f, 0x48, 0x65, 0x61, 0x72,
-	0x74, 0x62, 0x65, 0x61, 0x74, 0x22, 0xa9, 0x01, 0x0a, 0x10, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72,
-	0x63, 0x65, 0x50, 0x72, 0x65, 0x73, 0x73, 0x75, 0x72, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x63, 0x70,
-	0x75, 0x5f, 0x75, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x63,
-	0x70, 0x75, 0x55, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x72, 0x61, 0x6d, 0x5f, 0x75,
-	0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x72, 0x61, 0x6d, 0x55,
+	0x6f, 0x64, 0x65, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x22, 0x33, 0x0a, 0x0e, 0x4e, 0x65,
+	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x4c, 0x61, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x12, 0x21, 0x0a, 0x0c,
+	0x6c, 0x61, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x5f, 0x6d, 0x73, 0x65, 0x63, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x0b, 0x6c, 0x61, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x4d, 0x73, 0x65, 0x63, 0x22,
+	0x16, 0x0a, 0x14, 0x54, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x4b, 0x65, 0x65, 0x70, 0x48, 0x65,
+	0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x22, 0x16, 0x0a, 0x14, 0x4e, 0x6f, 0x54, 0x69, 0x6d,
+	0x65, 0x6f, 0x75, 0x74, 0x4e, 0x6f, 0x48, 0x65, 0x61, 0x72, 0x74, 0x62, 0x65, 0x61, 0x74, 0x22,
+	0xaf, 0x01, 0x0a, 0x10, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x72, 0x65, 0x73,
+	0x73, 0x75, 0x72, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x63, 0x70, 0x75, 0x5f, 0x75, 0x73, 0x61, 0x67,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x63, 0x70, 0x75, 0x55, 0x73, 0x61, 0x67,
+	0x65, 0x12, 0x21, 0x0a, 0x0c, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x5f, 0x75, 0x73, 0x61, 0x67,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0b, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x55,
 	0x73, 0x61, 0x67, 0x65, 0x12, 0x23, 0x0a, 0x0d, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x5f,
 	0x75, 0x73, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0c, 0x73, 0x74, 0x6f,
 	0x72, 0x61, 0x67, 0x65, 0x55, 0x73, 0x61, 0x67, 0x65, 0x12, 0x36, 0x0a, 0x17, 0x65, 0x70, 0x68,
@@ -351,14 +311,13 @@ func file_controlplane_events_node_events_proto_rawDescGZIP() []byte {
 	return file_controlplane_events_node_events_proto_rawDescData
 }
 
-var file_controlplane_events_node_events_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_controlplane_events_node_events_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_controlplane_events_node_events_proto_goTypes = []interface{}{
 	(*NodeFailure)(nil),          // 0: apate.controlplane.NodeFailure
-	(*NetworkSegregation)(nil),   // 1: apate.controlplane.NetworkSegregation
-	(*NetworkLatency)(nil),       // 2: apate.controlplane.NetworkLatency
-	(*TimeoutKeepHeartbeat)(nil), // 3: apate.controlplane.TimeoutKeepHeartbeat
-	(*NoTimeoutNoHeartbeat)(nil), // 4: apate.controlplane.NoTimeoutNoHeartbeat
-	(*ResourcePressure)(nil),     // 5: apate.controlplane.ResourcePressure
+	(*NetworkLatency)(nil),       // 1: apate.controlplane.NetworkLatency
+	(*TimeoutKeepHeartbeat)(nil), // 2: apate.controlplane.TimeoutKeepHeartbeat
+	(*NoTimeoutNoHeartbeat)(nil), // 3: apate.controlplane.NoTimeoutNoHeartbeat
+	(*ResourcePressure)(nil),     // 4: apate.controlplane.ResourcePressure
 }
 var file_controlplane_events_node_events_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -387,18 +346,6 @@ func file_controlplane_events_node_events_proto_init() {
 			}
 		}
 		file_controlplane_events_node_events_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NetworkSegregation); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_controlplane_events_node_events_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*NetworkLatency); i {
 			case 0:
 				return &v.state
@@ -410,7 +357,7 @@ func file_controlplane_events_node_events_proto_init() {
 				return nil
 			}
 		}
-		file_controlplane_events_node_events_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_controlplane_events_node_events_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TimeoutKeepHeartbeat); i {
 			case 0:
 				return &v.state
@@ -422,7 +369,7 @@ func file_controlplane_events_node_events_proto_init() {
 				return nil
 			}
 		}
-		file_controlplane_events_node_events_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_controlplane_events_node_events_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*NoTimeoutNoHeartbeat); i {
 			case 0:
 				return &v.state
@@ -434,7 +381,7 @@ func file_controlplane_events_node_events_proto_init() {
 				return nil
 			}
 		}
-		file_controlplane_events_node_events_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_controlplane_events_node_events_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ResourcePressure); i {
 			case 0:
 				return &v.state
@@ -453,7 +400,7 @@ func file_controlplane_events_node_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_controlplane_events_node_events_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

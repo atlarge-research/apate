@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario";
+package apate.scenario;
+
+enum LifecycleAction {
+    NORMAL = 0;
+    TIMEOUT = 1;
+    ERROR = 2;
+}

@@ -3,23 +3,18 @@ syntax = "proto3";
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events";
 package apate.controlplane;
 
-// A percentage of pod lifecycle requests will timeout
-// This can be executed for both nodes and pod configurations
-message LifecycleTimeout {
-    // The lifecycle type to act upon
-    LifecycleType type = 1;
-
-    // The percentage of pod lifecycle requests to timeout
-    int32 percentage = 2;
-}
+import "scenario/events.proto";
 
 // A percentage of lifecycle requests will error
-message LifecycleErrorResponse {
+message LifecycleState {
     // The lifecycle type to act upon
     LifecycleType type = 1;
 
+    // The lifecycle type to act upon
+    scenario.LifecycleAction action = 2;
+
     // The percentage of lifecycle requests to respond with error to
-    int32 percentage = 2;
+    int32 percentage = 3;
 }
 
 // See https://github.com/virtual-kubelet/virtual-kubelet/#podlifecylcehandler
@@ -30,5 +25,5 @@ enum LifecycleType {
     GET_POD = 3;
     GET_POD_STATUS = 4;
     GET_PODS = 5;
+    PING = 6;
 }
-

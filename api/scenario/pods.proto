@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario";
+package apate.scenario;
+
+enum PodStatus {
+    POD_PENDING = 0;
+    POD_RUNNING = 1;
+    POD_SUCCEEDED = 2;
+    POD_FAILED = 3;
+    POD_UNKNOWN = 4;
+}

@@ -49,23 +49,20 @@ message Task {
         // Node events
         NodeFailure node_failure = 5;
 
-        NetworkSegregation network_segregation = 6;
-        NetworkLatency network_latency = 7;
+        NetworkLatency network_latency = 6;
 
-        TimeoutKeepHeartbeat timeout_keep_heartbeat = 8;
-        NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 9;
+        TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
+        NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
 
-        LifecycleTimeout node_lifecycle_timeout = 10;
-        LifecycleErrorResponse node_lifecycle_error = 11;
+        LifecycleState node_lifecycle_state = 9;
 
-        ResourcePressure resource_pressure = 12;
+        ResourcePressure resource_pressure = 10;
 
         // Pod events
-        LifecycleTimeout pod_lifecycle_timeout = 13;
-        LifecycleErrorResponse pod_lifecycle_error = 14;
+        LifecycleState pod_lifecycle_state = 11;
 
-        PodStatusUpdate pod_status_update = 15;
-        PodStartTimeUpdate pod_start_time_update = 16;
+        PodStatusUpdate pod_status_update = 12;
+        PodStartTimeUpdate pod_start_time_update = 13;
     }
 }
 

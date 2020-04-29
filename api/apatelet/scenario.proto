@@ -4,6 +4,8 @@ option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/a
 package apate.apatelet;
 
 import "google/protobuf/empty.proto";
+import "scenario/events.proto";
+import "scenario/pods.proto";
 
 // This service will run on the Apatelets
 service Scenario {
@@ -56,8 +58,8 @@ message NodeEvent {
 
 // An event that will be applied on pod(s)
 message PodEvent {
-    // The name of the deployment used to determine on which pod this event applies
-    string deployment = 1;
+    // The name of the configuration_metadata_name used to determine on which pod this event applies
+    string configuration_metadata_name = 1;
 
     // The pod state that will be applied to the pod(s) defined by `deployment`.
     PodState pod_state = 2;
@@ -65,11 +67,17 @@ message PodEvent {
 
 // The node state that will be applied to the node.
 message NodeState {
-    // Indicates that the node will not respond to ping originating from k8s
-    bool dont_respond_to_ping = 1;
+    message NodeLifecycleState {
+        LifecycleState lifecycleState = 1;
 
-    LifecycleResponseState node_lifecycle_response_state = 2;
-    LifecycleErrorState node_lifecycle_error_state = 3;
+        scenario.LifecycleAction get_pods_action = 2;
+        int32 get_pods_action_percentage = 3;
+
+        scenario.LifecycleAction ping_action = 4;
+        int32 ping_action_percentage = 5;
+    }
+
+    NodeLifecycleState node_lifecycle_state = 1;
 
     // Defines the amount of resources the node has in use
     // Will default to 0% for all types of possible resources (corev1.ResourceName)
@@ -91,6 +99,8 @@ message NodeState {
         int32 ephemeral_storage_usage = 5;
     }
 
+    ResourceState resource_state = 2;
+
     // Defines the amount of added network latency the node experiences
     // Will default to 0 msec
     message AddedLatencyState {
@@ -101,79 +111,49 @@ message NodeState {
         // The amount of msec of latency
         int32 added_latency_msec = 2;
     }
+
+    AddedLatencyState added_latency_state = 3;
 }
 
 // The pod state that will be applied a certain pod deployment
 // To which deployment this state if applied depends on the `deployment` in `PodEvent`
 message PodState {
-    LifecycleResponseState pod_lifecycle_response_state = 1;
-    LifecycleErrorState pod_lifecycle_error_state = 2;
-
-    // See corev1.PodPhase
-    enum PodStatus {
-        POD_PENDING = 0;
-        POD_RUNNING = 1;
-        POD_SUCCEEDED = 2;
-        POD_FAILED = 3;
-        POD_UNKNOWN = 4;
+    message PodLifecycleState {
+        LifecycleState lifecycleState = 1;
     }
+
+    PodLifecycleState pod_lifecycle_state = 1;
 
     // The status of a certain percentage of pods in the current deployment
     // Can be left empty to keep the status unchanged
     // If left empty, the pod_status_percentage will be ignored
-    PodStatus pod_status = 3;
+    scenario.PodStatus pod_status = 2;
 
     // The percentage of pods in the current deployment getting the new status
-    int32 pod_status_percentage = 4;
+    int32 pod_status_percentage = 3;
 
     // The starting time of this pod (see corev1.PodStatus.StartTime)
     // ISO8601 format
     // Can be left empty to keep the starting time unchanged
-    string start_time = 5;
+    string start_time = 4;
 }
 
 // Defines if there will be a response to certain CRUD requests from k8s
 // If a field in here is set to true, the corresponding CRUD request will timeout
 // The percentage fields define what percentage of requests on this node will be affected by the error
-message LifecycleResponseState {
-    bool dont_respond_to_create = 1;
-    int32 dont_respond_to_create_percentage = 2;
+message LifecycleState {
+    scenario.LifecycleAction create_action = 1;
+    int32 create_action_percentage = 2;
 
-    bool dont_respond_to_update = 3;
-    int32 dont_respond_to_update_percentage = 4;
+    scenario.LifecycleAction update_action = 3;
+    int32 update_action_percentage = 4;
 
-    bool dont_respond_to_delete = 5;
-    int32 dont_respond_to_delete_percentage = 6;
+    scenario.LifecycleAction delete_action = 5;
+    int32 delete_action_percentage = 6;
 
-    bool dont_respond_to_get = 7;
-    int32 dont_respond_to_get_percentage = 8;
+    scenario.LifecycleAction get_pod_action = 7;
+    int32 get_pod_action_percentage = 8;
 
-    bool dont_respond_to_get_status = 9;
-    int32 dont_respond_to_get_status_percentage = 10;
-
-    bool dont_respond_to_get_pods = 11;
-    int32 dont_respond_to_get_pods_percentage = 12;
-}
-
-// Defines if there will be an error response to certain CRUD requests from k8s
-// If a field in here is set to true, the corresponding CRUD request will return an error
-// The percentage fields define what percentage of requests on this node will be affected by the error (can be 0-100)
-message LifecycleErrorState {
-    bool error_on_create = 1;
-    int32 error_on_create_percentage = 2;
-
-    bool error_on_update = 3;
-    int32 error_on_update_percentage = 4;
-
-    bool error_on_delete = 5;
-    int32 error_on_delete_percentage = 6;
-
-    bool error_on_get = 7;
-    int32 error_on_get_percentage = 8;
-
-    bool error_on_get_status = 9;
-    int32 error_on_get_status_percentage = 10;
-
-    bool error_on_get_pods = 11;
-    int32 error_on_get_pods_percentage = 12;
+    scenario.LifecycleAction get_pod_status_action = 9;
+    int32 get_pod_status_action_percentage = 10;
 }
