@@ -3,11 +3,8 @@ syntax = "proto3";
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events";
 package apate.controlplane;
 
-// This node fails
+// This node fails, so every request times out
 message NodeFailure {}
-
-// The node will be segregated, so every request will timeout
-message NetworkSegregation {}
 
 // Apply latency to every request
 message NetworkLatency {
@@ -25,8 +22,8 @@ message ResourcePressure {
     // The percentage of CPU used
     int32 cpu_usage = 1;
 
-    // The percentage of RAM used
-    int32 ram_usage = 2;
+    // The percentage of memory used
+    int32 memory_usage = 2;
 
     // The percentage of storage used
     int32 storage_usage = 3;
