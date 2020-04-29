@@ -6,10 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/google/uuid"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
@@ -46,14 +42,6 @@ func main() {
 		shutdown(&createdStore, &kubernetesCluster, server)
 		stopped <- true
 	}()
-
-	// TODO: Remove temp resource add
-	_ = createdStore.AddResourcesToQueue([]normalization.NodeResources{{
-		UUID:    uuid.New(),
-		Memory:  1024,
-		CPU:     1000,
-		MaxPods: 50,
-	}})
 
 	// Start serving request
 	server.Serve()
