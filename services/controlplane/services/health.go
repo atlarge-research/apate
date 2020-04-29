@@ -74,7 +74,8 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 			log.Println(err)
 		}
 
-		atomic.StoreInt32(&cnt, 0)
+		// TODO: Improve
+		// atomic.StoreInt32(&cnt, 0)
 	}
 
 	// If the loop is broken -> node unhealthy
@@ -90,8 +91,9 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 func (h healthService) sendHeartbeat(server health.Health_HealthStreamServer, cnt *int32) {
 	for {
+
 		if atomic.LoadInt32(cnt) >= maxNetworkErrors {
-			return
+			break
 		}
 
 		if err := server.Send(&empty.Empty{}); err != nil {
