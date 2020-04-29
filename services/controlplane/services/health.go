@@ -18,9 +18,11 @@ type healthService struct {
 	store *store.Store
 }
 
-const sendInterval = 1 * time.Second
-const recvTimeout = 5 * time.Second
-const maxNetworkErrors = 3
+const (
+	sendInterval     = 1 * time.Second
+	recvTimeout      = 5 * time.Second
+	maxNetworkErrors = 3
+)
 
 func (h healthService) HealthStream(server health.Health_HealthStreamServer) error {
 	log.Println("Starting new health stream")
@@ -78,7 +80,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 		// atomic.StoreInt32(&cnt, 0)
 	}
 
-	// If the loop is broken -> node unhealthy
+	// If the loop is broken -> node status unknown
 	if err := (*h.store).SetNodeStatus(id, health.Status_UNKNOWN); err != nil {
 		log.Print(err)
 	}
@@ -91,7 +93,6 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 func (h healthService) sendHeartbeat(server health.Health_HealthStreamServer, cnt *int32) {
 	for {
-
 		if atomic.LoadInt32(cnt) >= maxNetworkErrors {
 			break
 		}

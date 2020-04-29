@@ -26,6 +26,7 @@ type Store interface {
 	// GetNode returns the node with the given uuid
 	GetNode(uuid.UUID) (Node, error)
 
+	// SetNodeStatus sets the status of the node with the given uuid
 	SetNodeStatus(uuid.UUID, health.Status) error
 
 	// GetNodes returns an array containing all nodes in the Apate cluster

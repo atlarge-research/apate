@@ -45,7 +45,7 @@ func main() {
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	hc.StartStreamWithRetry(3)
 
-	// start the Apatelet
+	// Start the Apatelet
 	ctx, nc, cancel := getApatelet(location, kubeContext)
 
 	log.Println("Joining kubernetes cluster")

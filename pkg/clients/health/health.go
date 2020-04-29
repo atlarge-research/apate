@@ -24,8 +24,10 @@ type Client struct {
 	statusLock sync.RWMutex
 }
 
-const sendInterval = 1 * time.Second
-const recvTimeout = 5 * time.Second
+const (
+	sendInterval = 1 * time.Second
+	recvTimeout  = 5 * time.Second
+)
 
 // GetClient creates a new health client
 func GetClient(info *service.ConnectionInfo, uuid string) *Client {
