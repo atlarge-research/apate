@@ -96,7 +96,7 @@ func (p *VKProvider) ConfigureNode(_ context.Context, v *corev1.Node) {
 	cpu.Set(p.resources.CPU)
 
 	var mem resource.Quantity
-	mem.Set(p.resources.RAM)
+	mem.Set(p.resources.Memory)
 
 	var pods resource.Quantity
 	pods.Set(p.resources.MaxPods)

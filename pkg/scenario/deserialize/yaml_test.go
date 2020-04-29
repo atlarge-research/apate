@@ -10,7 +10,7 @@ func TestDeserializeYaml(t *testing.T) {
 	scenario, err := YamlScenario{}.FromBytes([]byte(`
 nodes:
     - node_type: testnode
-      ram: 2G
+      memory: 2G
       cpu: 42
       max_pods: 42
 
@@ -50,7 +50,7 @@ tasks:
 	assert.Equal(t, 1, len(obtainedScenario.Nodes))
 
 	assert.Equal(t, "testnode", obtainedScenario.Nodes[0].NodeType)
-	assert.Equal(t, "2G", obtainedScenario.Nodes[0].RAM)
-	assert.Equal(t, int64(42), obtainedScenario.Nodes[0].CPU)
+	assert.Equal(t, "2G", obtainedScenario.Nodes[0].Memory)
+	assert.Equal(t, int64(42), obtainedScenario.Nodes[0].Cpu)
 	assert.Equal(t, int64(42), obtainedScenario.Nodes[0].MaxPods)
 }

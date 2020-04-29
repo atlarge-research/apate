@@ -50,7 +50,7 @@ func main() {
 	// TODO: Remove temp resource add
 	_ = createdStore.AddResourcesToQueue([]normalization.NodeResources{{
 		UUID:    uuid.New(),
-		RAM:     1024,
+		Memory:  1024,
 		CPU:     1000,
 		MaxPods: 50,
 	}})
