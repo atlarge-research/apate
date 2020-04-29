@@ -38,10 +38,12 @@ func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationCl
 func (c *ClusterOperationClient) JoinCluster(location string) (string, *normalization.NodeResources, error) {
 	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
 
+	// Check for any grpc error
 	if err != nil {
 		return "", nil, err
 	}
 
+	// Ensure all dirs exist
 	if _, err = os.Stat(location); os.IsNotExist(err) {
 		if err = os.MkdirAll(path.Dir(location), os.ModePerm); err != nil {
 			return "", nil, err
@@ -49,14 +51,23 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, *normaliz
 	}
 
 	// Save kube config
-	err = ioutil.WriteFile(location, res.KubeConfig, 0644)
+	err = ioutil.WriteFile(location, res.KubeConfig, 0600)
+
+	// Check for write error
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Parse the uuid and check for errors
+	id, err := uuid.Parse(res.NodeUuid)
 
 	if err != nil {
 		return "", nil, err
 	}
 
+	// Return final join information
 	return res.KubeContext, &normalization.NodeResources{
-		UUID:    uuid.MustParse(res.NodeUuid), // TODO: Do we want MustParse or check for error?
+		UUID:    id,
 		RAM:     res.Hardware.Ram,
 		CPU:     res.Hardware.Cpu,
 		MaxPods: res.Hardware.MaxPods,

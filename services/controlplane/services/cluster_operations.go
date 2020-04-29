@@ -24,9 +24,9 @@ type clusterOperationService struct {
 }
 
 // RegisterClusterOperationService registers a new clusterOperationService with the given gRPC server
-func RegisterClusterOperationService(server *service.GRPCServer, cluster *store.Store) {
+func RegisterClusterOperationService(server *service.GRPCServer, store *store.Store) {
 	controlplane.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
-		store: cluster,
+		store: store,
 	})
 }
 
