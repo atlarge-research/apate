@@ -3,6 +3,9 @@ package normalization
 import (
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+
 	"github.com/docker/go-units"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -11,9 +14,7 @@ import (
 )
 
 func TestScenario(t *testing.T) {
-	// CLI
-
-	scenario, err := deserialize.YamlScenario{}.FromBytes([]byte(`
+	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
     -
         node_type: testnode
@@ -44,22 +45,27 @@ tasks:
         time: 10s
         node_groups:
             - testgroup1
-        node_failure: {}
+        node_response_state:
+            type: GET_POD
+            response: ERROR
+            percentage: 14
     -
         name: testtask2
         time: 10s
         node_groups:
             - all
-        node_failure: {}
+        node_response_state:
+            type: DELETE_POD
+            response: TIMEOUT
+            percentage: 42
     -
         name: testtask2
         time: 20s
         revert: true
-
 `))
 	assert.NoError(t, err)
 
-	getScenario, err := scenario.GetScenario()
+	getScenario, err := sc.GetScenario()
 	assert.NoError(t, err)
 
 	ps, nodes, err := NormalizeScenario(getScenario)
@@ -68,16 +74,26 @@ tasks:
 	// Should be 0 because this is set when the scenario is started.
 	assert.Equal(t, int32(0), ps.StartTime)
 	assert.Equal(t, 3, len(ps.Task))
-	assert.Equal(t, "testtask1", ps.Task[0].Name)
 	assert.Equal(t, false, ps.Task[0].RevertTask)
 	assert.Equal(t, 42, len(ps.Task[0].NodeSet))
+	assert.IsType(t, createNodeEvent(&apatelet.ResponseState{
+		GetPodResponse:           scenario.Response_ERROR,
+		GetPodResponsePercentage: 14,
+	}), ps.Task[0].Event) // Is tested more in translator_test
 
-	assert.Equal(t, "testtask2", ps.Task[1].Name)
 	assert.Equal(t, false, ps.Task[1].RevertTask)
 	assert.Equal(t, 52, len(ps.Task[1].NodeSet))
+	assert.IsType(t, createNodeEvent(&apatelet.ResponseState{
+		DeletePodResponse:           scenario.Response_TIMEOUT,
+		DeletePodResponsePercentage: 42,
+	}), ps.Task[1].Event)
 
-	assert.Equal(t, "testtask2", ps.Task[2].Name)
 	assert.Equal(t, true, ps.Task[2].RevertTask)
+	assert.Equal(t, 52, len(ps.Task[2].NodeSet))
+	assert.IsType(t, createNodeEvent(&apatelet.ResponseState{
+		DeletePodResponse:           scenario.Response_TIMEOUT,
+		DeletePodResponsePercentage: 42,
+	}), ps.Task[2].Event)
 
 	assert.Equal(t, 52, len(nodes))
 
@@ -109,4 +125,48 @@ tasks:
 
 	assert.Equal(t, 42, alreadySeenType1)
 	assert.Equal(t, 10, alreadySeenType2)
+}
+
+func TestScenarioRevertUnknown(t *testing.T) {
+	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
+nodes:
+    -
+        node_type: testnode
+        memory: 2G
+        cpu: 42
+        storage: 2G
+        ephemeral_storage: 2M
+        max_pods: 42
+node_groups:
+    -
+        group_name: testgroup1
+        node_type: testnode
+        amount: 42
+tasks:
+    -
+        name: a
+        time: 10s
+        node_groups:
+            - testgroup1
+        node_failure: {}
+    -
+        name: b
+        time: 10s
+        revert: true
+`))
+	assert.NoError(t, err)
+
+	getScenario, err := sc.GetScenario()
+	assert.NoError(t, err)
+
+	_, _, err = NormalizeScenario(getScenario)
+	assert.Error(t, err, "you can't revert task with name 'b' as you have never used it before")
+}
+
+func createNodeEvent(responseState *apatelet.ResponseState) *apatelet.Task_NodeEvent {
+	return &apatelet.Task_NodeEvent{NodeEvent: &apatelet.NodeEvent{NodeState: &apatelet.NodeState{
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: responseState},
+		ResourceState:     &apatelet.NodeState_ResourceState{},
+		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
+	}}}
 }
