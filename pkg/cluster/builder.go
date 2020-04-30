@@ -45,8 +45,7 @@ func (b *Builder) WithCreator(creator Manager) *Builder {
 	return b
 }
 
-// UnManaged creates an unmanaged cluster from the builder.
-func (b *Builder) UnManaged() (KubernetesCluster, error) {
+func (b *Builder) unManaged() (KubernetesCluster, error) {
 	config, err := GetKubeConfig(b.kubeConfigLocation)
 	if err != nil {
 		return KubernetesCluster{}, err
@@ -90,7 +89,7 @@ func (b *Builder) Create() (ManagedCluster, error) {
 		return ManagedCluster{}, err
 	}
 
-	kubernetesCluster, err := b.UnManaged()
+	kubernetesCluster, err := b.unManaged()
 	if err != nil {
 		return ManagedCluster{}, err
 	}
