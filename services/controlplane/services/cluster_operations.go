@@ -3,6 +3,7 @@ package services
 
 import (
 	"context"
+	cluster2 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"io/ioutil"
 	"log"
 	"net"
@@ -69,6 +70,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformation *controlplane.LeaveInformation) (*empty.Empty, error) {
 	// TODO: Maybe check if the remote address is still the same? idk
 
+	cluster, err := cluster2.KubernetesClusterFromConfigPath(s.cluster)
 
 
 	// TODO: Remove node from cluster and maybe from k8s too?
