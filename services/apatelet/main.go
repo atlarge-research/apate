@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/virtual-kubelet/virtual-kubelet/node"
+	"k8s.io/client-go/kubernetes"
+
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
@@ -9,9 +12,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
-
-	"github.com/virtual-kubelet/virtual-kubelet/node"
-	"k8s.io/client-go/kubernetes"
 
 	"context"
 	"log"
