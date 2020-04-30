@@ -163,6 +163,109 @@ tasks:
 	assert.Error(t, err, "you can't revert task with name 'b' as you have never used it before")
 }
 
+func TestScenarioSameNameTwice(t *testing.T) {
+	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
+nodes:
+    -
+        node_type: testnode
+        memory: 2G
+        cpu: 42
+        storage: 2G
+        ephemeral_storage: 2M
+        max_pods: 42
+node_groups:
+    -
+        group_name: testgroup1
+        node_type: testnode
+        amount: 42
+tasks:
+    -
+        name: a
+        time: 10s
+        node_groups:
+            - testgroup1
+        node_failure: {}
+    -
+        name: a
+        time: 10s
+        node_groups:
+            - testgroup1
+        node_failure: {}
+`))
+	assert.NoError(t, err)
+
+	getScenario, err := sc.GetScenario()
+	assert.NoError(t, err)
+
+	_, _, err = NormalizeScenario(getScenario)
+	assert.Error(t, err, "you can't use the task with name 'a' twice")
+}
+
+func TestScenarioRevertNameless(t *testing.T) {
+	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
+nodes:
+    -
+        node_type: testnode
+        memory: 2G
+        cpu: 42
+        storage: 2G
+        ephemeral_storage: 2M
+        max_pods: 42
+node_groups:
+    -
+        group_name: testgroup1
+        node_type: testnode
+        amount: 42
+tasks:
+    -
+        time: 10s
+        revert: true
+`))
+	assert.NoError(t, err)
+
+	getScenario, err := sc.GetScenario()
+	assert.NoError(t, err)
+
+	_, _, err = NormalizeScenario(getScenario)
+	assert.Error(t, err, "you can't revert a task with an empty task name")
+}
+
+func TestScenarioNameless(t *testing.T) {
+	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
+nodes:
+    -
+        node_type: testnode
+        memory: 2G
+        cpu: 42
+        storage: 2G
+        ephemeral_storage: 2M
+        max_pods: 42
+node_groups:
+    -
+        group_name: testgroup1
+        node_type: testnode
+        amount: 42
+tasks:
+    -
+        time: 10s
+        node_groups:
+            - testgroup1
+        node_failure: {}
+    -
+        time: 10s
+        node_groups:
+            - testgroup1
+        node_failure: {}
+`))
+	assert.NoError(t, err)
+
+	getScenario, err := sc.GetScenario()
+	assert.NoError(t, err)
+
+	_, _, err = NormalizeScenario(getScenario)
+	assert.NoError(t, err)
+}
+
 func createNodeEvent(responseState *apatelet.ResponseState) *apatelet.Task_NodeEvent {
 	return &apatelet.Task_NodeEvent{NodeEvent: &apatelet.NodeEvent{NodeState: &apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: responseState},
