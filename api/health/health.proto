@@ -1,10 +1,9 @@
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/health";
+package apate.health;
 
 import "google/protobuf/empty.proto";
-
-package apate.health;
 
 // The various states that an Apatelet may be
 enum Status {

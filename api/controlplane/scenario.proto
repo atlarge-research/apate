@@ -1,10 +1,13 @@
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
+package apate.controlplane;
 
 import "google/protobuf/empty.proto";
 
-package apate.controlplane;
+import "controlplane/events/node_events.proto";
+import "controlplane/events/shared_events.proto";
+import "controlplane/events/pod_events.proto";
 
 service Scenario {
     rpc loadScenario (PublicScenario) returns (google.protobuf.Empty) {}
@@ -41,6 +44,26 @@ message Task {
     // Which nodes this task applies to
     // This field should not be set when revert is true
     repeated string node_groups = 4;
+
+    oneof event {
+        // Node events
+        events.NodeFailure node_failure = 5;
+
+        events.NetworkLatency network_latency = 6;
+
+        events.TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
+        events.NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
+
+        events.ResponseState node_response_state = 9;
+
+        events.ResourcePressure resource_pressure = 10;
+
+        // Pod events
+        events.ResponseState pod_response_state = 11;
+
+        events.PodStatusUpdate pod_status_update = 12;
+        events.PodStartTimeUpdate pod_start_time_update = 13;
+    }
 }
 
 message Node {
@@ -54,8 +77,16 @@ message Node {
     // The amount of milli CPUs allocated to the node
     int64 cpu = 3;
 
+    // The amount of storage a node gets.
+    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
+    string storage = 4;
+
+    // The amount of ephemeral storage a node gets.
+    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
+    string ephemeral_storage = 5;
+
     // Maximum number of pods per node.
-    int64 max_pods = 4;
+    int64 max_pods = 6;
 }
 
 // A node group specifies a group of many nodes with the same properties.
