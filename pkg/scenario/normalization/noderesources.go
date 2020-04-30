@@ -13,6 +13,12 @@ type NodeResources struct {
 	// The amount of milli CPUs in Kubernetes
 	CPU int64
 
+	// The amount of bytes of storage
+	Storage int64
+
+	// The amount of bytes of ephemeral storage
+	EphemeralStorage int64
+
 	// The max amount of pods in Kubernetes
 	MaxPods int64
 }

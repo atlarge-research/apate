@@ -24,8 +24,14 @@ message NodeHardware {
     // The amount of milli CPUs in Kubernetes
     int64 cpu = 2;
 
+    // The amount of bytes of storage
+    int64 storage = 3;
+
+    // The amount of bytes of ephemeral storage
+    int64 ephemeral_storage = 4;
+
     // The max amount of pods in Kubernetes
-    int64 max_pods = 3;
+    int64 max_pods = 5;
 }
 
 message JoinInformation {

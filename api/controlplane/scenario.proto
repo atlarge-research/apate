@@ -54,12 +54,12 @@ message Task {
         events.TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
         events.NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
 
-        events.LifecycleState node_lifecycle_state = 9;
+        events.ResponseState node_response_state = 9;
 
         events.ResourcePressure resource_pressure = 10;
 
         // Pod events
-        events.LifecycleState pod_lifecycle_state = 11;
+        events.ResponseState pod_response_state = 11;
 
         events.PodStatusUpdate pod_status_update = 12;
         events.PodStartTimeUpdate pod_start_time_update = 13;
@@ -77,8 +77,16 @@ message Node {
     // The amount of milli CPUs allocated to the node
     int64 cpu = 3;
 
+    // The amount of storage a node gets.
+    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
+    string storage = 4;
+
+    // The amount of ephemeral storage a node gets.
+    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
+    string ephemeral_storage = 5;
+
     // Maximum number of pods per node.
-    int64 max_pods = 4;
+    int64 max_pods = 6;
 }
 
 // A node group specifies a group of many nodes with the same properties.

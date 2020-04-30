@@ -6,19 +6,19 @@ package apate.controlplane.events;
 import "scenario/events.proto";
 
 // A percentage of lifecycle requests will error
-message LifecycleState {
+message ResponseState {
     // The lifecycle type to act upon
-    LifecycleType type = 1;
+    RequestType type = 1;
 
     // The lifecycle type to act upon
-    scenario.LifecycleAction action = 2;
+    scenario.Response response = 2;
 
     // The percentage of lifecycle requests to respond with error to
     int32 percentage = 3;
 }
 
 // See https://github.com/virtual-kubelet/virtual-kubelet/#podlifecylcehandler
-enum LifecycleType {
+enum RequestType {
     CREATE_POD = 0;
     UPDATE_POD = 1;
     DELETE_POD = 2;
