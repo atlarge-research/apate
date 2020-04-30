@@ -26,7 +26,6 @@ func NewNode(nodeType string, role string, name string, version string) *NodeInf
 	}
 }
 
-
 // CreateKubernetesNode creates a kubernetes api object representing a node
 func CreateKubernetesNode(ctx context.Context, node NodeInfo, provider provider.Provider) *corev1.Node {
 	taints := make([]corev1.Taint, 0)

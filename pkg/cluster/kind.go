@@ -52,9 +52,5 @@ func (*KinD) DeleteCluster(name string) error {
 	// Deletes the cluster
 	// As far as I could test this call never errors (it just doesn't do anything
 	// when the cluster doesn't exist) so I don't think the system used in CreateCluster is necessary.
-	if err := app.Run(logger, cmd.StandardIOStreams(), args); err != nil {
-		return err
-	}
-	// Only gets here after the cluster is deleted
-	return nil
+	return app.Run(logger, cmd.StandardIOStreams(), args)
 }

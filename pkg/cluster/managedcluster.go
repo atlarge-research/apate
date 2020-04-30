@@ -7,7 +7,7 @@ package cluster
 type ManagedCluster struct {
 	KubernetesCluster
 	manager Manager
-	name string
+	name    string
 }
 
 // Delete destroys a (managed) kubernetes cluster

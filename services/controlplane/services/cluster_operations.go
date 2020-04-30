@@ -3,10 +3,11 @@ package services
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"log"
 	"net"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 
 	"google.golang.org/grpc/peer"
 
@@ -66,8 +67,8 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 
 	// TODO: Retrieve proper kube context from somewhere
 	return &controlplane.JoinInformation{
-		KubeConfig:  s.kubernetesCluster.KubeConfig,
-		NodeUuid:    node.UUID.String(),
+		KubeConfig: s.kubernetesCluster.KubeConfig,
+		NodeUuid:   node.UUID.String(),
 		Hardware: &controlplane.NodeHardware{
 			Memory:  nodeResources.Memory,
 			Cpu:     nodeResources.CPU,
@@ -85,9 +86,10 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 	log.Printf("Received request to leave apate store from node %s\n", leaveInformation.NodeUuid)
 
 	// TODO: Remove node from cluster and maybe from k8s too?
-	s.kubernetesCluster.RemoveNodeFromCluster("Apate-" + leaveInformation.NodeUUID)
+	if err := s.kubernetesCluster.RemoveNodeFromCluster("Apate-" + leaveInformation.NodeUuid); err != nil {
+		return nil, err
+	}
 
-	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUUID)
+	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
 	return &empty.Empty{}, nil
 }
-
