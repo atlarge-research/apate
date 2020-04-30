@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario";
+package apate.scenario;
+
+// How to respond to a request
+enum Response {
+    // Just respond normally, as fast as possible
+    NORMAL = 0;
+
+    // Don't respond at all
+    TIMEOUT = 1;
+
+    // Respond with an error
+    ERROR = 2;
+}
