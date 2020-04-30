@@ -3,8 +3,10 @@ package controlplane
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+
 	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
