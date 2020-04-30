@@ -59,7 +59,12 @@ func (th *EventTranslator) TranslateEvent() error {
 	case *controlplane.Task_NetworkLatency:
 		latencyState := th.createNodeEvent().GetNodeState().GetAddedLatencyState()
 		latencyState.AddedLatencyEnabled = true
-		latencyState.AddedLatencyMsec = x.NetworkLatency.GetLatencyMsec()
+
+		if x.NetworkLatency.LatencyMsec < 0 {
+			return errors.New("latency should be at least 0")
+		}
+
+		latencyState.AddedLatencyMsec = x.NetworkLatency.LatencyMsec
 
 	case *controlplane.Task_TimeoutKeepHeartbeat:
 		ne := th.createNodeEvent()
@@ -76,6 +81,10 @@ func (th *EventTranslator) TranslateEvent() error {
 		lifecycleState := nodeLifecycleState.GetLifecycleState()
 
 		state := x.NodeLifecycleState
+
+		if state.Percentage < 0 || state.Percentage > 100 {
+			return errors.New("percentage should be between 0 and 100")
+		}
 
 		switch state.Type {
 		case events.LifecycleType_CREATE_POD:
@@ -103,10 +112,28 @@ func (th *EventTranslator) TranslateEvent() error {
 	case *controlplane.Task_ResourcePressure:
 		resourceState := th.createNodeEvent().GetNodeState().GetResourceState()
 		resourceState.EnableResourceAlteration = true
-		resourceState.CpuUsage = x.ResourcePressure.GetCpuUsage()
-		resourceState.MemoryUsage = x.ResourcePressure.GetMemoryUsage()
-		resourceState.StorageUsage = x.ResourcePressure.GetStorageUsage()
-		resourceState.EphemeralStorageUsage = x.ResourcePressure.GetEphemeralStorageUsage()
+
+		rp := x.ResourcePressure
+
+		if rp.CpuUsage < 0 {
+			return errors.New("CPU usage should be at least 0")
+		}
+		resourceState.CpuUsage = rp.CpuUsage
+
+		if rp.MemoryUsage < 0 {
+			return errors.New("memory usage should be at least 0")
+		}
+		resourceState.MemoryUsage = rp.MemoryUsage
+
+		if rp.StorageUsage < 0 {
+			return errors.New("storage usage should be at least 0")
+		}
+		resourceState.StorageUsage = rp.StorageUsage
+
+		if rp.EphemeralStorageUsage < 0 {
+			return errors.New("ephemeral storage usage should be at least 0")
+		}
+		resourceState.EphemeralStorageUsage = rp.EphemeralStorageUsage
 
 	// Pod events
 	case *controlplane.Task_PodLifecycleState:
@@ -114,6 +141,10 @@ func (th *EventTranslator) TranslateEvent() error {
 		lifecycleState := getPodLifecycleState(pe).GetLifecycleState()
 
 		state := x.PodLifecycleState
+
+		if state.Percentage < 0 || state.Percentage > 100 {
+			return errors.New("percentage should be between 0 and 100")
+		}
 
 		switch state.Type {
 		case events.LifecycleType_CREATE_POD:
@@ -136,10 +167,17 @@ func (th *EventTranslator) TranslateEvent() error {
 		}
 
 	case *controlplane.Task_PodStatusUpdate:
-		th.createPodEvent().GetPodState().PodStatus = x.PodStatusUpdate.NewStatus
+		event := th.createPodEvent()
+
+		if x.PodStatusUpdate.Percentage < 0 || x.PodStatusUpdate.Percentage > 100 {
+			return errors.New("percentage should be between 0 and 100")
+		}
+
+		event.GetPodState().PodStatus = x.PodStatusUpdate.NewStatus
+		event.GetPodState().PodStatusPercentage = x.PodStatusUpdate.Percentage
 
 	case *controlplane.Task_PodStartTimeUpdate:
-		th.createPodEvent().GetPodState().StartTime = x.PodStartTimeUpdate.NewStartTime
+		th.createPodEvent().GetPodState().PodStartTime = x.PodStartTimeUpdate.NewStartTime
 	}
 
 	return nil

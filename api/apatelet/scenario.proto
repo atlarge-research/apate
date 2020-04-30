@@ -135,7 +135,7 @@ message PodState {
     // The starting time of this pod (see corev1.PodStatus.StartTime)
     // ISO8601 format
     // Can be left empty to keep the starting time unchanged
-    string start_time = 4;
+    string pod_start_time = 4;
 }
 
 // Defines if there will be a response to certain CRUD requests from k8s

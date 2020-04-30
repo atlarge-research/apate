@@ -7,6 +7,7 @@ import "scenario/pods.proto";
 
 message PodStatusUpdate {
     scenario.PodStatus new_status = 1;
+    int32 percentage = 2;
 }
 
 message PodStartTimeUpdate {
