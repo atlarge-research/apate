@@ -1,6 +1,6 @@
 GO111MODULE=on
 
-all: build lint test
+all: build protobuf mockgen lint test docker_build
 
 build:
 	go build ./...
@@ -16,7 +16,7 @@ lint_fix:
 	golangci-lint run --fix
 
 test:
-	go test ./...
+	go test -v ./...
 
 test_short:
 	go test -short ./...
