@@ -101,9 +101,17 @@ func (p *VKProvider) ConfigureNode(_ context.Context, v *corev1.Node) {
 	var pods resource.Quantity
 	pods.Set(p.resources.MaxPods)
 
+	var storage resource.Quantity
+	storage.Set(p.resources.Storage)
+
+	var ephemeralStorage resource.Quantity
+	ephemeralStorage.Set(p.resources.EphemeralStorage)
+
 	v.Status.Capacity = corev1.ResourceList{
-		"cpu":    cpu,
-		"memory": mem,
-		"pods":   pods,
+		corev1.ResourceCPU:              cpu,
+		corev1.ResourceMemory:           mem,
+		corev1.ResourcePods:             pods,
+		corev1.ResourceStorage:          storage,
+		corev1.ResourceEphemeralStorage: ephemeralStorage,
 	}
 }
