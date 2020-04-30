@@ -2,10 +2,12 @@ package events
 
 import (
 	"errors"
+	"fmt"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/docker/go-units"
 )
 
 type EventTranslator struct {
@@ -23,8 +25,8 @@ func NewEventTranslator(originalTask *controlplane.Task, newTask *apatelet.Task)
 func (th *EventTranslator) createNodeEvent() *apatelet.NodeEvent {
 	ne := &apatelet.NodeEvent{
 		NodeState: &apatelet.NodeState{
-			NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{
-				LifecycleState: &apatelet.LifecycleState{},
+			NodeResponseState: &apatelet.NodeState_NodeResponseState{
+				ResponseState: &apatelet.ResponseState{},
 			},
 			ResourceState:     &apatelet.NodeState_ResourceState{},
 			AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
@@ -37,8 +39,8 @@ func (th *EventTranslator) createNodeEvent() *apatelet.NodeEvent {
 func (th *EventTranslator) createPodEvent() *apatelet.PodEvent {
 	pe := &apatelet.PodEvent{
 		PodState: &apatelet.PodState{
-			PodLifecycleState: &apatelet.PodState_PodLifecycleState{
-				LifecycleState: &apatelet.LifecycleState{},
+			PodResponseState: &apatelet.PodState_PodResponseState{
+				ResponseState: &apatelet.ResponseState{},
 			},
 		},
 	}
@@ -54,7 +56,7 @@ func (th *EventTranslator) TranslateEvent() error {
 	switch x := th.originalTask.Event.(type) {
 	// Node events
 	case *controlplane.Task_NodeFailure:
-		applyNodeAction(th.createNodeEvent(), scenario.LifecycleAction_TIMEOUT, 100)
+		applyNodeResponse(th.createNodeEvent(), scenario.Response_TIMEOUT, 100)
 
 	case *controlplane.Task_NetworkLatency:
 		latencyState := th.createNodeEvent().GetNodeState().GetAddedLatencyState()
@@ -68,45 +70,45 @@ func (th *EventTranslator) TranslateEvent() error {
 
 	case *controlplane.Task_TimeoutKeepHeartbeat:
 		ne := th.createNodeEvent()
-		applyNodeAction(ne, scenario.LifecycleAction_TIMEOUT, 100)
-		setPingAction(getNodeLifecycleState(ne), scenario.LifecycleAction_NORMAL, 0)
+		applyNodeResponse(ne, scenario.Response_TIMEOUT, 100)
+		setPingResponse(getNodeResponseState(ne), scenario.Response_NORMAL, 0)
 
 	case *controlplane.Task_NoTimeoutNoHeartbeat:
 		ne := th.createNodeEvent()
-		setPingAction(getNodeLifecycleState(ne), scenario.LifecycleAction_TIMEOUT, 100)
+		setPingResponse(getNodeResponseState(ne), scenario.Response_TIMEOUT, 100)
 
-	case *controlplane.Task_NodeLifecycleState:
+	case *controlplane.Task_NodeResponseState:
 		ne := th.createNodeEvent()
-		nodeLifecycleState := getNodeLifecycleState(ne)
-		lifecycleState := nodeLifecycleState.GetLifecycleState()
+		nodeResponseState := getNodeResponseState(ne)
+		ResponseState := nodeResponseState.GetResponseState()
 
-		state := x.NodeLifecycleState
+		state := x.NodeResponseState
 
 		if state.Percentage < 0 || state.Percentage > 100 {
 			return errors.New("percentage should be between 0 and 100")
 		}
 
 		switch state.Type {
-		case events.LifecycleType_CREATE_POD:
-			setCreatePodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_CREATE_POD:
+			setCreatePodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_UPDATE_POD:
-			setUpdatePodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_UPDATE_POD:
+			setUpdatePodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_DELETE_POD:
-			setDeletePodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_DELETE_POD:
+			setDeletePodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_GET_POD:
-			setGetPodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_GET_POD:
+			setGetPodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_GET_POD_STATUS:
-			setGetPodStatusAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_GET_POD_STATUS:
+			setGetPodStatusResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_GET_PODS:
-			setGetPodsAction(nodeLifecycleState, state.Action, state.Percentage)
+		case events.RequestType_GET_PODS:
+			setGetPodsResponse(nodeResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_PING:
-			setPingAction(nodeLifecycleState, state.Action, state.Percentage)
+		case events.RequestType_PING:
+			setPingResponse(nodeResponseState, state.Response, state.Percentage)
 		}
 
 	case *controlplane.Task_ResourcePressure:
@@ -120,47 +122,50 @@ func (th *EventTranslator) TranslateEvent() error {
 		}
 		resourceState.CpuUsage = rp.CpuUsage
 
-		if rp.MemoryUsage < 0 {
-			return errors.New("memory usage should be at least 0")
+		memory, err := getInBytes(rp.MemoryUsage, "memory")
+		if err != nil {
+			return err
 		}
-		resourceState.MemoryUsage = rp.MemoryUsage
+		resourceState.MemoryUsage = memory
 
-		if rp.StorageUsage < 0 {
-			return errors.New("storage usage should be at least 0")
+		storage, err := getInBytes(rp.StorageUsage, "storage")
+		if err != nil {
+			return err
 		}
-		resourceState.StorageUsage = rp.StorageUsage
+		resourceState.StorageUsage = storage
 
-		if rp.EphemeralStorageUsage < 0 {
-			return errors.New("ephemeral storage usage should be at least 0")
+		ephStorage, err := getInBytes(rp.EphemeralStorageUsage, "ephemeral storage")
+		if err != nil {
+			return err
 		}
-		resourceState.EphemeralStorageUsage = rp.EphemeralStorageUsage
+		resourceState.EphemeralStorageUsage = ephStorage
 
 	// Pod events
-	case *controlplane.Task_PodLifecycleState:
+	case *controlplane.Task_PodResponseState:
 		pe := th.createPodEvent()
-		lifecycleState := getPodLifecycleState(pe).GetLifecycleState()
+		ResponseState := getPodResponseState(pe).GetResponseState()
 
-		state := x.PodLifecycleState
+		state := x.PodResponseState
 
 		if state.Percentage < 0 || state.Percentage > 100 {
 			return errors.New("percentage should be between 0 and 100")
 		}
 
 		switch state.Type {
-		case events.LifecycleType_CREATE_POD:
-			setCreatePodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_CREATE_POD:
+			setCreatePodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_UPDATE_POD:
-			setUpdatePodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_UPDATE_POD:
+			setUpdatePodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_DELETE_POD:
-			setDeletePodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_DELETE_POD:
+			setDeletePodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_GET_POD:
-			setGetPodAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_GET_POD:
+			setGetPodResponse(ResponseState, state.Response, state.Percentage)
 
-		case events.LifecycleType_GET_POD_STATUS:
-			setGetPodStatusAction(lifecycleState, state.Action, state.Percentage)
+		case events.RequestType_GET_POD_STATUS:
+			setGetPodStatusResponse(ResponseState, state.Response, state.Percentage)
 
 		default:
 			return errors.New("can't alter the GetPods / Ping response on pod level")
@@ -181,4 +186,14 @@ func (th *EventTranslator) TranslateEvent() error {
 	}
 
 	return nil
+}
+
+func getInBytes(unit string, unitName string) (int64, error) {
+	unitInt, err := units.RAMInBytes(unit)
+	if err != nil {
+		return 0, err
+	} else if unitInt < 0 {
+		return 0, fmt.Errorf("%s usage should be at least 0", unitName)
+	}
+	return unitInt, nil
 }

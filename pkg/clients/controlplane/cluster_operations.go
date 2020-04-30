@@ -67,10 +67,12 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, *normaliz
 
 	// Return final join information
 	return res.KubeContext, &normalization.NodeResources{
-		UUID:    id,
-		Memory:  res.Hardware.Memory,
-		CPU:     res.Hardware.Cpu,
-		MaxPods: res.Hardware.MaxPods,
+		UUID:             id,
+		Memory:           res.Hardware.Memory,
+		CPU:              res.Hardware.Cpu,
+		Storage:          res.Hardware.Storage,
+		EphemeralStorage: res.Hardware.EphemeralStorage,
+		MaxPods:          res.Hardware.MaxPods,
 	}, nil
 }
 

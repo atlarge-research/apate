@@ -67,17 +67,17 @@ message PodEvent {
 
 // The node state that will be applied to the node.
 message NodeState {
-    message NodeLifecycleState {
-        LifecycleState lifecycleState = 1;
+    message NodeResponseState {
+        ResponseState response_state = 1;
 
-        scenario.LifecycleAction get_pods_action = 2;
-        int32 get_pods_action_percentage = 3;
+        scenario.Response get_pods_response = 2;
+        int32 get_pods_response_percentage = 3;
 
-        scenario.LifecycleAction ping_action = 4;
-        int32 ping_action_percentage = 5;
+        scenario.Response ping_response = 4;
+        int32 ping_response_percentage = 5;
     }
 
-    NodeLifecycleState node_lifecycle_state = 1;
+    NodeResponseState node_response_state = 1;
 
     // Defines the amount of resources the node has in use
     // Will default to 0% for all types of possible resources (corev1.ResourceName)
@@ -87,16 +87,16 @@ message NodeState {
         bool enable_resource_alteration = 1;
 
         // The percentage of CPU used
-        int32 cpu_usage = 2;
+        int64 cpu_usage = 2;
 
         // The percentage of memory used
-        int32 memory_usage = 3;
+        int64 memory_usage = 3;
 
         // The percentage of storage used
-        int32 storage_usage = 4;
+        int64 storage_usage = 4;
 
         // The percentage of ephermal storage used
-        int32 ephemeral_storage_usage = 5;
+        int64 ephemeral_storage_usage = 5;
     }
 
     ResourceState resource_state = 2;
@@ -118,11 +118,11 @@ message NodeState {
 // The pod state that will be applied a certain pod deployment
 // To which deployment this state if applied depends on the `deployment` in `PodEvent`
 message PodState {
-    message PodLifecycleState {
-        LifecycleState lifecycleState = 1;
+    message PodResponseState {
+        ResponseState response_state = 1;
     }
 
-    PodLifecycleState pod_lifecycle_state = 1;
+    PodResponseState pod_response_state = 1;
 
     // The status of a certain percentage of pods in the current deployment
     // Can be left empty to keep the status unchanged
@@ -138,22 +138,22 @@ message PodState {
     string pod_start_time = 4;
 }
 
-// Defines if there will be a response to certain CRUD requests from k8s
-// If a field in here is set to true, the corresponding CRUD request will timeout
-// The percentage fields define what percentage of requests on this node will be affected by the error
-message LifecycleState {
-    scenario.LifecycleAction create_pod_action = 1;
-    int32 create_pod_action_percentage = 2;
+// Defines how to respond to certain requests from k8s
+// The percentage fields define what percentage of these types of requests on this node will be affected by the setting
+// Note that this percentage will be ignored when the action is NORMAL
+message ResponseState {
+    scenario.Response create_pod_response = 1;
+    int32 create_pod_response_percentage = 2;
 
-    scenario.LifecycleAction update_pod_action = 3;
-    int32 update_pod_action_percentage = 4;
+    scenario.Response update_pod_response = 3;
+    int32 update_pod_response_percentage = 4;
 
-    scenario.LifecycleAction delete_pod_action = 5;
-    int32 delete_pod_action_percentage = 6;
+    scenario.Response delete_pod_response = 5;
+    int32 delete_pod_response_percentage = 6;
 
-    scenario.LifecycleAction get_pod_action = 7;
-    int32 get_pod_action_percentage = 8;
+    scenario.Response get_pod_response = 7;
+    int32 get_pod_response_percentage = 8;
 
-    scenario.LifecycleAction get_pod_status_action = 9;
-    int32 get_pod_status_action_percentage = 10;
+    scenario.Response get_pod_status_response = 9;
+    int32 get_pod_status_response_percentage = 10;
 }

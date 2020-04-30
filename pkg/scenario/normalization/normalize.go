@@ -32,7 +32,18 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.Apatele
 			id := uuid.New()
 
 			nodeType := nodeTypeName[nodeGroup.NodeType]
+
 			memory, err := units.RAMInBytes(nodeType.Memory)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			storage, err := units.RAMInBytes(nodeType.Storage)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			ephStorage, err := units.RAMInBytes(nodeType.EphemeralStorage)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -41,6 +52,8 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.Apatele
 				id,
 				memory,
 				nodeType.Cpu,
+				storage,
+				ephStorage,
 				nodeType.MaxPods,
 			})
 

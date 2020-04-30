@@ -5,6 +5,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/docker/go-units"
 	"github.com/golang/protobuf/jsonpb"
 	"testing"
 
@@ -19,23 +20,23 @@ func TestNodeFailure(t *testing.T) {
 node_failure: {}
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{
-			LifecycleState: &apatelet.LifecycleState{
-				CreatePodAction:              scenario.LifecycleAction_TIMEOUT,
-				CreatePodActionPercentage:    100,
-				UpdatePodAction:              scenario.LifecycleAction_TIMEOUT,
-				UpdatePodActionPercentage:    100,
-				DeletePodAction:              scenario.LifecycleAction_TIMEOUT,
-				DeletePodActionPercentage:    100,
-				GetPodAction:                 scenario.LifecycleAction_TIMEOUT,
-				GetPodActionPercentage:       100,
-				GetPodStatusAction:           scenario.LifecycleAction_TIMEOUT,
-				GetPodStatusActionPercentage: 100,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{
+			ResponseState: &apatelet.ResponseState{
+				CreatePodResponse:              scenario.Response_TIMEOUT,
+				CreatePodResponsePercentage:    100,
+				UpdatePodResponse:              scenario.Response_TIMEOUT,
+				UpdatePodResponsePercentage:    100,
+				DeletePodResponse:              scenario.Response_TIMEOUT,
+				DeletePodResponsePercentage:    100,
+				GetPodResponse:                 scenario.Response_TIMEOUT,
+				GetPodResponsePercentage:       100,
+				GetPodStatusResponse:           scenario.Response_TIMEOUT,
+				GetPodStatusResponsePercentage: 100,
 			},
-			GetPodsAction:           scenario.LifecycleAction_TIMEOUT,
-			GetPodsActionPercentage: 100,
-			PingAction:              scenario.LifecycleAction_TIMEOUT,
-			PingActionPercentage:    100,
+			GetPodsResponse:           scenario.Response_TIMEOUT,
+			GetPodsResponsePercentage: 100,
+			PingResponse:              scenario.Response_TIMEOUT,
+			PingResponsePercentage:    100,
 		},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
@@ -48,7 +49,7 @@ network_latency:
   latency_msec: 100
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{LifecycleState: &apatelet.LifecycleState{}},
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{}},
 		ResourceState:      &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{
 			AddedLatencyEnabled: true,
@@ -69,21 +70,21 @@ func TestTimeoutKeepHeartbeat(t *testing.T) {
 timeout_keep_heartbeat: {}
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{
-			LifecycleState: &apatelet.LifecycleState{
-				CreatePodAction:              scenario.LifecycleAction_TIMEOUT,
-				CreatePodActionPercentage:    100,
-				UpdatePodAction:              scenario.LifecycleAction_TIMEOUT,
-				UpdatePodActionPercentage:    100,
-				DeletePodAction:              scenario.LifecycleAction_TIMEOUT,
-				DeletePodActionPercentage:    100,
-				GetPodAction:                 scenario.LifecycleAction_TIMEOUT,
-				GetPodActionPercentage:       100,
-				GetPodStatusAction:           scenario.LifecycleAction_TIMEOUT,
-				GetPodStatusActionPercentage: 100,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{
+			ResponseState: &apatelet.ResponseState{
+				CreatePodResponse:              scenario.Response_TIMEOUT,
+				CreatePodResponsePercentage:    100,
+				UpdatePodResponse:              scenario.Response_TIMEOUT,
+				UpdatePodResponsePercentage:    100,
+				DeletePodResponse:              scenario.Response_TIMEOUT,
+				DeletePodResponsePercentage:    100,
+				GetPodResponse:                 scenario.Response_TIMEOUT,
+				GetPodResponsePercentage:       100,
+				GetPodStatusResponse:           scenario.Response_TIMEOUT,
+				GetPodStatusResponsePercentage: 100,
 			},
-			GetPodsAction:           scenario.LifecycleAction_TIMEOUT,
-			GetPodsActionPercentage: 100,
+			GetPodsResponse:           scenario.Response_TIMEOUT,
+			GetPodsResponsePercentage: 100,
 		},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
@@ -95,151 +96,151 @@ func TestNoTimeoutNoHeartbeat(t *testing.T) {
 no_timeout_no_heartbeat: {}
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{
-			LifecycleState:       &apatelet.LifecycleState{},
-			PingAction:           scenario.LifecycleAction_TIMEOUT,
-			PingActionPercentage: 100,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{
+			ResponseState:       &apatelet.ResponseState{},
+			PingResponse:           scenario.Response_TIMEOUT,
+			PingResponsePercentage: 100,
 		},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStateCreatePod(t *testing.T) {
+func TestNodeResponseStateCreatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: CREATE_POD
-  action: ERROR
+  response: ERROR
   percentage: 42
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			CreatePodAction:           scenario.LifecycleAction_ERROR,
-			CreatePodActionPercentage: 42,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
+			CreatePodResponse:           scenario.Response_ERROR,
+			CreatePodResponsePercentage: 42,
 		}},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStateUpdatePod(t *testing.T) {
+func TestNodeResponseStateUpdatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: UPDATE_POD
-  action: TIMEOUT
+  response: TIMEOUT
   percentage: 15
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			UpdatePodAction:           scenario.LifecycleAction_TIMEOUT,
-			UpdatePodActionPercentage: 15,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
+			UpdatePodResponse:           scenario.Response_TIMEOUT,
+			UpdatePodResponsePercentage: 15,
 		}},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStateDeletePod(t *testing.T) {
+func TestNodeResponseStateDeletePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: DELETE_POD
-  action: ERROR
+  response: ERROR
   percentage: 100
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			DeletePodAction:           scenario.LifecycleAction_ERROR,
-			DeletePodActionPercentage: 100,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
+			DeletePodResponse:           scenario.Response_ERROR,
+			DeletePodResponsePercentage: 100,
 		}},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStateGetPod(t *testing.T) {
+func TestNodeResponseStateGetPod(t *testing.T) {
 	newTask := getApateletTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: GET_POD
-  action: ERROR
+  response: ERROR
   percentage: 14
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			GetPodAction:           scenario.LifecycleAction_ERROR,
-			GetPodActionPercentage: 14,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
+			GetPodResponse:           scenario.Response_ERROR,
+			GetPodResponsePercentage: 14,
 		}},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStateGetPodStatus(t *testing.T) {
+func TestNodeResponseStateGetPodStatus(t *testing.T) {
 	newTask := getApateletTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: GET_POD_STATUS
-  action: TIMEOUT
+  response: TIMEOUT
   percentage: 42
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			GetPodStatusAction:           scenario.LifecycleAction_TIMEOUT,
-			GetPodStatusActionPercentage: 42,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
+			GetPodStatusResponse:           scenario.Response_TIMEOUT,
+			GetPodStatusResponsePercentage: 42,
 		}},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStateGetPods(t *testing.T) {
+func TestNodeResponseStateGetPods(t *testing.T) {
 	newTask := getApateletTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: GET_PODS
-  action: TIMEOUT
+  response: TIMEOUT
   percentage: 65
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{
-			LifecycleState:          &apatelet.LifecycleState{},
-			GetPodsAction:           scenario.LifecycleAction_TIMEOUT,
-			GetPodsActionPercentage: 65,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{
+			ResponseState:          &apatelet.ResponseState{},
+			GetPodsResponse:           scenario.Response_TIMEOUT,
+			GetPodsResponsePercentage: 65,
 		},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStatePing(t *testing.T) {
+func TestNodeResponseStatePing(t *testing.T) {
 	newTask := getApateletTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: PING
-  action: ERROR
+  response: ERROR
   percentage: 50
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{
-			LifecycleState:       &apatelet.LifecycleState{},
-			PingAction:           scenario.LifecycleAction_ERROR,
-			PingActionPercentage: 50,
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{
+			ResponseState:       &apatelet.ResponseState{},
+			PingResponse:           scenario.Response_ERROR,
+			PingResponsePercentage: 50,
 		},
 		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
 }
 
-func TestNodeLifecycleStateLessThan0(t *testing.T) {
+func TestNodeResponseStateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: PING
-  action: ERROR
+  response: ERROR
   percentage: -50
 `, "percentage should be between 0 and 100")
 }
 
-func TestNodeLifecycleStateMoreThan100(t *testing.T) {
+func TestNodeResponseStateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
-node_lifecycle_state:
+node_response_state:
   type: PING
-  action: ERROR
+  response: ERROR
   percentage: 420
 `, "percentage should be between 0 and 100")
 }
@@ -248,18 +249,18 @@ func TestResourcePressure(t *testing.T) {
 	newTask := getApateletTask(t, `
 resource_pressure:
   cpu_usage: 42
-  memory_usage: 21
-  storage_usage: 84
-  ephemeral_storage_usage: 105
+  memory_usage: 21GB
+  storage_usage: 84MB
+  ephemeral_storage_usage: 105KB
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeLifecycleState: &apatelet.NodeState_NodeLifecycleState{LifecycleState: &apatelet.LifecycleState{}},
+		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{}},
 		ResourceState: &apatelet.NodeState_ResourceState{
 			EnableResourceAlteration: true,
 			CpuUsage:                 42,
-			MemoryUsage:              21,
-			StorageUsage:             84,
-			EphemeralStorageUsage:    105,
+			MemoryUsage:              21 * units.GiB,
+			StorageUsage:             84 * units.MiB,
+			EphemeralStorageUsage:    105 * units.KiB,
 		},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 	}), newTask.Event)
@@ -269,9 +270,9 @@ func TestResourcePressureCpuBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
   cpu_usage: -42
-  memory_usage: 21
-  storage_usage: 84
-  ephemeral_storage_usage: 105
+  memory_usage: 21G
+  storage_usage: 84M
+  ephemeral_storage_usage: 105K
 `, "CPU usage should be at least 0")
 }
 
@@ -279,9 +280,9 @@ func TestResourcePressureMemoryBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
   cpu_usage: 42
-  memory_usage: -21
-  storage_usage: 84
-  ephemeral_storage_usage: 105
+  memory_usage: -21G
+  storage_usage: 84M
+  ephemeral_storage_usage: 105K
 `, "memoy usage should be at least 0")
 }
 
@@ -289,9 +290,9 @@ func TestResourcePressureStorageBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
   cpu_usage: 42
-  memory_usage: 21
-  storage_usage: -84
-  ephemeral_storage_usage: 105
+  memory_usage: 21G
+  storage_usage: -84M
+  ephemeral_storage_usage: 105K
 `, "storage usage should be at least 0")
 }
 
@@ -299,120 +300,120 @@ func TestResourcePressureEphemeralStorageBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
   cpu_usage: 42
-  memory_usage: 21
-  storage_usage: 84
-  ephemeral_storage_usage: -105
+  memory_usage: 21G
+  storage_usage: 84M
+  ephemeral_storage_usage: -105K
 `, "ephemeral storage usage should be at least 0")
 }
 
 // Pod events
-func TestPodLifecycleStateCreatePod(t *testing.T) {
+func TestPodResponseStateCreatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: CREATE_POD
-  action: ERROR
+  response: ERROR
   percentage: 42
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodLifecycleState: &apatelet.PodState_PodLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			CreatePodAction:           scenario.LifecycleAction_ERROR,
-			CreatePodActionPercentage: 42,
+		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
+			CreatePodResponse:           scenario.Response_ERROR,
+			CreatePodResponsePercentage: 42,
 		}},
 	}), newTask.Event)
 }
 
-func TestPodLifecycleStateUpdatePod(t *testing.T) {
+func TestPodResponseStateUpdatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: UPDATE_POD
-  action: TIMEOUT
+  response: TIMEOUT
   percentage: 15
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodLifecycleState: &apatelet.PodState_PodLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			UpdatePodAction:           scenario.LifecycleAction_TIMEOUT,
-			UpdatePodActionPercentage: 15,
+		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
+			UpdatePodResponse:           scenario.Response_TIMEOUT,
+			UpdatePodResponsePercentage: 15,
 		}},
 	}), newTask.Event)
 }
 
-func TestPodLifecycleStateDeletePod(t *testing.T) {
+func TestPodResponseStateDeletePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: DELETE_POD
-  action: ERROR
+  response: ERROR
   percentage: 100
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodLifecycleState: &apatelet.PodState_PodLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			DeletePodAction:           scenario.LifecycleAction_ERROR,
-			DeletePodActionPercentage: 100,
+		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
+			DeletePodResponse:           scenario.Response_ERROR,
+			DeletePodResponsePercentage: 100,
 		}},
 	}), newTask.Event)
 }
 
-func TestPodLifecycleStateGetPod(t *testing.T) {
+func TestPodResponseStateGetPod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: GET_POD
-  action: ERROR
+  response: ERROR
   percentage: 14
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodLifecycleState: &apatelet.PodState_PodLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			GetPodAction:           scenario.LifecycleAction_ERROR,
-			GetPodActionPercentage: 14,
+		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
+			GetPodResponse:           scenario.Response_ERROR,
+			GetPodResponsePercentage: 14,
 		}},
 	}), newTask.Event)
 }
 
-func TestPodLifecycleStateGetPodStatus(t *testing.T) {
+func TestPodResponseStateGetPodStatus(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: GET_POD_STATUS
-  action: TIMEOUT
+  response: TIMEOUT
   percentage: 42
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodLifecycleState: &apatelet.PodState_PodLifecycleState{LifecycleState: &apatelet.LifecycleState{
-			GetPodStatusAction:           scenario.LifecycleAction_TIMEOUT,
-			GetPodStatusActionPercentage: 42,
+		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
+			GetPodStatusResponse:           scenario.Response_TIMEOUT,
+			GetPodStatusResponsePercentage: 42,
 		}},
 	}), newTask.Event)
 }
 
-func TestPodLifecycleStateGetPods(t *testing.T) {
+func TestPodResponseStateGetPods(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: GET_PODS
-  action: TIMEOUT
+  response: TIMEOUT
   percentage: 65
 `, "can't alter the GetPods / Ping response on pod level")
 }
 
-func TestPodLifecycleStatePing(t *testing.T) {
+func TestPodResponseStatePing(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: PING
-  action: ERROR
+  response: ERROR
   percentage: 50
 `, "can't alter the GetPods / Ping response on pod level")
 }
 
-func TestPodLifecycleStateLessThan0(t *testing.T) {
+func TestPodResponseStateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: PING
-  action: ERROR
+  response: ERROR
   percentage: -50
 `, "percentage should be between 0 and 100")
 }
 
-func TestPodLifecycleStateMoreThan100(t *testing.T) {
+func TestPodResponseStateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_lifecycle_state:
+pod_response_state:
   type: PING
-  action: ERROR
+  response: ERROR
   percentage: 420
 `, "percentage should be between 0 and 100")
 }
@@ -424,7 +425,7 @@ pod_status_update:
   percentage: 15
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodLifecycleState:   &apatelet.PodState_PodLifecycleState{LifecycleState: &apatelet.LifecycleState{}},
+		PodResponseState:   &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{}},
 		PodStatus:           scenario.PodStatus_POD_FAILED,
 		PodStatusPercentage: 15,
 	}), newTask.Event)
@@ -452,7 +453,7 @@ pod_start_time_update:
   new_start_time: "2020-04-30T11:32:05+0000"
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodLifecycleState: &apatelet.PodState_PodLifecycleState{LifecycleState: &apatelet.LifecycleState{}},
+		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{}},
 		PodStartTime:      "2020-04-30T11:32:05+0000",
 	}), newTask.Event)
 }
