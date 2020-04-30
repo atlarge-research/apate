@@ -37,8 +37,8 @@ func main() {
 
 	// Join the apate cluster and start the Apatelet
 	log.Println("Joining apate cluster")
-	kubeContext, uuid := joinApateCluster(location, connectionInfo)
-	ctx, nc, cancel := getApatelet(location, kubeContext)
+	uuid := joinApateCluster(location, connectionInfo)
+	ctx, nc, cancel := getApatelet(location)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -93,13 +93,13 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	cancel()
 }
 
-func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, string) {
+func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) string {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	ctx, uuid, err := client.JoinCluster(location)
+	uuid, err := client.JoinCluster(location)
 
 	// TODO: Better error handling
 	if err != nil {
@@ -108,14 +108,23 @@ func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (
 
 	log.Printf("Joined apate cluster with uuid %s", uuid)
 
-	return ctx, uuid
+	return uuid
 }
 
-func getApatelet(location string, kubeContext string) (context.Context, *node.NodeController, context.CancelFunc) {
+func getApatelet(location string) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	config, _ := cluster.GetConfigForContext(kubeContext, location)
-	client := kubernetes.NewForConfigOrDie(config)
+	config, err := cluster.GetKubeConfig(location)
+	if err != nil {
+		log.Fatal("Kube Config did not exist.")
+	}
+
+	restconfig, err := config.GetConfig()
+	if err != nil {
+		log.Fatal("Could not parse config.")
+	}
+
+	client := kubernetes.NewForConfigOrDie(restconfig)
 	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
 		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider()),
