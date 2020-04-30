@@ -58,8 +58,3 @@ func (*KinD) DeleteCluster(name string) error {
 	// Only gets here after the cluster is deleted
 	return nil
 }
-
-// ClusterContext returns the name of a context for kubernetes to use for a given cluster name.
-func (*KinD) ClusterContext(name string) string {
-	return "kind-" + name
-}

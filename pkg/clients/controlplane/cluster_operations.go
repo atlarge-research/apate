@@ -31,16 +31,16 @@ func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationCl
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the kube context and uuid
-func (c *ClusterOperationClient) JoinCluster(location string) (string, string, error) {
+func (c *ClusterOperationClient) JoinCluster(location string) (string, error) {
 	res, err := c.Client.JoinCluster(context.Background(), &empty.Empty{})
 
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	if _, err = os.Stat(location); os.IsNotExist(err) {
 		if err = os.MkdirAll(path.Dir(location), os.ModePerm); err != nil {
-			return "", "", err
+			return "", err
 		}
 	}
 
@@ -48,10 +48,10 @@ func (c *ClusterOperationClient) JoinCluster(location string) (string, string, e
 	err = ioutil.WriteFile(location, res.KubeConfig, 0644)
 
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	return res.KubeContext, res.NodeUUID, nil
+	return res.NodeUUID, nil
 }
 
 // LeaveCluster signals to the apate control panel that this node is leaving the cluster

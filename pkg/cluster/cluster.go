@@ -5,7 +5,6 @@ package cluster
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 // A KubernetesCluster object can be used to interact with kubernetes clusters.
@@ -13,21 +12,21 @@ import (
 type KubernetesCluster struct {
 	clientSet *kubernetes.Clientset
 
-	// TODO: We probably can remove the config. We only use it once to get the clientset.
-	config    *rest.Config
+	KubeConfig KubeConfig
 }
 
-func KubernetesClusterFromConfigPath(kubeConfigLocation string) (KubernetesCluster, error){
-	return KubernetesClusterFromContextAndConfigPath("", kubeConfigLocation)
-}
-
-func KubernetesClusterFromContextAndConfigPath(context string, kubeConfigLocation string) (KubernetesCluster, error) {
-	config, err := GetConfigForContext(context, kubeConfigLocation)
+func KubernetesClusterFromLocation(kubeConfigLocation string) (KubernetesCluster, error){
+	config, err := GetKubeConfig(kubeConfigLocation)
 	if err != nil {
 		return KubernetesCluster{}, err
 	}
 
-	clientSet, err := kubernetes.NewForConfig(config)
+	restconfig, err := config.GetConfig()
+	if err != nil {
+		return KubernetesCluster{}, err
+	}
+
+	clientSet, err := kubernetes.NewForConfig(restconfig)
 
 	if err != nil {
 		return KubernetesCluster{}, err
@@ -62,6 +61,6 @@ func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
 }
 
 
-func (c KubernetesCluster) RemoveNodeFromCluster(nodename string) {
-
+func (c KubernetesCluster) RemoveNodeFromCluster(nodename string) error {
+	return c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{})
 }
