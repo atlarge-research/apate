@@ -14,6 +14,9 @@ type Store interface {
 	// EnqueueTasks creates a priority queue based on these tasks
 	EnqueueTasks([]*apatelet.Task)
 
+	// LenTasks returns the amount of tasks left to be picked up
+	LenTasks() int
+
 	// PollTask returns the start time of the next task in the priority queue, without removing it from the queue
 	PollTask() (int64, error)
 
@@ -37,18 +40,21 @@ type store struct {
 // NewStore returns an empty store
 func NewStore() Store {
 	return &store{
+		queue: newTaskQueue(),
 		flags: make(map[string]int),
 	}
 }
 
 func (s *store) EnqueueTasks(tasks []*apatelet.Task) {
-	s.queue = newTaskQueue()
-
 	for _, task := range tasks {
 		s.queue.Push(task)
 	}
 
 	heap.Init(s.queue)
+}
+
+func (s *store) LenTasks() int {
+	return s.queue.Len()
 }
 
 func (s *store) PollTask() (int64, error) {

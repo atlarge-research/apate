@@ -31,6 +31,7 @@ func (q *taskQueue) Less(i, j int) bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
+	// TODO: Change sorting to absolute timestamp instead of relative
 	return q.tasks[i].Timestamp < q.tasks[j].Timestamp
 }
 
@@ -69,5 +70,5 @@ func (q *taskQueue) Poll() interface{} {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
-	return q.tasks[q.Len()-1]
+	return q.tasks[0]
 }
