@@ -3,9 +3,6 @@ package events
 
 import (
 	"errors"
-	"fmt"
-
-	"github.com/docker/go-units"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -28,7 +25,7 @@ func NewEventTranslator(originalTask *controlplane.Task, newTask *apatelet.Task)
 }
 
 // createNodeEvent creates a new node event and hooks it up to the current task
-func (th *EventTranslator) createNodeEvent() *apatelet.NodeEvent {
+func (et *EventTranslator) createNodeEvent() *apatelet.NodeEvent {
 	ne := &apatelet.NodeEvent{
 		NodeState: &apatelet.NodeState{
 			NodeResponseState: &apatelet.NodeState_NodeResponseState{
@@ -38,12 +35,12 @@ func (th *EventTranslator) createNodeEvent() *apatelet.NodeEvent {
 			AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
 		},
 	}
-	th.newTask.Event = &apatelet.Task_NodeEvent{NodeEvent: ne}
+	et.newTask.Event = &apatelet.Task_NodeEvent{NodeEvent: ne}
 	return ne
 }
 
 // createPodEvent creates a new pod event and hooks it up to the current task
-func (th *EventTranslator) createPodEvent() *apatelet.PodEvent {
+func (et *EventTranslator) createPodEvent() *apatelet.PodEvent {
 	pe := &apatelet.PodEvent{
 		PodState: &apatelet.PodState{
 			PodResponseState: &apatelet.PodState_PodResponseState{
@@ -51,46 +48,48 @@ func (th *EventTranslator) createPodEvent() *apatelet.PodEvent {
 			},
 		},
 	}
-	th.newTask.Event = &apatelet.Task_PodEvent{PodEvent: pe}
+	et.newTask.Event = &apatelet.Task_PodEvent{PodEvent: pe}
 	return pe
 }
 
 // TranslateEvent translates events sent through the public api to events understood by the Apatelets
-func (th *EventTranslator) TranslateEvent() error {
-	if th.originalTask.Event == nil {
+func (et *EventTranslator) TranslateEvent() error {
+	if et.originalTask.Event == nil {
 		return errors.New("you must pass an event to be executed")
 	}
 
-	switch x := th.originalTask.Event.(type) {
+	// et.originalTask.Event can be one of many types (see generated protobuf code)
+	// taskEvent will be the cast version of this event to the corresponding event, depending on the case
+	switch taskEvent := et.originalTask.Event.(type) {
 	// Node events
 	case *controlplane.Task_NodeFailure:
-		applyNodeResponse(th.createNodeEvent(), scenario.Response_TIMEOUT, 100)
+		applyNodeResponse(et.createNodeEvent(), scenario.Response_TIMEOUT, 100)
 
 	case *controlplane.Task_NetworkLatency:
-		latencyState := th.createNodeEvent().GetNodeState().GetAddedLatencyState()
+		latencyState := et.createNodeEvent().GetNodeState().GetAddedLatencyState()
 		latencyState.AddedLatencyEnabled = true
 
-		if x.NetworkLatency.LatencyMsec < 0 {
+		if taskEvent.NetworkLatency.LatencyMsec < 0 {
 			return errors.New("latency should be at least 0")
 		}
 
-		latencyState.AddedLatencyMsec = x.NetworkLatency.LatencyMsec
+		latencyState.AddedLatencyMsec = taskEvent.NetworkLatency.LatencyMsec
 
 	case *controlplane.Task_TimeoutKeepHeartbeat:
-		ne := th.createNodeEvent()
+		ne := et.createNodeEvent()
 		applyNodeResponse(ne, scenario.Response_TIMEOUT, 100)
 		setPingResponse(getNodeResponseState(ne), scenario.Response_NORMAL, 0)
 
 	case *controlplane.Task_NoTimeoutNoHeartbeat:
-		ne := th.createNodeEvent()
+		ne := et.createNodeEvent()
 		setPingResponse(getNodeResponseState(ne), scenario.Response_TIMEOUT, 100)
 
 	case *controlplane.Task_NodeResponseState:
-		ne := th.createNodeEvent()
+		ne := et.createNodeEvent()
 		nodeResponseState := getNodeResponseState(ne)
 		ResponseState := nodeResponseState.GetResponseState()
 
-		state := x.NodeResponseState
+		state := taskEvent.NodeResponseState
 
 		if state.Percentage < 0 || state.Percentage > 100 {
 			return errors.New("percentage should be between 0 and 100")
@@ -120,29 +119,29 @@ func (th *EventTranslator) TranslateEvent() error {
 		}
 
 	case *controlplane.Task_ResourcePressure:
-		resourceState := th.createNodeEvent().GetNodeState().GetResourceState()
+		resourceState := et.createNodeEvent().GetNodeState().GetResourceState()
 		resourceState.EnableResourceAlteration = true
 
-		rp := x.ResourcePressure
+		rp := taskEvent.ResourcePressure
 
 		if rp.CpuUsage < 0 {
 			return errors.New("CPU usage should be at least 0")
 		}
 		resourceState.CpuUsage = rp.CpuUsage
 
-		memory, err := getInBytes(rp.MemoryUsage, "memory")
+		memory, err := GetInBytes(rp.MemoryUsage, "memory")
 		if err != nil {
 			return err
 		}
 		resourceState.MemoryUsage = memory
 
-		storage, err := getInBytes(rp.StorageUsage, "storage")
+		storage, err := GetInBytes(rp.StorageUsage, "storage")
 		if err != nil {
 			return err
 		}
 		resourceState.StorageUsage = storage
 
-		ephStorage, err := getInBytes(rp.EphemeralStorageUsage, "ephemeral storage")
+		ephStorage, err := GetInBytes(rp.EphemeralStorageUsage, "ephemeral storage")
 		if err != nil {
 			return err
 		}
@@ -150,10 +149,10 @@ func (th *EventTranslator) TranslateEvent() error {
 
 	// Pod events
 	case *controlplane.Task_PodResponseState:
-		pe := th.createPodEvent()
+		pe := et.createPodEvent()
 		ResponseState := getPodResponseState(pe).GetResponseState()
 
-		state := x.PodResponseState
+		state := taskEvent.PodResponseState
 
 		if state.Percentage < 0 || state.Percentage > 100 {
 			return errors.New("percentage should be between 0 and 100")
@@ -180,28 +179,18 @@ func (th *EventTranslator) TranslateEvent() error {
 		}
 
 	case *controlplane.Task_PodStatusUpdate:
-		event := th.createPodEvent()
+		event := et.createPodEvent()
 
-		if x.PodStatusUpdate.Percentage < 0 || x.PodStatusUpdate.Percentage > 100 {
+		if taskEvent.PodStatusUpdate.Percentage < 0 || taskEvent.PodStatusUpdate.Percentage > 100 {
 			return errors.New("percentage should be between 0 and 100")
 		}
 
-		event.GetPodState().PodStatus = x.PodStatusUpdate.NewStatus
-		event.GetPodState().PodStatusPercentage = x.PodStatusUpdate.Percentage
+		event.GetPodState().PodStatus = taskEvent.PodStatusUpdate.NewStatus
+		event.GetPodState().PodStatusPercentage = taskEvent.PodStatusUpdate.Percentage
 
 	case *controlplane.Task_PodStartTimeUpdate:
-		th.createPodEvent().GetPodState().PodStartTime = x.PodStartTimeUpdate.NewStartTime
+		et.createPodEvent().GetPodState().PodStartTime = taskEvent.PodStartTimeUpdate.NewStartTime
 	}
 
 	return nil
-}
-
-func getInBytes(unit string, unitName string) (int64, error) {
-	unitInt, err := units.RAMInBytes(unit)
-	if err != nil {
-		return 0, err
-	} else if unitInt < 0 {
-		return 0, fmt.Errorf("%s usage should be at least 0", unitName)
-	}
-	return unitInt, nil
 }
