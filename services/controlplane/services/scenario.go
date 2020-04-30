@@ -39,7 +39,7 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane
 		return nil, err
 	}
 
-	if err := (*s.store).AddApateletScenario(normalizedScenario); err != nil {
+	if err := (*s.store).SetApateletScenario(normalizedScenario); err != nil {
 		log.Print(err)
 		return nil, err
 	}
@@ -65,6 +65,10 @@ func (s *scenarioService) StartScenario(context.Context, *empty.Empty) (*empty.E
 		return nil, err
 	}
 
+	// TODO set the start time on the apatelet scenario (apateletScenario.startTime)
+	// TODO make the task times absolute
+
+	// TODO make async
 	for _, node := range nodes {
 		scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
 		_, err := scenarioClient.Client.StartScenario(context.Background(), apateletScenario)

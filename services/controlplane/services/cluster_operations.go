@@ -29,7 +29,7 @@ func RegisterClusterOperationService(server *service.GRPCServer, store *store.St
 	})
 }
 
-// JoinCluster accepts an incoming request from an Apatelet to join the cluster
+// JoinCluster accepts an incoming request from an Apatelet to join the store
 func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empty) (*controlplane.JoinInformation, error) {
 	//TODO: TLS bool from somewhere?
 
@@ -38,33 +38,51 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 	p, _ := peer.FromContext(ctx)
 	addr := p.Addr.(*net.TCPAddr)
 	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), addr.Port, false)
-	log.Printf("Received request to join apate cluster from %v\n", connectionInfo)
+	log.Printf("Received request to join apate store from %v\n", connectionInfo)
+
+	// Retrieve node resources
+	st := *s.store
+	nodeResources, err := st.GetResourceFromQueue()
+
+	// TODO: Maybe reinsert NodeResources depending on the type of error?
+	if err != nil {
+		log.Printf("Unable to allocate resources for node %v: %s", connectionInfo, err.Error())
+		return nil, err
+	}
 
 	//TODO: Retrieve path from somewhere else
 
 	// Get connection information and create node
-	node := store.NewNode(connectionInfo)
+	node := store.NewNode(connectionInfo, nodeResources)
 
-	// Add to apate cluster
-	err := (*s.store).AddNode(node)
+	// Add to apate store
+	err = st.AddNode(node)
 
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("Added node to apate cluster: %v\n", node)
+	log.Printf("Added node to apate store: %v\n", node)
 
+	// TODO: Retrieve proper kube context from somewhere
 	return &controlplane.JoinInformation{
 		KubeConfig:  s.kubernetesCluster.KubeConfig,
-		NodeUUID:    node.UUID.String(),
+		NodeUuid:    node.UUID.String(),
+		Hardware: &controlplane.NodeHardware{
+			Memory:  nodeResources.Memory,
+			Cpu:     nodeResources.CPU,
+			MaxPods: nodeResources.MaxPods,
+		},
 	}, nil
 }
 
-// LeaveCluster removes the node from the cluster
+// LeaveCluster removes the node from the store
 // This will maybe also remove it from k8s itself, TBD
 func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformation *controlplane.LeaveInformation) (*empty.Empty, error) {
 	// TODO: Maybe check if the remote address is still the same? idk
 
+	// TODO: Remove node from store and maybe from k8s too?
+	log.Printf("Received request to leave apate store from node %s\n", leaveInformation.NodeUuid)
 
 	// TODO: Remove node from cluster and maybe from k8s too?
 	s.kubernetesCluster.RemoveNodeFromCluster("Apate-" + leaveInformation.NodeUUID)
