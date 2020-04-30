@@ -4,8 +4,6 @@ import (
 	"errors"
 	"os"
 	"path"
-
-	"k8s.io/client-go/kubernetes"
 )
 
 // Builder allows for the creation of KubernetesClusters.
@@ -47,6 +45,11 @@ func (b *Builder) WithCreator(creator Manager) *Builder {
 	return b
 }
 
+// UnManaged creates an unmanaged cluster from the builder.
+func (b *Builder) UnManaged() (KubernetesCluster, error){
+	return KubernetesClusterFromContextAndConfigPath(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
+}
+
 // ForceCreate creates a new cluster based on the state of the Builder.
 // Makes sure that old clusters with the same name as this one are deleted.
 func (b *Builder) ForceCreate() (ManagedCluster, error) {
@@ -82,32 +85,13 @@ func (b *Builder) Create() (ManagedCluster, error) {
 		return ManagedCluster{}, err
 	}
 
-	config, err := GetConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
-
+	kubernetesCluster, err := b.UnManaged()
 	if err != nil {
-		// If something went wrong, delete the cluster for the next run,
-		// otherwise ForceCreate would be necessary
-		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
-			err = err1
-		}
-		return ManagedCluster{}, err
-	}
-
-	clientSet, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		// If something went wrong, delete the cluster for the next run,
-		// otherwise ForceCreate would be necessary
-		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
-			err = err1
-		}
 		return ManagedCluster{}, err
 	}
 
 	return ManagedCluster {
-		KubernetesCluster{
-			clientSet: clientSet,
-			config:    config,
-		},
+		kubernetesCluster,
 		b.manager,
 		b.name,
 	}, nil

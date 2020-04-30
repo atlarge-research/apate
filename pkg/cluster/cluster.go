@@ -17,8 +17,12 @@ type KubernetesCluster struct {
 	config    *rest.Config
 }
 
-func KubernetesClusterFromConfigPath(kubeConfigLocation string) (KubernetesCluster, error) {
-	config, err := GetConfigForLocation(kubeConfigLocation)
+func KubernetesClusterFromConfigPath(kubeConfigLocation string) (KubernetesCluster, error){
+	return KubernetesClusterFromContextAndConfigPath("", kubeConfigLocation)
+}
+
+func KubernetesClusterFromContextAndConfigPath(context string, kubeConfigLocation string) (KubernetesCluster, error) {
+	config, err := GetConfigForContext(context, kubeConfigLocation)
 	if err != nil {
 		return KubernetesCluster{}, err
 	}
@@ -35,6 +39,9 @@ func KubernetesClusterFromConfigPath(kubeConfigLocation string) (KubernetesClust
 	}, nil
 }
 
+// ManagedCluster creates a managed cluster from an unmanaged cluster.
+// If you know the name and manager type of a cluster, you can make an unmanaged cluster become managed,
+// and you are for example able to delete it.
 func (c KubernetesCluster) ManagedCluster(name string, manager Manager) ManagedCluster {
 	return ManagedCluster{
 		c,
