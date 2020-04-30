@@ -1,20 +1,25 @@
+// Package events contains utilities to translate events of tasks between public API and internal API formats
 package events
 
 import (
 	"errors"
 	"fmt"
+
+	"github.com/docker/go-units"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
-	"github.com/docker/go-units"
 )
 
+// EventTranslator is a utility to translate events between events sent through the public api to events understood by the Apatelets
 type EventTranslator struct {
 	originalTask *controlplane.Task
 	newTask      *apatelet.Task
 }
 
+// NewEventTranslator constructs a new EventTranslator
 func NewEventTranslator(originalTask *controlplane.Task, newTask *apatelet.Task) *EventTranslator {
 	return &EventTranslator{
 		originalTask: originalTask,
@@ -22,6 +27,7 @@ func NewEventTranslator(originalTask *controlplane.Task, newTask *apatelet.Task)
 	}
 }
 
+// createNodeEvent creates a new node event and hooks it up to the current task
 func (th *EventTranslator) createNodeEvent() *apatelet.NodeEvent {
 	ne := &apatelet.NodeEvent{
 		NodeState: &apatelet.NodeState{
@@ -36,6 +42,7 @@ func (th *EventTranslator) createNodeEvent() *apatelet.NodeEvent {
 	return ne
 }
 
+// createPodEvent creates a new pod event and hooks it up to the current task
 func (th *EventTranslator) createPodEvent() *apatelet.PodEvent {
 	pe := &apatelet.PodEvent{
 		PodState: &apatelet.PodState{
@@ -48,6 +55,7 @@ func (th *EventTranslator) createPodEvent() *apatelet.PodEvent {
 	return pe
 }
 
+// TranslateEvent translates events sent through the public api to events understood by the Apatelets
 func (th *EventTranslator) TranslateEvent() error {
 	if th.originalTask.Event == nil {
 		return errors.New("you must pass an event to be executed")

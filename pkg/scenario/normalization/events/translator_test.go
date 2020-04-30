@@ -1,13 +1,14 @@
 package events
 
 import (
-	"bytes"
+	"testing"
+
+	"github.com/docker/go-units"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
-	"github.com/docker/go-units"
-	"github.com/golang/protobuf/jsonpb"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 
@@ -50,7 +51,7 @@ network_latency:
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{}},
-		ResourceState:      &apatelet.NodeState_ResourceState{},
+		ResourceState:     &apatelet.NodeState_ResourceState{},
 		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{
 			AddedLatencyEnabled: true,
 			AddedLatencyMsec:    100,
@@ -97,7 +98,7 @@ no_timeout_no_heartbeat: {}
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{
-			ResponseState:       &apatelet.ResponseState{},
+			ResponseState:          &apatelet.ResponseState{},
 			PingResponse:           scenario.Response_TIMEOUT,
 			PingResponsePercentage: 100,
 		},
@@ -200,7 +201,7 @@ node_response_state:
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{
-			ResponseState:          &apatelet.ResponseState{},
+			ResponseState:             &apatelet.ResponseState{},
 			GetPodsResponse:           scenario.Response_TIMEOUT,
 			GetPodsResponsePercentage: 65,
 		},
@@ -218,7 +219,7 @@ node_response_state:
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{
-			ResponseState:       &apatelet.ResponseState{},
+			ResponseState:          &apatelet.ResponseState{},
 			PingResponse:           scenario.Response_ERROR,
 			PingResponsePercentage: 50,
 		},
@@ -425,7 +426,7 @@ pod_status_update:
   percentage: 15
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
-		PodResponseState:   &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{}},
+		PodResponseState:    &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{}},
 		PodStatus:           scenario.PodStatus_POD_FAILED,
 		PodStatusPercentage: 15,
 	}), newTask.Event)
@@ -454,7 +455,7 @@ pod_start_time_update:
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{}},
-		PodStartTime:      "2020-04-30T11:32:05+0000",
+		PodStartTime:     "2020-04-30T11:32:05+0000",
 	}), newTask.Event)
 }
 
@@ -487,7 +488,7 @@ func translateYaml(t *testing.T, data []byte) *controlplane.Task {
 	assert.NoError(t, err)
 
 	var task controlplane.Task
-	err = jsonpb.Unmarshal(bytes.NewReader(json), &task)
+	err = protojson.Unmarshal(json, &task)
 	assert.NoError(t, err)
 
 	return &task

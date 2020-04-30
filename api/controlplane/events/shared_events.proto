@@ -7,17 +7,18 @@ import "scenario/events.proto";
 
 // A percentage of lifecycle requests will error
 message ResponseState {
-    // The lifecycle type to act upon
+    // The request type to act upon
     RequestType type = 1;
 
-    // The lifecycle type to act upon
+    // How to respond to this request
     scenario.Response response = 2;
 
-    // The percentage of lifecycle requests to respond with error to
+    // The percentage of requests to handle like this
     int32 percentage = 3;
 }
 
 // See https://github.com/virtual-kubelet/virtual-kubelet/#podlifecylcehandler
+// Ping stands for the heartbeat requests sent by Kubernetes
 enum RequestType {
     CREATE_POD = 0;
     UPDATE_POD = 1;

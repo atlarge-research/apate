@@ -49,7 +49,6 @@ message Task {
     }
 }
 
-
 // An event that will be applied on a node
 message NodeEvent {
     // The node state that will be applied to the node.
@@ -67,38 +66,40 @@ message PodEvent {
 
 // The node state that will be applied to the node.
 message NodeState {
+    // The responses given to Kubernetes on node level
     message NodeResponseState {
+        // Some more responses which can also be influenced on pod level
         ResponseState response_state = 1;
 
+        // How to respond to the GetPods request
         scenario.Response get_pods_response = 2;
         int32 get_pods_response_percentage = 3;
 
+        // How to respond to ping
         scenario.Response ping_response = 4;
         int32 ping_response_percentage = 5;
     }
-
     NodeResponseState node_response_state = 1;
 
     // Defines the amount of resources the node has in use
-    // Will default to 0% for all types of possible resources (corev1.ResourceName)
+    // Will default to 0 for all types of possible resources (corev1.ResourceName)
     message ResourceState {
         // Whether to enable the next fields
         // If not enabled, the next fields will be ignored
         bool enable_resource_alteration = 1;
 
-        // The percentage of CPU used
-        int64 cpu_usage = 2;
+        // The amount of bytes of memory used
+        int64 memory_usage = 2;
 
-        // The percentage of memory used
-        int64 memory_usage = 3;
+        // The of milli CPUs used
+        int64 cpu_usage = 3;
 
-        // The percentage of storage used
+        // The amount of bytes of storage used
         int64 storage_usage = 4;
 
-        // The percentage of ephermal storage used
+        // The amount of bytes of ephermal storage used
         int64 ephemeral_storage_usage = 5;
     }
-
     ResourceState resource_state = 2;
 
     // Defines the amount of added network latency the node experiences
@@ -111,20 +112,20 @@ message NodeState {
         // The amount of msec of latency
         int32 added_latency_msec = 2;
     }
-
     AddedLatencyState added_latency_state = 3;
 }
 
-// The pod state that will be applied a certain pod deployment
-// To which deployment this state if applied depends on the `deployment` in `PodEvent`
+// The node state that will be applied to a given pod configuration.
+// On which configuration this state is applied depends on the `configuration_metadata_name` in `PodEvent`
 message PodState {
+    // The responses given to Kubernetes on pod level
     message PodResponseState {
+        // Some more responses which can also be influenced on node level
         ResponseState response_state = 1;
     }
-
     PodResponseState pod_response_state = 1;
 
-    // The status of a certain percentage of pods in the current deployment
+    // The status of a certain percentage of pods in the current configuration
     // Can be left empty to keep the status unchanged
     // If left empty, the pod_status_percentage will be ignored
     scenario.PodStatus pod_status = 2;
@@ -142,18 +143,23 @@ message PodState {
 // The percentage fields define what percentage of these types of requests on this node will be affected by the setting
 // Note that this percentage will be ignored when the action is NORMAL
 message ResponseState {
+    // How to respond to the CreatePod request
     scenario.Response create_pod_response = 1;
     int32 create_pod_response_percentage = 2;
 
+    // How to respond to the UpdatePod request
     scenario.Response update_pod_response = 3;
     int32 update_pod_response_percentage = 4;
 
+    // How to respond to the DeletePod request
     scenario.Response delete_pod_response = 5;
     int32 delete_pod_response_percentage = 6;
 
+    // How to respond to the GetPod request
     scenario.Response get_pod_response = 7;
     int32 get_pod_response_percentage = 8;
 
+    // How to respond to the GetPodStatus request
     scenario.Response get_pod_status_response = 9;
     int32 get_pod_status_response_percentage = 10;
 }

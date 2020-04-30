@@ -6,40 +6,40 @@ import (
 )
 
 // ResponseState methods
-func setCreatePodResponse(ResponseState *apatelet.ResponseState, response scenario.Response, percentage int32) {
-	ResponseState.CreatePodResponse = response
-	ResponseState.CreatePodResponsePercentage = percentage
+func setCreatePodResponse(responseState *apatelet.ResponseState, response scenario.Response, percentage int32) {
+	responseState.CreatePodResponse = response
+	responseState.CreatePodResponsePercentage = percentage
 }
 
-func setUpdatePodResponse(ResponseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
-	ResponseState.UpdatePodResponse = action
-	ResponseState.UpdatePodResponsePercentage = percentage
+func setUpdatePodResponse(responseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
+	responseState.UpdatePodResponse = action
+	responseState.UpdatePodResponsePercentage = percentage
 }
 
-func setDeletePodResponse(ResponseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
-	ResponseState.DeletePodResponse = action
-	ResponseState.DeletePodResponsePercentage = percentage
+func setDeletePodResponse(responseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
+	responseState.DeletePodResponse = action
+	responseState.DeletePodResponsePercentage = percentage
 }
 
-func setGetPodResponse(ResponseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
-	ResponseState.GetPodResponse = action
-	ResponseState.GetPodResponsePercentage = percentage
+func setGetPodResponse(responseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
+	responseState.GetPodResponse = action
+	responseState.GetPodResponsePercentage = percentage
 }
 
-func setGetPodStatusResponse(ResponseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
-	ResponseState.GetPodStatusResponse = action
-	ResponseState.GetPodStatusResponsePercentage = percentage
+func setGetPodStatusResponse(responseState *apatelet.ResponseState, action scenario.Response, percentage int32) {
+	responseState.GetPodStatusResponse = action
+	responseState.GetPodStatusResponsePercentage = percentage
 }
 
-// NodeResponseState specific methods
-func setGetPodsResponse(ResponseState *apatelet.NodeState_NodeResponseState, action scenario.Response, percentage int32) {
-	ResponseState.GetPodsResponse = action
-	ResponseState.GetPodsResponsePercentage = percentage
+// Node specific specific methods
+func setGetPodsResponse(responseState *apatelet.NodeState_NodeResponseState, action scenario.Response, percentage int32) {
+	responseState.GetPodsResponse = action
+	responseState.GetPodsResponsePercentage = percentage
 }
 
-func setPingResponse(ResponseState *apatelet.NodeState_NodeResponseState, action scenario.Response, percentage int32) {
-	ResponseState.PingResponse = action
-	ResponseState.PingResponsePercentage = percentage
+func setPingResponse(responseState *apatelet.NodeState_NodeResponseState, action scenario.Response, percentage int32) {
+	responseState.PingResponse = action
+	responseState.PingResponsePercentage = percentage
 }
 
 // getNodeResponseState returns the NodeResponseState of the nodeEvent
@@ -58,10 +58,10 @@ func applyNodeResponse(nodeEvent *apatelet.NodeEvent, action scenario.Response, 
 	setGetPodsResponse(nodeResponseState, action, percentage)
 	setPingResponse(nodeResponseState, action, percentage)
 
-	ResponseState := nodeResponseState.GetResponseState()
-	setCreatePodResponse(ResponseState, action, percentage)
-	setUpdatePodResponse(ResponseState, action, percentage)
-	setDeletePodResponse(ResponseState, action, percentage)
-	setGetPodResponse(ResponseState, action, percentage)
-	setGetPodStatusResponse(ResponseState, action, percentage)
+	responseState := nodeResponseState.GetResponseState()
+	setCreatePodResponse(responseState, action, percentage)
+	setUpdatePodResponse(responseState, action, percentage)
+	setDeletePodResponse(responseState, action, percentage)
+	setGetPodResponse(responseState, action, percentage)
+	setGetPodStatusResponse(responseState, action, percentage)
 }

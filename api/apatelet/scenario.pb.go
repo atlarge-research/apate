@@ -383,15 +383,15 @@ func (x *NodeState) GetAddedLatencyState() *NodeState_AddedLatencyState {
 	return nil
 }
 
-// The pod state that will be applied a certain pod deployment
-// To which deployment this state if applied depends on the `deployment` in `PodEvent`
+// The node state that will be applied to a given pod configuration.
+// On which configuration this state is applied depends on the `configuration_metadata_name` in `PodEvent`
 type PodState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	PodResponseState *PodState_PodResponseState `protobuf:"bytes,1,opt,name=pod_response_state,json=podResponseState,proto3" json:"pod_response_state,omitempty"`
-	// The status of a certain percentage of pods in the current deployment
+	// The status of a certain percentage of pods in the current configuration
 	// Can be left empty to keep the status unchanged
 	// If left empty, the pod_status_percentage will be ignored
 	PodStatus scenario.PodStatus `protobuf:"varint,2,opt,name=pod_status,json=podStatus,proto3,enum=apate.scenario.PodStatus" json:"pod_status,omitempty"`
@@ -471,14 +471,19 @@ type ResponseState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	CreatePodResponse              scenario.Response `protobuf:"varint,1,opt,name=create_pod_response,json=createPodResponse,proto3,enum=apate.scenario.Response" json:"create_pod_response,omitempty"`
-	CreatePodResponsePercentage    int32             `protobuf:"varint,2,opt,name=create_pod_response_percentage,json=createPodResponsePercentage,proto3" json:"create_pod_response_percentage,omitempty"`
-	UpdatePodResponse              scenario.Response `protobuf:"varint,3,opt,name=update_pod_response,json=updatePodResponse,proto3,enum=apate.scenario.Response" json:"update_pod_response,omitempty"`
-	UpdatePodResponsePercentage    int32             `protobuf:"varint,4,opt,name=update_pod_response_percentage,json=updatePodResponsePercentage,proto3" json:"update_pod_response_percentage,omitempty"`
-	DeletePodResponse              scenario.Response `protobuf:"varint,5,opt,name=delete_pod_response,json=deletePodResponse,proto3,enum=apate.scenario.Response" json:"delete_pod_response,omitempty"`
-	DeletePodResponsePercentage    int32             `protobuf:"varint,6,opt,name=delete_pod_response_percentage,json=deletePodResponsePercentage,proto3" json:"delete_pod_response_percentage,omitempty"`
-	GetPodResponse                 scenario.Response `protobuf:"varint,7,opt,name=get_pod_response,json=getPodResponse,proto3,enum=apate.scenario.Response" json:"get_pod_response,omitempty"`
-	GetPodResponsePercentage       int32             `protobuf:"varint,8,opt,name=get_pod_response_percentage,json=getPodResponsePercentage,proto3" json:"get_pod_response_percentage,omitempty"`
+	// How to respond to the CreatePod request
+	CreatePodResponse           scenario.Response `protobuf:"varint,1,opt,name=create_pod_response,json=createPodResponse,proto3,enum=apate.scenario.Response" json:"create_pod_response,omitempty"`
+	CreatePodResponsePercentage int32             `protobuf:"varint,2,opt,name=create_pod_response_percentage,json=createPodResponsePercentage,proto3" json:"create_pod_response_percentage,omitempty"`
+	// How to respond to the UpdatePod request
+	UpdatePodResponse           scenario.Response `protobuf:"varint,3,opt,name=update_pod_response,json=updatePodResponse,proto3,enum=apate.scenario.Response" json:"update_pod_response,omitempty"`
+	UpdatePodResponsePercentage int32             `protobuf:"varint,4,opt,name=update_pod_response_percentage,json=updatePodResponsePercentage,proto3" json:"update_pod_response_percentage,omitempty"`
+	// How to respond to the DeletePod request
+	DeletePodResponse           scenario.Response `protobuf:"varint,5,opt,name=delete_pod_response,json=deletePodResponse,proto3,enum=apate.scenario.Response" json:"delete_pod_response,omitempty"`
+	DeletePodResponsePercentage int32             `protobuf:"varint,6,opt,name=delete_pod_response_percentage,json=deletePodResponsePercentage,proto3" json:"delete_pod_response_percentage,omitempty"`
+	// How to respond to the GetPod request
+	GetPodResponse           scenario.Response `protobuf:"varint,7,opt,name=get_pod_response,json=getPodResponse,proto3,enum=apate.scenario.Response" json:"get_pod_response,omitempty"`
+	GetPodResponsePercentage int32             `protobuf:"varint,8,opt,name=get_pod_response_percentage,json=getPodResponsePercentage,proto3" json:"get_pod_response_percentage,omitempty"`
+	// How to respond to the GetPodStatus request
 	GetPodStatusResponse           scenario.Response `protobuf:"varint,9,opt,name=get_pod_status_response,json=getPodStatusResponse,proto3,enum=apate.scenario.Response" json:"get_pod_status_response,omitempty"`
 	GetPodStatusResponsePercentage int32             `protobuf:"varint,10,opt,name=get_pod_status_response_percentage,json=getPodStatusResponsePercentage,proto3" json:"get_pod_status_response_percentage,omitempty"`
 }
@@ -585,16 +590,20 @@ func (x *ResponseState) GetGetPodStatusResponsePercentage() int32 {
 	return 0
 }
 
+// The responses given to Kubernetes on node level
 type NodeState_NodeResponseState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ResponseState             *ResponseState    `protobuf:"bytes,1,opt,name=response_state,json=responseState,proto3" json:"response_state,omitempty"`
+	// Some more responses which can also be influenced on pod level
+	ResponseState *ResponseState `protobuf:"bytes,1,opt,name=response_state,json=responseState,proto3" json:"response_state,omitempty"`
+	// How to respond to the GetPods request
 	GetPodsResponse           scenario.Response `protobuf:"varint,2,opt,name=get_pods_response,json=getPodsResponse,proto3,enum=apate.scenario.Response" json:"get_pods_response,omitempty"`
 	GetPodsResponsePercentage int32             `protobuf:"varint,3,opt,name=get_pods_response_percentage,json=getPodsResponsePercentage,proto3" json:"get_pods_response_percentage,omitempty"`
-	PingResponse              scenario.Response `protobuf:"varint,4,opt,name=ping_response,json=pingResponse,proto3,enum=apate.scenario.Response" json:"ping_response,omitempty"`
-	PingResponsePercentage    int32             `protobuf:"varint,5,opt,name=ping_response_percentage,json=pingResponsePercentage,proto3" json:"ping_response_percentage,omitempty"`
+	// How to respond to ping
+	PingResponse           scenario.Response `protobuf:"varint,4,opt,name=ping_response,json=pingResponse,proto3,enum=apate.scenario.Response" json:"ping_response,omitempty"`
+	PingResponsePercentage int32             `protobuf:"varint,5,opt,name=ping_response_percentage,json=pingResponsePercentage,proto3" json:"ping_response_percentage,omitempty"`
 }
 
 func (x *NodeState_NodeResponseState) Reset() {
@@ -665,7 +674,7 @@ func (x *NodeState_NodeResponseState) GetPingResponsePercentage() int32 {
 }
 
 // Defines the amount of resources the node has in use
-// Will default to 0% for all types of possible resources (corev1.ResourceName)
+// Will default to 0 for all types of possible resources (corev1.ResourceName)
 type NodeState_ResourceState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -674,13 +683,13 @@ type NodeState_ResourceState struct {
 	// Whether to enable the next fields
 	// If not enabled, the next fields will be ignored
 	EnableResourceAlteration bool `protobuf:"varint,1,opt,name=enable_resource_alteration,json=enableResourceAlteration,proto3" json:"enable_resource_alteration,omitempty"`
-	// The percentage of CPU used
-	CpuUsage int64 `protobuf:"varint,2,opt,name=cpu_usage,json=cpuUsage,proto3" json:"cpu_usage,omitempty"`
-	// The percentage of memory used
-	MemoryUsage int64 `protobuf:"varint,3,opt,name=memory_usage,json=memoryUsage,proto3" json:"memory_usage,omitempty"`
-	// The percentage of storage used
+	// The amount of bytes of memory used
+	MemoryUsage int64 `protobuf:"varint,2,opt,name=memory_usage,json=memoryUsage,proto3" json:"memory_usage,omitempty"`
+	// The of milli CPUs used
+	CpuUsage int64 `protobuf:"varint,3,opt,name=cpu_usage,json=cpuUsage,proto3" json:"cpu_usage,omitempty"`
+	// The amount of bytes of storage used
 	StorageUsage int64 `protobuf:"varint,4,opt,name=storage_usage,json=storageUsage,proto3" json:"storage_usage,omitempty"`
-	// The percentage of ephermal storage used
+	// The amount of bytes of ephermal storage used
 	EphemeralStorageUsage int64 `protobuf:"varint,5,opt,name=ephemeral_storage_usage,json=ephemeralStorageUsage,proto3" json:"ephemeral_storage_usage,omitempty"`
 }
 
@@ -723,16 +732,16 @@ func (x *NodeState_ResourceState) GetEnableResourceAlteration() bool {
 	return false
 }
 
-func (x *NodeState_ResourceState) GetCpuUsage() int64 {
+func (x *NodeState_ResourceState) GetMemoryUsage() int64 {
 	if x != nil {
-		return x.CpuUsage
+		return x.MemoryUsage
 	}
 	return 0
 }
 
-func (x *NodeState_ResourceState) GetMemoryUsage() int64 {
+func (x *NodeState_ResourceState) GetCpuUsage() int64 {
 	if x != nil {
-		return x.MemoryUsage
+		return x.CpuUsage
 	}
 	return 0
 }
@@ -811,11 +820,13 @@ func (x *NodeState_AddedLatencyState) GetAddedLatencyMsec() int32 {
 	return 0
 }
 
+// The responses given to Kubernetes on pod level
 type PodState_PodResponseState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Some more responses which can also be influenced on node level
 	ResponseState *ResponseState `protobuf:"bytes,1,opt,name=response_state,json=responseState,proto3" json:"response_state,omitempty"`
 }
 
@@ -946,10 +957,10 @@ var file_apatelet_scenario_proto_rawDesc = []byte{
 	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x6c, 0x74, 0x65, 0x72, 0x61, 0x74,
 	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x18, 0x65, 0x6e, 0x61, 0x62, 0x6c,
 	0x65, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x6c, 0x74, 0x65, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x12, 0x1b, 0x0a, 0x09, 0x63, 0x70, 0x75, 0x5f, 0x75, 0x73, 0x61, 0x67, 0x65,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x63, 0x70, 0x75, 0x55, 0x73, 0x61, 0x67, 0x65,
-	0x12, 0x21, 0x0a, 0x0c, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x5f, 0x75, 0x73, 0x61, 0x67, 0x65,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0b, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x55, 0x73,
+	0x69, 0x6f, 0x6e, 0x12, 0x21, 0x0a, 0x0c, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x5f, 0x75, 0x73,
+	0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0b, 0x6d, 0x65, 0x6d, 0x6f, 0x72,
+	0x79, 0x55, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x63, 0x70, 0x75, 0x5f, 0x75, 0x73,
+	0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x63, 0x70, 0x75, 0x55, 0x73,
 	0x61, 0x67, 0x65, 0x12, 0x23, 0x0a, 0x0d, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x5f, 0x75,
 	0x73, 0x61, 0x67, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0c, 0x73, 0x74, 0x6f, 0x72,
 	0x61, 0x67, 0x65, 0x55, 0x73, 0x61, 0x67, 0x65, 0x12, 0x36, 0x0a, 0x17, 0x65, 0x70, 0x68, 0x65,
