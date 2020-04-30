@@ -70,6 +70,7 @@ type NetworkLatency struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The amount of applied latency
 	LatencyMsec int32 `protobuf:"varint,1,opt,name=latency_msec,json=latencyMsec,proto3" json:"latency_msec,omitempty"`
 }
 
@@ -198,7 +199,7 @@ type ResourcePressure struct {
 
 	// The amount of bytes of memory used
 	MemoryUsage string `protobuf:"bytes,1,opt,name=memory_usage,json=memoryUsage,proto3" json:"memory_usage,omitempty"`
-	// The amount of CPUs used
+	// The amount of milli CPUs used
 	CpuUsage int64 `protobuf:"varint,2,opt,name=cpu_usage,json=cpuUsage,proto3" json:"cpu_usage,omitempty"`
 	// The amount of bytes of storage used
 	StorageUsage string `protobuf:"bytes,3,opt,name=storage_usage,json=storageUsage,proto3" json:"storage_usage,omitempty"`

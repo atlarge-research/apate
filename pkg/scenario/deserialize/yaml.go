@@ -1,10 +1,10 @@
 package deserialize
 
 import (
-	"bytes"
-	"github.com/golang/protobuf/jsonpb"
 	"io/ioutil"
 	"path/filepath"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
@@ -28,14 +28,13 @@ func (s YamlScenario) FromFile(filename string) (Deserializer, error) {
 
 // FromBytes creates a new YamlScenario from a byte array of data.
 func (s YamlScenario) FromBytes(data []byte) (Deserializer, error) {
-
 	json, err := yaml.YAMLToJSON(data)
 	if err != nil {
 		return nil, err
 	}
 
 	var scenario controlplane.PublicScenario
-	if err := jsonpb.Unmarshal(bytes.NewReader(json), &scenario); err != nil {
+	if err := protojson.Unmarshal(json, &scenario); err != nil {
 		return nil, err
 	}
 

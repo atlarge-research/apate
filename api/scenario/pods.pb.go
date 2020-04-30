@@ -25,6 +25,8 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
+// The status of the pods
+// See corev1.PodPhase
 type PodStatus int32
 
 const (

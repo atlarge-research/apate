@@ -8,6 +8,7 @@ message NodeFailure {}
 
 // Apply latency to every request
 message NetworkLatency {
+    // The amount of applied latency
     int32 latency_msec = 1;
 }
 
@@ -22,7 +23,7 @@ message ResourcePressure {
     // The amount of bytes of memory used
     string memory_usage = 1;
 
-    // The amount of CPUs used
+    // The amount of milli CPUs used
     int64 cpu_usage = 2;
 
     // The amount of bytes of storage used

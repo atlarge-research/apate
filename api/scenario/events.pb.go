@@ -25,12 +25,16 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
+// How to respond to a request
 type Response int32
 
 const (
-	Response_NORMAL  Response = 0
+	// Just respond normally, as fast as possible
+	Response_NORMAL Response = 0
+	// Don't respond at all
 	Response_TIMEOUT Response = 1
-	Response_ERROR   Response = 2
+	// Respond with an error
+	Response_ERROR Response = 2
 )
 
 // Enum value maps for Response.

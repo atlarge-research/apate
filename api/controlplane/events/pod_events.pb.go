@@ -26,13 +26,16 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
+// Updates the status of pods in the current configuration
 type PodStatusUpdate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NewStatus  scenario.PodStatus `protobuf:"varint,1,opt,name=new_status,json=newStatus,proto3,enum=apate.scenario.PodStatus" json:"new_status,omitempty"`
-	Percentage int32              `protobuf:"varint,2,opt,name=percentage,proto3" json:"percentage,omitempty"`
+	// The new pod status
+	NewStatus scenario.PodStatus `protobuf:"varint,1,opt,name=new_status,json=newStatus,proto3,enum=apate.scenario.PodStatus" json:"new_status,omitempty"`
+	// The percentage of pods in the current configuration that are affected by this status change
+	Percentage int32 `protobuf:"varint,2,opt,name=percentage,proto3" json:"percentage,omitempty"`
 }
 
 func (x *PodStatusUpdate) Reset() {
@@ -81,11 +84,14 @@ func (x *PodStatusUpdate) GetPercentage() int32 {
 	return 0
 }
 
+// Updates the start time of pods in the current configuration
 type PodStartTimeUpdate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The starting time of this pod (see corev1.PodStatus.StartTime)
+	// ISO8601 format
 	NewStartTime string `protobuf:"bytes,1,opt,name=new_start_time,json=newStartTime,proto3" json:"new_start_time,omitempty"`
 }
 

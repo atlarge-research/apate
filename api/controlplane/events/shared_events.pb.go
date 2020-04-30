@@ -27,6 +27,7 @@ const (
 const _ = proto.ProtoPackageIsVersion4
 
 // See https://github.com/virtual-kubelet/virtual-kubelet/#podlifecylcehandler
+// Ping stands for the heartbeat requests sent by Kubernetes
 type RequestType int32
 
 const (
@@ -94,11 +95,11 @@ type ResponseState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The lifecycle type to act upon
+	// The request type to act upon
 	Type RequestType `protobuf:"varint,1,opt,name=type,proto3,enum=apate.controlplane.events.RequestType" json:"type,omitempty"`
-	// The lifecycle type to act upon
+	// How to respond to this request
 	Response scenario.Response `protobuf:"varint,2,opt,name=response,proto3,enum=apate.scenario.Response" json:"response,omitempty"`
-	// The percentage of lifecycle requests to respond with error to
+	// The percentage of requests to handle like this
 	Percentage int32 `protobuf:"varint,3,opt,name=percentage,proto3" json:"percentage,omitempty"`
 }
 
