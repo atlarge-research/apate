@@ -24,7 +24,7 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
 	controlplane.RegisterScenarioServer(server.Server, &scenarioService{store: store})
 }
 
-func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane.PublicScenario) (*empty.Empty, error) {
+func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlplane.PublicScenario) (*empty.Empty, error) {
 	log.Printf("Loading new scenario")
 
 	normalizedScenario, resources, err := normalization.NormalizeScenario(scenario)
@@ -44,7 +44,7 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane
 		return nil, err
 	}
 
-	if err := cluster.SpawnNodes(len(resources)); err != nil {
+	if err := cluster.SpawnNodes(ctx, len(resources)); err != nil {
 		log.Print(err)
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane
 	return new(empty.Empty), nil
 }
 
-func (s *scenarioService) StartScenario(context.Context, *empty.Empty) (*empty.Empty, error) {
+func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		log.Print(err)
@@ -71,7 +71,7 @@ func (s *scenarioService) StartScenario(context.Context, *empty.Empty) (*empty.E
 	// TODO make async
 	for _, node := range nodes {
 		scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
-		_, err := scenarioClient.Client.StartScenario(context.Background(), apateletScenario)
+		_, err := scenarioClient.Client.StartScenario(ctx, apateletScenario)
 
 		if err != nil {
 			log.Fatalf("Could not complete call: %v", err)
