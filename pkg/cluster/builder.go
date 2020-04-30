@@ -45,7 +45,7 @@ func (b *Builder) WithCreator(creator Manager) *Builder {
 	return b
 }
 
-func (b *Builder) unManaged() (KubernetesCluster, error) {
+func (b *Builder) unmanaged() (KubernetesCluster, error) {
 	config, err := GetKubeConfig(b.kubeConfigLocation)
 	if err != nil {
 		return KubernetesCluster{}, err
@@ -89,7 +89,7 @@ func (b *Builder) Create() (ManagedCluster, error) {
 		return ManagedCluster{}, err
 	}
 
-	kubernetesCluster, err := b.unManaged()
+	kubernetesCluster, err := b.unmanaged()
 	if err != nil {
 		return ManagedCluster{}, err
 	}
