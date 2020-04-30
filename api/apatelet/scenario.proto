@@ -142,14 +142,14 @@ message PodState {
 // If a field in here is set to true, the corresponding CRUD request will timeout
 // The percentage fields define what percentage of requests on this node will be affected by the error
 message LifecycleState {
-    scenario.LifecycleAction create_action = 1;
-    int32 create_action_percentage = 2;
+    scenario.LifecycleAction create_pod_action = 1;
+    int32 create_pod_action_percentage = 2;
 
-    scenario.LifecycleAction update_action = 3;
-    int32 update_action_percentage = 4;
+    scenario.LifecycleAction update_pod_action = 3;
+    int32 update_pod_action_percentage = 4;
 
-    scenario.LifecycleAction delete_action = 5;
-    int32 delete_action_percentage = 6;
+    scenario.LifecycleAction delete_pod_action = 5;
+    int32 delete_pod_action_percentage = 6;
 
     scenario.LifecycleAction get_pod_action = 7;
     int32 get_pod_action_percentage = 8;
