@@ -47,22 +47,22 @@ message Task {
 
     oneof event {
         // Node events
-        NodeFailure node_failure = 5;
+        events.NodeFailure node_failure = 5;
 
-        NetworkLatency network_latency = 6;
+        events.NetworkLatency network_latency = 6;
 
-        TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
-        NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
+        events.TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
+        events.NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
 
-        LifecycleState node_lifecycle_state = 9;
+        events.LifecycleState node_lifecycle_state = 9;
 
-        ResourcePressure resource_pressure = 10;
+        events.ResourcePressure resource_pressure = 10;
 
         // Pod events
-        LifecycleState pod_lifecycle_state = 11;
+        events.LifecycleState pod_lifecycle_state = 11;
 
-        PodStatusUpdate pod_status_update = 12;
-        PodStartTimeUpdate pod_start_time_update = 13;
+        events.PodStatusUpdate pod_status_update = 12;
+        events.PodStartTimeUpdate pod_start_time_update = 13;
     }
 }
 
