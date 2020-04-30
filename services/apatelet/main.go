@@ -47,7 +47,7 @@ func main() {
 	hc.StartStreamWithRetry(3)
 
 	// Start the Apatelet
-	ctx, nc, cancel := createNodeController(location, kubeContext, res)
+	ctx, nc, cancel := createNodeController(location, res)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -103,7 +103,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	cancel()
 }
 
-func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (*normalization.NodeResources) {
+func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) *normalization.NodeResources {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()

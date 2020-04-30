@@ -15,13 +15,9 @@ type KubernetesCluster struct {
 	KubeConfig KubeConfig
 }
 
-func KubernetesClusterFromLocation(kubeConfigLocation string) (KubernetesCluster, error){
-	config, err := GetKubeConfig(kubeConfigLocation)
-	if err != nil {
-		return KubernetesCluster{}, err
-	}
-
-	restconfig, err := config.GetConfig()
+// KubernetesClusterFromLocation Creates a new KubernetesCluster from a location of a configuration file.
+func KubernetesClusterFromLocation(kubeConfig KubeConfig) (KubernetesCluster, error) {
+	restconfig, err := kubeConfig.GetConfig()
 	if err != nil {
 		return KubernetesCluster{}, err
 	}
@@ -32,9 +28,9 @@ func KubernetesClusterFromLocation(kubeConfigLocation string) (KubernetesCluster
 		return KubernetesCluster{}, err
 	}
 
-	return KubernetesCluster {
+	return KubernetesCluster{
 		clientSet,
-		config,
+		kubeConfig,
 	}, nil
 }
 
@@ -49,7 +45,6 @@ func (c KubernetesCluster) ManagedCluster(name string, manager Manager) ManagedC
 	}
 }
 
-
 // GetNumberOfPods returns the number of pods in the cluster, or an error if it couldn't get these.
 func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
 	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
@@ -60,7 +55,7 @@ func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
 	return len(pods.Items), nil
 }
 
-
+// RemoveNodeFromCluster removes a node with a given name from the cluster.
 func (c KubernetesCluster) RemoveNodeFromCluster(nodename string) error {
 	return c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{})
 }
