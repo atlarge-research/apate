@@ -47,15 +47,15 @@ message Node {
     // The type of the node. This can be referred to in nodegroups.
     string node_type = 1;
 
-    // The amount of ram a node gets.
+    // The amount of memory a node gets.
     // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
-    string RAM = 2;
+    string memory = 2;
 
-    // Percentage of cpu allocated to a node.
-    int32 CPU = 3;
+    // The amount of milli CPUs allocated to the node
+    int64 cpu = 3;
 
     // Maximum number of pods per node.
-    int32 max_pods = 4;
+    int64 max_pods = 4;
 }
 
 // A node group specifies a group of many nodes with the same properties.

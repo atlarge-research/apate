@@ -1,21 +1,23 @@
 package main
 
 import (
+	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
+	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node"
+	"k8s.io/client-go/kubernetes"
+
 	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-
-	"github.com/virtual-kubelet/virtual-kubelet/node"
-	"k8s.io/client-go/kubernetes"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
 )
 
 var (
@@ -35,10 +37,17 @@ func main() {
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
 	location := os.TempDir() + "/apate/vk/config"
 
-	// Join the apate cluster and start the Apatelet
+	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	uuid := joinApateCluster(location, connectionInfo)
-	ctx, nc, cancel := getApatelet(location)
+	res := joinApateCluster(location, connectionInfo)
+
+	// Setup health status
+	hc := health.GetClient(connectionInfo, res.UUID.String())
+	hc.SetStatus(healthpb.Status_UNKNOWN)
+	hc.StartStreamWithRetry(3)
+
+	// Start the Apatelet
+	ctx, nc, cancel := createNodeController(location, kubeContext, res)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -51,6 +60,7 @@ func main() {
 	// Start gRPC server
 	log.Println("Now accepting requests")
 	server := createGRPC()
+	hc.SetStatus(healthpb.Status_HEALTHY)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -59,7 +69,7 @@ func main() {
 
 	go func() {
 		<-signals
-		shutdown(server, cancel, connectionInfo, uuid)
+		shutdown(server, cancel, connectionInfo, res.UUID.String())
 		stopped <- true
 	}()
 
@@ -93,25 +103,25 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	cancel()
 }
 
-func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) string {
+func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (*normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	uuid, err := client.JoinCluster(location)
+	res, err := client.JoinCluster(location)
 
 	// TODO: Better error handling
 	if err != nil {
 		log.Fatalf("Unable to join cluster: %v", err)
 	}
 
-	log.Printf("Joined apate cluster with uuid %s", uuid)
+	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return uuid
+	return res
 }
 
-func getApatelet(location string) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(location string, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	config, err := cluster.GetKubeConfig(location)
@@ -127,7 +137,7 @@ func getApatelet(location string) (context.Context, *node.NodeController, contex
 	client := kubernetes.NewForConfigOrDie(restconfig)
 	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
-		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider()),
+		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res)),
 		client.CoreV1().Nodes())
 
 	return ctx, nc, cancel

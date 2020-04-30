@@ -80,6 +80,7 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	services.RegisterStatusService(server, createdStore)
 	services.RegisterScenarioService(server, createdStore)
 	services.RegisterClusterOperationService(server, createdStore, kubernetesCluster)
+	services.RegisterHealthService(server, createdStore)
 
 	return server
 }
