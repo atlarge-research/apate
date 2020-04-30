@@ -52,7 +52,7 @@ func (b *Builder) UnManaged() (KubernetesCluster, error) {
 		return KubernetesCluster{}, err
 	}
 
-	return KubernetesClusterFromLocation(config)
+	return KubernetesClusterFromKubeConfig(config)
 }
 
 // ForceCreate creates a new cluster based on the state of the Builder.

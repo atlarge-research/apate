@@ -85,7 +85,6 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 	// TODO: Remove node from store and maybe from k8s too?
 	log.Printf("Received request to leave apate store from node %s\n", leaveInformation.NodeUuid)
 
-	// TODO: Remove node from cluster and maybe from k8s too?
 	if err := s.kubernetesCluster.RemoveNodeFromCluster("Apate-" + leaveInformation.NodeUuid); err != nil {
 		return nil, err
 	}
