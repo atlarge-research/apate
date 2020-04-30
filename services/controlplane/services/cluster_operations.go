@@ -69,6 +69,8 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformation *controlplane.LeaveInformation) (*empty.Empty, error) {
 	// TODO: Maybe check if the remote address is still the same? idk
 
+
+
 	// TODO: Remove node from cluster and maybe from k8s too?
 	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUUID)
 	return &empty.Empty{}, nil
