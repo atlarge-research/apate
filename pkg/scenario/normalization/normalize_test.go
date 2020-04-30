@@ -19,10 +19,14 @@ nodes:
         node_type: testnode
         memory: 2G
         cpu: 42
+        storage: 2G
+        ephemeral_storage: 2M
         max_pods: 42
     -
         node_type: testnode2
         memory: 42G
+        storage: 22G
+        ephemeral_storage: 21K
         cpu: 24
         max_pods: 24
 node_groups:
@@ -89,10 +93,14 @@ tasks:
 		case 2 * units.GiB:
 			assert.Equal(t, int64(42), node.CPU)
 			assert.Equal(t, int64(42), node.MaxPods)
+			assert.Equal(t, int64(2*units.GiB), node.Storage)
+			assert.Equal(t, int64(2*units.MiB), node.EphemeralStorage)
 			alreadySeenType1++
 		case 42 * units.GiB:
 			assert.Equal(t, int64(24), node.CPU)
 			assert.Equal(t, int64(24), node.MaxPods)
+			assert.Equal(t, int64(22*units.GiB), node.Storage)
+			assert.Equal(t, int64(21*units.KiB), node.EphemeralStorage)
 			alreadySeenType2++
 		default:
 			assert.Fail(t, "This unit doesn't exist")

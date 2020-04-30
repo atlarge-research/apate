@@ -34,7 +34,7 @@ type normalizationContext struct {
 func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.ApateletScenario, []NodeResources, error) {
 	r := apatelet.ApateletScenario{}
 
-	c := normalizationContext{
+	c := &normalizationContext{
 		scenario:          scenario,
 		nodeResources:     make([]NodeResources, 0),
 		uuidsPerNodeGroup: make(map[string][]uuid.UUID),
@@ -62,7 +62,7 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.Apatele
 }
 
 // normalizeTasks translates the tasks from a public to internal scenario
-func normalizeTasks(c normalizationContext) ([]*apatelet.Task, error) {
+func normalizeTasks(c *normalizationContext) ([]*apatelet.Task, error) {
 	var tasks []*apatelet.Task
 
 	for _, task := range c.scenario.Tasks {
@@ -104,7 +104,7 @@ func normalizeTasks(c normalizationContext) ([]*apatelet.Task, error) {
 }
 
 // normalizeNodes parses the node groups in a scenario into separate nodes with a certain hardware definition
-func normalizeNodes(c normalizationContext) error {
+func normalizeNodes(c *normalizationContext) error {
 	for _, nodeGroup := range c.scenario.NodeGroups {
 		for i := 0; i < int(nodeGroup.Amount); i++ {
 			id := uuid.New()
