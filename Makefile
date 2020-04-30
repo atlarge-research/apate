@@ -43,7 +43,6 @@ docker_build: docker_build_cp docker_build_vk
 run_cp: docker_build_cp
 	docker run --network host -v /var/run/docker.sock:/var/run/docker.sock controlplane
 
-
 protobuf:
 	protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find . -type f -name "*.proto" -print`
 

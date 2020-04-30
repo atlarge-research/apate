@@ -70,9 +70,11 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 		KubeConfig: s.kubernetesCluster.KubeConfig,
 		NodeUuid:   node.UUID.String(),
 		Hardware: &controlplane.NodeHardware{
-			Memory:  nodeResources.Memory,
-			Cpu:     nodeResources.CPU,
-			MaxPods: nodeResources.MaxPods,
+			Memory:           nodeResources.Memory,
+			Cpu:              nodeResources.CPU,
+			Storage:          nodeResources.Storage,
+			EphemeralStorage: nodeResources.EphemeralStorage,
+			MaxPods:          nodeResources.MaxPods,
 		},
 	}, nil
 }

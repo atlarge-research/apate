@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events";
+package apate.controlplane.events;
+
+import "scenario/pods.proto";
+
+// Updates the status of pods in the current configuration
+message PodStatusUpdate {
+    // The new pod status
+    scenario.PodStatus new_status = 1;
+
+    // The percentage of pods in the current configuration that are affected by this status change
+    int32 percentage = 2;
+}
+
+// Updates the start time of pods in the current configuration
+message PodStartTimeUpdate {
+    // The starting time of this pod (see corev1.PodStatus.StartTime)
+    // ISO8601 format
+    string new_start_time = 1;
+}
+

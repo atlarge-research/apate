@@ -15,37 +15,47 @@ func TestScenario(t *testing.T) {
 
 	scenario, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
-    - node_type: testnode
-      memory: 2G
-      cpu: 42
-      max_pods: 42
-    - node_type: testnode2
-      memory: 42G
-      cpu: 24
-      max_pods: 24
-
+    -
+        node_type: testnode
+        memory: 2G
+        cpu: 42
+        storage: 2G
+        ephemeral_storage: 2M
+        max_pods: 42
+    -
+        node_type: testnode2
+        memory: 42G
+        storage: 22G
+        ephemeral_storage: 21K
+        cpu: 24
+        max_pods: 24
 node_groups:
-    - group_name: testgroup1
-      node_type: testnode
-      amount: 42
-    - group_name: testgroup2
-      node_type: testnode2
-      amount: 10
-
+    -
+        group_name: testgroup1
+        node_type: testnode
+        amount: 42
+    -
+        group_name: testgroup2
+        node_type: testnode2
+        amount: 10
 tasks:
-    - name: testtask1
-      time: 10s
-      node_groups: 
-          - testgroup1
+    -
+        name: testtask1
+        time: 10s
+        node_groups:
+            - testgroup1
+        node_failure: {}
+    -
+        name: testtask2
+        time: 10s
+        node_groups:
+            - all
+        node_failure: {}
+    -
+        name: testtask2
+        time: 20s
+        revert: true
 
-    - name: testtask2
-      time: 10s
-      node_groups: 
-          - all
-
-    - name: testtask2
-      time: 20s
-      revert: true
 `))
 	assert.NoError(t, err)
 
@@ -83,10 +93,14 @@ tasks:
 		case 2 * units.GiB:
 			assert.Equal(t, int64(42), node.CPU)
 			assert.Equal(t, int64(42), node.MaxPods)
+			assert.Equal(t, int64(2*units.GiB), node.Storage)
+			assert.Equal(t, int64(2*units.MiB), node.EphemeralStorage)
 			alreadySeenType1++
 		case 42 * units.GiB:
 			assert.Equal(t, int64(24), node.CPU)
 			assert.Equal(t, int64(24), node.MaxPods)
+			assert.Equal(t, int64(22*units.GiB), node.Storage)
+			assert.Equal(t, int64(21*units.KiB), node.EphemeralStorage)
 			alreadySeenType2++
 		default:
 			assert.Fail(t, "This unit doesn't exist")
