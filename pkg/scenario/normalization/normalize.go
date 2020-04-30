@@ -2,6 +2,8 @@
 package normalization
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/events"
@@ -23,6 +25,9 @@ type normalizationContext struct {
 	// A map mapping nodeType strings to node original types
 	// This aids in doing lookup later on
 	nodeTypeName map[string]*controlplane.Node
+
+	// A map mapping task names to their parsed counterparts
+	taskNameParsed map[string]*apatelet.Task
 }
 
 // NormalizeScenario takes a public scenario and turns it into a private scenario.
@@ -35,6 +40,7 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.Apatele
 		nodeResources:     make([]NodeResources, 0),
 		uuidsPerNodeGroup: make(map[string][]uuid.UUID),
 		nodeTypeName:      make(map[string]*controlplane.Node),
+		taskNameParsed:    make(map[string]*apatelet.Task),
 	}
 
 	// Fill the map with node cache
@@ -74,29 +80,45 @@ func normalizeTasks(c *normalizationContext) ([]*apatelet.Task, error) {
 			return nil, err
 		}
 
-		var nodeSet []string
-		for _, name := range nodeGroupNames {
-			for _, nodeUUID := range c.uuidsPerNodeGroup[name] {
-				nodeSet = append(nodeSet, nodeUUID.String())
-			}
-		}
-
 		newTask := &apatelet.Task{
-			Name:       task.Name,
 			RevertTask: task.Revert,
 			Timestamp:  int32(timestamp),
-			NodeSet:    nodeSet,
 		}
 
 		if !task.Revert {
+			// If this task is not a revert task we compute the node sets
+			nodeSet := generateNodeFromGroups(c, nodeGroupNames)
+			newTask.NodeSet = nodeSet
+
 			if err := events.NewEventTranslator(task, newTask).TranslateEvent(); err != nil {
 				return nil, err
 			}
+
+			c.taskNameParsed[task.Name] = newTask
+		} else {
+			savedTask := c.taskNameParsed[task.Name]
+			if savedTask == nil {
+				return nil, fmt.Errorf("you can't revert task with name '%s' as you have never used it before", task.Name)
+			}
+
+			newTask.NodeSet = savedTask.NodeSet
+			newTask.Event = savedTask.Event
 		}
 
 		tasks = append(tasks, newTask)
 	}
 	return tasks, nil
+}
+
+// Generates a set of UUIDs based on the groups and the nodes in these groups
+func generateNodeFromGroups(c *normalizationContext, nodeGroupNames []string) []string {
+	var nodeSet []string
+	for _, name := range nodeGroupNames {
+		for _, nodeUUID := range c.uuidsPerNodeGroup[name] {
+			nodeSet = append(nodeSet, nodeUUID.String())
+		}
+	}
+	return nodeSet
 }
 
 // normalizeNodes parses the node groups in a scenario into separate nodes with a certain hardware definition

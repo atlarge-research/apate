@@ -27,25 +27,20 @@ message ApateletScenario {
 }
 
 message Task {
-    // The name of the task, can be used later to revert it
-    string name = 1;
-
-    // Whether to revert the task with the given name
-    bool revert_task = 2;
+    // Whether to revert the event in this task
+    bool revert_task = 1;
 
     // The timestamp on which this task will be executed
     // Is in milliseconds since the scenario has started
-    int32 timestamp = 3;
+    int32 timestamp = 2;
 
     // The UUID of the nodes on which this task will be executed
-    // Will be ignored when revert_task is true
-    repeated string node_set = 4;
+    repeated string node_set = 3;
 
     // The event belonging to this task
-    // Will be ignored when revert_task is true
     oneof event {
-        NodeEvent node_event = 5;
-        PodEvent pod_event = 6;
+        NodeEvent node_event = 4;
+        PodEvent pod_event = 5;
     }
 }
 
