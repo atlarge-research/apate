@@ -51,7 +51,7 @@ func main() {
 	log.Printf("Apate control plane stopped")
 }
 
-func shutdown(store *store.Store, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
+func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, server *service.GRPCServer) {
 	log.Println("Stopping Apate control plane")
 
 	log.Println("Stopping API")
@@ -61,8 +61,6 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.KubernetesCluster, 
 	if err := (*store).ClearNodes(); err != nil {
 		log.Printf("An error occurred while cleaning the apate store: %s", err.Error())
 	}
-
-	// TODO: Cleanup /tmp/ dir we used for kube config etc
 
 	log.Println("Stopping kubernetes control plane")
 	if err := kubernetesCluster.Delete(); err != nil {
@@ -86,7 +84,7 @@ func createGRPC(createdStore *store.Store) *service.GRPCServer {
 	return server
 }
 
-func createCluster() cluster.KubernetesCluster {
+func createCluster() cluster.ManagedCluster {
 	cb := cluster.Default()
 	c, err := cb.WithName("Apate").ForceCreate()
 	if err != nil {

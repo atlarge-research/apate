@@ -49,26 +49,26 @@ func (b *Builder) WithCreator(creator Manager) *Builder {
 
 // ForceCreate creates a new cluster based on the state of the Builder.
 // Makes sure that old clusters with the same name as this one are deleted.
-func (b *Builder) ForceCreate() (KubernetesCluster, error) {
+func (b *Builder) ForceCreate() (ManagedCluster, error) {
 	if b.name == "" {
-		return KubernetesCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
+		return ManagedCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
 	}
 
 	if err := b.manager.DeleteCluster(b.name); err != nil {
-		return KubernetesCluster{}, err
+		return ManagedCluster{}, err
 	}
 	return b.Create()
 }
 
 // Create creates a new cluster based on the state of the Builder.
-func (b *Builder) Create() (KubernetesCluster, error) {
+func (b *Builder) Create() (ManagedCluster, error) {
 	if b.name == "" {
-		return KubernetesCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
+		return ManagedCluster{}, errors.New("trying to create a cluster with an empty name (\"\")")
 	}
 
 	if _, err := os.Stat(b.kubeConfigLocation); os.IsNotExist(err) {
 		if err := os.MkdirAll(path.Dir(b.kubeConfigLocation), os.ModePerm); err != nil {
-			return KubernetesCluster{}, err
+			return ManagedCluster{}, err
 		}
 	}
 
@@ -79,7 +79,7 @@ func (b *Builder) Create() (KubernetesCluster, error) {
 		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
 			err = err1
 		}
-		return KubernetesCluster{}, err
+		return ManagedCluster{}, err
 	}
 
 	config, err := GetConfigForContext(b.manager.ClusterContext(b.name), b.kubeConfigLocation)
@@ -90,7 +90,7 @@ func (b *Builder) Create() (KubernetesCluster, error) {
 		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
 			err = err1
 		}
-		return KubernetesCluster{}, err
+		return ManagedCluster{}, err
 	}
 
 	clientSet, err := kubernetes.NewForConfig(config)
@@ -100,13 +100,15 @@ func (b *Builder) Create() (KubernetesCluster, error) {
 		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
 			err = err1
 		}
-		return KubernetesCluster{}, err
+		return ManagedCluster{}, err
 	}
 
-	return KubernetesCluster{
-		name:      b.name,
-		clientSet: clientSet,
-		manager:   b.manager,
-		config:    config,
+	return ManagedCluster {
+		KubernetesCluster{
+			clientSet: clientSet,
+			config:    config,
+		},
+		b.manager,
+		b.name,
 	}, nil
 }

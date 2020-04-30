@@ -38,7 +38,9 @@ func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 	// Override with defaults (this call might not be necessary since the defaults are already set above?)
 	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
 	// But set the context to our own context while overriding
-	overrides.CurrentContext = context
+	if context != "" {
+		overrides.CurrentContext = context
+	}
 
 	// You could override server ip/host here with this:
 	// overrides.ClusterInfo.Server
@@ -50,6 +52,11 @@ func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Confi
 	}
 
 	return config, nil
+}
+
+// GetConfigForContext returns a kubernetes client configuration from just the path to the kubeconfig.
+func GetConfigForLocation(kubeConfigLocation string) (*rest.Config, error) {
+	return GetConfigForContext("", kubeConfigLocation)
 }
 
 // CreateKubernetesNode creates a kubernetes api object representing a node

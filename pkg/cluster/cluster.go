@@ -11,16 +11,38 @@ import (
 // A KubernetesCluster object can be used to interact with kubernetes clusters.
 // It abstracts away calls to the kubernetes client-go api.
 type KubernetesCluster struct {
-	name      string
-	manager   Manager
 	clientSet *kubernetes.Clientset
+
+	// TODO: We probably can remove the config. We only use it once to get the clientset.
 	config    *rest.Config
 }
 
-// Delete can be used to delete a cluster
-func (c KubernetesCluster) Delete() error {
-	return c.manager.DeleteCluster(c.name)
+func KubernetesClusterFromConfigPath(kubeConfigLocation string) (KubernetesCluster, error) {
+	config, err := GetConfigForLocation(kubeConfigLocation)
+	if err != nil {
+		return KubernetesCluster{}, err
+	}
+
+	clientSet, err := kubernetes.NewForConfig(config)
+
+	if err != nil {
+		return KubernetesCluster{}, err
+	}
+
+	return KubernetesCluster {
+		clientSet,
+		config,
+	}, nil
 }
+
+func (c KubernetesCluster) ManagedCluster(name string, manager Manager) ManagedCluster {
+	return ManagedCluster{
+		c,
+		manager,
+		name,
+	}
+}
+
 
 // GetNumberOfPods returns the number of pods in the cluster, or an error if it couldn't get these.
 func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
@@ -30,4 +52,9 @@ func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
 	}
 
 	return len(pods.Items), nil
+}
+
+
+func (c KubernetesCluster) RemoveNodeFromCluster(nodename string) {
+
 }
