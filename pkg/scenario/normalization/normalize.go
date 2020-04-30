@@ -2,13 +2,9 @@
 package normalization
 
 import (
-	"time"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/events"
-
 	"github.com/google/uuid"
 
-	"github.com/docker/go-units"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/events"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -66,7 +62,7 @@ func normalizeTasks(c *normalizationContext) ([]*apatelet.Task, error) {
 	var tasks []*apatelet.Task
 
 	for _, task := range c.scenario.Tasks {
-		timestamp, err := desugarTimestamp(task.Time)
+		timestamp, err := events.DesugarTimestamp(task.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -111,17 +107,17 @@ func normalizeNodes(c *normalizationContext) error {
 
 			nodeType := c.nodeTypeName[nodeGroup.NodeType]
 
-			memory, err := units.RAMInBytes(nodeType.Memory)
+			memory, err := events.GetInBytes(nodeType.Memory, "memory")
 			if err != nil {
 				return err
 			}
 
-			storage, err := units.RAMInBytes(nodeType.Storage)
+			storage, err := events.GetInBytes(nodeType.Storage, "storage")
 			if err != nil {
 				return err
 			}
 
-			ephStorage, err := units.RAMInBytes(nodeType.EphemeralStorage)
+			ephStorage, err := events.GetInBytes(nodeType.EphemeralStorage, "ephemeral storage")
 			if err != nil {
 				return err
 			}
@@ -140,13 +136,4 @@ func normalizeNodes(c *normalizationContext) error {
 	}
 
 	return nil
-}
-
-func desugarTimestamp(t string) (int, error) {
-	duration, err := time.ParseDuration(t)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(duration.Milliseconds()), nil
 }
