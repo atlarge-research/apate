@@ -1,6 +1,8 @@
 package deserialize
 
 import (
+	"bytes"
+	"github.com/golang/protobuf/jsonpb"
 	"io/ioutil"
 	"path/filepath"
 
@@ -26,9 +28,16 @@ func (s YamlScenario) FromFile(filename string) (Deserializer, error) {
 
 // FromBytes creates a new YamlScenario from a byte array of data.
 func (s YamlScenario) FromBytes(data []byte) (Deserializer, error) {
-	var scenario controlplane.PublicScenario
-	if err := yaml.Unmarshal(data, &scenario); err != nil {
-		return JSONScenario{}, err
+
+	json, err := yaml.YAMLToJSON(data)
+	if err != nil {
+		return nil, err
 	}
+
+	var scenario controlplane.PublicScenario
+	if err := jsonpb.Unmarshal(bytes.NewReader(json), &scenario); err != nil {
+		return nil, err
+	}
+
 	return YamlScenario{JSONScenario{&scenario}}, nil
 }
