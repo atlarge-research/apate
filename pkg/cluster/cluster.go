@@ -15,8 +15,8 @@ type KubernetesCluster struct {
 	KubeConfig KubeConfig
 }
 
-// KubernetesClusterFromLocation Creates a new KubernetesCluster from a location of a configuration file.
-func KubernetesClusterFromLocation(kubeConfig KubeConfig) (KubernetesCluster, error) {
+// KubernetesClusterFromKubeConfig Creates a new KubernetesCluster from a location of a configuration file.
+func KubernetesClusterFromKubeConfig(kubeConfig KubeConfig) (KubernetesCluster, error) {
 	restconfig, err := kubeConfig.GetConfig()
 	if err != nil {
 		return KubernetesCluster{}, err
