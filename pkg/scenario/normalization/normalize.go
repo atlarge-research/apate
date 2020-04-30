@@ -2,6 +2,9 @@
 package normalization
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/google/uuid"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/events"
@@ -23,6 +26,12 @@ type normalizationContext struct {
 	// A map mapping nodeType strings to node original types
 	// This aids in doing lookup later on
 	nodeTypeName map[string]*controlplane.Node
+
+	// A map mapping task names to their parsed counterparts
+	taskNameParsed map[string]*apatelet.Task
+
+	// A set of task names that have been used
+	usedTaskNames map[string]bool
 }
 
 // NormalizeScenario takes a public scenario and turns it into a private scenario.
@@ -35,6 +44,8 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.Apatele
 		nodeResources:     make([]NodeResources, 0),
 		uuidsPerNodeGroup: make(map[string][]uuid.UUID),
 		nodeTypeName:      make(map[string]*controlplane.Node),
+		taskNameParsed:    make(map[string]*apatelet.Task),
+		usedTaskNames:     make(map[string]bool),
 	}
 
 	// Fill the map with node cache
@@ -74,22 +85,19 @@ func normalizeTasks(c *normalizationContext) ([]*apatelet.Task, error) {
 			return nil, err
 		}
 
-		var nodeSet []string
-		for _, name := range nodeGroupNames {
-			for _, nodeUUID := range c.uuidsPerNodeGroup[name] {
-				nodeSet = append(nodeSet, nodeUUID.String())
-			}
-		}
-
 		newTask := &apatelet.Task{
-			Name:       task.Name,
 			RevertTask: task.Revert,
 			Timestamp:  int32(timestamp),
-			NodeSet:    nodeSet,
 		}
 
-		if !task.Revert {
-			if err := events.NewEventTranslator(task, newTask).TranslateEvent(); err != nil {
+		if task.Revert {
+			err := createRevertEvent(c, task, newTask)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err := createEvent(c, task, nodeGroupNames, newTask)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -97,6 +105,57 @@ func normalizeTasks(c *normalizationContext) ([]*apatelet.Task, error) {
 		tasks = append(tasks, newTask)
 	}
 	return tasks, nil
+}
+
+func createEvent(c *normalizationContext, task *controlplane.Task, nodeGroupNames []string, newTask *apatelet.Task) error {
+	if c.usedTaskNames[task.Name] {
+		return fmt.Errorf("you can't use the task with name '%s' twice", task.Name)
+	}
+
+	// If this task is not a revert task we compute the node sets
+	nodeSet := getNodeUUIDs(c, nodeGroupNames)
+	newTask.NodeSet = nodeSet
+
+	if err := events.NewEventTranslator(task, newTask).TranslateEvent(); err != nil {
+		return err
+	}
+
+	// We only allow reverting a task if it has a name
+	// Now you can also make a nameless task
+	if task.Name != "" {
+		c.taskNameParsed[task.Name] = newTask
+		c.usedTaskNames[task.Name] = true
+	}
+	return nil
+}
+
+func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask *apatelet.Task) error {
+	if task.Name == "" {
+		return errors.New("you can't revert a task with an empty task name")
+	}
+
+	savedTask := c.taskNameParsed[task.Name]
+	if savedTask == nil {
+		return fmt.Errorf("you can't revert task with name '%s' as you have never used it before", task.Name)
+	}
+
+	newTask.NodeSet = savedTask.NodeSet
+	newTask.Event = savedTask.Event
+
+	// Delete from the map so we can't revert it again
+	delete(c.taskNameParsed, task.Name)
+	return nil
+}
+
+// Generates a set of UUIDs based on the groups and the nodes in these groups
+func getNodeUUIDs(c *normalizationContext, nodeGroupNames []string) []string {
+	var nodeSet []string
+	for _, name := range nodeGroupNames {
+		for _, nodeUUID := range c.uuidsPerNodeGroup[name] {
+			nodeSet = append(nodeSet, nodeUUID.String())
+		}
+	}
+	return nodeSet
 }
 
 // normalizeNodes parses the node groups in a scenario into separate nodes with a certain hardware definition
