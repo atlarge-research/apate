@@ -46,8 +46,7 @@ tasks:
         time: 10s
         node_groups:
             - all
-        network_latency:
-            latency_msec: 100
+        node_failure: {}
     -
         name: testtask2
         time: 20s

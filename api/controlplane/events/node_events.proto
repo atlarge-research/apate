@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events";
-package apate.controlplane;
+package apate.controlplane.events;
 
 // This node fails, so every request times out
 message NodeFailure {}
