@@ -6,8 +6,6 @@ import (
 	"github.com/virtual-kubelet/node-cli/provider"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 // NodeInfo contains all information used for creating an equivalent kubernetes node
@@ -26,30 +24,6 @@ func NewNode(nodeType string, role string, name string, version string) *NodeInf
 		name:     name,
 		version:  version,
 	}
-}
-
-// GetConfigForContext returns a kubernetes client configuration for the context given.
-func GetConfigForContext(context string, kubeConfigLocation string) (*rest.Config, error) {
-	// Create a default config rules struct
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
-	rules.ExplicitPath = kubeConfigLocation
-
-	// Override with defaults (this call might not be necessary since the defaults are already set above?)
-	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
-	// But set the context to our own context while overriding
-	overrides.CurrentContext = context
-
-	// You could override server ip/host here with this:
-	// overrides.ClusterInfo.Server
-
-	// Now create the actual configuration
-	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
 }
 
 // CreateKubernetesNode creates a kubernetes api object representing a node

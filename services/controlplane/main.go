@@ -23,14 +23,14 @@ func main() {
 
 	// Create kubernetes cluster
 	log.Println("Starting kubernetes control plane")
-	kubernetesCluster := createCluster()
+	managedKubernetesCluster := createCluster()
 
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
 	// Start gRPC server
 	log.Println("Now accepting requests")
-	server := createGRPC(&createdStore)
+	server := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -39,7 +39,7 @@ func main() {
 
 	go func() {
 		<-signals
-		shutdown(&createdStore, &kubernetesCluster, server)
+		shutdown(&createdStore, &managedKubernetesCluster, server)
 		stopped <- true
 	}()
 
@@ -51,7 +51,7 @@ func main() {
 	log.Printf("Apate control plane stopped")
 }
 
-func shutdown(store *store.Store, kubernetesCluster *cluster.KubernetesCluster, server *service.GRPCServer) {
+func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, server *service.GRPCServer) {
 	log.Println("Stopping Apate control plane")
 
 	log.Println("Stopping API")
@@ -62,15 +62,13 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.KubernetesCluster, 
 		log.Printf("An error occurred while cleaning the apate store: %s", err.Error())
 	}
 
-	// TODO: Cleanup /tmp/ dir we used for kube config etc
-
 	log.Println("Stopping kubernetes control plane")
 	if err := kubernetesCluster.Delete(); err != nil {
 		log.Printf("An error occurred while deleting the kubernetes store: %s", err.Error())
 	}
 }
 
-func createGRPC(createdStore *store.Store) *service.GRPCServer {
+func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster) *service.GRPCServer {
 	// TODO: Get grpc settings from env
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
@@ -81,13 +79,13 @@ func createGRPC(createdStore *store.Store) *service.GRPCServer {
 	// Add services
 	services.RegisterStatusService(server, createdStore)
 	services.RegisterScenarioService(server, createdStore)
-	services.RegisterClusterOperationService(server, createdStore)
+	services.RegisterClusterOperationService(server, createdStore, kubernetesCluster)
 	services.RegisterHealthService(server, createdStore)
 
 	return server
 }
 
-func createCluster() cluster.KubernetesCluster {
+func createCluster() cluster.ManagedCluster {
 	cb := cluster.Default()
 	c, err := cb.WithName("Apate").ForceCreate()
 	if err != nil {
