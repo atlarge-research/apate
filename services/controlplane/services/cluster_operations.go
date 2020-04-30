@@ -3,13 +3,11 @@ package services
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"net"
-	"os"
-	"path/filepath"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 
 	"google.golang.org/grpc/peer"
 
@@ -20,13 +18,15 @@ import (
 )
 
 type clusterOperationService struct {
-	store *store.Store
+	store             *store.Store
+	kubernetesCluster cluster.KubernetesCluster
 }
 
 // RegisterClusterOperationService registers a new clusterOperationService with the given gRPC server
-func RegisterClusterOperationService(server *service.GRPCServer, store *store.Store) {
+func RegisterClusterOperationService(server *service.GRPCServer, store *store.Store, kubernetesCluster cluster.KubernetesCluster) {
 	controlplane.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
-		store: store,
+		store:             store,
+		kubernetesCluster: kubernetesCluster,
 	})
 }
 
@@ -52,8 +52,6 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 	}
 
 	//TODO: Retrieve path from somewhere else
-	// Retrieving kube config
-	config := getKubeConfigData("/apate/config")
 
 	// Get connection information and create node
 	node := store.NewNode(connectionInfo, nodeResources)
@@ -69,9 +67,8 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 
 	// TODO: Retrieve proper kube context from somewhere
 	return &controlplane.JoinInformation{
-		KubeConfig:  config,
-		KubeContext: "kind-Apate",
-		NodeUuid:    node.UUID.String(),
+		KubeConfig: s.kubernetesCluster.KubeConfig,
+		NodeUuid:   node.UUID.String(),
 		Hardware: &controlplane.NodeHardware{
 			Memory:  nodeResources.Memory,
 			Cpu:     nodeResources.CPU,
@@ -87,16 +84,11 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 
 	// TODO: Remove node from store and maybe from k8s too?
 	log.Printf("Received request to leave apate store from node %s\n", leaveInformation.NodeUuid)
-	return &empty.Empty{}, nil
-}
 
-func getKubeConfigData(path string) []byte {
-	data, err := ioutil.ReadFile(filepath.Join(os.TempDir(), filepath.Clean(path)))
-
-	// TODO: Better error handling
-	if err != nil {
-		log.Fatalf("Could not read kube config: %v", err)
+	if err := s.kubernetesCluster.RemoveNodeFromCluster("Apate-" + leaveInformation.NodeUuid); err != nil {
+		return nil, err
 	}
 
-	return data
+	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
+	return &empty.Empty{}, nil
 }
