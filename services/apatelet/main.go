@@ -35,11 +35,10 @@ func main() {
 
 	// TODO: Get these from envvars
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
-	location := os.TempDir() + "/apate/vk/config"
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	kubeContext, res := joinApateCluster(location, connectionInfo)
+	kubeConfig, res := joinApateCluster(connectionInfo)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -47,7 +46,7 @@ func main() {
 	hc.StartStreamWithRetry(3)
 
 	// Start the Apatelet
-	ctx, nc, cancel := createNodeController(location, kubeContext, res)
+	ctx, nc, cancel := createNodeController(kubeConfig, res)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -103,13 +102,13 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	cancel()
 }
 
-func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (string, *normalization.NodeResources) {
+func joinApateCluster(connectionInfo *service.ConnectionInfo) (cluster.KubeConfig, *normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	ctx, res, err := client.JoinCluster(location)
+	kubeconfig, res, err := client.JoinCluster()
 
 	// TODO: Better error handling
 	if err != nil {
@@ -118,14 +117,18 @@ func joinApateCluster(location string, connectionInfo *service.ConnectionInfo) (
 
 	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return ctx, res
+	return kubeconfig, res
 }
 
-func createNodeController(location string, kubeContext string, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(kubeConfig cluster.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	config, _ := cluster.GetConfigForContext(kubeContext, location)
-	client := kubernetes.NewForConfigOrDie(config)
+	restconfig, err := kubeConfig.GetConfig()
+	if err != nil {
+		log.Fatal("Could not parse config.")
+	}
+
+	client := kubernetes.NewForConfigOrDie(restconfig)
 	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
 		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res)),
