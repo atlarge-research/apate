@@ -36,17 +36,19 @@ func main() {
 	// TODO: Get these from envvars
 	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
 
+	ctx := context.Background()
+
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	kubeConfig, res := joinApateCluster(connectionInfo)
+	kubeConfig, res := joinApateCluster(ctx, connectionInfo)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
 	hc.SetStatus(healthpb.Status_UNKNOWN)
-	hc.StartStreamWithRetry(3)
+	hc.StartStreamWithRetry(ctx, 3)
 
 	// Start the Apatelet
-	ctx, nc, cancel := createNodeController(kubeConfig, res)
+	ctx, nc, cancel := createNodeController(ctx, kubeConfig, res)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -68,7 +70,7 @@ func main() {
 
 	go func() {
 		<-signals
-		shutdown(server, cancel, connectionInfo, res.UUID.String())
+		shutdown(ctx, server, cancel, connectionInfo, res.UUID.String())
 		stopped <- true
 	}()
 
@@ -80,7 +82,7 @@ func main() {
 	log.Println("Apatelet stopped")
 }
 
-func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) {
+func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) {
 	log.Println("Stopping Apatelet")
 
 	log.Println("Stopping API")
@@ -94,7 +96,7 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 		_ = client.Conn.Close()
 	}()
 
-	if err := client.LeaveCluster(uuid); err != nil {
+	if err := client.LeaveCluster(ctx, uuid); err != nil {
 		log.Printf("An error occurred while leaving the clusters (apate & k8s): %s", err.Error())
 	}
 
@@ -102,13 +104,13 @@ func shutdown(server *service.GRPCServer, cancel context.CancelFunc, connectionI
 	cancel()
 }
 
-func joinApateCluster(connectionInfo *service.ConnectionInfo) (cluster.KubeConfig, *normalization.NodeResources) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo) (cluster.KubeConfig, *normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	kubeconfig, res, err := client.JoinCluster()
+	kubeconfig, res, err := client.JoinCluster(ctx)
 
 	// TODO: Better error handling
 	if err != nil {
@@ -120,8 +122,8 @@ func joinApateCluster(connectionInfo *service.ConnectionInfo) (cluster.KubeConfi
 	return kubeconfig, res
 }
 
-func createNodeController(kubeConfig cluster.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(context.Background())
+func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
 
 	restconfig, err := kubeConfig.GetConfig()
 	if err != nil {
