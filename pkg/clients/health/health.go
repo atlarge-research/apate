@@ -42,8 +42,7 @@ func GetClient(info *service.ConnectionInfo, uuid string) *Client {
 }
 
 // StartStreamWithRetry calls StartStream but will retry n times to re-establish a connection
-func (c *Client) StartStreamWithRetry(n int32) {
-	ctx := context.Background()
+func (c *Client) StartStreamWithRetry(ctx context.Context, n int32) {
 	c.StartStream(ctx, func(err error) {
 		if atomic.LoadInt32(&n) < 1 {
 			log.Fatal(err)
