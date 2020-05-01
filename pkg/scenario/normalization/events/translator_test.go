@@ -6,6 +6,9 @@ import (
 	"github.com/docker/go-units"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	flag "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/events"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
@@ -20,34 +23,15 @@ func TestNodeFailure(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_failure: {}
 `)
-	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
-		NodeResponseState: &apatelet.NodeState_NodeResponseState{
-			ResponseState: &apatelet.ResponseState{
-				CreatePodResponse:              scenario.Response_TIMEOUT,
-				CreatePodResponsePercentage:    100,
-				UpdatePodResponse:              scenario.Response_TIMEOUT,
-				UpdatePodResponsePercentage:    100,
-				DeletePodResponse:              scenario.Response_TIMEOUT,
-				DeletePodResponsePercentage:    100,
-				GetPodResponse:                 scenario.Response_TIMEOUT,
-				GetPodResponsePercentage:       100,
-				GetPodStatusResponse:           scenario.Response_TIMEOUT,
-				GetPodStatusResponsePercentage: 100,
-			},
-			GetPodsResponse:           scenario.Response_TIMEOUT,
-			GetPodsResponsePercentage: 100,
-			PingResponse:              scenario.Response_TIMEOUT,
-			PingResponsePercentage:    100,
-		},
-		ResourceState:     &apatelet.NodeState_ResourceState{},
-		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
-	}), newTask.Event)
+	assert.Equal(t, events.EventFlags{
+
+	}, newTask.EventFlags)
 }
 
 func TestNetworkLatency(t *testing.T) {
 	newTask := getApateletTask(t, `
 network_latency:
-  latency_msec: 100
+ latency_msec: 100
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{}},
@@ -62,7 +46,7 @@ network_latency:
 func TestNegativeNetworkLatency(t *testing.T) {
 	getApateletErroredTask(t, `
 network_latency:
-  latency_msec: -100
+ latency_msec: -100
 `, "latency should be at least 0")
 }
 
@@ -110,9 +94,9 @@ no_timeout_no_heartbeat: {}
 func TestNodeResponseStateCreatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
-  type: CREATE_POD
-  response: ERROR
-  percentage: 42
+ type: CREATE_POD
+ response: ERROR
+ percentage: 42
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
@@ -127,9 +111,9 @@ node_response_state:
 func TestNodeResponseStateUpdatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
-  type: UPDATE_POD
-  response: TIMEOUT
-  percentage: 15
+ type: UPDATE_POD
+ response: TIMEOUT
+ percentage: 15
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
@@ -144,9 +128,9 @@ node_response_state:
 func TestNodeResponseStateDeletePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
-  type: DELETE_POD
-  response: ERROR
-  percentage: 100
+ type: DELETE_POD
+ response: ERROR
+ percentage: 100
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
@@ -161,9 +145,9 @@ node_response_state:
 func TestNodeResponseStateGetPod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
-  type: GET_POD
-  response: ERROR
-  percentage: 14
+ type: GET_POD
+ response: ERROR
+ percentage: 14
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
@@ -178,9 +162,9 @@ node_response_state:
 func TestNodeResponseStateGetPodStatus(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
-  type: GET_POD_STATUS
-  response: TIMEOUT
-  percentage: 42
+ type: GET_POD_STATUS
+ response: TIMEOUT
+ percentage: 42
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{
@@ -195,9 +179,9 @@ node_response_state:
 func TestNodeResponseStateGetPods(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
-  type: GET_PODS
-  response: TIMEOUT
-  percentage: 65
+ type: GET_PODS
+ response: TIMEOUT
+ percentage: 65
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{
@@ -213,9 +197,9 @@ node_response_state:
 func TestNodeResponseStatePing(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
-  type: PING
-  response: ERROR
-  percentage: 50
+ type: PING
+ response: ERROR
+ percentage: 50
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{
@@ -231,28 +215,28 @@ node_response_state:
 func TestNodeResponseStateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
 node_response_state:
-  type: PING
-  response: ERROR
-  percentage: -50
+ type: PING
+ response: ERROR
+ percentage: -50
 `, "percentage should be between 0 and 100")
 }
 
 func TestNodeResponseStateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
 node_response_state:
-  type: PING
-  response: ERROR
-  percentage: 420
+ type: PING
+ response: ERROR
+ percentage: 420
 `, "percentage should be between 0 and 100")
 }
 
 func TestResourcePressure(t *testing.T) {
 	newTask := getApateletTask(t, `
 resource_pressure:
-  cpu_usage: 42
-  memory_usage: 21GB
-  storage_usage: 84MB
-  ephemeral_storage_usage: 105KB
+ cpu_usage: 42
+ memory_usage: 21GB
+ storage_usage: 84MB
+ ephemeral_storage_usage: 105KB
 `)
 	assert.Equal(t, createNodeEvent(&apatelet.NodeState{
 		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: &apatelet.ResponseState{}},
@@ -270,40 +254,40 @@ resource_pressure:
 func TestResourcePressureCpuBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
-  cpu_usage: -42
-  memory_usage: 21G
-  storage_usage: 84M
-  ephemeral_storage_usage: 105K
+ cpu_usage: -42
+ memory_usage: 21G
+ storage_usage: 84M
+ ephemeral_storage_usage: 105K
 `, "CPU usage should be at least 0")
 }
 
 func TestResourcePressureMemoryBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
-  cpu_usage: 42
-  memory_usage: -21G
-  storage_usage: 84M
-  ephemeral_storage_usage: 105K
+ cpu_usage: 42
+ memory_usage: -21G
+ storage_usage: 84M
+ ephemeral_storage_usage: 105K
 `, "memoy usage should be at least 0")
 }
 
 func TestResourcePressureStorageBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
-  cpu_usage: 42
-  memory_usage: 21G
-  storage_usage: -84M
-  ephemeral_storage_usage: 105K
+ cpu_usage: 42
+ memory_usage: 21G
+ storage_usage: -84M
+ ephemeral_storage_usage: 105K
 `, "storage usage should be at least 0")
 }
 
 func TestResourcePressureEphemeralStorageBelow0(t *testing.T) {
 	getApateletErroredTask(t, `
 resource_pressure:
-  cpu_usage: 42
-  memory_usage: 21G
-  storage_usage: 84M
-  ephemeral_storage_usage: -105K
+ cpu_usage: 42
+ memory_usage: 21G
+ storage_usage: 84M
+ ephemeral_storage_usage: -105K
 `, "ephemeral storage usage should be at least 0")
 }
 
@@ -311,9 +295,9 @@ resource_pressure:
 func TestPodResponseStateCreatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 pod_response_state:
-  type: CREATE_POD
-  response: ERROR
-  percentage: 42
+ type: CREATE_POD
+ response: ERROR
+ percentage: 42
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
@@ -326,9 +310,9 @@ pod_response_state:
 func TestPodResponseStateUpdatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 pod_response_state:
-  type: UPDATE_POD
-  response: TIMEOUT
-  percentage: 15
+ type: UPDATE_POD
+ response: TIMEOUT
+ percentage: 15
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
@@ -341,9 +325,9 @@ pod_response_state:
 func TestPodResponseStateDeletePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 pod_response_state:
-  type: DELETE_POD
-  response: ERROR
-  percentage: 100
+ type: DELETE_POD
+ response: ERROR
+ percentage: 100
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
@@ -356,9 +340,9 @@ pod_response_state:
 func TestPodResponseStateGetPod(t *testing.T) {
 	newTask := getApateletTask(t, `
 pod_response_state:
-  type: GET_POD
-  response: ERROR
-  percentage: 14
+ type: GET_POD
+ response: ERROR
+ percentage: 14
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
@@ -371,9 +355,9 @@ pod_response_state:
 func TestPodResponseStateGetPodStatus(t *testing.T) {
 	newTask := getApateletTask(t, `
 pod_response_state:
-  type: GET_POD_STATUS
-  response: TIMEOUT
-  percentage: 42
+ type: GET_POD_STATUS
+ response: TIMEOUT
+ percentage: 42
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{
@@ -386,44 +370,44 @@ pod_response_state:
 func TestPodResponseStateGetPods(t *testing.T) {
 	getApateletErroredTask(t, `
 pod_response_state:
-  type: GET_PODS
-  response: TIMEOUT
-  percentage: 65
+ type: GET_PODS
+ response: TIMEOUT
+ percentage: 65
 `, "can't alter the GetPods / Ping response on pod level")
 }
 
 func TestPodResponseStatePing(t *testing.T) {
 	getApateletErroredTask(t, `
 pod_response_state:
-  type: PING
-  response: ERROR
-  percentage: 50
+ type: PING
+ response: ERROR
+ percentage: 50
 `, "can't alter the GetPods / Ping response on pod level")
 }
 
 func TestPodResponseStateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
 pod_response_state:
-  type: PING
-  response: ERROR
-  percentage: -50
+ type: PING
+ response: ERROR
+ percentage: -50
 `, "percentage should be between 0 and 100")
 }
 
 func TestPodResponseStateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
 pod_response_state:
-  type: PING
-  response: ERROR
-  percentage: 420
+ type: PING
+ response: ERROR
+ percentage: 420
 `, "percentage should be between 0 and 100")
 }
 
 func TestPodStatusUpdate(t *testing.T) {
 	newTask := getApateletTask(t, `
 pod_status_update:
-  new_status: POD_FAILED
-  percentage: 15
+ new_status: POD_FAILED
+ percentage: 15
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState:    &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{}},
@@ -435,23 +419,23 @@ pod_status_update:
 func TestPodStatusUpdateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
 pod_status_update:
-  new_status: POD_FAILED
-  percentage: -15
+ new_status: POD_FAILED
+ percentage: -15
 `, "percentage should be between 0 and 100")
 }
 
 func TestPodStatusUpdateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
 pod_status_update:
-  new_status: POD_FAILED
-  percentage: 150
+ new_status: POD_FAILED
+ percentage: 150
 `, "percentage should be between 0 and 100")
 }
 
 func TestPodStartTimeUpdate(t *testing.T) {
 	newTask := getApateletTask(t, `
 pod_start_time_update:
-  new_start_time: "2020-04-30T11:32:05+0000"
+ new_start_time: "2020-04-30T11:32:05+0000"
 `)
 	assert.Equal(t, createPodEvent(&apatelet.PodState{
 		PodResponseState: &apatelet.PodState_PodResponseState{ResponseState: &apatelet.ResponseState{}},

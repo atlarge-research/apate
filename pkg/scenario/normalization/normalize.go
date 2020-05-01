@@ -140,7 +140,7 @@ func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask
 	}
 
 	newTask.NodeSet = savedTask.NodeSet
-	newTask.Event = savedTask.Event
+	newTask.EventFlags = savedTask.EventFlags
 
 	// Delete from the map so we can't revert it again
 	delete(c.taskNameParsed, task.Name)

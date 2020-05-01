@@ -115,10 +115,10 @@ type Task struct {
 	// Revert the task
 	Revert bool `protobuf:"varint,3,opt,name=revert,proto3" json:"revert,omitempty"`
 	// Which nodes this task applies to
-	// This field should not be set when revert is true
+	// This field will be ignored when revert is true
 	NodeGroups []string `protobuf:"bytes,4,rep,name=node_groups,json=nodeGroups,proto3" json:"node_groups,omitempty"`
 	// The event to be executed
-	// This field should not be set when revert is true
+	// This field will be ignored when revert is true
 	//
 	// Types that are assignable to Event:
 	//	*Task_NodeFailure
