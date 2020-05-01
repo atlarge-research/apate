@@ -1,6 +1,7 @@
 package store
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
@@ -43,13 +44,19 @@ func (q *taskQueue) Swap(i, j int) {
 	q.tasks[i], q.tasks[j] = q.tasks[j], q.tasks[i]
 }
 
-// Push pushed a new task to the queue
+// Push pushes a new task to the queue
 func (q *taskQueue) Push(x interface{}) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	task := x.(*apatelet.Task)
-	q.tasks = append(q.tasks, task)
+	// No-op if x is nil or not a task
+	if x == nil || (reflect.ValueOf(x).Kind() == reflect.Ptr && reflect.ValueOf(x).IsNil()) {
+		return
+	}
+
+	if task, ok := x.(*apatelet.Task); ok {
+		q.tasks = append(q.tasks, task)
+	}
 }
 
 // Pop returns the first task in the queue and removes it
@@ -65,8 +72,8 @@ func (q *taskQueue) Pop() interface{} {
 	return task
 }
 
-// Poll returns the first task in the queue without removing it
-func (q *taskQueue) Poll() interface{} {
+// First returns the first task in the queue without removing it
+func (q *taskQueue) First() interface{} {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 

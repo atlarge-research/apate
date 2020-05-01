@@ -17,18 +17,26 @@ type Store interface {
 	// LenTasks returns the amount of tasks left to be picked up
 	LenTasks() int
 
-	// PollTask returns the start time of the next task in the priority queue, without removing it from the queue
-	PollTask() (int64, error)
+	// PeekTask returns the start time of the next task in the priority queue, without removing it from the queue
+	PeekTask() (int64, error)
 
-	// GetTask returns the first task to be executed and removes it from the queue
-	GetTask() (*apatelet.Task, error)
+	// PopTask returns the first task to be executed and removes it from the queue
+	PopTask() (*apatelet.Task, error)
 
-	// GetFlag returns the value of the given flag, default value is zero for non-existing flags
-	GetFlag(string) (int, error)
+	// GetFlag returns the value of the given flag, default value is false
+	GetFlag(string) bool
 
-	// UpdateFlag updates the value of the given flag with the given value (the value is added to the current value),
-	// or creates it with the given value if it didn't exist before
-	UpdateFlag(string, int)
+	// GetArgument returns the value of the given argument, default value is zero for non-existing flags
+	GetArgument(string) int
+
+	// IncrementFlag increments the refcount of a flag
+	IncrementFlag(string)
+
+	// DecrementFlag decrements the refcount of flag
+	DecrementFlag(string)
+
+	// SetArgument sets the value of an argument
+	SetArgument(string, int)
 }
 
 type store struct {
@@ -57,36 +65,63 @@ func (s *store) LenTasks() int {
 	return s.queue.Len()
 }
 
-func (s *store) PollTask() (int64, error) {
+func (s *store) PeekTask() (int64, error) {
 	if s.queue.Len() == 0 {
 		return -1, errors.New("no tasks left")
 	}
 
-	return int64(s.queue.Poll().(*apatelet.Task).Timestamp), nil
+	// Make sure the array in the pq didn't magically change to a different type
+	if task, ok := s.queue.First().(*apatelet.Task); ok {
+		return int64(task.Timestamp), nil
+	}
+
+	return -1, errors.New("array in pq magically changed to a different type")
 }
 
-func (s *store) GetTask() (*apatelet.Task, error) {
+func (s *store) PopTask() (*apatelet.Task, error) {
 	if s.queue.Len() == 0 {
 		return nil, errors.New("no tasks left")
 	}
 
-	return heap.Pop(s.queue).(*apatelet.Task), nil
+	// Make sure the array in the pq didn't magically change to a different type
+	if task, ok := heap.Pop(s.queue).(*apatelet.Task); ok {
+		return task, nil
+	}
+
+	return nil, errors.New("array in pq magically changed to a different type")
 }
 
-func (s *store) GetFlag(flag string) (int, error) {
+func (s *store) GetFlag(flag string) bool {
 	s.flagLock.RLock()
 	defer s.flagLock.RUnlock()
 
-	if val, ok := s.flags[flag]; ok {
-		return val, nil
-	}
-
-	return 0, errors.New("flag defaulted to zero")
+	return s.flags[flag] > 0
 }
 
-func (s *store) UpdateFlag(flag string, val int) {
+func (s *store) GetArgument(arg string) int {
+	s.flagLock.RLock()
+	defer s.flagLock.RUnlock()
+
+	return s.flags[arg]
+}
+
+func (s *store) IncrementFlag(flag string) {
 	s.flagLock.Lock()
 	defer s.flagLock.Unlock()
 
-	s.flags[flag] += val
+	s.flags[flag]++
+}
+
+func (s *store) DecrementFlag(flag string) {
+	s.flagLock.Lock()
+	defer s.flagLock.Unlock()
+
+	s.flags[flag]--
+}
+
+func (s *store) SetArgument(arg string, val int) {
+	s.flagLock.Lock()
+	defer s.flagLock.Unlock()
+
+	s.flags[arg] = val
 }

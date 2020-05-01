@@ -19,8 +19,8 @@ func TestEmptyQueue(t *testing.T) {
 	assert.Equal(t, 0, st.LenTasks())
 
 	// Make sure both poll and get return an error
-	_, pollErr := st.PollTask()
-	_, getErr := st.GetTask()
+	_, pollErr := st.PeekTask()
+	_, getErr := st.PopTask()
 	assert.Error(t, pollErr)
 	assert.Error(t, getErr)
 }
@@ -34,7 +34,7 @@ func TestGetSingleTask(t *testing.T) {
 	st.EnqueueTasks([]*apatelet.Task{task})
 
 	// Retrieve single task and verify it was the original one
-	retrieved, err := st.GetTask()
+	retrieved, err := st.PopTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task, retrieved)
 
@@ -51,7 +51,7 @@ func TestPollSingleTask(t *testing.T) {
 	st.EnqueueTasks([]*apatelet.Task{task})
 
 	// Poll single task and verify the timestamp is correct
-	retrieved, err := st.PollTask()
+	retrieved, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task.Timestamp, int32(retrieved))
 
@@ -70,21 +70,21 @@ func TestMultipleTasks(t *testing.T) {
 	st.EnqueueTasks([]*apatelet.Task{task1, task2, task3})
 
 	// Poll first task, which should be task 2
-	firstTaskTime, err := st.PollTask()
+	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task2.Timestamp, int32(firstTaskTime))
 
 	// Retrieve first two tasks
-	firstTask, err := st.GetTask()
+	firstTask, err := st.PopTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task2, firstTask)
 
-	secondTask, err := st.GetTask()
+	secondTask, err := st.PopTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task1, secondTask)
 
 	// Verify there is still one task left
-	lastTaskTime, err := st.PollTask()
+	lastTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, st.LenTasks())
 	assert.Equal(t, task3.Timestamp, int32(lastTaskTime))
@@ -95,9 +95,8 @@ func TestUnsetFlag(t *testing.T) {
 	st := NewStore()
 
 	// Retrieve unset flag and verify default value and err
-	val, err := st.GetFlag("k8s")
-	assert.Equal(t, 0, val)
-	assert.Error(t, err)
+	val := st.GetFlag("k8s")
+	assert.Equal(t, false, val)
 }
 
 // TestSetFlag ensures the value for a flag is updated properly
@@ -105,12 +104,61 @@ func TestSetFlag(t *testing.T) {
 	st := NewStore()
 
 	// Set flag
-	st.UpdateFlag("k8s", 1)
-	st.UpdateFlag("k8s", -2)
-	st.UpdateFlag("k8s", 2)
+	st.IncrementFlag("k8s")
+	st.DecrementFlag("k8s")
+	st.DecrementFlag("k8s")
+	st.IncrementFlag("k8s")
+	st.IncrementFlag("k8s")
 
 	// Retrieve unset flag and verify default value and err
-	val, err := st.GetFlag("k8s")
-	assert.Equal(t, 1, val)
+	val := st.GetFlag("k8s")
+	assert.Equal(t, true, val)
+}
+
+// TestUnsetArgument ensures the default value of an argument is 0
+func TestUnsetArgument(t *testing.T) {
+	st := NewStore()
+
+	// Make sure the argument is 0 by default
+	val := st.GetArgument("k8s")
+	assert.Equal(t, 0, val)
+}
+
+// TestSetArgument ensures the default
+func TestSetArgument(t *testing.T) {
+	st := NewStore()
+
+	// Update the value of the argument
+	st.SetArgument("k8s", 100)
+	st.SetArgument("k8s", 42)
+
+	// Make sure the argument is 42 after the changes
+	val := st.GetArgument("k8s")
+	assert.Equal(t, 42, val)
+}
+
+// TestArrayWithNil ensures an array containing nills will not destroy the pq
+func TestArrayWithNil(t *testing.T) {
+	task1 := &apatelet.Task{Timestamp: 213123}
+	task2 := &apatelet.Task{Timestamp: 4242}
+	st := NewStore()
+
+	// Enqueue tasks
+	st.EnqueueTasks([]*apatelet.Task{nil, task1, nil, task2, nil, nil})
+
+	// Ensure there are two tasks
+	assert.Equal(t, 2, st.LenTasks())
+
+	// Poll first task, which should be task 2
+	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
+	assert.Equal(t, task2.Timestamp, int32(firstTaskTime))
+
+	// Retrieve first task, and confirm it's task 2
+	firstTask, err := st.PopTask()
+	assert.NoError(t, err)
+	assert.Equal(t, task2, firstTask)
+
+	// Ensure task 1 is still in the queue
+	assert.Equal(t, 1, st.LenTasks())
 }
