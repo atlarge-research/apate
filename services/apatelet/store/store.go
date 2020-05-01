@@ -6,6 +6,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )
 
@@ -24,15 +26,15 @@ type Store interface {
 	PopTask() (*apatelet.Task, error)
 
 	// GetFlag returns the value of the given flag
-	GetFlag(int) (interface{}, error)
+	GetFlag(events.EventFlag) (interface{}, error)
 
 	// SetFlag sets the value of the given flag
-	SetFlag(int, interface{})
+	SetFlag(events.EventFlag, interface{})
 }
 
 type store struct {
 	queue    *taskQueue
-	flags    map[int]interface{}
+	flags    map[events.EventFlag]interface{}
 	flagLock sync.RWMutex
 }
 
@@ -40,7 +42,7 @@ type store struct {
 func NewStore() Store {
 	return &store{
 		queue: newTaskQueue(),
-		flags: make(map[int]interface{}),
+		flags: make(map[events.EventFlag]interface{}),
 	}
 }
 
@@ -82,7 +84,7 @@ func (s *store) PopTask() (*apatelet.Task, error) {
 	return nil, errors.New("array in pq magically changed to a different type")
 }
 
-func (s *store) GetFlag(id int) (interface{}, error) {
+func (s *store) GetFlag(id events.EventFlag) (interface{}, error) {
 	s.flagLock.RLock()
 	defer s.flagLock.RUnlock()
 
@@ -93,7 +95,7 @@ func (s *store) GetFlag(id int) (interface{}, error) {
 	return nil, errors.New("flag not set")
 }
 
-func (s *store) SetFlag(id int, val interface{}) {
+func (s *store) SetFlag(id events.EventFlag, val interface{}) {
 	s.flagLock.Lock()
 	defer s.flagLock.Unlock()
 
