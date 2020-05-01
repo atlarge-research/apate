@@ -3,10 +3,15 @@ package normalization
 import (
 	"testing"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 
 	"github.com/docker/go-units"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/translate"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -16,52 +21,52 @@ import (
 func TestScenario(t *testing.T) {
 	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
-    -
-        node_type: testnode
-        memory: 2G
-        cpu: 42
-        storage: 2G
-        ephemeral_storage: 2M
-        max_pods: 42
-    -
-        node_type: testnode2
-        memory: 42G
-        storage: 22G
-        ephemeral_storage: 21K
-        cpu: 24
-        max_pods: 24
+   -
+       node_type: testnode
+       memory: 2G
+       cpu: 42
+       storage: 2G
+       ephemeral_storage: 2M
+       max_pods: 42
+   -
+       node_type: testnode2
+       memory: 42G
+       storage: 22G
+       ephemeral_storage: 21K
+       cpu: 24
+       max_pods: 24
 node_groups:
-    -
-        group_name: testgroup1
-        node_type: testnode
-        amount: 42
-    -
-        group_name: testgroup2
-        node_type: testnode2
-        amount: 10
+   -
+       group_name: testgroup1
+       node_type: testnode
+       amount: 42
+   -
+       group_name: testgroup2
+       node_type: testnode2
+       amount: 10
 tasks:
-    -
-        name: testtask1
-        time: 10s
-        node_groups:
-            - testgroup1
-        node_response_state:
-            type: GET_POD
-            response: ERROR
-            percentage: 14
-    -
-        name: testtask2
-        time: 10s
-        node_groups:
-            - all
-        node_response_state:
-            type: DELETE_POD
-            response: TIMEOUT
-            percentage: 42
-    -
-        name: testtask2
-        time: 20s
-        revert: true
+   -
+       name: testtask1
+       time: 10s
+       node_groups:
+           - testgroup1
+       node_response_state:
+           type: GET_POD
+           response: ERROR
+           percentage: 14
+   -
+       name: testtask2
+       time: 10s
+       node_groups:
+           - all
+       node_response_state:
+           type: DELETE_POD
+           response: TIMEOUT
+           percentage: 42
+   -
+       name: testtask2
+       time: 20s
+       revert: true
 `))
 	assert.NoError(t, err)
 
@@ -76,24 +81,24 @@ tasks:
 	assert.Equal(t, 3, len(ps.Task))
 	assert.Equal(t, false, ps.Task[0].RevertTask)
 	assert.Equal(t, 42, len(ps.Task[0].NodeSet))
-	assert.IsType(t, createNodeEvent(&apatelet.ResponseState{
-		GetPodResponse:           scenario.Response_ERROR,
-		GetPodResponsePercentage: 14,
-	}), ps.Task[0].Event) // Is tested more in translator_test
+	assert.EqualValues(t, translate.EventFlags{
+		events.NodeGetPodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
+		events.NodeGetPodResponsePercentage: any.MarshalOrDie(14),
+	}, ps.Task[0].EventFlags) // Is tested more in translator_test
 
 	assert.Equal(t, false, ps.Task[1].RevertTask)
 	assert.Equal(t, 52, len(ps.Task[1].NodeSet))
-	assert.IsType(t, createNodeEvent(&apatelet.ResponseState{
-		DeletePodResponse:           scenario.Response_TIMEOUT,
-		DeletePodResponsePercentage: 42,
-	}), ps.Task[1].Event)
+	assert.EqualValues(t, translate.EventFlags{
+		events.NodeDeletePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
+		events.NodeDeletePodResponsePercentage: any.MarshalOrDie(42),
+	}, ps.Task[1].EventFlags)
 
 	assert.Equal(t, true, ps.Task[2].RevertTask)
 	assert.Equal(t, 52, len(ps.Task[2].NodeSet))
-	assert.IsType(t, createNodeEvent(&apatelet.ResponseState{
-		DeletePodResponse:           scenario.Response_TIMEOUT,
-		DeletePodResponsePercentage: 42,
-	}), ps.Task[2].Event)
+	assert.EqualValues(t, translate.EventFlags{
+		events.NodeDeletePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
+		events.NodeDeletePodResponsePercentage: any.MarshalOrDie(42),
+	}, ps.Task[2].EventFlags)
 
 	assert.Equal(t, 52, len(nodes))
 
@@ -130,29 +135,29 @@ tasks:
 func TestScenarioRevertUnknown(t *testing.T) {
 	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
-    -
-        node_type: testnode
-        memory: 2G
-        cpu: 42
-        storage: 2G
-        ephemeral_storage: 2M
-        max_pods: 42
+   -
+       node_type: testnode
+       memory: 2G
+       cpu: 42
+       storage: 2G
+       ephemeral_storage: 2M
+       max_pods: 42
 node_groups:
-    -
-        group_name: testgroup1
-        node_type: testnode
-        amount: 42
+   -
+       group_name: testgroup1
+       node_type: testnode
+       amount: 42
 tasks:
-    -
-        name: a
-        time: 10s
-        node_groups:
-            - testgroup1
-        node_failure: {}
-    -
-        name: b
-        time: 10s
-        revert: true
+   -
+       name: a
+       time: 10s
+       node_groups:
+           - testgroup1
+       node_failure: {}
+   -
+       name: b
+       time: 10s
+       revert: true
 `))
 	assert.NoError(t, err)
 
@@ -166,31 +171,31 @@ tasks:
 func TestScenarioSameNameTwice(t *testing.T) {
 	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
-    -
-        node_type: testnode
-        memory: 2G
-        cpu: 42
-        storage: 2G
-        ephemeral_storage: 2M
-        max_pods: 42
+   -
+       node_type: testnode
+       memory: 2G
+       cpu: 42
+       storage: 2G
+       ephemeral_storage: 2M
+       max_pods: 42
 node_groups:
-    -
-        group_name: testgroup1
-        node_type: testnode
-        amount: 42
+   -
+       group_name: testgroup1
+       node_type: testnode
+       amount: 42
 tasks:
-    -
-        name: a
-        time: 10s
-        node_groups:
-            - testgroup1
-        node_failure: {}
-    -
-        name: a
-        time: 10s
-        node_groups:
-            - testgroup1
-        node_failure: {}
+   -
+       name: a
+       time: 10s
+       node_groups:
+           - testgroup1
+       node_failure: {}
+   -
+       name: a
+       time: 10s
+       node_groups:
+           - testgroup1
+       node_failure: {}
 `))
 	assert.NoError(t, err)
 
@@ -204,22 +209,22 @@ tasks:
 func TestScenarioRevertNameless(t *testing.T) {
 	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
-    -
-        node_type: testnode
-        memory: 2G
-        cpu: 42
-        storage: 2G
-        ephemeral_storage: 2M
-        max_pods: 42
+   -
+       node_type: testnode
+       memory: 2G
+       cpu: 42
+       storage: 2G
+       ephemeral_storage: 2M
+       max_pods: 42
 node_groups:
-    -
-        group_name: testgroup1
-        node_type: testnode
-        amount: 42
+   -
+       group_name: testgroup1
+       node_type: testnode
+       amount: 42
 tasks:
-    -
-        time: 10s
-        revert: true
+   -
+       time: 10s
+       revert: true
 `))
 	assert.NoError(t, err)
 
@@ -233,29 +238,29 @@ tasks:
 func TestScenarioNameless(t *testing.T) {
 	sc, err := deserialize.YamlScenario{}.FromBytes([]byte(`
 nodes:
-    -
-        node_type: testnode
-        memory: 2G
-        cpu: 42
-        storage: 2G
-        ephemeral_storage: 2M
-        max_pods: 42
+   -
+       node_type: testnode
+       memory: 2G
+       cpu: 42
+       storage: 2G
+       ephemeral_storage: 2M
+       max_pods: 42
 node_groups:
-    -
-        group_name: testgroup1
-        node_type: testnode
-        amount: 42
+   -
+       group_name: testgroup1
+       node_type: testnode
+       amount: 42
 tasks:
-    -
-        time: 10s
-        node_groups:
-            - testgroup1
-        node_failure: {}
-    -
-        time: 10s
-        node_groups:
-            - testgroup1
-        node_failure: {}
+   -
+       time: 10s
+       node_groups:
+           - testgroup1
+       node_failure: {}
+   -
+       time: 10s
+       node_groups:
+           - testgroup1
+       node_failure: {}
 `))
 	assert.NoError(t, err)
 
@@ -264,12 +269,4 @@ tasks:
 
 	_, _, err = NormalizeScenario(getScenario)
 	assert.NoError(t, err)
-}
-
-func createNodeEvent(responseState *apatelet.ResponseState) *apatelet.Task_NodeEvent {
-	return &apatelet.Task_NodeEvent{NodeEvent: &apatelet.NodeEvent{NodeState: &apatelet.NodeState{
-		NodeResponseState: &apatelet.NodeState_NodeResponseState{ResponseState: responseState},
-		ResourceState:     &apatelet.NodeState_ResourceState{},
-		AddedLatencyState: &apatelet.NodeState_AddedLatencyState{},
-	}}}
 }
