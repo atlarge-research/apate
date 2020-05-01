@@ -13,11 +13,3 @@ message PodStatusUpdate {
     // The percentage of pods in the current configuration that are affected by this status change
     int32 percentage = 2;
 }
-
-// Updates the start time of pods in the current configuration
-message PodStartTimeUpdate {
-    // The starting time of this pod (see corev1.PodStatus.StartTime)
-    // ISO8601 format
-    string new_start_time = 1;
-}
-

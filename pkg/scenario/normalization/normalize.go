@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/translate"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -73,7 +73,7 @@ func normalizeTasks(c *normalizationContext) ([]*apatelet.Task, error) {
 	var tasks []*apatelet.Task
 
 	for _, task := range c.scenario.Tasks {
-		timestamp, err := events.DesugarTimestamp(task.Time)
+		timestamp, err := translate.DesugarTimestamp(task.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func createEvent(c *normalizationContext, task *controlplane.Task, nodeGroupName
 	nodeSet := getNodeUUIDs(c, nodeGroupNames)
 	newTask.NodeSet = nodeSet
 
-	if err := events.NewEventTranslator(task, newTask).TranslateEvent(); err != nil {
+	if err := translate.NewEventTranslator(task, newTask).TranslateEvent(); err != nil {
 		return err
 	}
 
@@ -140,7 +140,7 @@ func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask
 	}
 
 	newTask.NodeSet = savedTask.NodeSet
-	newTask.Event = savedTask.Event
+	newTask.EventFlags = savedTask.EventFlags
 
 	// Delete from the map so we can't revert it again
 	delete(c.taskNameParsed, task.Name)
@@ -166,17 +166,17 @@ func normalizeNodes(c *normalizationContext) error {
 
 			nodeType := c.nodeTypeName[nodeGroup.NodeType]
 
-			memory, err := events.GetInBytes(nodeType.Memory, "memory")
+			memory, err := translate.GetInBytes(nodeType.Memory, "memory")
 			if err != nil {
 				return err
 			}
 
-			storage, err := events.GetInBytes(nodeType.Storage, "storage")
+			storage, err := translate.GetInBytes(nodeType.Storage, "storage")
 			if err != nil {
 				return err
 			}
 
-			ephStorage, err := events.GetInBytes(nodeType.EphemeralStorage, "ephemeral storage")
+			ephStorage, err := translate.GetInBytes(nodeType.EphemeralStorage, "ephemeral storage")
 			if err != nil {
 				return err
 			}
