@@ -11,10 +11,9 @@ import (
 )
 
 // SpawnNodes spawns multiple Apatelet Docker containers
-func SpawnNodes(amountOfNodes int) error {
+func SpawnNodes(ctx context.Context, amountOfNodes int) error {
 	var err error
 
-	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return err
