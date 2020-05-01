@@ -1,5 +1,5 @@
-// Package events contains utilities to translate events of tasks between public API and internal API formats
-package events
+// Package translate contains utilities to translate events of tasks between public API and internal API formats
+package translate
 
 import (
 	"errors"
@@ -39,7 +39,7 @@ func (et *EventTranslator) TranslateEvent() (err error) {
 	// Node events
 	case *controlplane.Task_NodeFailure:
 		f.flags(scenario.Response_TIMEOUT, nodeEventFlags)
-		f.flags(0, nodeEventPercentageFlags)
+		f.flags(100, nodeEventPercentageFlags)
 
 	case *controlplane.Task_NetworkLatency:
 		if taskEvent.NetworkLatency.LatencyMsec < 0 {
@@ -51,7 +51,7 @@ func (et *EventTranslator) TranslateEvent() (err error) {
 
 	case *controlplane.Task_TimeoutKeepHeartbeat:
 		f.flags(scenario.Response_TIMEOUT, nodeEventFlags)
-		f.flags(0, nodeEventPercentageFlags)
+		f.flags(100, nodeEventPercentageFlags)
 
 		// Reset ping
 		f.flag(scenario.Response_NORMAL, ef.NodePingResponse)
@@ -166,10 +166,9 @@ func (et *EventTranslator) TranslateEvent() (err error) {
 
 		f.flag(taskEvent.PodStatusUpdate.NewStatus, ef.PodUpdatePodStatus)
 		f.flag(taskEvent.PodStatusUpdate.Percentage, ef.PodUpdatePodStatusPercentage)
-
-	case *controlplane.Task_PodStartTimeUpdate:
-		f.flag(taskEvent.PodStartTimeUpdate.NewStartTime, ef.PodUpdateStartTime)
 	}
+
+	et.newTask.EventFlags = f
 
 	return nil
 }

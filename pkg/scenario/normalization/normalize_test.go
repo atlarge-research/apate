@@ -3,12 +3,15 @@ package normalization
 import (
 	"testing"
 
-	flag "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
+
+	"github.com/docker/go-units"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/translate"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 
-	"github.com/docker/go-units"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -78,23 +81,23 @@ tasks:
 	assert.Equal(t, 3, len(ps.Task))
 	assert.Equal(t, false, ps.Task[0].RevertTask)
 	assert.Equal(t, 42, len(ps.Task[0].NodeSet))
-	assert.IsType(t, events.EventFlags{
-		flag.NodeGetPodResponse:           events.MarshalAny(scenario.Response_ERROR),
-		flag.NodeGetPodResponsePercentage: events.MarshalAny(14),
+	assert.EqualValues(t, translate.EventFlags{
+		events.NodeGetPodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
+		events.NodeGetPodResponsePercentage: any.MarshalOrDie(14),
 	}, ps.Task[0].EventFlags) // Is tested more in translator_test
 
 	assert.Equal(t, false, ps.Task[1].RevertTask)
 	assert.Equal(t, 52, len(ps.Task[1].NodeSet))
-	assert.IsType(t, events.EventFlags{
-		flag.NodeDeletePodResponse:           events.MarshalAny(scenario.Response_TIMEOUT),
-		flag.NodeDeletePodResponsePercentage: events.MarshalAny(42),
+	assert.EqualValues(t, translate.EventFlags{
+		events.NodeDeletePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
+		events.NodeDeletePodResponsePercentage: any.MarshalOrDie(42),
 	}, ps.Task[1].EventFlags)
 
 	assert.Equal(t, true, ps.Task[2].RevertTask)
 	assert.Equal(t, 52, len(ps.Task[2].NodeSet))
-	assert.IsType(t, events.EventFlags{
-		flag.NodeDeletePodResponse:           events.MarshalAny(scenario.Response_TIMEOUT),
-		flag.NodeDeletePodResponsePercentage: events.MarshalAny(42),
+	assert.EqualValues(t, translate.EventFlags{
+		events.NodeDeletePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
+		events.NodeDeletePodResponsePercentage: any.MarshalOrDie(42),
 	}, ps.Task[2].EventFlags)
 
 	assert.Equal(t, 52, len(nodes))
