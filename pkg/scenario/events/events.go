@@ -2,7 +2,7 @@
 package events
 
 // EventFlag is a flag to be used by the Apatelet
-type EventFlag int32
+type EventFlag = int32
 
 const (
 	// NodeCreatePodResponse determines how to respond to the CreatePod request
@@ -112,9 +112,4 @@ const (
 
 	// PodUpdatePodStatusPercentage sets the percentage of pods in the current deployment getting the new status
 	PodUpdatePodStatusPercentage
-
-	// PodUpdateStartTime updates the starting time of this pod (see corev1.PodStatus.StartTime)
-	// ISO8601 format
-	// Can be left empty to keep the starting time unchanged
-	PodUpdateStartTime
 )

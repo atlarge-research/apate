@@ -1,12 +1,11 @@
-package events
+package translate
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
+
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -37,10 +36,10 @@ func GetInBytes(unit string, unitName string) (int64, error) {
 }
 
 // EventFlags maps event flags to their any value
-type EventFlags map[events.EventFlag]*any.Any
+type EventFlags map[events.EventFlag]*anypb.Any
 
 func newEventFlags() EventFlags {
-	return make(map[events.EventFlag]*any.Any)
+	return make(map[events.EventFlag]*anypb.Any)
 }
 
 func (ef *EventFlags) flags(value interface{}, flags []events.EventFlag) {
@@ -50,21 +49,8 @@ func (ef *EventFlags) flags(value interface{}, flags []events.EventFlag) {
 }
 
 func (ef EventFlags) flag(value interface{}, flag events.EventFlag) {
-	mv := MarshalAny(value)
+	mv := any.MarshalOrDie(value)
 	ef[flag] = mv
-}
-
-// MarshalAny marshals a value to Any
-func MarshalAny(value interface{}) *anypb.Any {
-	//anypb.Any{
-	//	TypeUrl: MessageName(),
-	//	Value:   proto.Marshal(value),
-	//}
-	a, err := ptypes.MarshalAny(proto.MessageV1(value))
-	if err != nil {
-		panic(err)
-	}
-	return a
 }
 
 var nodeEventFlags = []events.EventFlag{
