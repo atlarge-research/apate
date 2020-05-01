@@ -95,8 +95,9 @@ func TestUnsetFlag(t *testing.T) {
 	st := NewStore()
 
 	// Retrieve unset flag and verify default value and err
-	val := st.GetFlag("k8s")
-	assert.Equal(t, false, val)
+	val, err := st.GetFlag(42)
+	assert.Nil(t, val)
+	assert.Error(t, err)
 }
 
 // TestSetFlag ensures the value for a flag is updated properly
@@ -104,37 +105,14 @@ func TestSetFlag(t *testing.T) {
 	st := NewStore()
 
 	// Set flag
-	st.IncrementFlag("k8s")
-	st.DecrementFlag("k8s")
-	st.DecrementFlag("k8s")
-	st.IncrementFlag("k8s")
-	st.IncrementFlag("k8s")
+	st.SetFlag(42, 15)
+	st.SetFlag(42, false)
+	st.SetFlag(42, "k8s")
 
 	// Retrieve unset flag and verify default value and err
-	val := st.GetFlag("k8s")
-	assert.Equal(t, true, val)
-}
-
-// TestUnsetArgument ensures the default value of an argument is 0
-func TestUnsetArgument(t *testing.T) {
-	st := NewStore()
-
-	// Make sure the argument is 0 by default
-	val := st.GetArgument("k8s")
-	assert.Equal(t, 0, val)
-}
-
-// TestSetArgument ensures the default
-func TestSetArgument(t *testing.T) {
-	st := NewStore()
-
-	// Update the value of the argument
-	st.SetArgument("k8s", 100)
-	st.SetArgument("k8s", 42)
-
-	// Make sure the argument is 42 after the changes
-	val := st.GetArgument("k8s")
-	assert.Equal(t, 42, val)
+	val, err := st.GetFlag(42)
+	assert.Equal(t, "k8s", val)
+	assert.NoError(t, err)
 }
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq

@@ -23,25 +23,16 @@ type Store interface {
 	// PopTask returns the first task to be executed and removes it from the queue
 	PopTask() (*apatelet.Task, error)
 
-	// GetFlag returns the value of the given flag, default value is false
-	GetFlag(string) bool
+	// GetFlag returns the value of the given flag
+	GetFlag(int) (interface{}, error)
 
-	// GetArgument returns the value of the given argument, default value is zero for non-existing flags
-	GetArgument(string) int
-
-	// IncrementFlag increments the refcount of a flag
-	IncrementFlag(string)
-
-	// DecrementFlag decrements the refcount of flag
-	DecrementFlag(string)
-
-	// SetArgument sets the value of an argument
-	SetArgument(string, int)
+	// SetFlag sets the value of the given flag
+	SetFlag(int, interface{})
 }
 
 type store struct {
 	queue    *taskQueue
-	flags    map[string]int
+	flags    map[int]interface{}
 	flagLock sync.RWMutex
 }
 
@@ -49,7 +40,7 @@ type store struct {
 func NewStore() Store {
 	return &store{
 		queue: newTaskQueue(),
-		flags: make(map[string]int),
+		flags: make(map[int]interface{}),
 	}
 }
 
@@ -91,37 +82,20 @@ func (s *store) PopTask() (*apatelet.Task, error) {
 	return nil, errors.New("array in pq magically changed to a different type")
 }
 
-func (s *store) GetFlag(flag string) bool {
+func (s *store) GetFlag(id int) (interface{}, error) {
 	s.flagLock.RLock()
 	defer s.flagLock.RUnlock()
 
-	return s.flags[flag] > 0
+	if val, ok := s.flags[id]; ok {
+		return val, nil
+	}
+
+	return nil, errors.New("flag not set")
 }
 
-func (s *store) GetArgument(arg string) int {
-	s.flagLock.RLock()
-	defer s.flagLock.RUnlock()
-
-	return s.flags[arg]
-}
-
-func (s *store) IncrementFlag(flag string) {
+func (s *store) SetFlag(id int, val interface{}) {
 	s.flagLock.Lock()
 	defer s.flagLock.Unlock()
 
-	s.flags[flag]++
-}
-
-func (s *store) DecrementFlag(flag string) {
-	s.flagLock.Lock()
-	defer s.flagLock.Unlock()
-
-	s.flags[flag]--
-}
-
-func (s *store) SetArgument(arg string, val int) {
-	s.flagLock.Lock()
-	defer s.flagLock.Unlock()
-
-	s.flags[arg] = val
+	s.flags[id] = val
 }
