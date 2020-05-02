@@ -39,6 +39,7 @@ func SpawnNodes(ctx context.Context, amountOfNodes int) error {
 }
 
 func pullImage(ctx context.Context, cli *client.Client) error {
+	// TODO: Get from env/config
 	imageName := "apatekubernetes/apatelet:latest"
 	if _, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{}); err != nil {
 		return err
@@ -48,8 +49,9 @@ func pullImage(ctx context.Context, cli *client.Client) error {
 }
 
 func spawnNode(ctx context.Context, cli *client.Client, hostname string, nodeIndex int) error {
-	// TODO check if exists
+	// TODO: check if exists
 	c, err := cli.ContainerCreate(ctx, &container.Config{
+		// TODO: Should match the imageName from pullImage
 		Image: "apatelet:latest",
 		Env: []string{
 			"CP_HOSTNAME=" + hostname,
