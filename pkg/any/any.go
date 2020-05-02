@@ -2,7 +2,6 @@
 package any
 
 import (
-	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
@@ -137,6 +136,6 @@ func Unmarshal(any *anypb.Any) (interface{}, error) {
 		}
 		return res.Value, nil
 	default:
-		return nil, errors.New("unknown type url")
+		return nil, fmt.Errorf("invalid type url: %s", any.TypeUrl)
 	}
 }
