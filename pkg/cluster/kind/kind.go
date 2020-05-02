@@ -1,4 +1,5 @@
-package cluster
+// Package kind contains code to manage a KinD cluster and its configuration file
+package kind
 
 import (
 	"os"
@@ -12,7 +13,7 @@ import (
 type KinD struct{}
 
 // CreateCluster creates a new cluster with a given name.
-func (KinD) CreateCluster(name string, kubeConfigLocation string) error {
+func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigPath string) error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 
@@ -23,7 +24,7 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string) error {
 
 	args = append(args, "--name", name)
 	args = append(args, "--kubeconfig", kubeConfigLocation)
-	args = append(args, "--config", "/tmp/apate/kind")
+	args = append(args, "--config", managerConfigPath)
 
 	// Set up a cluster
 	// Can't simply call Run as is done in Delete since we want to get error messages back.

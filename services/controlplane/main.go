@@ -2,14 +2,31 @@ package main
 
 import (
 	"log"
+	"net"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+)
+
+const (
+	// ListenAddress is the address the control plane will listen on
+	ListenAddress = "CP_LISTEN_ADDRESS"
+
+	// ListenPort is the port the control plane will listen on
+	ListenPort = "CP_LISTEN_PORT"
+
+	// ManagedClusterConfig is the path to the config of the cluster manager, if applicable
+	ManagedClusterConfig = "CP_K8S_CONFIG"
+
+	// ExternalIP can be used to override the IP the control plane will give to apatelets to connect to
+	ExternalIP = "CP_EXTERNAL_IP"
 )
 
 func init() {
@@ -21,16 +38,30 @@ func init() {
 func main() {
 	log.Println("Starting Apate control plane")
 
+	// Get external ip
+	externalIP, err := getExternalAddress()
+
+	if err != nil {
+		log.Fatalf("Error while starting control plane: %s", err.Error())
+	}
+
+	log.Printf("External IP for control plane: %s", externalIP)
+
 	// Create kubernetes cluster
 	log.Println("Starting kubernetes control plane")
-	managedKubernetesCluster := createCluster()
+	managedKubernetesCluster := createCluster(getEnv(ManagedClusterConfig, "/tmp/apate/manager"))
 
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
 	// Start gRPC server
-	log.Println("Now accepting requests")
-	server := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster)
+	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster)
+
+	if err != nil {
+		log.Fatalf("Error while starting control plane: %s", err.Error())
+	}
+
+	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -68,10 +99,43 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 	}
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster) *service.GRPCServer {
-	// TODO: Get grpc settings from env
+// TODO: Maybe use multiple detection methods later?
+func getExternalAddress() (string, error) {
+	// Check for external IP override
+	if val, ok := os.LookupEnv(ExternalIP); ok {
+		return val, nil
+	}
+
+	// Check for IP in interface addresses
+	addresses, err := net.InterfaceAddrs()
+
+	if err != nil {
+		return "", err
+	}
+
+	for _, address := range addresses {
+		if strings.Contains(address.String(), "172.17.") {
+			ip := strings.Split(address.String(), "/")[0]
+
+			return ip, nil
+		}
+	}
+
+	// Default to localhost
+	return "localhost", nil
+}
+
+func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster) (*service.GRPCServer, error) {
+	// Retrieve from environment
+	listenAddress := getEnv(ListenAddress, "0.0.0.0")
+	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8085"))
+
+	if err != nil {
+		return nil, err
+	}
+
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
+	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)
@@ -82,12 +146,12 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	services.RegisterClusterOperationService(server, createdStore, kubernetesCluster)
 	services.RegisterHealthService(server, createdStore)
 
-	return server
+	return server, nil
 }
 
-func createCluster() cluster.ManagedCluster {
+func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {
 	cb := cluster.Default()
-	c, err := cb.WithName("Apate").ForceCreate()
+	c, err := cb.WithName("Apate").WithManagerConfig(managedClusterConfigPath).ForceCreate()
 	if err != nil {
 		log.Fatalf("An error occurred: %s", err.Error())
 	}
@@ -100,4 +164,12 @@ func createCluster() cluster.ManagedCluster {
 	log.Printf("There are %d pods in the cluster", numberOfPods)
 
 	return c
+}
+
+func getEnv(key, def string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
+
+	return def
 }
