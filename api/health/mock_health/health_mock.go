@@ -6,14 +6,12 @@ package mock_health
 
 import (
 	context "context"
-	reflect "reflect"
-
+	health "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
 	metadata "google.golang.org/grpc/metadata"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-
-	health "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	reflect "reflect"
 )
 
 // MockHealth_HealthStreamClient is a mock of Health_HealthStreamClient interface
