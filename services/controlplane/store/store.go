@@ -105,6 +105,7 @@ func (s *store) SetNodeStatus(uuid uuid.UUID, status health.Status) error {
 
 	if node, ok := s.nodes[uuid]; ok {
 		node.Status = status
+		s.nodes[uuid] = node
 		return nil
 	}
 
