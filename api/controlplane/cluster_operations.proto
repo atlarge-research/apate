@@ -11,10 +11,15 @@ service ClusterOperations {
     // Joins the node to the Apate cluster.
     // Will return information needed to identify yourself
     // And to join the kubernetes cluster.
-    rpc joinCluster (google.protobuf.Empty) returns (JoinInformation) {}
+    rpc joinCluster (ApateletInformation) returns (JoinInformation) {}
 
     // Removes the node from the cluster
     rpc leaveCluster (LeaveInformation) returns (google.protobuf.Empty) {}
+}
+
+message ApateletInformation {
+    // The port of the apatelet api
+    int32 port = 1;
 }
 
 message NodeHardware {

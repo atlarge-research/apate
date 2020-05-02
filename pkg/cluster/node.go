@@ -2,12 +2,14 @@ package cluster
 
 import (
 	"context"
-	"os"
 	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
 const (
@@ -19,40 +21,38 @@ const (
 )
 
 // SpawnNodes spawns multiple Apatelet Docker containers
-func SpawnNodes(ctx context.Context, amountOfNodes int) error {
+func SpawnNodes(ctx context.Context, amountOfNodes int, info *service.ConnectionInfo) error {
 	var err error
 
-	imageName := "apatekubernetes/apatelet:latest"
+	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return err
 	}
 
-	localAvailable, err := checkLocal(ctx, cli, imageName)
-
+	// Prepare image
+	err = prepareImage(ctx, cli)
 	if err != nil {
 		return err
 	}
 
-	if !localAvailable {
-		if err = pullImage(ctx, cli, imageName); err != nil {
-			return err
-		}
-	}
+	// Create error group to handle async spawning
+	group, ctx := errgroup.WithContext(ctx)
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-
-	// TODO async
 	for i := 0; i < amountOfNodes; i++ {
-		if err := spawnNode(ctx, cli, hostname, i); err != nil {
-			return err
-		}
+		i := i
+
+		// Spawn container
+		group.Go(func() error {
+			if err := spawnNode(ctx, cli, info, i); err != nil {
+				return err
+			}
+
+			return nil
+		})
 	}
 
-	return nil
+	return group.Wait()
 }
 
 //TODO: Optimise
@@ -74,6 +74,26 @@ func checkLocal(ctx context.Context, cli *client.Client, imageName string) (bool
 	return false, nil
 }
 
+func prepareImage(ctx context.Context, cli *client.Client) error {
+	imageName := "apatekubernetes/apatelet:latest"
+
+	// Check if the image is already available
+	localAvailable, err := checkLocal(ctx, cli, imageName)
+
+	if err != nil {
+		return err
+	}
+
+	// If not, pull the image
+	if !localAvailable {
+		if err = pullImage(ctx, cli, imageName); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func pullImage(ctx context.Context, cli *client.Client, imageName string) error {
 	if _, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{}); err != nil {
 		return err
@@ -82,12 +102,12 @@ func pullImage(ctx context.Context, cli *client.Client, imageName string) error 
 	return nil
 }
 
-func spawnNode(ctx context.Context, cli *client.Client, hostname string, nodeIndex int) error {
-	// TODO check if exists
+func spawnNode(ctx context.Context, cli *client.Client, info *service.ConnectionInfo, nodeIndex int) error {
 	c, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "apatelet:latest",
 		Env: []string{
-			"CP_HOSTNAME=" + hostname,
+			ControlPlaneAddress + "=" + info.Address,
+			ControlPlanePort + "=" + strconv.Itoa(info.Port),
 		},
 	}, nil, nil, "apatelet-"+strconv.Itoa(nodeIndex))
 

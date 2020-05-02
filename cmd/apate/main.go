@@ -21,7 +21,7 @@ import (
 
 const (
 	defaultControlPlaneAddress = "localhost"
-	defaultControlPlanePort    = 8083
+	defaultControlPlanePort    = 8085
 )
 
 func main() {

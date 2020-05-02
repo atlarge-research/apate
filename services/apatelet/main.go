@@ -54,9 +54,16 @@ func main() {
 	connectionInfo := service.NewConnectionInfo(controlPlaneAddress, controlPlanePort, false)
 	ctx := context.Background()
 
+	// Retrieve own port
+	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8086"))
+
+	if err != nil {
+		log.Fatalf("Error while starting apatelet: %s", err.Error())
+	}
+
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	kubeConfig, res := joinApateCluster(ctx, connectionInfo)
+	kubeConfig, res := joinApateCluster(ctx, connectionInfo, listenPort)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -76,11 +83,7 @@ func main() {
 	}()
 
 	// Start gRPC server
-	server, err := createGRPC()
-
-	if err != nil {
-		log.Fatalf("Error while starting apatelet: %s", err.Error())
-	}
+	server := createGRPC(listenPort)
 
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
@@ -126,13 +129,13 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	cancel()
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo) (cluster.KubeConfig, *normalization.NodeResources) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (cluster.KubeConfig, *normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	kubeconfig, res, err := client.JoinCluster(ctx)
+	kubeconfig, res, err := client.JoinCluster(ctx, listenPort)
 
 	// TODO: Better error handling
 	if err != nil {
@@ -152,10 +155,8 @@ func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, re
 		log.Fatal("Could not parse config.")
 	}
 
-	log.Printf("Got: %v", restconfig.Host)
-
 	client := kubernetes.NewForConfigOrDie(restconfig)
-	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
+	n := cluster.NewNode("apatelet", "agent", "apatelet-"+res.UUID.String(), k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
 		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res)),
 		client.CoreV1().Nodes())
@@ -163,17 +164,12 @@ func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, re
 	return ctx, nc, cancel
 }
 
-func createGRPC() (*service.GRPCServer, error) {
+func createGRPC(listenPort int) *service.GRPCServer {
 	// Retrieving connection information
 	listenAddress := getEnv(ListenAddress, "0.0.0.0")
-	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8086"))
-
-	if err != nil {
-		return nil, err
-	}
 
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, true)
+	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)
@@ -181,7 +177,7 @@ func createGRPC() (*service.GRPCServer, error) {
 	// Add services
 	vkService.RegisterScenarioService(server)
 
-	return server, nil
+	return server
 }
 
 func getEnv(key, def string) string {

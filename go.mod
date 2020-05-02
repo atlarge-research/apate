@@ -14,6 +14,7 @@ require (
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/virtual-kubelet/node-cli v0.1.2
 	github.com/virtual-kubelet/virtual-kubelet v1.2.1
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
 	k8s.io/api v0.0.0 // Will be replaced

@@ -38,14 +38,12 @@ func init() {
 func main() {
 	log.Println("Starting Apate control plane")
 
-	// Get external ip
-	externalIP, err := getExternalAddress()
+	// Get external connection information
+	externalInformation, err := createExternalConnectionInformation()
 
 	if err != nil {
 		log.Fatalf("Error while starting control plane: %s", err.Error())
 	}
-
-	log.Printf("External IP for control plane: %s", externalIP)
 
 	// Create kubernetes cluster
 	log.Println("Starting kubernetes control plane")
@@ -55,12 +53,7 @@ func main() {
 	createdStore := store.NewStore()
 
 	// Start gRPC server
-	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster)
-
-	if err != nil {
-		log.Fatalf("Error while starting control plane: %s", err.Error())
-	}
-
+	server := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	// Handle signals
@@ -125,28 +118,23 @@ func getExternalAddress() (string, error) {
 	return "localhost", nil
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster) (*service.GRPCServer, error) {
+func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) *service.GRPCServer {
 	// Retrieve from environment
 	listenAddress := getEnv(ListenAddress, "0.0.0.0")
-	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8085"))
-
-	if err != nil {
-		return nil, err
-	}
 
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
+	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)
 
 	// Add services
 	services.RegisterStatusService(server, createdStore)
-	services.RegisterScenarioService(server, createdStore)
+	services.RegisterScenarioService(server, createdStore, info)
 	services.RegisterClusterOperationService(server, createdStore, kubernetesCluster)
 	services.RegisterHealthService(server, createdStore)
 
-	return server, nil
+	return server
 }
 
 func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {
@@ -172,4 +160,25 @@ func getEnv(key, def string) string {
 	}
 
 	return def
+}
+
+func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
+	// Get external ip
+	externalIP, err := getExternalAddress()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Get port
+	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8085"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Create external information
+	log.Printf("External IP for control plane: %s", externalIP)
+
+	return service.NewConnectionInfo(externalIP, listenPort, false), nil
 }

@@ -64,7 +64,6 @@ message Task {
         events.ResponseState pod_response_state = 11;
 
         events.PodStatusUpdate pod_status_update = 12;
-        events.PodStartTimeUpdate pod_start_time_update = 13;
     }
 }
 
