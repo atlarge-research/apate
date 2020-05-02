@@ -10,6 +10,14 @@ import (
 	"github.com/docker/docker/client"
 )
 
+const (
+	// ControlPlaneAddress is the address of the control plane which will be used to connect to
+	ControlPlaneAddress = "CP_LISTEN_ADDRESS"
+
+	// ControlPlanePort is the port of the control plane
+	ControlPlanePort = "CP_LISTEN_PORT"
+)
+
 // SpawnNodes spawns multiple Apatelet Docker containers
 func SpawnNodes(ctx context.Context, amountOfNodes int) error {
 	var err error

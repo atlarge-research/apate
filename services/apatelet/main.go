@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
 
@@ -24,6 +26,14 @@ var (
 	k8sVersion = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
 )
 
+const (
+	// ListenAddress is the address the apatelet will listen on for requests
+	ListenAddress = "APATELET_LISTEN_ADDRESS"
+
+	// ListenPort is the port the apatelet will listen on for requests
+	ListenPort = "APATELET_LISTEN_PORT"
+)
+
 func init() {
 	// Enable line numbers in logging
 	// Enables date time flags & file name + line
@@ -33,9 +43,15 @@ func init() {
 func main() {
 	log.Println("Starting Apatelet")
 
-	// TODO: Get these from envvars
-	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
+	// Retrieving connection information
+	controlPlaneAddress := getEnv(cluster.ControlPlaneAddress, "localhost")
+	controlPlanePort, err := strconv.Atoi(getEnv(cluster.ControlPlanePort, "8085"))
 
+	if err != nil {
+		log.Fatalf("Error while starting apatelet: %s", err.Error())
+	}
+
+	connectionInfo := service.NewConnectionInfo(controlPlaneAddress, controlPlanePort, false)
 	ctx := context.Background()
 
 	// Join the apate cluster
@@ -53,15 +69,22 @@ func main() {
 	log.Println("Joining kubernetes cluster")
 	go func() {
 		// TODO: Notify master / proper logging
-		if err := nc.Run(ctx); err != nil {
+		if err = nc.Run(ctx); err != nil {
+			hc.SetStatus(healthpb.Status_UNHEALTHY)
 			log.Fatalf("Unable to start apatelet: %v", err)
 		}
 	}()
 
 	// Start gRPC server
-	log.Println("Now accepting requests")
-	server := createGRPC()
+	server, err := createGRPC()
+
+	if err != nil {
+		log.Fatalf("Error while starting apatelet: %s", err.Error())
+	}
+
+	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
+	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -90,7 +113,6 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 
 	log.Println("Leaving clusters (apate & k8s)")
 
-	// TODO: Maybe leave k8s? Or will control plane do that?
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
@@ -141,10 +163,17 @@ func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, re
 	return ctx, nc, cancel
 }
 
-func createGRPC() *service.GRPCServer {
-	// TODO: Get grpc settings from env
+func createGRPC() (*service.GRPCServer, error) {
+	// Retrieving connection information
+	listenAddress := getEnv(ListenAddress, "0.0.0.0")
+	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8086"))
+
+	if err != nil {
+		return nil, err
+	}
+
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo("localhost", 8081, true)
+	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, true)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)
@@ -152,5 +181,13 @@ func createGRPC() *service.GRPCServer {
 	// Add services
 	vkService.RegisterScenarioService(server)
 
-	return server
+	return server, nil
+}
+
+func getEnv(key, def string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
+
+	return def
 }

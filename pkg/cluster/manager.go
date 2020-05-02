@@ -10,5 +10,5 @@ type Manager interface {
 
 	// Should delete a cluster with a certain name.
 	// This may error, and should error when a cluster with that name already exists.
-	CreateCluster(name string, kubeConfigLocation string) error
+	CreateCluster(name string, kubeConfigLocation string, managerConfigPath string) error
 }
