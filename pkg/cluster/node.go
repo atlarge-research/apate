@@ -14,13 +14,22 @@ import (
 func SpawnNodes(ctx context.Context, amountOfNodes int) error {
 	var err error
 
+	imageName := "apatekubernetes/apatelet:latest"
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return err
 	}
 
-	if err = pullImage(ctx, cli); err != nil {
+	localAvailable, err := checkLocal(ctx, cli, imageName)
+
+	if err != nil {
 		return err
+	}
+
+	if !localAvailable {
+		if err = pullImage(ctx, cli, imageName); err != nil {
+			return err
+		}
 	}
 
 	hostname, err := os.Hostname()
@@ -38,8 +47,26 @@ func SpawnNodes(ctx context.Context, amountOfNodes int) error {
 	return nil
 }
 
-func pullImage(ctx context.Context, cli *client.Client) error {
-	imageName := "apatekubernetes/apatelet:latest"
+//TODO: Optimise
+func checkLocal(ctx context.Context, cli *client.Client, imageName string) (bool, error) {
+	imgs, err := cli.ImageList(ctx, types.ImageListOptions{})
+
+	if err != nil {
+		return false, err
+	}
+
+	for _, img := range imgs {
+		for _, tag := range img.RepoTags {
+			if tag == imageName {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
+func pullImage(ctx context.Context, cli *client.Client, imageName string) error {
 	if _, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{}); err != nil {
 		return err
 	}
