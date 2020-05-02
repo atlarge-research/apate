@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"time"
 )
@@ -12,7 +13,7 @@ type Scheduler struct {
 }
 
 func (s *Scheduler) StartScheduler(ctx context.Context) chan error {
-	ech := make(chan error)
+	ech := make(chan error, 3)
 
 	go func() {
 		for {
@@ -22,35 +23,43 @@ func (s *Scheduler) StartScheduler(ctx context.Context) chan error {
 			default:
 			}
 
-			if err := s.runner(); err != nil {
-				ech <- err
-			}
-			time.Sleep(0)
+			s.runner(ech)
 		}
 	}()
 
 	return ech
 }
 
-func (s *Scheduler) runner() error {
+func (s *Scheduler) runner(ech chan error) {
 	now := time.Now().Unix()
 
 	nextT, err := (*s.store).PeekTask()
 	if err != nil {
-		return err
+		ech <- err
+		return
 	}
 	if now >= nextT {
 		task, err := (*s.store).PopTask()
 		if err != nil {
-			return err
+			ech <- err
+			return
 		}
 
-		go s.taskHandler(task)
+		go s.taskHandler(ech, task)
 	}
 
-	return nil
+	return
 }
 
-func (s *Scheduler) taskHandler(t *apatelet.Task) {
-	// TODO: Implement
+func (s Scheduler) taskHandler(ech chan error, t *apatelet.Task) {
+	// TODO: Handle revert tasks here or in normalize
+	for k, mv := range t.EventFlags {
+		v, err := any.Unmarshal(mv)
+		if err != nil {
+			ech <- err
+			continue
+		}
+
+		(*s.store).SetFlag(k, v)
+	}
 }
