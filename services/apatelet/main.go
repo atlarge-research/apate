@@ -130,6 +130,8 @@ func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, re
 		log.Fatal("Could not parse config.")
 	}
 
+	log.Printf("Got: %v", restconfig.Host)
+
 	client := kubernetes.NewForConfigOrDie(restconfig)
 	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
