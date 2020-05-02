@@ -1,17 +1,22 @@
+// Package scheduler handles the scheduling of tasks
 package scheduler
 
 import (
 	"context"
+	"time"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"time"
 )
 
+// Scheduler is struct on which all scheduler functionality is implemented.
 type Scheduler struct {
 	store *store.Store
 }
 
+// StartScheduler starts running the scheduler
+// this will poll the store queue for changes and write errors to a 3-buffered channel
 func (s *Scheduler) StartScheduler(ctx context.Context) chan error {
 	ech := make(chan error, 3)
 
@@ -47,12 +52,9 @@ func (s *Scheduler) runner(ech chan error) {
 
 		go s.taskHandler(ech, task)
 	}
-
-	return
 }
 
 func (s Scheduler) taskHandler(ech chan error, t *apatelet.Task) {
-	// TODO: Handle revert tasks here or in normalize
 	for k, mv := range t.EventFlags {
 		v, err := any.Unmarshal(mv)
 		if err != nil {
