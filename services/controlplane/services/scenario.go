@@ -17,11 +17,15 @@ import (
 
 type scenarioService struct {
 	store *store.Store
+	info  *service.ConnectionInfo
 }
 
 // RegisterScenarioService registers a new scenarioService with the given gRPC server
-func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
-	controlplane.RegisterScenarioServer(server.Server, &scenarioService{store: store})
+func RegisterScenarioService(server *service.GRPCServer, store *store.Store, info *service.ConnectionInfo) {
+	controlplane.RegisterScenarioServer(server.Server, &scenarioService{
+		store: store,
+		info:  info,
+	})
 }
 
 func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlplane.PublicScenario) (*empty.Empty, error) {
@@ -44,7 +48,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 		return nil, err
 	}
 
-	if err := cluster.SpawnNodes(ctx, len(resources)); err != nil {
+	if err := cluster.SpawnNodes(ctx, len(resources), s.info); err != nil {
 		log.Print(err)
 		return nil, err
 	}
