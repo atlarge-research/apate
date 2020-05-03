@@ -65,7 +65,7 @@ func (s *store) PeekTask() (int64, error) {
 
 	// Make sure the array in the pq didn't magically change to a different type
 	if task, ok := s.queue.First().(*apatelet.Task); ok {
-		return int64(task.Timestamp), nil
+		return task.AbsoluteTimestamp, nil
 	}
 
 	return -1, errors.New("array in pq magically changed to a different type")

@@ -44,7 +44,7 @@ func TestGetSingleTask(t *testing.T) {
 
 // TestGetSingleTask ensures a polled task is not deleted
 func TestPollSingleTask(t *testing.T) {
-	task := &apatelet.Task{Timestamp: 424242}
+	task := &apatelet.Task{AbsoluteTimestamp: 424242}
 	st := NewStore()
 
 	// Enqueue single task
@@ -53,7 +53,7 @@ func TestPollSingleTask(t *testing.T) {
 	// Poll single task and verify the timestamp is correct
 	retrieved, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task.Timestamp, int32(retrieved))
+	assert.Equal(t, task.AbsoluteTimestamp, int32(retrieved))
 
 	// Also verify it was not removed
 	assert.Equal(t, 1, st.LenTasks())
@@ -61,9 +61,9 @@ func TestPollSingleTask(t *testing.T) {
 
 // TestMultipleTasks ensures the priority queue actually sorts the tasks properly (earliest task first)
 func TestMultipleTasks(t *testing.T) {
-	task1 := &apatelet.Task{Timestamp: 213123}
-	task2 := &apatelet.Task{Timestamp: 4242}
-	task3 := &apatelet.Task{Timestamp: 83481234}
+	task1 := &apatelet.Task{AbsoluteTimestamp: 213123}
+	task2 := &apatelet.Task{AbsoluteTimestamp: 4242}
+	task3 := &apatelet.Task{AbsoluteTimestamp: 83481234}
 	st := NewStore()
 
 	// Enqueue tasks
@@ -72,7 +72,7 @@ func TestMultipleTasks(t *testing.T) {
 	// Poll first task, which should be task 2
 	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2.Timestamp, int32(firstTaskTime))
+	assert.Equal(t, task2.AbsoluteTimestamp, int32(firstTaskTime))
 
 	// Retrieve first two tasks
 	firstTask, err := st.PopTask()
@@ -87,7 +87,7 @@ func TestMultipleTasks(t *testing.T) {
 	lastTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, st.LenTasks())
-	assert.Equal(t, task3.Timestamp, int32(lastTaskTime))
+	assert.Equal(t, task3.AbsoluteTimestamp, int32(lastTaskTime))
 }
 
 // TestUnsetFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
@@ -117,8 +117,8 @@ func TestSetFlag(t *testing.T) {
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
 func TestArrayWithNil(t *testing.T) {
-	task1 := &apatelet.Task{Timestamp: 213123}
-	task2 := &apatelet.Task{Timestamp: 4242}
+	task1 := &apatelet.Task{AbsoluteTimestamp: 213123}
+	task2 := &apatelet.Task{AbsoluteTimestamp: 4242}
 	st := NewStore()
 
 	// Enqueue tasks
@@ -130,7 +130,7 @@ func TestArrayWithNil(t *testing.T) {
 	// Poll first task, which should be task 2
 	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2.Timestamp, int32(firstTaskTime))
+	assert.Equal(t, task2.AbsoluteTimestamp, int32(firstTaskTime))
 
 	// Retrieve first task, and confirm it's task 2
 	firstTask, err := st.PopTask()

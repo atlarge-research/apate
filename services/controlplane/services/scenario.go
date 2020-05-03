@@ -3,9 +3,11 @@ package services
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
+	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
@@ -14,6 +16,10 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 )
+
+// The amount of seconds to wait with starting the scenario
+// Should be large enough so that all apatelets have received the scenario and are ready
+const amountOfSecondsToWait = 15
 
 type scenarioService struct {
 	store *store.Store
@@ -65,22 +71,43 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 		return nil, err
 	}
 
-	// TODO set the start time on the apatelet scenario (apateletScenario.startTime)
-	// TODO make the task times absolute
+	startTime := time.Now().Local().Add(time.Second * time.Duration(amountOfSecondsToWait)).UnixNano()
+	convertToAbsoluteTimestamp(apateletScenario, startTime)
 
-	// TODO make async
-	for _, node := range nodes {
-		scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
-		_, err := scenarioClient.Client.StartScenario(ctx, apateletScenario)
+	for i := range nodes {
+		go func(node *store.Node) {
+			ft := prepareTasksForNode(apateletScenario.Task, node.UUID.String())
+			nodeSc := &apiApatelet.ApateletScenario{Task: ft}
 
-		if err != nil {
-			log.Fatalf("Could not complete call: %v", err)
-		}
+			scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
+			_, err := scenarioClient.Client.StartScenario(ctx, nodeSc)
 
-		if err := scenarioClient.Conn.Close(); err != nil {
-			log.Fatal("Failed to close connection")
-		}
+			if err != nil {
+				log.Fatalf("Could not complete call: %v", err)
+			}
+
+			if err := scenarioClient.Conn.Close(); err != nil {
+				log.Fatal("Failed to close connection")
+			}
+		}(&nodes[i])
 	}
 
 	return new(empty.Empty), nil
+}
+
+func convertToAbsoluteTimestamp(as *apiApatelet.ApateletScenario, unixNanoStartTime int64) {
+	for _, t := range as.Task {
+		newStartTimeNano := t.RelativeTimestamp + unixNanoStartTime
+		t.AbsoluteTimestamp = newStartTimeNano
+	}
+}
+
+func prepareTasksForNode(inputTasks []*apiApatelet.Task, uuid string) []*apiApatelet.Task {
+	filteredTasks := make([]*apiApatelet.Task, 0)
+	for _, t := range inputTasks {
+		if t.NodeSet[uuid] {
+			filteredTasks = append(filteredTasks, t)
+		}
+	}
+	return filteredTasks
 }

@@ -36,7 +36,7 @@ func (s *Scheduler) StartScheduler(ctx context.Context) chan error {
 }
 
 func (s *Scheduler) runner(ech chan error) {
-	now := time.Now().Unix()
+	now := time.Now().UnixNano()
 
 	nextT, err := (*s.store).PeekTask()
 	if err != nil {
