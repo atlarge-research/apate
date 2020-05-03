@@ -71,7 +71,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 		return nil, err
 	}
 
-	startTime := time.Now().Local().Add(time.Second * time.Duration(amountOfSecondsToWait)).UnixNano()
+	startTime := time.Now().Add(time.Second * time.Duration(amountOfSecondsToWait)).UnixNano()
 	convertToAbsoluteTimestamp(apateletScenario, startTime)
 
 	for i := range nodes {
@@ -99,6 +99,7 @@ func convertToAbsoluteTimestamp(as *apiApatelet.ApateletScenario, unixNanoStartT
 	for _, t := range as.Task {
 		newStartTimeNano := t.RelativeTimestamp + unixNanoStartTime
 		t.AbsoluteTimestamp = newStartTimeNano
+		t.RelativeTimestamp = 0 // Reset
 	}
 }
 
