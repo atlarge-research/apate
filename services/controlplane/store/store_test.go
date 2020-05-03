@@ -25,8 +25,7 @@ func TestNoScenario(t *testing.T) {
 func TestScenario(t *testing.T) {
 	store := NewStore()
 	expected := &apatelet.ApateletScenario{
-		Task:      nil,
-		StartTime: 42,
+		Task: nil,
 	}
 
 	// Set scenario
