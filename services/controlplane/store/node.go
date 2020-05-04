@@ -22,6 +22,6 @@ func NewNode(info service.ConnectionInfo, resources *normalization.NodeResources
 	return &Node{
 		ConnectionInfo: info,
 		UUID:           resources.UUID,
-		Status:         health.Status_HEALTHY, //TODO: Remove later
+		Status:         health.Status_UNKNOWN,
 	}
 }

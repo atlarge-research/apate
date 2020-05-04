@@ -8,7 +8,9 @@ import (
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
 
+	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -58,9 +60,9 @@ func main() {
 	kubeConfig, res := joinApateCluster(ctx, connectionInfo, listenPort)
 
 	// Setup health status
-	//hc := health.GetClient(connectionInfo, res.UUID.String())
-	//hc.SetStatus(healthpb.Status_UNKNOWN)
-	//hc.StartStreamWithRetry(ctx, 3)
+	hc := health.GetClient(connectionInfo, res.UUID.String())
+	hc.SetStatus(healthpb.Status_UNKNOWN)
+	hc.StartStreamWithRetry(ctx, 3)
 
 	// Start the Apatelet
 	ctx, nc, cancel := createNodeController(ctx, kubeConfig, res)
@@ -69,7 +71,7 @@ func main() {
 	go func() {
 		// TODO: Notify master / proper logging
 		if err = nc.Run(ctx); err != nil {
-			//hc.SetStatus(healthpb.Status_UNHEALTHY)
+			hc.SetStatus(healthpb.Status_UNHEALTHY)
 			log.Fatalf("Unable to start apatelet: %v", err)
 		}
 	}()
@@ -78,7 +80,7 @@ func main() {
 	server := createGRPC(listenPort)
 
 	// Update status
-	//hc.SetStatus(healthpb.Status_HEALTHY)
+	hc.SetStatus(healthpb.Status_HEALTHY)
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	// Handle signals

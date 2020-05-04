@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 	"log"
 	"net"
 	"os"
 	"os/signal"
-	"runtime/pprof"
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -24,20 +24,6 @@ func init() {
 }
 
 func main() {
-	//TODO: Remove
-	// Start profiler
-	f, err := os.Create("/tmp/cpu-profile")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = pprof.StartCPUProfile(f)
-
-	if err != nil {
-		log.Fatalf("err: %s", err.Error())
-	}
-	defer pprof.StopCPUProfile()
-
-	// Start control panel
 	log.Println("Starting Apate control plane")
 
 	// Get external connection information
@@ -61,7 +47,7 @@ func main() {
 	// Handle signals
 	signals := make(chan os.Signal, 1)
 	stopped := make(chan bool, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		<-signals

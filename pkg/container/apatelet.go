@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/docker/docker/api/types"
@@ -52,12 +51,6 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 		return cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{})
 	})
 
-	err = HandleSpawnContainers(ctx, cli, spawnInfo)
-
-	if err != nil {
-		fmt.Printf("err: %s\n", err.Error())
-		// TODO: Add retry functionality
-	}
-
-	return nil
+	// Spawn apatelets
+	return HandleSpawnContainers(ctx, cli, spawnInfo)
 }
