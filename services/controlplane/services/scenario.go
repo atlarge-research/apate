@@ -2,10 +2,10 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"strings"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 
@@ -78,25 +78,21 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 	startTime := time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano()
 	convertToAbsoluteTimestamp(apateletScenario, startTime)
 
-	errs := startOnNodes(ctx, nodes, apateletScenario)
-
-	var errStrings []string
-	for err := range errs {
-		errStrings = append(errStrings, err.Error())
-	}
-
-	if len(errStrings) > 0 {
-		err := fmt.Errorf(strings.Join(errStrings, "\n"))
+	err = startOnNodes(ctx, nodes, apateletScenario)
+	if err != nil {
 		scenario.Failed(err)
-		return new(empty.Empty), err
+		return nil, err
 	}
 
 	return new(empty.Empty), nil
 }
 
-func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *apiApatelet.ApateletScenario) (errs chan error) {
+func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *apiApatelet.ApateletScenario) error {
+	errs, ctx := errgroup.WithContext(ctx)
+
 	for i := range nodes {
-		go func(node *store.Node) {
+		node := nodes[i]
+		errs.Go(func() error {
 			ft := filterTasksForNode(apateletScenario.Task, node.UUID.String())
 			nodeSc := &apiApatelet.ApateletScenario{Task: ft}
 
@@ -104,18 +100,14 @@ func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *api
 			_, err := scenarioClient.Client.StartScenario(ctx, nodeSc)
 
 			if err != nil {
-				errs <- err
-				return
+				return err
 			}
 
-			if err := scenarioClient.Conn.Close(); err != nil {
-				errs <- err
-				return
-			}
-		}(&nodes[i])
+			return scenarioClient.Conn.Close()
+		})
 	}
 
-	return
+	return errs.Wait()
 }
 
 func convertToAbsoluteTimestamp(as *apiApatelet.ApateletScenario, unixNanoStartTime int64) {
