@@ -345,6 +345,35 @@ pod_configs:
 	}, newTask.PodConfigs[0].EventFlags)
 }
 
+func TestPodMultipleConfigs(t *testing.T) {
+	newTask := getApateletTask(t, `
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: GET_POD_STATUS
+            response: TIMEOUT
+            percentage: 42
+    -
+        metadata_name: b
+        pod_response_state:
+            type: DELETE_POD
+            response: ERROR
+            percentage: 100
+`)
+	assert.Equal(t, "a", newTask.PodConfigs[0].MetadataName)
+	assert.EqualValues(t, EventFlags{
+		events.PodGetPodStatusResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
+		events.PodGetPodStatusResponsePercentage: any.MarshalOrDie(42),
+	}, newTask.PodConfigs[0].EventFlags)
+
+	assert.Equal(t, "b", newTask.PodConfigs[1].MetadataName)
+	assert.EqualValues(t, EventFlags{
+		events.PodDeletePodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
+		events.PodDeletePodResponsePercentage: any.MarshalOrDie(100),
+	}, newTask.PodConfigs[1].EventFlags)
+}
+
 func TestPodResponseStateGetPods(t *testing.T) {
 	getApateletErroredTask(t, `
 pod_configs:
