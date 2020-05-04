@@ -50,5 +50,5 @@ message PodConfig {
     string metadata_name = 1;
 
     // The flags to be set for this specific configuration
-    map<int32, google.protobuf.Any> event_flags = 4;
+    map<int32, google.protobuf.Any> event_flags = 2;
 }
