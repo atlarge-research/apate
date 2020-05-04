@@ -36,10 +36,10 @@ func GetInBytes(unit string, unitName string) (int64, error) {
 }
 
 // EventFlags maps event flags to their any value
-type EventFlags map[int32]*anypb.Any
+type EventFlags map[events.EventFlag]*anypb.Any
 
 func newEventFlags() EventFlags {
-	return make(map[int32]*anypb.Any)
+	return make(map[events.EventFlag]*anypb.Any)
 }
 
 func (ef *EventFlags) flags(value interface{}, flags []events.EventFlag) {
