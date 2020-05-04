@@ -2,9 +2,12 @@ package services
 
 import (
 	"context"
+	"errors"
 	"log"
 	"sync/atomic"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
@@ -82,12 +85,11 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 	// If the loop is broken -> node status unknown
 	if err := (*h.store).SetNodeStatus(id, health.Status_UNKNOWN); err != nil {
-		log.Print(err)
+		scenario.Failed(err)
+		return nil
 	}
 
-	// TODO: We should stop the scenario here (here as in here in time not place)
-	log.Println("Node healthcheck disconnected...")
-
+	scenario.Failed(errors.New("node healthcheck disconnected"))
 	return nil
 }
 

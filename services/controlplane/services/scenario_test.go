@@ -70,7 +70,7 @@ func TestFilter(t *testing.T) {
 		},
 	}
 
-	uuid1Tasks := prepareTasksForNode(input, uuid1)
+	uuid1Tasks := filterTasksForNode(input, uuid1)
 	assert.EqualValues(t, []*apatelet.Task{
 		{
 			NodeSet: map[string]bool{
@@ -87,7 +87,7 @@ func TestFilter(t *testing.T) {
 		},
 	}, uuid1Tasks)
 
-	uuid2Tasks := prepareTasksForNode(input, uuid2)
+	uuid2Tasks := filterTasksForNode(input, uuid2)
 	assert.EqualValues(t, []*apatelet.Task{
 		{
 			NodeSet: map[string]bool{
@@ -104,6 +104,6 @@ func TestFilter(t *testing.T) {
 		},
 	}, uuid2Tasks)
 
-	uuid3Tasks := prepareTasksForNode(input, uuid3)
+	uuid3Tasks := filterTasksForNode(input, uuid3)
 	assert.EqualValues(t, input, uuid3Tasks)
 }

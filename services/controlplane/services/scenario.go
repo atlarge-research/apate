@@ -2,8 +2,12 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
@@ -61,38 +65,57 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
-		log.Print(err)
+		scenario.Failed(err)
 		return nil, err
 	}
 
 	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {
-		log.Print(err)
+		scenario.Failed(err)
 		return nil, err
 	}
 
-	startTime := time.Now().Add(time.Second * time.Duration(amountOfSecondsToWait)).UnixNano()
+	startTime := time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano()
 	convertToAbsoluteTimestamp(apateletScenario, startTime)
 
+	errs := startOnNodes(ctx, nodes, apateletScenario)
+
+	var errStrings []string
+	for err := range errs {
+		errStrings = append(errStrings, err.Error())
+	}
+
+	if len(errStrings) > 0 {
+		err := fmt.Errorf(strings.Join(errStrings, "\n"))
+		scenario.Failed(err)
+		return new(empty.Empty), err
+	}
+
+	return new(empty.Empty), nil
+}
+
+func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *apiApatelet.ApateletScenario) (errs chan error) {
 	for i := range nodes {
 		go func(node *store.Node) {
-			ft := prepareTasksForNode(apateletScenario.Task, node.UUID.String())
+			ft := filterTasksForNode(apateletScenario.Task, node.UUID.String())
 			nodeSc := &apiApatelet.ApateletScenario{Task: ft}
 
 			scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
 			_, err := scenarioClient.Client.StartScenario(ctx, nodeSc)
 
 			if err != nil {
-				log.Fatalf("Could not complete call: %v", err)
+				errs <- err
+				return
 			}
 
 			if err := scenarioClient.Conn.Close(); err != nil {
-				log.Fatal("Failed to close connection")
+				errs <- err
+				return
 			}
 		}(&nodes[i])
 	}
 
-	return new(empty.Empty), nil
+	return
 }
 
 func convertToAbsoluteTimestamp(as *apiApatelet.ApateletScenario, unixNanoStartTime int64) {
@@ -103,7 +126,7 @@ func convertToAbsoluteTimestamp(as *apiApatelet.ApateletScenario, unixNanoStartT
 	}
 }
 
-func prepareTasksForNode(inputTasks []*apiApatelet.Task, uuid string) []*apiApatelet.Task {
+func filterTasksForNode(inputTasks []*apiApatelet.Task, uuid string) []*apiApatelet.Task {
 	filteredTasks := make([]*apiApatelet.Task, 0)
 	for _, t := range inputTasks {
 		if t.NodeSet[uuid] {
