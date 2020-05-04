@@ -11,6 +11,24 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const (
+	// DefaultPullPolicy returns the default pull policy
+	DefaultPullPolicy = PullIfNotLocal
+
+	// AlwaysPull will always pull the image, even if it's already locally available
+	AlwaysPull = "pull-always"
+
+	// AlwaysLocal will always use the local image, and will not pull if it's not locally available
+	AlwaysLocal = "local-always"
+
+	// PullIfNotLocal will only pull if the image is not locally available, this will not check
+	// if the local image is possibly outdated
+	PullIfNotLocal = "pull-if-not-local"
+
+	// DockerAddressPrefix specifies the docker address prefix, used for determining the docker address
+	DockerAddressPrefix = "172.17."
+)
+
 // SpawnCall is function which takes in the number of the container, then spawns the container
 // and finally returns any error that might have occurred in the process
 type SpawnCall func(int, context.Context) error
@@ -64,14 +82,14 @@ func HandleSpawnContainers(ctx context.Context, cli *client.Client, info SpawnIn
 }
 
 func checkLocalImage(ctx context.Context, cli *client.Client, imageName string) (bool, error) {
-	imgs, err := cli.ImageList(ctx, types.ImageListOptions{})
+	images, err := cli.ImageList(ctx, types.ImageListOptions{})
 
 	if err != nil {
 		return false, err
 	}
 
-	for _, img := range imgs {
-		for _, tag := range img.RepoTags {
+	for _, image := range images {
+		for _, tag := range image.RepoTags {
 			if tag == imageName {
 				return true, nil
 			}
@@ -104,11 +122,11 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 
 func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy string) error {
 	switch pullPolicy {
-	case "pull-always":
+	case AlwaysPull:
 		return alwaysPull(ctx, cli, imageName)
-	case "pull-not-local":
+	case PullIfNotLocal:
 		return pullIfNotLocal(ctx, cli, imageName)
-	case "cache-always":
+	case AlwaysLocal:
 		return alwaysCache(ctx, cli, imageName)
 	default:
 		return fmt.Errorf("unknown docker pull policy: %s", pullPolicy)
@@ -152,9 +170,11 @@ func alwaysCache(ctx context.Context, cli *client.Client, imageName string) erro
 }
 
 func pullImage(ctx context.Context, cli *client.Client, imageName string) error {
-	if _, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{}); err != nil {
+	readCloser, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+
+	if err != nil {
 		return err
 	}
 
-	return nil
+	return readCloser.Close()
 }
