@@ -34,9 +34,11 @@ test_cover_short:
 
 docker_build_vk:
 	docker build -f services/apatelet/Dockerfile -t apatelet .
+	docker tag apatelet apatekubernetes/apatelet
 
 docker_build_cp:
 	docker build -f ./services/controlplane/Dockerfile -t controlplane .
+	docker tag controlplane apatekubernetes/controlplane
 
 docker_build: docker_build_cp docker_build_vk
 

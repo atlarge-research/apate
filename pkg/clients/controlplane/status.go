@@ -45,6 +45,6 @@ func (c *StatusClient) WaitForHealthy(ctx context.Context, expectedApatelets int
 		}
 
 		// Sleep for a second before trying again
-		time.Sleep(1000000000)
+		time.Sleep(time.Second)
 	}
 }

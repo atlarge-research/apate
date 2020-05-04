@@ -92,7 +92,8 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 	}
 }
 
-// TODO: Maybe use multiple detection methods later?
+// getExternalAddress will return the detected external IP address based on the env var, then network interfaces
+// (it will look for the first 172.17.0.0/16 address), and finally a fallback on localhost
 func getExternalAddress() (string, error) {
 	// Check for external IP override
 	if val, ok := os.LookupEnv(ExternalIP); ok {
@@ -106,6 +107,7 @@ func getExternalAddress() (string, error) {
 		return "", err
 	}
 
+	// Get first 172.17.0.0/16 address, if any
 	for _, address := range addresses {
 		if strings.Contains(address.String(), "172.17.") {
 			ip := strings.Split(address.String(), "/")[0]
