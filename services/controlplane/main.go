@@ -9,24 +9,12 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-)
-
-const (
-	// ListenAddress is the address the control plane will listen on
-	ListenAddress = "CP_LISTEN_ADDRESS"
-
-	// ListenPort is the port the control plane will listen on
-	ListenPort = "CP_LISTEN_PORT"
-
-	// ManagedClusterConfig is the path to the config of the cluster manager, if applicable
-	ManagedClusterConfig = "CP_K8S_CONFIG"
-
-	// ExternalIP can be used to override the IP the control plane will give to apatelets to connect to
-	ExternalIP = "CP_EXTERNAL_IP"
 )
 
 func init() {
@@ -47,7 +35,7 @@ func main() {
 
 	// Create kubernetes cluster
 	log.Println("Starting kubernetes control plane")
-	managedKubernetesCluster := createCluster(getEnv(ManagedClusterConfig, "/tmp/apate/manager"))
+	managedKubernetesCluster := createCluster(container.RetrieveFromEnvironment(container.ManagedClusterConfig, container.ManagedClusterConfigDefault))
 
 	// Create apate cluster state
 	createdStore := store.NewStore()
@@ -92,12 +80,15 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 	}
 }
 
+// TODO: Maybe check for docker subnet first somehow, people can change it from 172.17.0.0/16 to something else after all..
+
 // getExternalAddress will return the detected external IP address based on the env var, then network interfaces
 // (it will look for the first 172.17.0.0/16 address), and finally a fallback on localhost
 func getExternalAddress() (string, error) {
 	// Check for external IP override
-	if val, ok := os.LookupEnv(ExternalIP); ok {
-		return val, nil
+	override := container.RetrieveFromEnvironment(container.ControlPlaneExternalIP, container.ControlPlaneExternalIPDefault)
+	if override != container.ControlPlaneExternalIPDefault {
+		return override, nil
 	}
 
 	// Check for IP in interface addresses
@@ -109,7 +100,7 @@ func getExternalAddress() (string, error) {
 
 	// Get first 172.17.0.0/16 address, if any
 	for _, address := range addresses {
-		if strings.Contains(address.String(), "172.17.") {
+		if strings.Contains(address.String(), container.DockerAddressPrefix) {
 			ip := strings.Split(address.String(), "/")[0]
 
 			return ip, nil
@@ -122,7 +113,7 @@ func getExternalAddress() (string, error) {
 
 func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) *service.GRPCServer {
 	// Retrieve from environment
-	listenAddress := getEnv(ListenAddress, "0.0.0.0")
+	listenAddress := container.RetrieveFromEnvironment(container.ControlPlaneListenAddress, container.ControlPlaneListenAddressDefault)
 
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
@@ -156,14 +147,6 @@ func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {
 	return c
 }
 
-func getEnv(key, def string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
-	}
-
-	return def
-}
-
 func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	// Get external ip
 	externalIP, err := getExternalAddress()
@@ -173,7 +156,7 @@ func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	}
 
 	// Get port
-	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8085"))
+	listenPort, err := strconv.Atoi(container.RetrieveFromEnvironment(container.ControlPlaneListenPort, container.ControlPlaneListenPortDefault))
 
 	if err != nil {
 		return nil, err

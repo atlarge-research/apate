@@ -2,10 +2,10 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"os"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/container"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
@@ -51,14 +51,10 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	}
 
 	// Retrieve pull policy
-	var policy string
-	if val, ok := os.LookupEnv(container.ControlPlaneDockerPolicy); ok {
-		policy = val
-	} else {
-		policy = "pull-not-local"
-	}
+	pullPolicy := container.GetPullPolicyControlPlane()
+	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
-	if err := container.SpawnApatelets(ctx, len(resources), s.info, policy); err != nil {
+	if err := container.SpawnApatelets(ctx, len(resources), s.info, pullPolicy, container.DefaultApateEnvironment()); err != nil {
 		log.Print(err)
 		return nil, err
 	}

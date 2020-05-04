@@ -3,7 +3,7 @@ package main
 import (
 	"strconv"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/container"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
@@ -28,14 +28,6 @@ var (
 	k8sVersion = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
 )
 
-const (
-	// ListenAddress is the address the apatelet will listen on for requests
-	ListenAddress = "APATELET_LISTEN_ADDRESS"
-
-	// ListenPort is the port the apatelet will listen on for requests
-	ListenPort = "APATELET_LISTEN_PORT"
-)
-
 func init() {
 	// Enable line numbers in logging
 	// Enables date time flags & file name + line
@@ -46,8 +38,8 @@ func main() {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
-	controlPlaneAddress := getEnv(container.ControlPlaneAddress, "localhost")
-	controlPlanePort, err := strconv.Atoi(getEnv(container.ControlPlanePort, "8085"))
+	controlPlaneAddress := container.RetrieveFromEnvironment(container.ControlPlaneAddress, container.ControlPlaneAddressDefault)
+	controlPlanePort, err := strconv.Atoi(container.RetrieveFromEnvironment(container.ControlPlanePort, container.ControlPlanePortDefault))
 
 	if err != nil {
 		log.Fatalf("Error while starting apatelet: %s", err.Error())
@@ -57,7 +49,7 @@ func main() {
 	ctx := context.Background()
 
 	// Retrieve own port
-	listenPort, err := strconv.Atoi(getEnv(ListenPort, "8086"))
+	listenPort, err := strconv.Atoi(container.RetrieveFromEnvironment(container.ApateletListenPort, container.ApateletListenPortDefault))
 
 	if err != nil {
 		log.Fatalf("Error while starting apatelet: %s", err.Error())
@@ -168,7 +160,7 @@ func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, re
 
 func createGRPC(listenPort int) *service.GRPCServer {
 	// Retrieving connection information
-	listenAddress := getEnv(ListenAddress, "0.0.0.0")
+	listenAddress := container.RetrieveFromEnvironment(container.ApateletListenAddress, container.ApateletListenAddressDefault)
 
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
@@ -180,12 +172,4 @@ func createGRPC(listenPort int) *service.GRPCServer {
 	vkService.RegisterScenarioService(server)
 
 	return server
-}
-
-func getEnv(key, def string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
-	}
-
-	return def
 }
