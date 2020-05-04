@@ -36,10 +36,10 @@ func GetInBytes(unit string, unitName string) (int64, error) {
 }
 
 // EventFlags maps event flags to their any value
-type EventFlags map[events.EventFlag]*anypb.Any
+type EventFlags map[int32]*anypb.Any
 
 func newEventFlags() EventFlags {
-	return make(map[events.EventFlag]*anypb.Any)
+	return make(map[int32]*anypb.Any)
 }
 
 func (ef *EventFlags) flags(value interface{}, flags []events.EventFlag) {
@@ -53,7 +53,7 @@ func (ef EventFlags) flag(value interface{}, flag events.EventFlag) {
 	ef[flag] = mv
 }
 
-var nodeEventFlags = []events.EventFlag{
+var nodeEventFlags = []events.NodeEventFlag{
 	events.NodeCreatePodResponse,
 	events.NodeUpdatePodResponse,
 	events.NodeDeletePodResponse,
@@ -63,7 +63,7 @@ var nodeEventFlags = []events.EventFlag{
 	events.NodePingResponse,
 }
 
-var nodeEventPercentageFlags = []events.EventFlag{
+var nodeEventPercentageFlags = []events.NodeEventFlag{
 	events.NodeCreatePodResponsePercentage,
 	events.NodeUpdatePodResponsePercentage,
 	events.NodeDeletePodResponsePercentage,

@@ -45,10 +45,9 @@ message Task {
     // This field will be ignored when revert is true
     repeated string node_groups = 4;
 
-    // The event to be executed
+    // The node event to be executed
     // This field will be ignored when revert is true
-    oneof event {
-        // Node events
+    oneof node_event {
         events.NodeFailure node_failure = 5;
 
         events.NetworkLatency network_latency = 6;
@@ -59,8 +58,18 @@ message Task {
         events.ResponseState node_response_state = 9;
 
         events.ResourcePressure resource_pressure = 10;
+    }
 
-        // Pod events
+    // The pod events to be executed
+    // This field will be ignored when revert is true
+    repeated PodConfig pod_configs = 11;
+}
+
+message PodConfig {
+    // The metadata.name from a configuration
+    string metadata_name = 1;
+
+    oneof pod_event {
         events.ResponseState pod_response_state = 11;
 
         events.PodStatusUpdate pod_status_update = 12;
