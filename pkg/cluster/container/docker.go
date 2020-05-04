@@ -1,51 +1,49 @@
-package cluster
+package container
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
-
-	"github.com/docker/docker/api/types/filters"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
-const (
-	// ControlPlaneAddress is the address of the control plane which will be used to connect to
-	ControlPlaneAddress = "CP_LISTEN_ADDRESS"
+// SpawnCall is function which takes in the number of the container, then spawns the container
+// and finally returns any error that might have occurred in the process
+type SpawnCall func(int, context.Context) error
 
-	// ControlPlanePort is the port of the control plane
-	ControlPlanePort = "CP_LISTEN_PORT"
+// SpawnInformation represents all required information to prepare the docker environment for spawning the containers
+type SpawnInformation struct {
+	pullPolicy, image, containerName string
+	amount                           int
+	callback                         SpawnCall
+}
 
-	// ControlPlaneDockerPolicy specifies the docker pull policy for apatelet images
-	ControlPlaneDockerPolicy = "CP_DOCKER_POLICY"
-)
-
-// SpawnNodes spawns multiple Apatelet Docker containers
-func SpawnNodes(ctx context.Context, amountOfNodes int, info *service.ConnectionInfo) error {
-	var err error
-
-	// Get docker cli
-	cli, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return err
+// NewSpawnInformation creates a new SpawnInformation struct using the given information
+func NewSpawnInformation(pullPolicy, image, containerName string, amount int, callback SpawnCall) SpawnInformation {
+	return SpawnInformation{
+		pullPolicy:    pullPolicy,
+		image:         image,
+		containerName: containerName,
+		amount:        amount,
+		callback:      callback,
 	}
+}
 
+// HandleSpawnContainers handles the preparation of docker images, removing of old containers and calling the given
+// spawn call async
+func HandleSpawnContainers(ctx context.Context, cli *client.Client, info SpawnInformation) error {
 	// Prepare image
-	err = prepareImage(ctx, cli)
+	err := prepareImage(ctx, cli, info.image, info.pullPolicy)
 	if err != nil {
 		return err
 	}
 
 	// Remove old containers
-	err = removeOldContainers(ctx, cli)
+	err = removeOldContainers(ctx, cli, info.containerName)
 	if err != nil {
 		return err
 	}
@@ -53,16 +51,12 @@ func SpawnNodes(ctx context.Context, amountOfNodes int, info *service.Connection
 	// Create error group to handle async spawning
 	group, ctx := errgroup.WithContext(ctx)
 
-	for i := 0; i < amountOfNodes; i++ {
+	for i := 0; i < info.amount; i++ {
 		i := i
 
 		// Spawn container
 		group.Go(func() error {
-			if err := spawnNode(ctx, cli, info, i); err != nil {
-				return err
-			}
-
-			return nil
+			return info.callback(i, ctx)
 		})
 	}
 
@@ -87,10 +81,10 @@ func checkLocalImage(ctx context.Context, cli *client.Client, imageName string) 
 	return false, nil
 }
 
-func removeOldContainers(ctx context.Context, cli *client.Client) error {
+func removeOldContainers(ctx context.Context, cli *client.Client, name string) error {
 	// Retrieve all old apatelet containers
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true,
-		Filters: filters.NewArgs(filters.Arg("status", "exited"), filters.Arg("name", "apatelet"))})
+		Filters: filters.NewArgs(filters.Arg("status", "exited"), filters.Arg("name", name))})
 
 	if err != nil {
 		return nil
@@ -108,18 +102,8 @@ func removeOldContainers(ctx context.Context, cli *client.Client) error {
 	return nil
 }
 
-func prepareImage(ctx context.Context, cli *client.Client) error {
-	imageName := "apatekubernetes/apatelet:latest"
-
-	// Retrieve pull policy
-	var policy string
-	if val, ok := os.LookupEnv(ControlPlaneDockerPolicy); ok {
-		policy = val
-	} else {
-		policy = "pull-not-local"
-	}
-
-	switch policy {
+func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy string) error {
+	switch pullPolicy {
 	case "pull-always":
 		return alwaysPull(ctx, cli, imageName)
 	case "pull-not-local":
@@ -127,7 +111,7 @@ func prepareImage(ctx context.Context, cli *client.Client) error {
 	case "cache-always":
 		return alwaysCache(ctx, cli, imageName)
 	default:
-		return fmt.Errorf("unknown docker pull policy: %s", policy)
+		return fmt.Errorf("unknown docker pull policy: %s", pullPolicy)
 	}
 }
 
@@ -173,20 +157,4 @@ func pullImage(ctx context.Context, cli *client.Client, imageName string) error 
 	}
 
 	return nil
-}
-
-func spawnNode(ctx context.Context, cli *client.Client, info *service.ConnectionInfo, nodeIndex int) error {
-	c, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: "apatelet:latest",
-		Env: []string{
-			ControlPlaneAddress + "=" + info.Address,
-			ControlPlanePort + "=" + strconv.Itoa(info.Port),
-		},
-	}, nil, nil, "apatelet-"+strconv.Itoa(nodeIndex))
-
-	if err != nil {
-		return err
-	}
-
-	return cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{})
 }

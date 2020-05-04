@@ -3,6 +3,8 @@ package main
 import (
 	"strconv"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/container"
+
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
 
@@ -44,8 +46,8 @@ func main() {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
-	controlPlaneAddress := getEnv(cluster.ControlPlaneAddress, "localhost")
-	controlPlanePort, err := strconv.Atoi(getEnv(cluster.ControlPlanePort, "8085"))
+	controlPlaneAddress := getEnv(container.ControlPlaneAddress, "localhost")
+	controlPlanePort, err := strconv.Atoi(getEnv(container.ControlPlanePort, "8085"))
 
 	if err != nil {
 		log.Fatalf("Error while starting apatelet: %s", err.Error())
