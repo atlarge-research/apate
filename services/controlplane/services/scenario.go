@@ -3,11 +3,13 @@ package services
 import (
 	"context"
 	"log"
+	"os"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/container"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
@@ -48,7 +50,15 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 		return nil, err
 	}
 
-	if err := cluster.SpawnNodes(ctx, len(resources), s.info); err != nil {
+	// Retrieve pull policy
+	var policy string
+	if val, ok := os.LookupEnv(container.ControlPlaneDockerPolicy); ok {
+		policy = val
+	} else {
+		policy = "pull-not-local"
+	}
+
+	if err := container.SpawnApatelets(ctx, len(resources), s.info, policy); err != nil {
 		log.Print(err)
 		return nil, err
 	}
