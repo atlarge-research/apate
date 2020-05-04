@@ -26,10 +26,18 @@ func (s JSONScenario) FromFile(filename string) (Deserializer, error) {
 
 // FromBytes creates a new JSONScenario from a byte array of data.
 func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
+
 	var scenario controlplane.PublicScenario
 	if err := json.Unmarshal(data, &scenario); err != nil {
-		return JSONScenario{}, err
+		return nil, err
 	}
+
+	cfp := customFlagParser{
+		scenario: &scenario,
+	}
+
+	cfp.Get(data)
+
 	return JSONScenario{&scenario}, nil
 }
 
