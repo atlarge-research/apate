@@ -18,11 +18,6 @@ service Scenario {
 message ApateletScenario {
     // A scenario consists of multiple tasks that will be scheduled on a Apatelet
     repeated Task task = 1;
-
-    // A unix time stamp indicating when this scenario will start
-    // Should be enough time such that every Apatelet has received the startScenario request
-    // The task timestamps will be relative to this time
-    int32 start_time = 2;
 }
 
 message Task {
@@ -30,12 +25,19 @@ message Task {
     bool revert_task = 1;
 
     // The timestamp on which this task will be executed
-    // Is in milliseconds since the scenario has started
-    int32 timestamp = 2;
+    // Is in nanoseconds since the scenario has started
+    // Note that this field should not be used by the apatelet!
+    int64 relative_timestamp = 2;
+
+    // The timestamp on which this task will be executed
+    // Is a nanosecond unix timestamp
+    // This is the timestamp field that should be used by the apatelet!
+    int64 absolute_timestamp = 3;
 
     // The UUID of the nodes on which this task will be executed
-    repeated string node_set = 3;
+    // Should not be used by the apatelet as every task it receives is target towards that apatelet
+    map<string, bool> node_set = 4;
 
-    // The event belonging to this task
-    map<int32, google.protobuf.Any> event_flags = 4;
+    // The event flags belonging to this task
+    map<int32, google.protobuf.Any> event_flags = 5;
 }

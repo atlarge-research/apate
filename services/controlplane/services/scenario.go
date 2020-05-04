@@ -3,9 +3,15 @@ package services
 import (
 	"context"
 	"log"
+	"time"
+
+	"golang.org/x/sync/errgroup"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
+	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
@@ -14,6 +20,10 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 )
+
+// The amount of seconds to wait with starting the scenario
+// Should be large enough so that all apatelets have received the scenario and are ready
+const amountOfSecondsToWait = 15
 
 type scenarioService struct {
 	store *store.Store
@@ -55,32 +65,65 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
-		log.Print(err)
+		scenario.Failed(err)
 		return nil, err
 	}
 
 	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {
-		log.Print(err)
+		scenario.Failed(err)
 		return nil, err
 	}
 
-	// TODO set the start time on the apatelet scenario (apateletScenario.startTime)
-	// TODO make the task times absolute
+	startTime := time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano()
+	convertToAbsoluteTimestamp(apateletScenario, startTime)
 
-	// TODO make async
-	for _, node := range nodes {
-		scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
-		_, err := scenarioClient.Client.StartScenario(ctx, apateletScenario)
-
-		if err != nil {
-			log.Fatalf("Could not complete call: %v", err)
-		}
-
-		if err := scenarioClient.Conn.Close(); err != nil {
-			log.Fatal("Failed to close connection")
-		}
+	err = startOnNodes(ctx, nodes, apateletScenario)
+	if err != nil {
+		scenario.Failed(err)
+		return nil, err
 	}
 
 	return new(empty.Empty), nil
+}
+
+func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *apiApatelet.ApateletScenario) error {
+	errs, ctx := errgroup.WithContext(ctx)
+
+	for i := range nodes {
+		node := nodes[i]
+		errs.Go(func() error {
+			ft := filterTasksForNode(apateletScenario.Task, node.UUID.String())
+			nodeSc := &apiApatelet.ApateletScenario{Task: ft}
+
+			scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
+			_, err := scenarioClient.Client.StartScenario(ctx, nodeSc)
+
+			if err != nil {
+				return err
+			}
+
+			return scenarioClient.Conn.Close()
+		})
+	}
+
+	return errs.Wait()
+}
+
+func convertToAbsoluteTimestamp(as *apiApatelet.ApateletScenario, unixNanoStartTime int64) {
+	for _, t := range as.Task {
+		newStartTimeNano := t.RelativeTimestamp + unixNanoStartTime
+		t.AbsoluteTimestamp = newStartTimeNano
+		t.RelativeTimestamp = 0 // Reset
+	}
+}
+
+func filterTasksForNode(inputTasks []*apiApatelet.Task, uuid string) []*apiApatelet.Task {
+	filteredTasks := make([]*apiApatelet.Task, 0)
+	for _, t := range inputTasks {
+		if t.NodeSet[uuid] {
+			filteredTasks = append(filteredTasks, t)
+		}
+	}
+	return filteredTasks
 }
