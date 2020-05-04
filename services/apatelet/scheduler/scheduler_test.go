@@ -29,13 +29,13 @@ func TestTaskHandlerSimple(t *testing.T) {
 
 	// Test task:
 	task := apatelet.Task{
-		EventFlags: map[int32]*anypb.Any{
+		NodeEventFlags: map[int32]*anypb.Any{
 			events.NodeCreatePodResponse: a,
 		},
 	}
 
 	// Set up expectations
-	ms.EXPECT().SetFlag(events.NodeCreatePodResponse, scenario.Response_ERROR)
+	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_ERROR)
 
 	var s store.Store = ms
 	sched := Scheduler{&s}
@@ -64,15 +64,15 @@ func TestTaskHandlerMultiple(t *testing.T) {
 
 	// Test task:
 	task := apatelet.Task{
-		EventFlags: map[int32]*anypb.Any{
+		NodeEventFlags: map[int32]*anypb.Any{
 			events.NodeCreatePodResponse: m1,
 			events.NodeAddedLatencyMsec:  m2,
 		},
 	}
 
 	// Set up expectations
-	ms.EXPECT().SetFlag(events.NodeCreatePodResponse, scenario.Response_ERROR)
-	ms.EXPECT().SetFlag(events.NodeAddedLatencyMsec, int64(42))
+	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_ERROR)
+	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
 
 	var s store.Store = ms
 	sched := Scheduler{&s}
@@ -101,7 +101,7 @@ func TestTaskHandlerError(t *testing.T) {
 
 	// Test task:
 	task := apatelet.Task{
-		EventFlags: map[int32]*anypb.Any{
+		NodeEventFlags: map[int32]*anypb.Any{
 			events.NodeCreatePodResponse: &a,
 		},
 	}
@@ -133,7 +133,7 @@ func TestRunner(t *testing.T) {
 
 	// Test task:
 	task := apatelet.Task{
-		EventFlags: map[int32]*anypb.Any{
+		NodeEventFlags: map[int32]*anypb.Any{
 			events.NodeCreatePodResponse: a,
 		},
 	}
@@ -141,7 +141,7 @@ func TestRunner(t *testing.T) {
 	// Expectations
 	ms.EXPECT().PeekTask().Return(int64(0), nil)
 	ms.EXPECT().PopTask().Return(&task, nil)
-	ms.EXPECT().SetFlag(gomock.Any(), gomock.Any())
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
 
 	var s store.Store = ms
 	sched := Scheduler{&s}
@@ -220,7 +220,7 @@ func TestStartScheduler(t *testing.T) {
 
 	// Test task:
 	task := apatelet.Task{
-		EventFlags: map[int32]*anypb.Any{
+		NodeEventFlags: map[int32]*anypb.Any{
 			events.NodeCreatePodResponse: a,
 		},
 	}
@@ -228,7 +228,7 @@ func TestStartScheduler(t *testing.T) {
 	// Expectations
 	ms.EXPECT().PeekTask().Return(int64(0), nil)
 	ms.EXPECT().PopTask().Return(&task, nil)
-	ms.EXPECT().SetFlag(gomock.Any(), gomock.Any())
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
 
 	// any further peeks are well into the future
 	ms.EXPECT().PeekTask().Return(time.Now().Add(time.Hour*12).UnixNano(), nil).AnyTimes()

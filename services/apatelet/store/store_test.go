@@ -95,7 +95,7 @@ func TestUnsetFlag(t *testing.T) {
 	st := NewStore()
 
 	// Retrieve unset flag and verify default value and err
-	val, err := st.GetFlag(42)
+	val, err := st.GetNodeFlag(42)
 	assert.Nil(t, val)
 	assert.Error(t, err)
 }
@@ -105,12 +105,12 @@ func TestSetFlag(t *testing.T) {
 	st := NewStore()
 
 	// Set flag
-	st.SetFlag(42, 15)
-	st.SetFlag(42, false)
-	st.SetFlag(42, "k8s")
+	st.SetNodeFlag(42, 15)
+	st.SetNodeFlag(42, false)
+	st.SetNodeFlag(42, "k8s")
 
 	// Retrieve unset flag and verify default value and err
-	val, err := st.GetFlag(42)
+	val, err := st.GetNodeFlag(42)
 	assert.Equal(t, "k8s", val)
 	assert.NoError(t, err)
 }
