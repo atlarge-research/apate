@@ -198,8 +198,6 @@ func (et *EventTranslator) translateNodeEventFlags() error {
 			return err
 		}
 		nef.flag(ephStorage, ef.NodeEphemeralStorageUsage)
-	default:
-		return errors.New("unknown node event")
 	}
 
 	et.newTask.NodeEventFlags = nef

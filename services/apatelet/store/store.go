@@ -130,7 +130,7 @@ func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val i
 	defer s.podFlagLock.Unlock()
 
 	if conf, ok := s.podFlags[configuration]; ok {
-		conf[flag] = flag
+		conf[flag] = val
 	} else {
 		s.podFlags[configuration] = make(flags)
 		s.podFlags[configuration][flag] = val
