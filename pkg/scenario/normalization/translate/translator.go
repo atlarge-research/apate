@@ -41,6 +41,10 @@ func (et *EventTranslator) TranslateEvent() (err error) {
 }
 
 func (et *EventTranslator) translatePodEventFlags() error {
+	if et.originalTask.PodConfigs == nil {
+		return nil
+	}
+
 	for _, podConfig := range et.originalTask.PodConfigs {
 		pef := newEventFlags()
 
@@ -97,6 +101,10 @@ func (et *EventTranslator) translatePodEventFlags() error {
 
 func (et *EventTranslator) translateNodeEventFlags() error {
 	nef := newEventFlags()
+
+	if et.originalTask.NodeEvent == nil {
+		return nil
+	}
 
 	// et.originalTask.Event can be one of many types (see generated protobuf code)
 	// ne will be the cast version of this event to the corresponding event, depending on the case
@@ -191,7 +199,7 @@ func (et *EventTranslator) translateNodeEventFlags() error {
 		}
 		nef.flag(ephStorage, ef.NodeEphemeralStorageUsage)
 	default:
-		return errors.New("invalid node request thingy")
+		return errors.New("unknown node event")
 	}
 
 	et.newTask.NodeEventFlags = nef

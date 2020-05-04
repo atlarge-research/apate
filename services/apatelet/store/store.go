@@ -28,7 +28,7 @@ type Store interface {
 	// GetNodeFlag returns the value of the given node flag
 	GetNodeFlag(events.NodeEventFlag) (interface{}, error)
 
-	// SetNodeFlag sets the value of the given flag
+	// SetNodeFlag sets the value of the given node flag
 	SetNodeFlag(events.NodeEventFlag, interface{})
 
 	// GetPodFlag returns the value of the given pod flag for a configuration
