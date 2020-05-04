@@ -231,15 +231,13 @@ func TestStartScheduler(t *testing.T) {
 	ms.EXPECT().SetFlag(gomock.Any(), gomock.Any())
 
 	// any further peeks are well into the future
-	ms.EXPECT().PeekTask().Return(time.Now().Add(time.Hour*12).Unix(), nil).AnyTimes()
+	ms.EXPECT().PeekTask().Return(time.Now().Add(time.Hour*12).UnixNano(), nil).AnyTimes()
 
 	var s store.Store = ms
 	sched := Scheduler{&s}
 
 	// Run code under test
-	ech := make(chan error, 1)
-
-	sched.StartScheduler(ctx)
+	ech := sched.StartScheduler(ctx)
 
 	time.Sleep(time.Second)
 

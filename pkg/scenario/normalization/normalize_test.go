@@ -76,8 +76,6 @@ tasks:
 	ps, nodes, err := NormalizeScenario(getScenario)
 	assert.NoError(t, err)
 
-	// Should be 0 because this is set when the scenario is started.
-	assert.Equal(t, int32(0), ps.StartTime)
 	assert.Equal(t, 3, len(ps.Task))
 	assert.Equal(t, false, ps.Task[0].RevertTask)
 	assert.Equal(t, 42, len(ps.Task[0].NodeSet))
