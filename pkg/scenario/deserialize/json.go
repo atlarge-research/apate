@@ -1,10 +1,11 @@
 package deserialize
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"path/filepath"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 )
@@ -26,9 +27,8 @@ func (s JSONScenario) FromFile(filename string) (Deserializer, error) {
 
 // FromBytes creates a new JSONScenario from a byte array of data.
 func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
-
 	var scenario controlplane.PublicScenario
-	if err := json.Unmarshal(data, &scenario); err != nil {
+	if err := protojson.Unmarshal(data, &scenario); err != nil {
 		return nil, err
 	}
 
@@ -36,7 +36,9 @@ func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
 		scenario: &scenario,
 	}
 
-	cfp.Get(data)
+	if err := cfp.parse(data); err != nil {
+		return nil, err
+	}
 
 	return JSONScenario{&scenario}, nil
 }
