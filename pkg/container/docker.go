@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -29,9 +27,6 @@ const (
 
 	// DockerAddressPrefix specifies the docker address prefix, used for determining the docker address
 	DockerAddressPrefix = "172.17."
-
-	// StaggeredGroupSize represents the amount of containers we spawn at once
-	StaggeredGroupSize = 5
 )
 
 // SpawnCall is function which takes in the number of the container, then spawns the container
@@ -73,28 +68,14 @@ func HandleSpawnContainers(ctx context.Context, cli *client.Client, info SpawnIn
 
 	// Create error group to handle async spawning
 	group, ctx := errgroup.WithContext(ctx)
-	cnt := 0
 
-	log.Printf("Spawning %d containers", info.amount)
 	for i := 0; i < info.amount; i++ {
 		i := i
 
 		// Spawn container
-		//group.Go(func() error {
-		//	return info.callback(i, ctx)
-		//})
-
-		err := info.callback(i, ctx)
-
-		if err != nil {
-			return err
-		}
-
-		cnt++
-		if cnt == StaggeredGroupSize {
-			time.Sleep(time.Millisecond * 500)
-			cnt = 0
-		}
+		group.Go(func() error {
+			return info.callback(i, ctx)
+		})
 	}
 
 	return group.Wait()
@@ -119,8 +100,6 @@ func checkLocalImage(ctx context.Context, cli *client.Client, imageName string) 
 }
 
 func removeOldContainers(ctx context.Context, cli *client.Client, name string) error {
-	log.Printf("Removing all containers named %s\n", name)
-
 	// Retrieve all old apatelet containers
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true,
 		Filters: filters.NewArgs(filters.Arg("status", "exited"), filters.Arg("name", name))})
@@ -142,8 +121,6 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 }
 
 func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy string) error {
-	log.Printf("Preparing image %s\n", imageName)
-
 	switch pullPolicy {
 	case AlwaysPull:
 		return alwaysPull(ctx, cli, imageName)
