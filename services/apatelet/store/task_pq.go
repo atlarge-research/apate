@@ -32,7 +32,6 @@ func (q *taskQueue) Less(i, j int) bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
-	// TODO: Change sorting to absolute timestamp instead of relative
 	return q.tasks[i].AbsoluteTimestamp < q.tasks[j].AbsoluteTimestamp
 }
 
