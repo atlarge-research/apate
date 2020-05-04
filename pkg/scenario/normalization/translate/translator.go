@@ -11,6 +11,8 @@ import (
 	ef "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
+const percentageRangeErrorMessage = "percentage should be between 0 and 100"
+
 // EventTranslator is a utility to translate events between events sent through the public api to events understood by the Apatelets
 type EventTranslator struct {
 	originalTask *controlplane.Task
@@ -26,18 +28,13 @@ func NewEventTranslator(originalTask *controlplane.Task, newTask *apatelet.Task)
 }
 
 // TranslateEvent translates events sent through the public api to events understood by the Apatelets
-func (et *EventTranslator) TranslateEvent() (err error) {
-	err = et.translateNodeEventFlags()
+func (et *EventTranslator) TranslateEvent() error {
+	err := et.translateNodeEventFlags()
 	if err != nil {
 		return err
 	}
 
-	err = et.translatePodEventFlags()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return et.translatePodEventFlags()
 }
 
 func (et *EventTranslator) translatePodEventFlags() error {
@@ -53,7 +50,7 @@ func (et *EventTranslator) translatePodEventFlags() error {
 			state := pe.PodResponseState
 
 			if state.Percentage < 0 || state.Percentage > 100 {
-				return errors.New("percentage should be between 0 and 100")
+				return errors.New(percentageRangeErrorMessage)
 			}
 
 			switch state.Type {
@@ -83,7 +80,7 @@ func (et *EventTranslator) translatePodEventFlags() error {
 
 		case *controlplane.PodConfig_PodStatusUpdate:
 			if pe.PodStatusUpdate.Percentage < 0 || pe.PodStatusUpdate.Percentage > 100 {
-				return errors.New("percentage should be between 0 and 100")
+				return errors.New(percentageRangeErrorMessage)
 			}
 
 			pef.flag(pe.PodStatusUpdate.NewStatus, ef.PodUpdatePodStatus)
@@ -100,11 +97,11 @@ func (et *EventTranslator) translatePodEventFlags() error {
 }
 
 func (et *EventTranslator) translateNodeEventFlags() error {
-	nef := newEventFlags()
-
 	if et.originalTask.NodeEvent == nil {
 		return nil
 	}
+
+	nef := newEventFlags()
 
 	// et.originalTask.Event can be one of many types (see generated protobuf code)
 	// ne will be the cast version of this event to the corresponding event, depending on the case
@@ -138,7 +135,7 @@ func (et *EventTranslator) translateNodeEventFlags() error {
 		state := ne.NodeResponseState
 
 		if state.Percentage < 0 || state.Percentage > 100 {
-			return errors.New("percentage should be between 0 and 100")
+			return errors.New(percentageRangeErrorMessage)
 		}
 
 		switch state.Type {
