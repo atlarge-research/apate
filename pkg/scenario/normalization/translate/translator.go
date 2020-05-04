@@ -88,6 +88,9 @@ func (et *EventTranslator) translatePodEventFlags() error {
 
 			pef.flag(pe.PodStatusUpdate.NewStatus, ef.PodUpdatePodStatus)
 			pef.flag(pe.PodStatusUpdate.Percentage, ef.PodUpdatePodStatusPercentage)
+
+		case *controlplane.PodConfig_CustomFlags:
+			pef = pe.CustomFlags.CustomFlags
 		}
 
 		podConfig := &apatelet.PodConfig{
@@ -198,6 +201,9 @@ func (et *EventTranslator) translateNodeEventFlags() error {
 			return err
 		}
 		nef.flag(ephStorage, ef.NodeEphemeralStorageUsage)
+
+	case *controlplane.Task_CustomFlags:
+		nef = ne.CustomFlags.CustomFlags
 	}
 
 	et.newTask.NodeEventFlags = nef

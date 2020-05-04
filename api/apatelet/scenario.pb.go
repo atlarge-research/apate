@@ -100,7 +100,7 @@ type Task struct {
 	NodeSet map[string]bool `protobuf:"bytes,4,rep,name=node_set,json=nodeSet,proto3" json:"node_set,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 	// The node event flags belonging to this task
 	NodeEventFlags map[int32]*any.Any `protobuf:"bytes,5,rep,name=node_event_flags,json=nodeEventFlags,proto3" json:"node_event_flags,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// The pod event flags belonging to this task
+	// The pod configurations belonging to this task
 	PodConfigs []*PodConfig `protobuf:"bytes,6,rep,name=pod_configs,json=podConfigs,proto3" json:"pod_configs,omitempty"`
 }
 

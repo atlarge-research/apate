@@ -58,11 +58,13 @@ message Task {
         events.ResponseState node_response_state = 9;
 
         events.ResourcePressure resource_pressure = 10;
+
+        events.CustomFlags custom_flags = 11;
     }
 
     // The pod events to be executed
     // This field will be ignored when revert is true
-    repeated PodConfig pod_configs = 11;
+    repeated PodConfig pod_configs = 12;
 }
 
 message PodConfig {
@@ -70,9 +72,11 @@ message PodConfig {
     string metadata_name = 1;
 
     oneof pod_event {
-        events.ResponseState pod_response_state = 11;
+        events.ResponseState pod_response_state = 2;
 
-        events.PodStatusUpdate pod_status_update = 12;
+        events.PodStatusUpdate pod_status_update = 3;
+
+        events.CustomFlags custom_flags = 4;
     }
 }
 
