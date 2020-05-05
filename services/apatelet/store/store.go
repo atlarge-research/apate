@@ -25,24 +25,36 @@ type Store interface {
 	// PopTask returns the first task to be executed and removes it from the queue
 	PopTask() (*apatelet.Task, error)
 
-	// GetFlag returns the value of the given flag
-	GetFlag(events.EventFlag) (interface{}, error)
+	// GetNodeFlag returns the value of the given node flag
+	GetNodeFlag(events.NodeEventFlag) (interface{}, error)
 
-	// SetFlag sets the value of the given flag
-	SetFlag(events.EventFlag, interface{})
+	// SetNodeFlag sets the value of the given node flag
+	SetNodeFlag(events.NodeEventFlag, interface{})
+
+	// GetPodFlag returns the value of the given pod flag for a configuration
+	GetPodFlag(string, events.PodEventFlag) (interface{}, error)
+
+	// SetNodeFlag sets the value of the given pod flag for a configuration
+	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
+type flags map[events.EventFlag]interface{}
+type podFlags map[string]flags
+
 type store struct {
-	queue    *taskQueue
-	flags    map[events.EventFlag]interface{}
-	flagLock sync.RWMutex
+	queue        *taskQueue
+	nodeFlags    flags
+	nodeFlagLock sync.RWMutex
+	podFlags     podFlags
+	podFlagLock  sync.RWMutex
 }
 
 // NewStore returns an empty store
 func NewStore() Store {
 	return &store{
-		queue: newTaskQueue(),
-		flags: make(map[events.EventFlag]interface{}),
+		queue:     newTaskQueue(),
+		nodeFlags: make(flags),
+		podFlags:  make(podFlags),
 	}
 }
 
@@ -84,20 +96,43 @@ func (s *store) PopTask() (*apatelet.Task, error) {
 	return nil, errors.New("array in pq magically changed to a different type")
 }
 
-func (s *store) GetFlag(id events.EventFlag) (interface{}, error) {
-	s.flagLock.RLock()
-	defer s.flagLock.RUnlock()
+func (s *store) GetNodeFlag(id events.NodeEventFlag) (interface{}, error) {
+	s.nodeFlagLock.RLock()
+	defer s.nodeFlagLock.RUnlock()
 
-	if val, ok := s.flags[id]; ok {
+	if val, ok := s.nodeFlags[id]; ok {
 		return val, nil
 	}
 
 	return nil, errors.New("flag not set")
 }
 
-func (s *store) SetFlag(id events.EventFlag, val interface{}) {
-	s.flagLock.Lock()
-	defer s.flagLock.Unlock()
+func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
+	s.nodeFlagLock.Lock()
+	defer s.nodeFlagLock.Unlock()
 
-	s.flags[id] = val
+	s.nodeFlags[id] = val
+}
+
+func (s *store) GetPodFlag(configuration string, flag events.PodEventFlag) (interface{}, error) {
+	s.podFlagLock.Lock()
+	defer s.podFlagLock.Unlock()
+
+	if val, ok := s.podFlags[configuration][flag]; ok {
+		return val, nil
+	}
+
+	return nil, errors.New("flag not set")
+}
+
+func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val interface{}) {
+	s.podFlagLock.Lock()
+	defer s.podFlagLock.Unlock()
+
+	if conf, ok := s.podFlags[configuration]; ok {
+		conf[flag] = val
+	} else {
+		s.podFlags[configuration] = make(flags)
+		s.podFlags[configuration][flag] = val
+	}
 }
