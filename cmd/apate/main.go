@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	defaultControlPlaneAddress = "localhost"
+	defaultControlPlaneAddress          = "localhost"
 	defaultK8sConfigurationFileLocation = "./k8s.yml"
-	defaultControlPlanePort    = 8085
-	defaultControlPlaneTimeout = 30
+	defaultControlPlanePort             = 8085
+	defaultControlPlaneTimeout          = 30
 )
 
 func main() {

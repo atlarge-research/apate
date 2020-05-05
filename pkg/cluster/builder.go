@@ -2,9 +2,10 @@ package cluster
 
 import (
 	"errors"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"os"
 	"path"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kind"
 )

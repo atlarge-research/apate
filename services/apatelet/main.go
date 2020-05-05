@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"strconv"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
@@ -130,7 +131,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 		_ = client.Conn.Close()
 	}()
 
-	kubeconfig, res, err := client.JoinCluster(ctx, listenPort)
+	cfg, res, err := client.JoinCluster(ctx, listenPort)
 
 	// TODO: Better error handling
 	if err != nil {
@@ -139,7 +140,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 
 	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return kubeconfig, res
+	return cfg, res
 }
 
 func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {

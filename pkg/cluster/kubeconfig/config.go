@@ -1,10 +1,12 @@
+// Package kubeconfig provides the ability to create, read, and manage the kubeconfig file/bytes.
 package kubeconfig
 
 import (
-	"github.com/google/uuid"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/google/uuid"
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -33,14 +35,14 @@ func FromBytes(bytes []byte, path ...string) (*KubeConfig, error) {
 	}, nil
 }
 
-// GetKubeConfig Loads a KubeConfig from a file path.
+// FromPath Loads a KubeConfig from a file path.
 func FromPath(path string) (*KubeConfig, error) {
 	bytes, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, err
 	}
 
-	return &KubeConfig{path,bytes }, nil
+	return &KubeConfig{path, bytes}, nil
 }
 
 // GetConfig returns a kubernetes rest configuration from the KubeConfig.

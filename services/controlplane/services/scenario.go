@@ -2,26 +2,22 @@ package services
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
 	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-
-	"github.com/golang/protobuf/ptypes/empty"
 )
 
 // The amount of seconds to wait with starting the scenario
@@ -84,8 +80,6 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 		scenario.Failed(err)
 		return nil, err
 	}
-
-
 
 	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {

@@ -3,9 +3,11 @@
 package cluster
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 )
 
 // A KubernetesCluster object can be used to interact with kubernetes clusters.
@@ -61,6 +63,19 @@ func (c KubernetesCluster) RemoveNodeFromCluster(nodename string) error {
 	return c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{})
 }
 
-func (c KubernetesCluster) AddFromYaml() {
-	c.clientSet.RESTClient().Post()
+// GetNumberOfPendingPods will return the number of pods in the pending state.
+func (c KubernetesCluster) GetNumberOfPendingPods(namespace string) (int, error) {
+	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return -1, err
+	}
+
+	cnt := 0
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == corev1.PodPending {
+			cnt++
+		}
+	}
+
+	return cnt, nil
 }
