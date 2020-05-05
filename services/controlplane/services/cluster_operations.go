@@ -3,6 +3,7 @@ package services
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"net"
 
@@ -86,4 +87,14 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 
 	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
 	return &empty.Empty{}, nil
+}
+
+func (s *clusterOperationService) GetKubeConfig(_ context.Context, _ *empty.Empty) (*controlplane.KubeConfig, error) {
+	cfg, err := ioutil.ReadFile("/tmp/apate/config-ext")
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &controlplane.KubeConfig{Config: cfg}, nil
 }

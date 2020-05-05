@@ -2,6 +2,7 @@ package controlplane
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -23,6 +24,25 @@ func GetStatusClient(info *service.ConnectionInfo) *StatusClient {
 	return &StatusClient{
 		Conn:   conn,
 		Client: controlplane.NewStatusClient(conn),
+	}
+}
+
+// WaitForControlPlane waits for the control plane to be up and running
+func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
+	for {
+		_, err := c.Client.Status(ctx, new(empty.Empty))
+
+		deadline, _ := ctx.Deadline()
+
+		if deadline.Before(time.Now()) {
+			return errors.New("waiting too long on control plane, giving up")
+		}
+
+		if err == nil {
+			return nil
+		}
+
+		time.Sleep(time.Millisecond * 800)
 	}
 }
 
