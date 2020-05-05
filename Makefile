@@ -49,10 +49,13 @@ protobuf:
 	protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find . -type f -name "*.proto" -print`
 
 # Generates the various mocks
-mockgen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go
+mockgen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go ./services/apatelet/store/mock_store/store_mock.go
 
 ./api/health/mock_health/health_mock.go: ./api/health/health.pb.go
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/api/health Health_HealthStreamClient,HealthClient,Health_HealthStreamServer > $@
 
 ./services/controlplane/store/mock_store/store_mock.go: ./services/controlplane/store/store.go
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store Store > $@
+
+./services/apatelet/store/mock_store/store_mock.go: ./services/apatelet/store/store.go
+	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store Store > $@

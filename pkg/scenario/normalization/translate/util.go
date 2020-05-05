@@ -13,14 +13,14 @@ import (
 	"github.com/docker/go-units"
 )
 
-// DesugarTimestamp takes in a formatted duration string and returns the duration specified by this string in milliseconds.
+// DesugarTimestamp takes in a formatted duration string and returns the duration specified by this string in nanoseconds.
 func DesugarTimestamp(t string) (int, error) {
 	duration, err := time.ParseDuration(t)
 	if err != nil {
 		return 0, err
 	}
 
-	return int(duration.Milliseconds()), nil
+	return int(duration.Nanoseconds()), nil
 }
 
 // GetInBytes takes in a formatted size string and returns the size specified by this string in bytes.
@@ -53,7 +53,7 @@ func (ef EventFlags) flag(value interface{}, flag events.EventFlag) {
 	ef[flag] = mv
 }
 
-var nodeEventFlags = []events.EventFlag{
+var nodeEventFlags = []events.NodeEventFlag{
 	events.NodeCreatePodResponse,
 	events.NodeUpdatePodResponse,
 	events.NodeDeletePodResponse,
@@ -63,7 +63,7 @@ var nodeEventFlags = []events.EventFlag{
 	events.NodePingResponse,
 }
 
-var nodeEventPercentageFlags = []events.EventFlag{
+var nodeEventPercentageFlags = []events.NodeEventFlag{
 	events.NodeCreatePodResponsePercentage,
 	events.NodeUpdatePodResponsePercentage,
 	events.NodeDeletePodResponsePercentage,

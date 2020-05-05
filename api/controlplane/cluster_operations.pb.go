@@ -525,6 +525,7 @@ type ClusterOperationsClient interface {
 	JoinCluster(ctx context.Context, in *ApateletInformation, opts ...grpc.CallOption) (*JoinInformation, error)
 	// Removes the node from the cluster
 	LeaveCluster(ctx context.Context, in *LeaveInformation, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Returns the kube config file
 	GetKubeConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*KubeConfig, error)
 }
 
@@ -571,6 +572,7 @@ type ClusterOperationsServer interface {
 	JoinCluster(context.Context, *ApateletInformation) (*JoinInformation, error)
 	// Removes the node from the cluster
 	LeaveCluster(context.Context, *LeaveInformation) (*empty.Empty, error)
+	// Returns the kube config file
 	GetKubeConfig(context.Context, *empty.Empty) (*KubeConfig, error)
 }
 

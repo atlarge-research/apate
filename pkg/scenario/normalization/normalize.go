@@ -86,8 +86,8 @@ func normalizeTasks(c *normalizationContext) ([]*apatelet.Task, error) {
 		}
 
 		newTask := &apatelet.Task{
-			RevertTask: task.Revert,
-			Timestamp:  int32(timestamp),
+			RevertTask:        task.Revert,
+			RelativeTimestamp: int64(timestamp),
 		}
 
 		if task.Revert {
@@ -140,7 +140,8 @@ func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask
 	}
 
 	newTask.NodeSet = savedTask.NodeSet
-	newTask.EventFlags = savedTask.EventFlags
+	newTask.NodeEventFlags = savedTask.NodeEventFlags
+	newTask.PodConfigs = savedTask.PodConfigs
 
 	// Delete from the map so we can't revert it again
 	delete(c.taskNameParsed, task.Name)
@@ -148,11 +149,11 @@ func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask
 }
 
 // Generates a set of UUIDs based on the groups and the nodes in these groups
-func getNodeUUIDs(c *normalizationContext, nodeGroupNames []string) []string {
-	var nodeSet []string
+func getNodeUUIDs(c *normalizationContext, nodeGroupNames []string) map[string]bool {
+	nodeSet := make(map[string]bool)
 	for _, name := range nodeGroupNames {
 		for _, nodeUUID := range c.uuidsPerNodeGroup[name] {
-			nodeSet = append(nodeSet, nodeUUID.String())
+			nodeSet[nodeUUID.String()] = true
 		}
 	}
 	return nodeSet
