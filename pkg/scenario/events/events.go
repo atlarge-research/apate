@@ -4,10 +4,13 @@ package events
 // EventFlag is a flag to be used by the Apatelet
 type EventFlag = int32
 
+// NodeEventFlag is a node specific flag to be used by the Apatelet
+type NodeEventFlag = EventFlag
+
 const (
 	// NodeCreatePodResponse determines how to respond to the CreatePod request
 	// Can also be influenced on pod level
-	NodeCreatePodResponse EventFlag = iota
+	NodeCreatePodResponse NodeEventFlag = iota
 	// NodeCreatePodResponsePercentage determines what percentage of CreatePod requests have the above mentioned response
 	NodeCreatePodResponsePercentage
 
@@ -74,10 +77,15 @@ const (
 	// NodeAddedLatencyMsec is the amount of msec of latency
 	// Will default to 0 msec
 	NodeAddedLatencyMsec
+)
 
+// PodEventFlag is a pod specific flag to be used by the Apatelet
+type PodEventFlag = EventFlag
+
+const (
 	// PodCreatePodResponse determines how to respond to the CreatePod request
 	// Can also be influenced on node level
-	PodCreatePodResponse
+	PodCreatePodResponse PodEventFlag = iota
 	// PodCreatePodResponsePercentage determines what percentage of CreatePod requests have the above mentioned response
 	PodCreatePodResponsePercentage
 
