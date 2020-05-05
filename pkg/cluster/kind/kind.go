@@ -58,7 +58,6 @@ func useInternalKubeConfig(name string, kubeConfigLocation string) error {
 	args = append(args, "--internal")
 
 	cfg, err := os.Create(kubeConfigLocation)
-
 	if err != nil {
 		return err
 	}
@@ -70,11 +69,7 @@ func useInternalKubeConfig(name string, kubeConfigLocation string) error {
 	})
 
 	c.SetArgs(args)
-	if err := c.Execute(); err != nil {
-		return err
-	}
-
-	return nil
+	return c.Execute()
 }
 
 // DeleteCluster deletes a cluster with a given name.

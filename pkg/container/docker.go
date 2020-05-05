@@ -105,7 +105,7 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 		Filters: filters.NewArgs(filters.Arg("status", "exited"), filters.Arg("name", name))})
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Remove old apatelet containers
@@ -138,7 +138,7 @@ func alwaysPull(ctx context.Context, cli *client.Client, imageName string) error
 }
 
 func pullIfNotLocal(ctx context.Context, cli *client.Client, imageName string) error {
-	// Get version from docker hub
+	// Check if the image is locally available
 	localAvailable, err := checkLocalImage(ctx, cli, imageName)
 
 	if err != nil {
