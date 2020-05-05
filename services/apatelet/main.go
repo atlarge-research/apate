@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	cli "github.com/virtual-kubelet/node-cli"
+	"io/ioutil"
 	"strconv"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
-
-	"github.com/virtual-kubelet/virtual-kubelet/node"
-	"k8s.io/client-go/kubernetes"
-
+	"context"
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
@@ -16,16 +16,10 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
-
-	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-)
-
-var (
-	k8sVersion = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
 )
 
 func init() {
@@ -57,7 +51,13 @@ func main() {
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	kubeConfig, res := joinApateCluster(ctx, connectionInfo, listenPort)
+	config, res := joinApateCluster(ctx, connectionInfo, listenPort)
+
+	err = ioutil.WriteFile("/config", config, 0600)
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -65,19 +65,21 @@ func main() {
 	hc.StartStreamWithRetry(ctx, 3)
 
 	// Start the Apatelet
-	ctx, nc, cancel := createNodeController(ctx, kubeConfig, res)
+	nc, cancel, err := createNodeController(ctx, res)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
 		// TODO: Notify master / proper logging
-		if err = nc.Run(ctx); err != nil {
+		if err = nc.Run(); err != nil {
 			hc.SetStatus(healthpb.Status_UNHEALTHY)
 			log.Fatalf("Unable to start apatelet: %v", err)
 		}
 	}()
 
+	st := store.NewStore()
+
 	// Start gRPC server
-	server := createGRPC(listenPort)
+	server := createGRPC(listenPort, &st)
 
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
@@ -141,24 +143,13 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return kubeconfig, res
 }
 
-func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(ctx context.Context, res *normalization.NodeResources) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
-
-	restconfig, err := kubeConfig.GetConfig()
-	if err != nil {
-		log.Fatal("Could not parse config.")
-	}
-
-	client := kubernetes.NewForConfigOrDie(restconfig)
-	n := cluster.NewNode("apatelet", "agent", "apatelet-"+res.UUID.String(), k8sVersion)
-	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
-		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res)),
-		client.CoreV1().Nodes())
-
-	return ctx, nc, cancel
+	cmd, err := vkProvider.CreateProvider(ctx, res, 10250)
+	return cmd, cancel, err
 }
 
-func createGRPC(listenPort int) *service.GRPCServer {
+func createGRPC(listenPort int, store *store.Store) *service.GRPCServer {
 	// Retrieving connection information
 	listenAddress := container.RetrieveFromEnvironment(container.ApateletListenAddress, container.ApateletListenAddressDefault)
 
@@ -169,7 +160,7 @@ func createGRPC(listenPort int) *service.GRPCServer {
 	server := service.NewGRPCServer(connectionInfo)
 
 	// Add services
-	vkService.RegisterScenarioService(server)
+	vkService.RegisterScenarioService(server, store)
 
 	return server
 }

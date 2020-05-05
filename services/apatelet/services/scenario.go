@@ -20,8 +20,10 @@ type scenarioHandlerService struct {
 }
 
 // RegisterScenarioService registers the scenarioHandlerService to the given GRPCServer
-func RegisterScenarioService(server *service.GRPCServer) {
-	apatelet.RegisterScenarioServer(server.Server, &scenarioHandlerService{})
+func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
+	apatelet.RegisterScenarioServer(server.Server, &scenarioHandlerService{
+		store: store,
+	})
 }
 
 // StartScenario starts a given scenario on the current Apatelet

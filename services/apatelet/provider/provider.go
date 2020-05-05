@@ -1,117 +1,57 @@
-// Package provider implements the virtual kubelet provider emulate to facilitate emulating pods.
 package provider
 
 import (
-	"github.com/virtual-kubelet/virtual-kubelet/node/api"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-
-	"bytes"
 	"context"
-	"errors"
-	"io"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	"github.com/sirupsen/logrus"
+	cli "github.com/virtual-kubelet/node-cli"
+	logruscli "github.com/virtual-kubelet/node-cli/logrus"
+	"github.com/virtual-kubelet/node-cli/opts"
+	logruslogger "github.com/virtual-kubelet/virtual-kubelet/log/logrus"
 	"io/ioutil"
+	"os"
 
-	vkprov "github.com/virtual-kubelet/node-cli/provider"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/virtual-kubelet/node-cli/provider"
+	"github.com/virtual-kubelet/virtual-kubelet/log"
 )
 
-// VKProvider implements the virtual-kubelet provider interface
-type VKProvider struct {
-	Pods      map[types.UID]*corev1.Pod
-	resources *normalization.NodeResources
-}
+var (
+	k8sVersion = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
+)
 
-// CreateProvider returns the provider but with the vk type instead of our own.
-func CreateProvider(resources *normalization.NodeResources) vkprov.Provider {
-	return &VKProvider{
-		resources: resources,
-	}
-}
+func CreateProvider(ctx context.Context, res *normalization.NodeResources, port int32) (*cli.Command, error) {
+	logger := logrus.StandardLogger()
 
-// CreatePod takes a Kubernetes Pod and deploys it within the provider.
-func (p *VKProvider) CreatePod(_ context.Context, pod *corev1.Pod) error {
-	p.Pods[pod.UID] = pod
-	return nil
-}
-
-// UpdatePod takes a Kubernetes Pod and updates it within the provider.
-func (p *VKProvider) UpdatePod(_ context.Context, pod *corev1.Pod) error {
-	p.Pods[pod.UID] = pod
-	return nil
-}
-
-// DeletePod takes a Kubernetes Pod and deletes it from the provider.
-func (p *VKProvider) DeletePod(_ context.Context, pod *corev1.Pod) error {
-	delete(p.Pods, pod.UID)
-	return nil
-}
-
-// GetPod retrieves a pod by name.
-func (p *VKProvider) GetPod(_ context.Context, namespace, name string) (*corev1.Pod, error) {
-	// TODO: think about better structure for p.Pods
-	for _, element := range p.Pods {
-		if element.Namespace == namespace && element.Name == name {
-			return element, nil
-		}
+	log.L = logruslogger.FromLogrus(logrus.NewEntry(logger))
+	logConfig := &logruscli.Config{LogLevel: "info"}
+	op, err := opts.FromEnv()
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, errors.New("unable to find pod")
-}
+	op.KubeConfigPath = "/config"
+	op.ListenPort = port
+	op.Provider = "apatelet"
 
-// GetPodStatus retrieves the status of a pod by name.
-func (p *VKProvider) GetPodStatus(context.Context, string, string) (*corev1.PodStatus, error) {
-	return &corev1.PodStatus{}, nil
-}
+	_ = ioutil.WriteFile("/cert", []byte("-----BEGIN CERTIFICATE-----\nMIICnDCCAgWgAwIBAgIBBzANBgkqhkiG9w0BAQsFADBWMQswCQYDVQQGEwJBVTET\nMBEGA1UECBMKU29tZS1TdGF0ZTEhMB8GA1UEChMYSW50ZXJuZXQgV2lkZ2l0cyBQ\ndHkgTHRkMQ8wDQYDVQQDEwZ0ZXN0Y2EwHhcNMTUxMTA0MDIyMDI0WhcNMjUxMTAx\nMDIyMDI0WjBlMQswCQYDVQQGEwJVUzERMA8GA1UECBMISWxsaW5vaXMxEDAOBgNV\nBAcTB0NoaWNhZ28xFTATBgNVBAoTDEV4YW1wbGUsIENvLjEaMBgGA1UEAxQRKi50\nZXN0Lmdvb2dsZS5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAOHDFSco\nLCVJpYDDM4HYtIdV6Ake/sMNaaKdODjDMsux/4tDydlumN+fm+AjPEK5GHhGn1Bg\nzkWF+slf3BxhrA/8dNsnunstVA7ZBgA/5qQxMfGAq4wHNVX77fBZOgp9VlSMVfyd\n9N8YwbBYAckOeUQadTi2X1S6OgJXgQ0m3MWhAgMBAAGjazBpMAkGA1UdEwQCMAAw\nCwYDVR0PBAQDAgXgME8GA1UdEQRIMEaCECoudGVzdC5nb29nbGUuZnKCGHdhdGVy\nem9vaS50ZXN0Lmdvb2dsZS5iZYISKi50ZXN0LnlvdXR1YmUuY29thwTAqAEDMA0G\nCSqGSIb3DQEBCwUAA4GBAJFXVifQNub1LUP4JlnX5lXNlo8FxZ2a12AFQs+bzoJ6\nhM044EDjqyxUqSbVePK0ni3w1fHQB5rY9yYC5f8G7aqqTY1QOhoUk8ZTSTRpnkTh\ny4jjdvTZeLDVBlueZUTDRmy2feY5aZIU18vFDK08dTG0A87pppuv1LNIR3loveU8\n-----END CERTIFICATE-----\n"), 644)
+	_ = ioutil.WriteFile("/key", []byte("-----BEGIN PRIVATE KEY-----\nMIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAOHDFScoLCVJpYDD\nM4HYtIdV6Ake/sMNaaKdODjDMsux/4tDydlumN+fm+AjPEK5GHhGn1BgzkWF+slf\n3BxhrA/8dNsnunstVA7ZBgA/5qQxMfGAq4wHNVX77fBZOgp9VlSMVfyd9N8YwbBY\nAckOeUQadTi2X1S6OgJXgQ0m3MWhAgMBAAECgYAn7qGnM2vbjJNBm0VZCkOkTIWm\nV10okw7EPJrdL2mkre9NasghNXbE1y5zDshx5Nt3KsazKOxTT8d0Jwh/3KbaN+YY\ntTCbKGW0pXDRBhwUHRcuRzScjli8Rih5UOCiZkhefUTcRb6xIhZJuQy71tjaSy0p\ndHZRmYyBYO2YEQ8xoQJBAPrJPhMBkzmEYFtyIEqAxQ/o/A6E+E4w8i+KM7nQCK7q\nK4JXzyXVAjLfyBZWHGM2uro/fjqPggGD6QH1qXCkI4MCQQDmdKeb2TrKRh5BY1LR\n81aJGKcJ2XbcDu6wMZK4oqWbTX2KiYn9GB0woM6nSr/Y6iy1u145YzYxEV/iMwff\nDJULAkB8B2MnyzOg0pNFJqBJuH29bKCcHa8gHJzqXhNO5lAlEbMK95p/P2Wi+4Hd\naiEIAF1BF326QJcvYKmwSmrORp85AkAlSNxRJ50OWrfMZnBgzVjDx3xG6KsFQVk2\nol6VhqL6dFgKUORFUWBvnKSyhjJxurlPEahV6oo6+A+mPhFY8eUvAkAZQyTdupP3\nXEFQKctGz+9+gKkemDp7LBBMEMBXrGTLPhpEfcjv/7KPdnFHYmhYeBTBnuVmTVWe\nF98XJ7tIFfJq\n-----END PRIVATE KEY-----\n"), 644)
 
-// GetPods retrieves a list of all pods running.
-func (p *VKProvider) GetPods(context.Context) ([]*corev1.Pod, error) {
-	// TODO: Improve
-	var arr []*corev1.Pod
+	_ = os.Setenv("APISERVER_CERT_LOCATION", "/cert")
+	_ = os.Setenv("APISERVER_KEY_LOCATION", "/key")
 
-	for _, element := range p.Pods {
-		arr = append(arr, element)
-	}
+	nodeInfo := cluster.NewNode("apatelet", "agent", "apatelet-"+res.UUID.String(), k8sVersion)
 
-	return arr, nil
-}
+	node, err := cli.New(ctx,
+		cli.WithProvider("apatelet", func(cfg provider.InitConfig) (provider.Provider, error) {
+			return NewProvider(res, cfg, nodeInfo), nil
+		}),
+		cli.WithBaseOpts(op),
+		cli.WithPersistentFlags(logConfig.FlagSet()),
+		cli.WithPersistentPreRunCallback(func() error {
+			return logruscli.Configure(logConfig, logger)
+		}),
+	)
 
-// GetContainerLogs retrieves the log of a specific container.
-func (p *VKProvider) GetContainerLogs(context.Context, string, string, string, api.ContainerLogOpts) (io.ReadCloser, error) {
-	// We return empty string as the emulated containers don't have a log.
-	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate"))), nil
-}
-
-// RunInContainer retrieves the log of a specific container.
-func (p *VKProvider) RunInContainer(context.Context, string, string, string, []string, api.AttachIO) error {
-	// There is no actual process running in the containers, so we can't do anything.
-	return nil
-}
-
-// ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
-func (p *VKProvider) ConfigureNode(_ context.Context, v *corev1.Node) {
-	var cpu resource.Quantity
-	cpu.Set(p.resources.CPU)
-
-	var mem resource.Quantity
-	mem.Set(p.resources.Memory)
-
-	var pods resource.Quantity
-	pods.Set(p.resources.MaxPods)
-
-	var storage resource.Quantity
-	storage.Set(p.resources.Storage)
-
-	var ephemeralStorage resource.Quantity
-	ephemeralStorage.Set(p.resources.EphemeralStorage)
-
-	v.Status.Capacity = corev1.ResourceList{
-		corev1.ResourceCPU:              cpu,
-		corev1.ResourceMemory:           mem,
-		corev1.ResourcePods:             pods,
-		corev1.ResourceStorage:          storage,
-		corev1.ResourceEphemeralStorage: ephemeralStorage,
-	}
+	return node, err
 }
