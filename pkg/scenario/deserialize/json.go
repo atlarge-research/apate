@@ -36,7 +36,7 @@ func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
 		scenario: &scenario,
 	}
 
-	if err := cfp.parse(data); err != nil {
+	if err := cfp.parse(string(data)); err != nil {
 		return nil, err
 	}
 

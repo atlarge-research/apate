@@ -157,11 +157,13 @@ func (x *ResponseState) GetPercentage() int32 {
 	return 0
 }
 
+// The flags given by this message will be overridden on the apatelets
 type CustomFlags struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The actual flags to be overridden
 	CustomFlags map[int32]*any.Any `protobuf:"bytes,1,rep,name=custom_flags,json=customFlags,proto3" json:"custom_flags,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 

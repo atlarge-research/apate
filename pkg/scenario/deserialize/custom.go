@@ -2,9 +2,9 @@ package deserialize
 
 import (
 	"errors"
-	"log"
+	"fmt"
 
-	"github.com/buger/jsonparser"
+	"github.com/tidwall/gjson"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -18,231 +18,222 @@ import (
 type protoEventMap map[int32]*anypb.Any
 
 type customFlagParser struct {
+	// A parsed public scenario, only missing the custom flags events
 	scenario *controlplane.PublicScenario
 }
 
-func (cfp *customFlagParser) parse(json []byte) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				err = errors.New(x)
-			case error:
-				err = x
-			default:
-				err = errors.New("unknown panic")
+func (cfp *customFlagParser) parse(json string) error {
+	// JSON object looks as such: tasks[x].{custom_flags, pod_configs[y].custom_flags}
+	for i, task := range gjson.Get(json, "tasks").Array() {
+		currentParsedTask := cfp.scenario.Tasks[i]
+
+		// If the current task has custom flags
+		if hasCustomFlags(task) {
+			taskCustomFlags := make(protoEventMap)
+
+			// Parse them
+			if err := cfp.parseCustomFlags(task, &taskCustomFlags); err != nil {
+				return err
 			}
-		}
-	}()
-
-	tasksBytes, _, _, err := jsonparser.Get(json, "tasks")
-	if err != nil {
-		log.Panic(err)
-	}
-
-	taskIndex := 0
-	_, err = jsonparser.ArrayEach(tasksBytes, func(taskBytes []byte, _ jsonparser.ValueType, _ int, _ error) {
-		currentTask := cfp.scenario.Tasks[taskIndex]
-
-		taskCustomFlags := make(protoEventMap)
-		cfp.parseCustomFlags(taskBytes, &taskCustomFlags)
-
-		if hasCustomFlags(taskBytes) {
-			currentTask.NodeEvent = &controlplane.Task_CustomFlags{CustomFlags: &apiEvents.CustomFlags{CustomFlags: taskCustomFlags}}
+			currentParsedTask.NodeEvent = &controlplane.Task_CustomFlags{CustomFlags: &apiEvents.CustomFlags{CustomFlags: taskCustomFlags}}
 		}
 
-		// Explicitly ignore this error as it's also returned when pod_configs is not set, which we check by the next if
-		podConfigsBytes, podConfigsDataType, _, _ := jsonparser.Get(taskBytes, "pod_configs")
-		if podConfigsDataType == jsonparser.Array {
-			podConfigIndex := 0
-			_, err = jsonparser.ArrayEach(podConfigsBytes, func(podConfigBytes []byte, _ jsonparser.ValueType, _ int, _ error) {
+		// Iterate over the pod configs
+		for j, podConfig := range task.Get("pod_configs").Array() {
+			// If this pod config has custom flags
+			if hasCustomFlags(podConfig) {
 				podCustomFlags := make(protoEventMap)
-				cfp.parseCustomFlags(podConfigBytes, &podCustomFlags)
 
-				if hasCustomFlags(podConfigBytes) {
-					currentTask.PodConfigs[podConfigIndex].PodEvent = &controlplane.PodConfig_CustomFlags{CustomFlags: &apiEvents.CustomFlags{CustomFlags: podCustomFlags}}
+				// Parse them
+				if err := cfp.parseCustomFlags(podConfig, &podCustomFlags); err != nil {
+					return err
 				}
-
-				podConfigIndex++
-			})
-
-			if err != nil {
-				log.Panic(err)
+				currentParsedTask.PodConfigs[j].PodEvent = &controlplane.PodConfig_CustomFlags{CustomFlags: &apiEvents.CustomFlags{CustomFlags: podCustomFlags}}
 			}
 		}
-
-		taskIndex++
-	})
-
-	return err
-}
-
-func (cfp *customFlagParser) parseCustomFlags(flagBytes []byte, customFlags *protoEventMap) {
-	// Explicitly ignore this error as it's also returned when pod_configs is not set, which we check by the next if
-	flagBytes, flagDataType, _, _ := jsonparser.Get(flagBytes, "custom_flags")
-	if flagDataType == jsonparser.Object {
-		err := jsonparser.ObjectEach(flagBytes, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			ef, anyValue := cfp.parseKey(string(key), value)
-			(*customFlags)[ef] = anyMarshal.MarshalOrDie(anyValue)
-			return nil
-		})
-
-		if err != nil {
-			log.Panic(err)
-		}
 	}
+
+	return nil
 }
 
-func (cfp *customFlagParser) parseKey(key string, value []byte) (events.EventFlag, interface{}) {
+func (cfp *customFlagParser) parseCustomFlags(objectWithCustomFlags gjson.Result, customFlags *protoEventMap) error {
+	// Iterate over all set custom flags and fill the given map
+	for k, v := range objectWithCustomFlags.Get("custom_flags").Map() {
+		ef, anyValue, err := cfp.parseKey(k, v)
+		if err != nil {
+			return err
+		}
+
+		anyMarshalled, err := anyMarshal.Marshal(anyValue)
+		if err != nil {
+			return err
+		}
+
+		(*customFlags)[ef] = anyMarshalled
+	}
+
+	return nil
+}
+
+func (cfp *customFlagParser) parseKey(key string, value gjson.Result) (ef events.EventFlag, response interface{}, err error) {
 	switch key {
 	case "node_create_pod_response":
-		return events.NodeCreatePodResponse, getResponse(value)
+		ef = events.NodeCreatePodResponse
+		response, err = getResponse(value)
 	case "node_create_pod_response_percentage":
-		return events.NodeCreatePodResponsePercentage, getPercent(value)
+		ef = events.NodeCreatePodResponsePercentage
+		response, err = getPercent(value)
 
 	case "node_update_pod_response":
-		return events.NodeUpdatePodResponse, getResponse(value)
+		ef = events.NodeUpdatePodResponse
+		response, err = getResponse(value)
 	case "node_update_pod_response_percentage":
-		return events.NodeUpdatePodResponsePercentage, getPercent(value)
+		ef = events.NodeUpdatePodResponsePercentage
+		response, err = getPercent(value)
 
 	case "node_delete_pod_response":
-		return events.NodeDeletePodResponse, getResponse(value)
+		ef = events.NodeDeletePodResponse
+		response, err = getResponse(value)
 	case "node_delete_pod_response_percentage":
-		return events.NodeDeletePodResponsePercentage, getPercent(value)
+		ef = events.NodeDeletePodResponsePercentage
+		response, err = getPercent(value)
 
 	case "node_get_pod_response":
-		return events.NodeGetPodResponse, getResponse(value)
+		ef = events.NodeGetPodResponse
+		response, err = getResponse(value)
 	case "node_get_pod_response_percentage":
-		return events.NodeGetPodResponsePercentage, getPercent(value)
+		ef = events.NodeGetPodResponsePercentage
+		response, err = getPercent(value)
 
 	case "node_get_pod_status_response":
-		return events.NodeGetPodStatusResponse, getResponse(value)
+		ef = events.NodeGetPodStatusResponse
+		response, err = getResponse(value)
 	case "node_get_pod_status_response_percentage":
-		return events.NodeGetPodStatusResponsePercentage, getPercent(value)
+		ef = events.NodeGetPodStatusResponsePercentage
+		response, err = getPercent(value)
 
 	case "node_get_pods_response":
-		return events.NodeGetPodsResponse, getResponse(value)
+		ef = events.NodeGetPodsResponse
+		response, err = getResponse(value)
 	case "node_get_pods_response_percentage":
-		return events.NodeGetPodsResponsePercentage, getPercent(value)
+		ef = events.NodeGetPodsResponsePercentage
+		response, err = getPercent(value)
 
 	case "node_ping_response":
-		return events.NodePingResponse, getResponse(value)
+		ef = events.NodePingResponse
+		response, err = getResponse(value)
 	case "node_ping_response_percentage":
-		return events.NodePingResponsePercentage, getPercent(value)
+		ef = events.NodePingResponsePercentage
+		response, err = getPercent(value)
 
 	case "node_enable_resource_alteration":
-		return events.NodeEnableResourceAlteration, getBool(value)
+		return events.NodeEnableResourceAlteration, value.Bool(), nil
 	case "node_memory_usage":
-		return events.NodeMemoryUsage, getSize(value, "memory")
+		ef = events.NodeMemoryUsage
+		response, err = getSize(value, "memory")
 	case "node_cpu_usage":
-		return events.NodeCPUUsage, getIntMinZero(value)
+		ef = events.NodeCPUUsage
+		response, err = getIntMinZero(value)
 	case "node_storage_usage":
-		return events.NodeStorageUsage, getSize(value, "storage")
+		ef = events.NodeStorageUsage
+		response, err = getSize(value, "storage")
 	case "node_ephemeral_storage_usage":
-		return events.NodeEphemeralStorageUsage, getSize(value, "ephemeral storage")
+		ef = events.NodeEphemeralStorageUsage
+		response, err = getSize(value, "ephemeral storage")
 
 	case "node_added_latency_enabled":
-		return events.NodeAddedLatencyEnabled, getBool(value)
+		return events.NodeAddedLatencyEnabled, value.Bool(), nil
 	case "node_added_latency_msec":
-		return events.NodeAddedLatencyMsec, getIntMinZero(value)
+		ef = events.NodeAddedLatencyMsec
+		response, err = getIntMinZero(value)
 
 	case "pod_create_pod_response":
-		return events.PodCreatePodResponse, getResponse(value)
+		ef = events.PodCreatePodResponse
+		response, err = getResponse(value)
 	case "pod_create_pod_response_percentage":
-		return events.PodCreatePodResponsePercentage, getPercent(value)
+		ef = events.PodCreatePodResponsePercentage
+		response, err = getPercent(value)
 
 	case "pod_update_pod_response":
-		return events.PodUpdatePodResponse, getResponse(value)
+		ef = events.PodUpdatePodResponse
+		response, err = getResponse(value)
 	case "pod_update_pod_response_percentage":
-		return events.PodUpdatePodResponsePercentage, getPercent(value)
+		ef = events.PodUpdatePodResponsePercentage
+		response, err = getPercent(value)
 
 	case "pod_delete_pod_response":
-		return events.PodDeletePodResponse, getResponse(value)
+		ef = events.PodDeletePodResponse
+		response, err = getResponse(value)
 	case "pod_delete_pod_response_percentage":
-		return events.PodDeletePodResponsePercentage, getPercent(value)
+		ef = events.PodDeletePodResponsePercentage
+		response, err = getPercent(value)
 
 	case "pod_get_pod_response":
-		return events.PodGetPodResponse, getResponse(value)
+		ef = events.PodGetPodResponse
+		response, err = getResponse(value)
 	case "pod_get_pod_response_percentage":
-		return events.PodGetPodResponsePercentage, getPercent(value)
+		ef = events.PodGetPodResponsePercentage
+		response, err = getPercent(value)
 
 	case "pod_get_pod_status_response":
-		return events.PodGetPodStatusResponse, getResponse(value)
+		ef = events.PodGetPodStatusResponse
+		response, err = getResponse(value)
 	case "pod_get_pod_status_response_percentage":
-		return events.PodGetPodStatusResponsePercentage, getPercent(value)
+		ef = events.PodGetPodStatusResponsePercentage
+		response, err = getPercent(value)
 
 	case "pod_update_pod_status":
-		return events.PodUpdatePodStatus, getPodStatus(value)
+		ef = events.PodUpdatePodStatus
+		response, err = getPodStatus(value)
 	case "pod_update_pod_status_percentage":
-		return events.PodUpdatePodStatusPercentage, getPercent(value)
+		ef = events.PodUpdatePodStatusPercentage
+		response, err = getPercent(value)
 
 	default:
-		log.Panicf("invalid custom flag key '%s'", key)
-		return 0, nil
+		return 0, nil, fmt.Errorf("invalid custom flag key '%s'", key)
 	}
+
+	return ef, response, err
 }
 
-func hasCustomFlags(value []byte) bool {
-	flagBytes, flagDataType, _, _ := jsonparser.Get(value, "custom_flags")
-	return flagDataType == jsonparser.Object && len(flagBytes) > 0
+func hasCustomFlags(objectWithCustomFlags gjson.Result) bool {
+	return objectWithCustomFlags.Get("custom_flags").Exists()
 }
 
-func getResponse(value []byte) scenario.Response {
-	if response, ok := scenario.Response_value[getString(value)]; ok {
-		return scenario.Response(response)
+func getResponse(value gjson.Result) (scenario.Response, error) {
+	if response, ok := scenario.Response_value[value.String()]; ok {
+		return scenario.Response(response), nil
 	}
-	log.Panicf("invalid response '%v'", getString(value))
-	return 0
+	return 0, fmt.Errorf("invalid response '%v'", value.String())
 }
 
-func getPodStatus(value []byte) scenario.PodStatus {
-	if podStatus, ok := scenario.PodStatus_value[getString(value)]; ok {
-		return scenario.PodStatus(podStatus)
+func getPodStatus(value gjson.Result) (scenario.PodStatus, error) {
+	if podStatus, ok := scenario.PodStatus_value[value.String()]; ok {
+		return scenario.PodStatus(podStatus), nil
 	}
-	log.Panicf("invalid pod status '%v'", getString(value))
-	return 0
+	return 0, fmt.Errorf("invalid pod status '%v'", value.String())
 }
 
-func getSize(value []byte, unitName string) int64 {
-	inBytes, err := translate.GetInBytes(getString(value), unitName)
+func getSize(value gjson.Result, unitName string) (int64, error) {
+	inBytes, err := translate.GetInBytes(value.String(), unitName)
 	if err != nil {
-		log.Panic(err)
+		return 0, err
 	}
-	return inBytes
+	return inBytes, nil
 }
 
-func getPercent(value []byte) int64 {
-	percent := getInt(value)
+func getPercent(value gjson.Result) (int64, error) {
+	percent := value.Int()
 	if percent < 0 || percent > 100 {
-		log.Panic("percentage should be between 0 and 100")
+		return 0, errors.New("percentage should be between 0 and 100")
 	}
-	return percent
+	return percent, nil
 }
 
-func getIntMinZero(value []byte) int64 {
-	valueInt := getInt(value)
+func getIntMinZero(value gjson.Result) (int64, error) {
+	valueInt := value.Int()
 	if valueInt < 0 {
-		log.Panic("value should be at least 0")
+		return 0, errors.New("value should be at least 0")
 	}
-	return valueInt
-}
-
-func getInt(value []byte) int64 {
-	valueInt, err := jsonparser.GetInt(value)
-	if err != nil {
-		log.Panic(err)
-	}
-	return valueInt
-}
-
-func getBool(value []byte) bool {
-	valueBool, err := jsonparser.GetBoolean(value)
-	if err != nil {
-		log.Panic(err)
-	}
-	return valueBool
-}
-
-func getString(value []byte) string {
-	return string(value)
+	return valueInt, nil
 }
