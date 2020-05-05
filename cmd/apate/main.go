@@ -17,11 +17,13 @@ import (
 
 const (
 	defaultControlPlaneAddress = "localhost"
+	defaultK8sConfigurationFileLocation = "./k8s.yml"
 	defaultControlPlanePort    = 8083
 )
 
 func main() {
 	var scenarioFileLocation string
+	var k8sConfigurationFileLocation string
 	var controlPlaneAddress string
 	var controlPlanePort int
 
@@ -33,7 +35,7 @@ func main() {
 				Name:  "run",
 				Usage: "Runs a given scenario file on the Apate cluster",
 				Action: func(c *cli.Context) error {
-					return runScenario(scenarioFileLocation, controlPlaneAddress, controlPlanePort)
+					return runScenario(scenarioFileLocation, controlPlaneAddress, controlPlanePort, k8sConfigurationFileLocation)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -49,6 +51,15 @@ func main() {
 						Value:       defaultControlPlaneAddress,
 						DefaultText: defaultControlPlaneAddress,
 						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "k8s-config",
+						Usage:       "The location of the kubernetes configuration for the resources to be created",
+						EnvVars:     []string{"K8S_CONFIG_LOCATION"},
+						Required:    true,
+						Destination: &k8sConfigurationFileLocation,
+						Value:       defaultK8sConfigurationFileLocation,
+						DefaultText: defaultControlPlaneAddress,
 					},
 					&cli.IntFlag{
 						Name:        "port",
@@ -69,8 +80,8 @@ func main() {
 	}
 }
 
-func runScenario(scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int) error {
-	var deserializer deserialize.Deserializer
+func runScenario(scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int, configFileLocation string) error {
+	var scenarioDeserializer deserialize.Deserializer
 	var err error
 
 	if scenarioFileLocation == "-" {
@@ -82,12 +93,18 @@ func runScenario(scenarioFileLocation string, controlPlaneAddress string, contro
 			return err
 		}
 
-		deserializer, err = deserialize.YamlScenario{}.FromBytes(bytes)
+		scenarioDeserializer, err = deserialize.YamlScenario{}.FromBytes(bytes)
 	} else {
 		// Read the file given by the argument
-		deserializer, err = deserialize.YamlScenario{}.FromFile(scenarioFileLocation)
+		scenarioDeserializer, err = deserialize.YamlScenario{}.FromFile(scenarioFileLocation)
 	}
 
+	if err != nil {
+		return err
+	}
+
+	// Read the k8s configuration file
+	k8sConfig, err := ioutil.ReadFile(configFileLocation)
 	if err != nil {
 		return err
 	}
@@ -104,10 +121,13 @@ func runScenario(scenarioFileLocation string, controlPlaneAddress string, contro
 	// Initial call: load the scenario
 	scenarioClient := controlplane.GetScenarioClient(info)
 
-	scenario, err := deserializer.GetScenario()
+	scenario, err := scenarioDeserializer.GetScenario()
 	if err != nil {
 		return err
 	}
+
+	// Add k8sconfig to the scenerio
+	scenario.K8SConfiguration = k8sConfig
 
 	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
 	if err != nil {

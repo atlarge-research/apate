@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 	"log"
 	"time"
 
@@ -43,6 +44,11 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 		return nil, err
 	}
 
+	if err := kubectl.SaveResourceConfig(scenario.ResourceConfig); err != nil {
+		log.Print(err)
+		return nil, err
+	}
+
 	log.Printf("Adding %v to the queue", len(resources))
 	if err := (*s.store).AddResourcesToQueue(resources); err != nil {
 		log.Print(err)
@@ -69,6 +75,8 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 		return nil, err
 	}
 
+
+
 	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {
 		scenario.Failed(err)
@@ -79,6 +87,19 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 	convertToAbsoluteTimestamp(apateletScenario, startTime)
 
 	err = startOnNodes(ctx, nodes, apateletScenario)
+	if err != nil {
+		scenario.Failed(err)
+		return nil, err
+	}
+
+	cfg, err := (*s.store).GetKubeConfig()
+	if err != nil {
+		scenario.Failed(err)
+		return nil, err
+	}
+
+	// TODO: This is probably very flaky
+	err = kubectl.Create(cfg)
 	if err != nil {
 		scenario.Failed(err)
 		return nil, err

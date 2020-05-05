@@ -26,6 +26,9 @@ message PublicScenario {
 
     // A scenario consists of an number of tasks.
     repeated Task tasks = 3;
+
+    // A kubernetes configuration file which will be deployed to the cluster
+    bytes resource_config = 4;
 }
 
 // A task is a part of a scenario describing what happens at a certain point in time.

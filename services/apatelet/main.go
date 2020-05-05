@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
 
@@ -104,7 +105,7 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	cancel()
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo) (cluster.KubeConfig, *normalization.NodeResources) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo) (*kubeconfig.KubeConfig, *normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
@@ -122,7 +123,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return kubeconfig, res
 }
 
-func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	restconfig, err := kubeConfig.GetConfig()
