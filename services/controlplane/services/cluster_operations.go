@@ -67,7 +67,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, _ *empty.Empt
 
 	// TODO: Retrieve proper kube context from somewhere
 	return &controlplane.JoinInformation{
-		KubeConfig: s.kubernetesCluster.KubeConfig,
+		KubeConfig: s.kubernetesCluster.KubeConfig.Bytes,
 		NodeUuid:   node.UUID.String(),
 		Hardware: &controlplane.NodeHardware{
 			Memory:           nodeResources.Memory,
