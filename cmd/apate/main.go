@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+
 	"github.com/golang/protobuf/ptypes/empty"
 
 	api "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -28,6 +30,8 @@ func main() {
 	var scenarioFileLocation string
 	var controlPlaneAddress string
 	var controlPlanePort int
+
+	env := container.DefaultControlPlaneEnvironment()
 
 	app := &cli.App{
 		Name:  "apate-cli",
@@ -64,6 +68,55 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:  "create",
+				Usage: "Creates a local control plane",
+				Action: func(c *cli.Context) error {
+					return createControlPlane(env)
+				},
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "address",
+						Usage:       "Listen address of control plane",
+						Destination: &env.Address,
+						Value:       env.Address,
+						DefaultText: container.ControlPlaneListenAddressDefault,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "port",
+						Usage:       "The port of the control plane",
+						Destination: &env.Port,
+						Value:       env.Port,
+						DefaultText: container.ControlPlaneListenPortDefault,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "config",
+						Usage:       "Manager config of cluster manager",
+						Destination: &env.ManagerConfig,
+						Value:       env.ManagerConfig,
+						DefaultText: container.ManagedClusterConfigDefault,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "external-ip",
+						Usage:       "IP used by apatelets to connect to control plane",
+						Destination: &env.ExternalIP,
+						Value:       env.ExternalIP,
+						DefaultText: container.ControlPlaneExternalIPDefault,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "docker-policy",
+						Usage:       "Docker pull policy",
+						Destination: &env.DockerPolicy,
+						Value:       env.DockerPolicy,
+						DefaultText: container.DefaultPullPolicy,
+						Required:    false,
+					},
+				},
+			},
 		},
 	}
 
@@ -72,6 +125,16 @@ func main() {
 		_, _ = color.New(color.FgRed).Printf("FAILED\nERROR: ")
 		fmt.Printf("%s\n", err.Error())
 	}
+}
+
+func createControlPlane(env container.ControlPlaneEnvironment) error {
+	fmt.Printf("%v\n", env)
+	fmt.Println("Creating control plane container")
+
+	err := container.SpawnControlPlane(context.Background(), container.PullIfNotLocal, env)
+
+	color.Green("DONE\n")
+	return err
 }
 
 func runScenario(scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int) error {

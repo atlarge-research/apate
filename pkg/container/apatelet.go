@@ -4,6 +4,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/docker/go-connections/nat"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -32,6 +34,13 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 		return err
 	}
 
+	// Get docker port for apatelet
+	port, err := nat.NewPort("tcp", env.Port)
+
+	if err != nil {
+		return err
+	}
+
 	// Set spawn information
 	spawnInfo := NewSpawnInformation(pullPolicy, apateletFullImage, apateletContainerPrefix, amountOfNodes, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
@@ -41,6 +50,9 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 				ControlPlanePort + "=" + strconv.Itoa(info.Port),
 				ApateletListenAddress + "=" + env.Address,
 				ApateletListenPort + "=" + env.Port,
+			},
+			ExposedPorts: nat.PortSet{
+				port: struct{}{},
 			},
 		}, nil, nil, apateletContainerPrefix+strconv.Itoa(i))
 

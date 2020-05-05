@@ -3,6 +3,10 @@ package container
 import (
 	"context"
 
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/go-connections/nat"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -32,6 +36,13 @@ func SpawnControlPlane(ctx context.Context, pullPolicy string, env ControlPlaneE
 		return err
 	}
 
+	// Get docker port for control plane
+	port, err := nat.NewPort("tcp", env.Port)
+
+	if err != nil {
+		return err
+	}
+
 	// Set spawn information
 	spawnInfo := NewSpawnInformation(pullPolicy, controlPlaneFullImage, controlPlaneContainerName, 1, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
@@ -43,7 +54,26 @@ func SpawnControlPlane(ctx context.Context, pullPolicy string, env ControlPlaneE
 				ControlPlaneExternalIP + "=" + env.ExternalIP,
 				ControlPlaneDockerPolicy + "=" + env.DockerPolicy,
 			},
-		}, nil, nil, controlPlaneContainerName)
+			ExposedPorts: nat.PortSet{
+				port: struct{}{},
+			},
+		}, &container.HostConfig{
+			PortBindings: nat.PortMap{
+				port: []nat.PortBinding{
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: env.Port,
+					},
+				},
+			},
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeBind,
+					Source: "/var/run/docker.sock",
+					Target: "/var/run/docker.sock",
+				},
+			},
+		}, &network.NetworkingConfig{}, controlPlaneContainerName)
 
 		if err != nil {
 			return err
