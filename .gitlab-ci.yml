@@ -29,6 +29,7 @@ variables:
   VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
+  CP_K8S_CONFIG: "$CI_PROJECT_DIR/pkg/cluster/kind/kind"
 
 default:
   image: $DIND_GO_IMAGE

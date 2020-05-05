@@ -40,7 +40,7 @@ node_failure: {}
 		events.NodePingResponse:                   any.MarshalOrDie(scenario.Response_TIMEOUT),
 		events.NodePingResponsePercentage:         any.MarshalOrDie(100),
 	}
-	assert.EqualValues(t, flags, newTask.EventFlags)
+	assert.EqualValues(t, flags, newTask.NodeEventFlags)
 }
 
 func TestNetworkLatency(t *testing.T) {
@@ -52,7 +52,7 @@ network_latency:
 		events.NodeAddedLatencyEnabled: any.MarshalOrDie(true),
 		events.NodeAddedLatencyMsec:    any.MarshalOrDie(int32(100)),
 	}
-	assert.EqualValues(t, flags, newTask.EventFlags)
+	assert.EqualValues(t, flags, newTask.NodeEventFlags)
 }
 
 func TestNegativeNetworkLatency(t *testing.T) {
@@ -81,7 +81,7 @@ timeout_keep_heartbeat: {}
 		events.NodeGetPodsResponsePercentage:      any.MarshalOrDie(100),
 		events.NodePingResponse:                   any.MarshalOrDie(scenario.Response_NORMAL),
 		events.NodePingResponsePercentage:         any.MarshalOrDie(0),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNoTimeoutNoHeartbeat(t *testing.T) {
@@ -91,7 +91,7 @@ no_timeout_no_heartbeat: {}
 	assert.EqualValues(t, EventFlags{
 		events.NodePingResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
 		events.NodePingResponsePercentage: any.MarshalOrDie(100),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNodeResponseStateCreatePod(t *testing.T) {
@@ -104,7 +104,7 @@ node_response_state:
 	assert.EqualValues(t, EventFlags{
 		events.NodeCreatePodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
 		events.NodeCreatePodResponsePercentage: any.MarshalOrDie(42),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNodeResponseStateUpdatePod(t *testing.T) {
@@ -117,7 +117,7 @@ node_response_state:
 	assert.EqualValues(t, EventFlags{
 		events.NodeUpdatePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
 		events.NodeUpdatePodResponsePercentage: any.MarshalOrDie(15),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNodeResponseStateDeletePod(t *testing.T) {
@@ -130,7 +130,7 @@ node_response_state:
 	assert.EqualValues(t, EventFlags{
 		events.NodeDeletePodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
 		events.NodeDeletePodResponsePercentage: any.MarshalOrDie(100),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNodeResponseStateGetPod(t *testing.T) {
@@ -143,7 +143,7 @@ node_response_state:
 	assert.EqualValues(t, EventFlags{
 		events.NodeGetPodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
 		events.NodeGetPodResponsePercentage: any.MarshalOrDie(14),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 func TestNodeResponseStateGetPodStatus(t *testing.T) {
 	newTask := getApateletTask(t, `
@@ -155,7 +155,7 @@ node_response_state:
 	assert.EqualValues(t, EventFlags{
 		events.NodeGetPodStatusResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
 		events.NodeGetPodStatusResponsePercentage: any.MarshalOrDie(42),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNodeResponseStateGetPods(t *testing.T) {
@@ -168,7 +168,7 @@ node_response_state:
 	assert.EqualValues(t, EventFlags{
 		events.NodeGetPodsResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
 		events.NodeGetPodsResponsePercentage: any.MarshalOrDie(65),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNodeResponseStatePing(t *testing.T) {
@@ -181,7 +181,7 @@ node_response_state:
 	assert.EqualValues(t, EventFlags{
 		events.NodePingResponse:           any.MarshalOrDie(scenario.Response_ERROR),
 		events.NodePingResponsePercentage: any.MarshalOrDie(50),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestNodeResponseStateLessThan0(t *testing.T) {
@@ -216,7 +216,7 @@ resource_pressure:
 		events.NodeMemoryUsage:              any.MarshalOrDie(21 * units.GiB),
 		events.NodeStorageUsage:             any.MarshalOrDie(84 * units.MiB),
 		events.NodeEphemeralStorageUsage:    any.MarshalOrDie(105 * units.KiB),
-	}, newTask.EventFlags)
+	}, newTask.NodeEventFlags)
 }
 
 func TestResourcePressureCpuBelow0(t *testing.T) {
@@ -262,130 +262,200 @@ resource_pressure:
 // Pod events
 func TestPodResponseStateCreatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_response_state:
- type: CREATE_POD
- response: ERROR
- percentage: 42
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: CREATE_POD
+            response: ERROR
+            percentage: 42
 `)
+	assert.Equal(t, "a", newTask.PodConfigs[0].MetadataName)
 	assert.EqualValues(t, EventFlags{
 		events.PodCreatePodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
 		events.PodCreatePodResponsePercentage: any.MarshalOrDie(42),
-	}, newTask.EventFlags)
+	}, newTask.PodConfigs[0].EventFlags)
 }
 
 func TestPodResponseStateUpdatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_response_state:
- type: UPDATE_POD
- response: TIMEOUT
- percentage: 15
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: UPDATE_POD
+            response: TIMEOUT
+            percentage: 15
 `)
+	assert.Equal(t, "a", newTask.PodConfigs[0].MetadataName)
 	assert.EqualValues(t, EventFlags{
 		events.PodUpdatePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
 		events.PodUpdatePodResponsePercentage: any.MarshalOrDie(15),
-	}, newTask.EventFlags)
+	}, newTask.PodConfigs[0].EventFlags)
 }
 
 func TestPodResponseStateDeletePod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_response_state:
- type: DELETE_POD
- response: ERROR
- percentage: 100
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: DELETE_POD
+            response: ERROR
+            percentage: 100
 `)
+	assert.Equal(t, "a", newTask.PodConfigs[0].MetadataName)
 	assert.EqualValues(t, EventFlags{
 		events.PodDeletePodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
 		events.PodDeletePodResponsePercentage: any.MarshalOrDie(100),
-	}, newTask.EventFlags)
+	}, newTask.PodConfigs[0].EventFlags)
 }
 
 func TestPodResponseStateGetPod(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_response_state:
- type: GET_POD
- response: ERROR
- percentage: 14
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: GET_POD
+            response: ERROR
+            percentage: 14
 `)
+	assert.Equal(t, "a", newTask.PodConfigs[0].MetadataName)
 	assert.EqualValues(t, EventFlags{
 		events.PodGetPodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
 		events.PodGetPodResponsePercentage: any.MarshalOrDie(14),
-	}, newTask.EventFlags)
+	}, newTask.PodConfigs[0].EventFlags)
 }
 
 func TestPodResponseStateGetPodStatus(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_response_state:
- type: GET_POD_STATUS
- response: TIMEOUT
- percentage: 42
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: GET_POD_STATUS
+            response: TIMEOUT
+            percentage: 42
 `)
+	assert.Equal(t, "a", newTask.PodConfigs[0].MetadataName)
 	assert.EqualValues(t, EventFlags{
 		events.PodGetPodStatusResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
 		events.PodGetPodStatusResponsePercentage: any.MarshalOrDie(42),
-	}, newTask.EventFlags)
+	}, newTask.PodConfigs[0].EventFlags)
+}
+
+func TestPodMultipleConfigs(t *testing.T) {
+	newTask := getApateletTask(t, `
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: GET_POD_STATUS
+            response: TIMEOUT
+            percentage: 42
+    -
+        metadata_name: b
+        pod_response_state:
+            type: DELETE_POD
+            response: ERROR
+            percentage: 100
+`)
+	assert.Equal(t, "a", newTask.PodConfigs[0].MetadataName)
+	assert.EqualValues(t, EventFlags{
+		events.PodGetPodStatusResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
+		events.PodGetPodStatusResponsePercentage: any.MarshalOrDie(42),
+	}, newTask.PodConfigs[0].EventFlags)
+
+	assert.Equal(t, "b", newTask.PodConfigs[1].MetadataName)
+	assert.EqualValues(t, EventFlags{
+		events.PodDeletePodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
+		events.PodDeletePodResponsePercentage: any.MarshalOrDie(100),
+	}, newTask.PodConfigs[1].EventFlags)
 }
 
 func TestPodResponseStateGetPods(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_response_state:
- type: GET_PODS
- response: TIMEOUT
- percentage: 65
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: GET_PODS
+            response: TIMEOUT
+            percentage: 65
 `, "can't alter the GetPods / Ping response on pod level")
 }
 
 func TestPodResponseStatePing(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_response_state:
- type: PING
- response: ERROR
- percentage: 50
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: PING
+            response: ERROR
+            percentage: 50
 `, "can't alter the GetPods / Ping response on pod level")
 }
 
 func TestPodResponseStateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_response_state:
- type: PING
- response: ERROR
- percentage: -50
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: PING
+            response: ERROR
+            percentage: -50
 `, "percentage should be between 0 and 100")
 }
 
 func TestPodResponseStateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_response_state:
- type: PING
- response: ERROR
- percentage: 420
+pod_configs:
+    -
+        metadata_name: a
+        pod_response_state:
+            type: PING
+            response: ERROR
+            percentage: 420
 `, "percentage should be between 0 and 100")
 }
 
 func TestPodStatusUpdate(t *testing.T) {
 	newTask := getApateletTask(t, `
-pod_status_update:
- new_status: POD_FAILED
- percentage: 15
+pod_configs:
+    -
+        metadata_name: a
+        pod_status_update:
+            new_status: POD_FAILED
+            percentage: 15
 `)
 	assert.EqualValues(t, EventFlags{
 		events.PodUpdatePodStatus:           any.MarshalOrDie(scenario.PodStatus_POD_FAILED),
 		events.PodUpdatePodStatusPercentage: any.MarshalOrDie(15),
-	}, newTask.EventFlags)
+	}, newTask.PodConfigs[0].EventFlags)
 }
 
 func TestPodStatusUpdateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_status_update:
- new_status: POD_FAILED
- percentage: -15
+pod_configs:
+    -
+        metadata_name: a
+        pod_status_update:
+            new_status: POD_FAILED
+            percentage: -15
 `, "percentage should be between 0 and 100")
 }
 
 func TestPodStatusUpdateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
-pod_status_update:
- new_status: POD_FAILED
- percentage: 150
+pod_configs:
+    -
+        metadata_name: a
+        pod_status_update: 
+            new_status: POD_FAILED
+            percentage: 150
 `, "percentage should be between 0 and 100")
 }
 

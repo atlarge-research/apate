@@ -21,7 +21,7 @@ func RegisterStatusService(server *service.GRPCServer, store *store.Store) {
 	controlplane.RegisterStatusServer(server.Server, &statusService{store: store})
 }
 
-func (s statusService) Status(_ context.Context, _ *empty.Empty) (*controlplane.ClusterStatus, error) {
+func (s *statusService) Status(_ context.Context, _ *empty.Empty) (*controlplane.ClusterStatus, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		return nil, err
