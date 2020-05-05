@@ -5,8 +5,9 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"sync"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 
@@ -58,14 +59,14 @@ type Store interface {
 }
 
 type store struct {
-	nodes         map[uuid.UUID]Node
-	nodeLock      sync.RWMutex
+	nodes    map[uuid.UUID]Node
+	nodeLock sync.RWMutex
 
 	resourceQueue list.List
 	resourceLock  sync.Mutex
 
-	scenario      *apatelet.ApateletScenario
-	scenarioLock  sync.RWMutex
+	scenario     *apatelet.ApateletScenario
+	scenarioLock sync.RWMutex
 
 	kubeConfig     kubeconfig.KubeConfig
 	kubeConfigLock sync.RWMutex
