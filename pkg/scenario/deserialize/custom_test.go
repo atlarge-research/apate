@@ -179,20 +179,6 @@ custom_flags:
 `, "value should be at least 0")
 }
 
-func TestCustomInvalidBool(t *testing.T) {
-	getErrorPublicScenario(t, `
-custom_flags:
-    node_added_latency_enabled: fffffff
-`)
-}
-
-func TestCustomInvalidInt(t *testing.T) {
-	getErrorPublicScenario(t, `
-custom_flags:
-    node_added_latency_msec: fffffff
-`)
-}
-
 func TestCustomInvalidSize(t *testing.T) {
 	getErrorPublicScenario(t, `
 custom_flags:
@@ -204,7 +190,7 @@ custom_flags:
 func getPublicScenario(t *testing.T, events string) *controlplane.PublicScenario {
 	jsonBytes, ps := getJSONBytes(t, events)
 	cfp := customFlagParser{scenario: ps}
-	err := cfp.parse(jsonBytes)
+	err := cfp.parse(string(jsonBytes))
 	assert.NoError(t, err)
 	return ps
 }
@@ -212,7 +198,7 @@ func getPublicScenario(t *testing.T, events string) *controlplane.PublicScenario
 func getErrorPublicScenario(t *testing.T, events string, msg ...string) {
 	jsonBytes, ps := getJSONBytes(t, events)
 	cfp := customFlagParser{scenario: ps}
-	err := cfp.parse(jsonBytes)
+	err := cfp.parse(string(jsonBytes))
 	assert.Error(t, err, msg)
 }
 

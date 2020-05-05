@@ -18,7 +18,10 @@ message ResponseState {
     int32 percentage = 3;
 }
 
+// The flags given by this message will be overridden on the apatelets
 message CustomFlags {
+
+    // The actual flags to be overridden
     map<int32, google.protobuf.Any> custom_flags = 1;
 }
 
