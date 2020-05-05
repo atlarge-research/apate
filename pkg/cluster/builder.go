@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"path"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kind"
 )
 
 // Builder allows for the creation of KubernetesClusters.
@@ -11,6 +13,7 @@ type Builder struct {
 	name               string
 	manager            Manager
 	kubeConfigLocation string
+	managerConfigPath  string
 }
 
 // New is used to create a new Builder with all fields empty.
@@ -21,7 +24,7 @@ func New() Builder {
 // Default is used to create a new Builder with all fields set to default values.
 func Default() (c Builder) {
 	c.name = "Apate"
-	c.manager = &KinD{}
+	c.manager = &kind.KinD{}
 	c.kubeConfigLocation = os.TempDir() + "/apate/config"
 	return c
 }
@@ -29,6 +32,12 @@ func Default() (c Builder) {
 // WithName is used to give the cluster that is to be built a name.
 func (b *Builder) WithName(name string) *Builder {
 	b.name = name
+	return b
+}
+
+// WithManagerConfig is used to set the path to the config for the manager, if applicable
+func (b *Builder) WithManagerConfig(path string) *Builder {
+	b.managerConfigPath = path
 	return b
 }
 
@@ -79,7 +88,7 @@ func (b *Builder) Create() (ManagedCluster, error) {
 		}
 	}
 
-	err := b.manager.CreateCluster(b.name, b.kubeConfigLocation)
+	err := b.manager.CreateCluster(b.name, b.kubeConfigLocation, b.managerConfigPath)
 	if err != nil {
 		// If something went wrong, there still could be a built cluster we can't interact with.
 		// delete the cluster to be safe for the next run, otherwise ForceCreate would be necessary

@@ -1,6 +1,11 @@
 package controlplane
 
 import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -19,5 +24,47 @@ func GetStatusClient(info *service.ConnectionInfo) *StatusClient {
 	return &StatusClient{
 		Conn:   conn,
 		Client: controlplane.NewStatusClient(conn),
+	}
+}
+
+// WaitForControlPlane waits for the control plane to be up and running
+func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
+	for {
+		_, err := c.Client.Status(ctx, new(empty.Empty))
+
+		deadline, _ := ctx.Deadline()
+
+		if deadline.Before(time.Now()) {
+			return errors.New("waiting too long on control plane, giving up")
+		}
+
+		if err == nil {
+			return nil
+		}
+
+		time.Sleep(time.Millisecond * 800)
+	}
+}
+
+// WaitForHealthy polls the server every second to retrieve the latest amount of healthy nodes and calls the
+// given update function after every poll
+func (c *StatusClient) WaitForHealthy(ctx context.Context, expectedApatelets int, update func(int)) error {
+	for {
+		res, err := c.Client.Status(ctx, new(empty.Empty))
+
+		if err != nil {
+			return err
+		}
+
+		healthy := int(res.HealthyNodes)
+
+		update(healthy)
+
+		if healthy >= expectedApatelets {
+			return nil
+		}
+
+		// Sleep for a second before trying again
+		time.Sleep(time.Second)
 	}
 }

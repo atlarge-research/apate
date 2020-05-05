@@ -15,6 +15,7 @@ import (
 type GRPCServer struct {
 	listener net.Listener
 	Server   *grpc.Server
+	Conn     *ConnectionInfo
 }
 
 // NewGRPCServer creates new gGRP server based on connection information
@@ -23,6 +24,7 @@ func NewGRPCServer(info *ConnectionInfo) *GRPCServer {
 	return &GRPCServer{
 		listener: lis,
 		Server:   server,
+		Conn:     info,
 	}
 }
 
@@ -34,7 +36,7 @@ func (s *GRPCServer) Serve() {
 }
 
 func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, server *grpc.Server) {
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", info.Port))
+	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", info.Address, info.Port))
 	var options []grpc.ServerOption
 
 	// Enable TLS if needed
@@ -45,7 +47,7 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 	server = grpc.NewServer(options...)
 
 	if err != nil {
-		log.Fatalf("Failed to listen on Port %d: %v", info.Port, err)
+		log.Fatalf("Failed to listen on  %s:%d because: %v", info.Address, info.Port, err)
 	}
 
 	return
