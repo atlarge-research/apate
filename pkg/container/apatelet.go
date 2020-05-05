@@ -52,7 +52,8 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 				ApateletListenPort + "=" + env.Port,
 			},
 			ExposedPorts: nat.PortSet{
-				port: struct{}{},
+				port:        struct{}{},
+				"10250/tcp": struct{}{},
 			},
 		}, nil, nil, apateletContainerPrefix+strconv.Itoa(i))
 
