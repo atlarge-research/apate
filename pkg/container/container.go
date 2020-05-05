@@ -73,18 +73,6 @@ const (
 	controlPlaneFullImage     = apateDocker + "/" + controlPlaneImageName
 )
 
-// GetPullPolicyControlPlane returns the pull policy active on the control plane
-func GetPullPolicyControlPlane() string {
-	var policy string
-	if val, ok := os.LookupEnv(ControlPlaneDockerPolicy); ok {
-		policy = val
-	} else {
-		policy = DefaultPullPolicy
-	}
-
-	return policy
-}
-
 // RetrieveFromEnvironment allows for a value to be retrieved from the environment
 func RetrieveFromEnvironment(key, def string) string {
 	if val, ok := os.LookupEnv(key); ok {

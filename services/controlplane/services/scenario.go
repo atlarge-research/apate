@@ -61,7 +61,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	}
 
 	// Retrieve pull policy
-	pullPolicy := container.GetPullPolicyControlPlane()
+	pullPolicy := container.RetrieveFromEnvironment(container.ControlPlaneDockerPolicy, container.ControlPlaneDockerPolicyDefault)
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
 	if err := container.SpawnApatelets(ctx, len(resources), s.info, pullPolicy, container.DefaultApateEnvironment()); err != nil {

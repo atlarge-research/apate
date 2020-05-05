@@ -16,5 +16,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o controlpl
 # Run stage
 FROM docker
 COPY --from=build /build/controlplane /controlplane
-COPY --from=build /build/pkg/cluster/kind/kind /tmp/apate/manager
+COPY --from=build /build/config/kind /tmp/apate/manager
 CMD ["/controlplane"]

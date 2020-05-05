@@ -33,7 +33,9 @@ func main() {
 	var controlPlaneAddress string
 	var controlPlanePort int
 	var controlPlaneTimeout int
+	var pullPolicy string
 
+	ctx := context.Background()
 	env := container.DefaultControlPlaneEnvironment()
 
 	app := &cli.App{
@@ -44,7 +46,7 @@ func main() {
 				Name:  "run",
 				Usage: "Runs a given scenario file on the Apate cluster",
 				Action: func(c *cli.Context) error {
-					return runScenario(scenarioFileLocation, controlPlaneAddress, controlPlanePort)
+					return runScenario(ctx, scenarioFileLocation, controlPlaneAddress, controlPlanePort)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -58,7 +60,6 @@ func main() {
 						Usage:       "The address of the control plane",
 						Destination: &controlPlaneAddress,
 						Value:       defaultControlPlaneAddress,
-						DefaultText: defaultControlPlaneAddress,
 						Required:    false,
 					},
 					&cli.IntFlag{
@@ -66,7 +67,6 @@ func main() {
 						Usage:       "The port of the control plane",
 						Destination: &controlPlanePort,
 						Value:       defaultControlPlanePort,
-						DefaultText: strconv.Itoa(defaultControlPlanePort),
 						Required:    false,
 					},
 				},
@@ -75,7 +75,7 @@ func main() {
 				Name:  "create",
 				Usage: "Creates a local control plane",
 				Action: func(c *cli.Context) error {
-					return createControlPlane(env, controlPlaneTimeout)
+					return createControlPlane(ctx, env, controlPlaneTimeout, pullPolicy)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -83,7 +83,6 @@ func main() {
 						Usage:       "Listen address of control plane",
 						Destination: &env.Address,
 						Value:       env.Address,
-						DefaultText: container.ControlPlaneListenAddressDefault,
 						Required:    false,
 					},
 					&cli.StringFlag{
@@ -91,7 +90,6 @@ func main() {
 						Usage:       "The port of the control plane",
 						Destination: &env.Port,
 						Value:       env.Port,
-						DefaultText: container.ControlPlaneListenPortDefault,
 						Required:    false,
 					},
 					&cli.StringFlag{
@@ -99,7 +97,6 @@ func main() {
 						Usage:       "Manager config of cluster manager",
 						Destination: &env.ManagerConfig,
 						Value:       env.ManagerConfig,
-						DefaultText: container.ManagedClusterConfigDefault,
 						Required:    false,
 					},
 					&cli.StringFlag{
@@ -107,15 +104,20 @@ func main() {
 						Usage:       "IP used by apatelets to connect to control plane",
 						Destination: &env.ExternalIP,
 						Value:       env.ExternalIP,
-						DefaultText: container.ControlPlaneExternalIPDefault,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "docker-policy-cp",
+						Usage:       "Docker pull policy for control plane",
+						Destination: &env.DockerPolicy,
+						Value:       env.DockerPolicy,
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "docker-policy",
-						Usage:       "Docker pull policy",
-						Destination: &env.DockerPolicy,
-						Value:       env.DockerPolicy,
-						DefaultText: container.DefaultPullPolicy,
+						Usage:       "Docker pull policy used for creating the control plane",
+						Destination: &pullPolicy,
+						Value:       container.DefaultPullPolicy,
 						Required:    false,
 					},
 					&cli.IntFlag{
@@ -123,7 +125,6 @@ func main() {
 						Usage:       "Time before giving up on the control plane in seconds",
 						Destination: &controlPlaneTimeout,
 						Value:       defaultControlPlaneTimeout,
-						DefaultText: strconv.Itoa(defaultControlPlaneTimeout),
 						Required:    false,
 					},
 				},
@@ -132,7 +133,7 @@ func main() {
 				Name:  "kubeconfig",
 				Usage: "Retrieves a kube configuration file from the control plane",
 				Action: func(c *cli.Context) error {
-					return getKubeConfig(controlPlaneAddress, controlPlanePort)
+					return getKubeConfig(ctx, controlPlaneAddress, controlPlanePort)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -140,7 +141,6 @@ func main() {
 						Usage:       "The address of the control plane",
 						Destination: &controlPlaneAddress,
 						Value:       defaultControlPlaneAddress,
-						DefaultText: defaultControlPlaneAddress,
 						Required:    false,
 					},
 					&cli.IntFlag{
@@ -148,7 +148,6 @@ func main() {
 						Usage:       "The port of the control plane",
 						Destination: &controlPlanePort,
 						Value:       defaultControlPlanePort,
-						DefaultText: strconv.Itoa(defaultControlPlanePort),
 						Required:    false,
 					},
 				},
@@ -163,8 +162,8 @@ func main() {
 	}
 }
 
-func getKubeConfig(address string, port int) error {
-	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false)).GetKubeConfig(context.Background())
+func getKubeConfig(ctx context.Context, address string, port int) error {
+	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false)).GetKubeConfig(ctx)
 
 	if err != nil {
 		return err
@@ -174,10 +173,14 @@ func getKubeConfig(address string, port int) error {
 	return nil
 }
 
-func createControlPlane(env container.ControlPlaneEnvironment, timeout int) error {
+func createControlPlane(ctx context.Context, env container.ControlPlaneEnvironment, timeout int, pullPolicy string) error {
 	fmt.Print("Creating control plane container ")
-	ctx := context.Background()
-	err := container.SpawnControlPlane(ctx, container.PullIfNotLocal, env)
+	port, err := strconv.Atoi(env.Port)
+	if err != nil {
+		return err
+	}
+
+	err = container.SpawnControlPlane(ctx, pullPolicy, env)
 
 	if err != nil {
 		return err
@@ -186,7 +189,6 @@ func createControlPlane(env container.ControlPlaneEnvironment, timeout int) erro
 	fmt.Print("Waiting for control plane to be up ")
 
 	// Polling control plane until up
-	port, _ := strconv.Atoi(env.Port)
 	statusClient := controlplane.GetStatusClient(service.NewConnectionInfo(env.Address, port, false))
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
 	defer cancel()
@@ -201,7 +203,7 @@ func createControlPlane(env container.ControlPlaneEnvironment, timeout int) erro
 	return nil
 }
 
-func runScenario(scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int) error {
+func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int) error {
 	var deserializer deserialize.Deserializer
 	var err error
 
@@ -235,8 +237,6 @@ func runScenario(scenarioFileLocation string, controlPlaneAddress string, contro
 		Port:    controlPlanePort,
 		TLS:     false,
 	}
-
-	ctx := context.Background()
 
 	fmt.Printf("Loading scenario ")
 	// Initial call: load the scenario
