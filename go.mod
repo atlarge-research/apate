@@ -28,7 +28,7 @@ require (
 replace github.com/apache/thrift v0.12.0 => github.com/apache/thrift v0.13.0
 
 // Replaced due to security bug: https://access.redhat.com/errata/RHBA-2018:2652
-replace github.com/evanphx/json-patch v4.1.0+incompatible => github.com/evanphx/json-patch v4.4.0+incompatible
+replace github.com/evanphx/json-patch => github.com/evanphx/json-patch v4.5.0+incompatible
 
 // Replaced due to security bug: https://github.com/docker/cli/pull/2117
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
