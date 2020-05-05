@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
+	"fmt"
 	"log"
 	"time"
 
@@ -10,11 +11,12 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
 	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
@@ -28,11 +30,15 @@ const amountOfSecondsToWait = 15
 
 type scenarioService struct {
 	store *store.Store
+	info  *service.ConnectionInfo
 }
 
 // RegisterScenarioService registers a new scenarioService with the given gRPC server
-func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
-	controlplane.RegisterScenarioServer(server.Server, &scenarioService{store: store})
+func RegisterScenarioService(server *service.GRPCServer, store *store.Store, info *service.ConnectionInfo) {
+	controlplane.RegisterScenarioServer(server.Server, &scenarioService{
+		store: store,
+		info:  info,
+	})
 }
 
 func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlplane.PublicScenario) (*empty.Empty, error) {
@@ -60,7 +66,11 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 		return nil, err
 	}
 
-	if err := cluster.SpawnNodes(ctx, len(resources)); err != nil {
+	// Retrieve pull policy
+	pullPolicy := container.RetrieveFromEnvironment(container.ControlPlaneDockerPolicy, container.ControlPlaneDockerPolicyDefault)
+	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
+
+	if err := container.SpawnApatelets(ctx, len(resources), s.info, pullPolicy, container.DefaultApateEnvironment()); err != nil {
 		log.Print(err)
 		return nil, err
 	}

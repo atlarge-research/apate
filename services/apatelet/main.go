@@ -2,6 +2,10 @@ package main
 
 import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+	"strconv"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	"k8s.io/client-go/kubernetes"
 
@@ -34,14 +38,27 @@ func init() {
 func main() {
 	log.Println("Starting Apatelet")
 
-	// TODO: Get these from envvars
-	connectionInfo := service.NewConnectionInfo("localhost", 8083, false)
+	// Retrieving connection information
+	controlPlaneAddress := container.RetrieveFromEnvironment(container.ControlPlaneAddress, container.ControlPlaneAddressDefault)
+	controlPlanePort, err := strconv.Atoi(container.RetrieveFromEnvironment(container.ControlPlanePort, container.ControlPlanePortDefault))
 
+	if err != nil {
+		log.Fatalf("Error while starting apatelet: %s", err.Error())
+	}
+
+	connectionInfo := service.NewConnectionInfo(controlPlaneAddress, controlPlanePort, false)
 	ctx := context.Background()
+
+	// Retrieve own port
+	listenPort, err := strconv.Atoi(container.RetrieveFromEnvironment(container.ApateletListenPort, container.ApateletListenPortDefault))
+
+	if err != nil {
+		log.Fatalf("Error while starting apatelet: %s", err.Error())
+	}
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	kubeConfig, res := joinApateCluster(ctx, connectionInfo)
+	kubeConfig, res := joinApateCluster(ctx, connectionInfo, listenPort)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -54,15 +71,18 @@ func main() {
 	log.Println("Joining kubernetes cluster")
 	go func() {
 		// TODO: Notify master / proper logging
-		if err := nc.Run(ctx); err != nil {
+		if err = nc.Run(ctx); err != nil {
+			hc.SetStatus(healthpb.Status_UNHEALTHY)
 			log.Fatalf("Unable to start apatelet: %v", err)
 		}
 	}()
 
 	// Start gRPC server
-	log.Println("Now accepting requests")
-	server := createGRPC()
+	server := createGRPC(listenPort)
+
+	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
+	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -91,7 +111,6 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 
 	log.Println("Leaving clusters (apate & k8s)")
 
-	// TODO: Maybe leave k8s? Or will control plane do that?
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
@@ -105,13 +124,13 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	cancel()
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo) (*kubeconfig.KubeConfig, *normalization.NodeResources) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	kubeconfig, res, err := client.JoinCluster(ctx)
+	kubeconfig, res, err := client.JoinCluster(ctx, listenPort)
 
 	// TODO: Better error handling
 	if err != nil {
@@ -132,7 +151,7 @@ func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig
 	}
 
 	client := kubernetes.NewForConfigOrDie(restconfig)
-	n := cluster.NewNode("apatelet", "agent", "apatelet", k8sVersion)
+	n := cluster.NewNode("apatelet", "agent", "apatelet-"+res.UUID.String(), k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
 		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res)),
 		client.CoreV1().Nodes())
@@ -140,10 +159,12 @@ func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig
 	return ctx, nc, cancel
 }
 
-func createGRPC() *service.GRPCServer {
-	// TODO: Get grpc settings from env
+func createGRPC(listenPort int) *service.GRPCServer {
+	// Retrieving connection information
+	listenAddress := container.RetrieveFromEnvironment(container.ApateletListenAddress, container.ApateletListenAddressDefault)
+
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo("localhost", 8081, true)
+	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 
 	// Create gRPC server
 	server := service.NewGRPCServer(connectionInfo)

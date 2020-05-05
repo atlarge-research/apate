@@ -90,31 +90,6 @@ func TestMultipleTasks(t *testing.T) {
 	assert.Equal(t, task3.AbsoluteTimestamp, lastTaskTime)
 }
 
-// TestUnsetFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
-func TestUnsetFlag(t *testing.T) {
-	st := NewStore()
-
-	// Retrieve unset flag and verify default value and err
-	val, err := st.GetFlag(42)
-	assert.Nil(t, val)
-	assert.Error(t, err)
-}
-
-// TestSetFlag ensures the value for a flag is updated properly
-func TestSetFlag(t *testing.T) {
-	st := NewStore()
-
-	// Set flag
-	st.SetFlag(42, 15)
-	st.SetFlag(42, false)
-	st.SetFlag(42, "k8s")
-
-	// Retrieve unset flag and verify default value and err
-	val, err := st.GetFlag(42)
-	assert.Equal(t, "k8s", val)
-	assert.NoError(t, err)
-}
-
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
 func TestArrayWithNil(t *testing.T) {
 	task1 := &apatelet.Task{AbsoluteTimestamp: 213123}
@@ -139,4 +114,68 @@ func TestArrayWithNil(t *testing.T) {
 
 	// Ensure task 1 is still in the queue
 	assert.Equal(t, 1, st.LenTasks())
+}
+
+// Nodes
+
+// TestUnsetNodeFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
+func TestUnsetNodeFlag(t *testing.T) {
+	st := NewStore()
+
+	// Retrieve unset flag and verify default value and err
+	val, err := st.GetNodeFlag(42)
+	assert.Nil(t, val)
+	assert.Error(t, err)
+}
+
+// TestSetNodeFlag ensures the value for a flag is updated properly
+func TestSetNodeFlag(t *testing.T) {
+	st := NewStore()
+
+	// Set flag
+	st.SetNodeFlag(42, 15)
+	st.SetNodeFlag(42, false)
+	st.SetNodeFlag(42, "k8s")
+
+	// Retrieve unset flag and verify default value and err
+	val, err := st.GetNodeFlag(42)
+	assert.Equal(t, "k8s", val)
+	assert.NoError(t, err)
+
+	_, err = st.GetNodeFlag(44)
+	assert.Error(t, err, "flag not set")
+}
+
+// Pods
+
+// TestUnsetPodFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
+func TestUnsetPodFlag(t *testing.T) {
+	st := NewStore()
+
+	// Retrieve unset flag and verify default value and err
+	val, err := st.GetPodFlag("a", 42)
+	assert.Nil(t, val)
+	assert.Error(t, err)
+}
+
+// TestSetPodFlag ensures the value for a flag is updated properly
+func TestSetPodFlag(t *testing.T) {
+	st := NewStore()
+
+	// Set flag
+	st.SetPodFlag("a", 42, 15)
+	st.SetPodFlag("a", 42, false)
+	st.SetPodFlag("b", 42, "k8s")
+
+	// Retrieve unset flag and verify default value and err
+	val, err := st.GetPodFlag("a", 42)
+	assert.Equal(t, false, val)
+	assert.NoError(t, err)
+
+	val, err = st.GetPodFlag("b", 42)
+	assert.Equal(t, "k8s", val)
+	assert.NoError(t, err)
+
+	_, err = st.GetPodFlag("b", 44)
+	assert.Error(t, err, "flag not set")
 }

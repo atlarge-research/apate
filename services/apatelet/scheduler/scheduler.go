@@ -55,13 +55,25 @@ func (s *Scheduler) runner(ech chan error) {
 }
 
 func (s Scheduler) taskHandler(ech chan error, t *apatelet.Task) {
-	for k, mv := range t.EventFlags {
+	for k, mv := range t.NodeEventFlags {
 		v, err := any.Unmarshal(mv)
 		if err != nil {
 			ech <- err
 			continue
 		}
 
-		(*s.store).SetFlag(k, v)
+		(*s.store).SetNodeFlag(k, v)
+	}
+
+	for _, conf := range t.PodConfigs {
+		for k, mv := range conf.EventFlags {
+			v, err := any.Unmarshal(mv)
+			if err != nil {
+				ech <- err
+				continue
+			}
+
+			(*s.store).SetPodFlag(conf.MetadataName, k, v)
+		}
 	}
 }

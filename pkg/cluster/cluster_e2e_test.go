@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kind"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +17,7 @@ func TestCreateCluster_e2e(t *testing.T) {
 		t.Skip("Skipping e2e test")
 	}
 
-	clusterInterface := KinD{}
+	clusterInterface := kind.KinD{}
 
 	// Delete it before to be safe
 	assert.NoError(t, clusterInterface.DeleteCluster("TestCreateCluster"))
@@ -33,7 +35,7 @@ func TestCreateClusterNoFolder_e2e(t *testing.T) {
 		t.Skip("Skipping e2e test")
 	}
 
-	clusterInterface := KinD{}
+	clusterInterface := kind.KinD{}
 
 	// Delete it before to be safe
 	assert.NoError(t, clusterInterface.DeleteCluster("TestCreateClusterNoFolder"))
@@ -59,7 +61,7 @@ func TestForceCreateCluster_e2e(t *testing.T) {
 		t.Skip("Skipping e2e test")
 	}
 
-	clusterInterface := KinD{}
+	clusterInterface := kind.KinD{}
 
 	// Delete it before to be safe
 	assert.NoError(t, clusterInterface.DeleteCluster("TestForceCreateCluster"))
