@@ -11,6 +11,8 @@ import (
 	ef "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
+const percentageRangeErrorMessage = "percentage should be between 0 and 100"
+
 // EventTranslator is a utility to translate events between events sent through the public api to events understood by the Apatelets
 type EventTranslator struct {
 	originalTask *controlplane.Task
@@ -26,149 +28,176 @@ func NewEventTranslator(originalTask *controlplane.Task, newTask *apatelet.Task)
 }
 
 // TranslateEvent translates events sent through the public api to events understood by the Apatelets
-func (et *EventTranslator) TranslateEvent() (err error) {
-	if et.originalTask.Event == nil {
-		return errors.New("you must pass an event to be executed")
+func (et *EventTranslator) TranslateEvent() error {
+	err := et.translateNodeEventFlags()
+	if err != nil {
+		return err
 	}
 
-	f := newEventFlags()
+	return et.translatePodEventFlags()
+}
+
+func (et *EventTranslator) translatePodEventFlags() error {
+	if et.originalTask.PodConfigs == nil {
+		return nil
+	}
+
+	for _, podConfig := range et.originalTask.PodConfigs {
+		pef := newEventFlags()
+
+		switch pe := podConfig.PodEvent.(type) {
+		case *controlplane.PodConfig_PodResponseState:
+			state := pe.PodResponseState
+
+			if state.Percentage < 0 || state.Percentage > 100 {
+				return errors.New(percentageRangeErrorMessage)
+			}
+
+			switch state.Type {
+			case events.RequestType_CREATE_POD:
+				pef.flag(state.Response, ef.PodCreatePodResponse)
+				pef.flag(state.Percentage, ef.PodCreatePodResponsePercentage)
+
+			case events.RequestType_UPDATE_POD:
+				pef.flag(state.Response, ef.PodUpdatePodResponse)
+				pef.flag(state.Percentage, ef.PodUpdatePodResponsePercentage)
+
+			case events.RequestType_DELETE_POD:
+				pef.flag(state.Response, ef.PodDeletePodResponse)
+				pef.flag(state.Percentage, ef.PodDeletePodResponsePercentage)
+
+			case events.RequestType_GET_POD:
+				pef.flag(state.Response, ef.PodGetPodResponse)
+				pef.flag(state.Percentage, ef.PodGetPodResponsePercentage)
+
+			case events.RequestType_GET_POD_STATUS:
+				pef.flag(state.Response, ef.PodGetPodStatusResponse)
+				pef.flag(state.Percentage, ef.PodGetPodStatusResponsePercentage)
+
+			default:
+				return errors.New("can't alter the GetPods / Ping response on pod level")
+			}
+
+		case *controlplane.PodConfig_PodStatusUpdate:
+			if pe.PodStatusUpdate.Percentage < 0 || pe.PodStatusUpdate.Percentage > 100 {
+				return errors.New(percentageRangeErrorMessage)
+			}
+
+			pef.flag(pe.PodStatusUpdate.NewStatus, ef.PodUpdatePodStatus)
+			pef.flag(pe.PodStatusUpdate.Percentage, ef.PodUpdatePodStatusPercentage)
+		}
+
+		podConfig := &apatelet.PodConfig{
+			MetadataName: podConfig.MetadataName,
+			EventFlags:   pef,
+		}
+		et.newTask.PodConfigs = append(et.newTask.PodConfigs, podConfig)
+	}
+	return nil
+}
+
+func (et *EventTranslator) translateNodeEventFlags() error {
+	if et.originalTask.NodeEvent == nil {
+		return nil
+	}
+
+	nef := newEventFlags()
 
 	// et.originalTask.Event can be one of many types (see generated protobuf code)
-	// taskEvent will be the cast version of this event to the corresponding event, depending on the case
-	switch taskEvent := et.originalTask.Event.(type) {
+	// ne will be the cast version of this event to the corresponding event, depending on the case
+	switch ne := et.originalTask.NodeEvent.(type) {
 	// Node events
 	case *controlplane.Task_NodeFailure:
-		f.flags(scenario.Response_TIMEOUT, nodeEventFlags)
-		f.flags(100, nodeEventPercentageFlags)
+		nef.flags(scenario.Response_TIMEOUT, nodeEventFlags)
+		nef.flags(100, nodeEventPercentageFlags)
 
 	case *controlplane.Task_NetworkLatency:
-		if taskEvent.NetworkLatency.LatencyMsec < 0 {
+		if ne.NetworkLatency.LatencyMsec < 0 {
 			return errors.New("latency should be at least 0")
 		}
 
-		f.flag(true, ef.NodeAddedLatencyEnabled)
-		f.flag(taskEvent.NetworkLatency.LatencyMsec, ef.NodeAddedLatencyMsec)
+		nef.flag(true, ef.NodeAddedLatencyEnabled)
+		nef.flag(ne.NetworkLatency.LatencyMsec, ef.NodeAddedLatencyMsec)
 
 	case *controlplane.Task_TimeoutKeepHeartbeat:
-		f.flags(scenario.Response_TIMEOUT, nodeEventFlags)
-		f.flags(100, nodeEventPercentageFlags)
+		nef.flags(scenario.Response_TIMEOUT, nodeEventFlags)
+		nef.flags(100, nodeEventPercentageFlags)
 
 		// Reset ping
-		f.flag(scenario.Response_NORMAL, ef.NodePingResponse)
-		f.flag(0, ef.NodePingResponsePercentage)
+		nef.flag(scenario.Response_NORMAL, ef.NodePingResponse)
+		nef.flag(0, ef.NodePingResponsePercentage)
 
 	case *controlplane.Task_NoTimeoutNoHeartbeat:
-		f.flag(scenario.Response_TIMEOUT, ef.NodePingResponse)
-		f.flag(100, ef.NodePingResponsePercentage)
+		nef.flag(scenario.Response_TIMEOUT, ef.NodePingResponse)
+		nef.flag(100, ef.NodePingResponsePercentage)
 
 	case *controlplane.Task_NodeResponseState:
-		state := taskEvent.NodeResponseState
+		state := ne.NodeResponseState
 
 		if state.Percentage < 0 || state.Percentage > 100 {
-			return errors.New("percentage should be between 0 and 100")
+			return errors.New(percentageRangeErrorMessage)
 		}
 
 		switch state.Type {
 		case events.RequestType_CREATE_POD:
-			f.flag(state.Response, ef.NodeCreatePodResponse)
-			f.flag(state.Percentage, ef.NodeCreatePodResponsePercentage)
+			nef.flag(state.Response, ef.NodeCreatePodResponse)
+			nef.flag(state.Percentage, ef.NodeCreatePodResponsePercentage)
 
 		case events.RequestType_UPDATE_POD:
-			f.flag(state.Response, ef.NodeUpdatePodResponse)
-			f.flag(state.Percentage, ef.NodeUpdatePodResponsePercentage)
+			nef.flag(state.Response, ef.NodeUpdatePodResponse)
+			nef.flag(state.Percentage, ef.NodeUpdatePodResponsePercentage)
 
 		case events.RequestType_DELETE_POD:
-			f.flag(state.Response, ef.NodeDeletePodResponse)
-			f.flag(state.Percentage, ef.NodeDeletePodResponsePercentage)
+			nef.flag(state.Response, ef.NodeDeletePodResponse)
+			nef.flag(state.Percentage, ef.NodeDeletePodResponsePercentage)
 
 		case events.RequestType_GET_POD:
-			f.flag(state.Response, ef.NodeGetPodResponse)
-			f.flag(state.Percentage, ef.NodeGetPodResponsePercentage)
+			nef.flag(state.Response, ef.NodeGetPodResponse)
+			nef.flag(state.Percentage, ef.NodeGetPodResponsePercentage)
 
 		case events.RequestType_GET_POD_STATUS:
-			f.flag(state.Response, ef.NodeGetPodStatusResponse)
-			f.flag(state.Percentage, ef.NodeGetPodStatusResponsePercentage)
+			nef.flag(state.Response, ef.NodeGetPodStatusResponse)
+			nef.flag(state.Percentage, ef.NodeGetPodStatusResponsePercentage)
 
 		case events.RequestType_GET_PODS:
-			f.flag(state.Response, ef.NodeGetPodsResponse)
-			f.flag(state.Percentage, ef.NodeGetPodsResponsePercentage)
+			nef.flag(state.Response, ef.NodeGetPodsResponse)
+			nef.flag(state.Percentage, ef.NodeGetPodsResponsePercentage)
 
 		case events.RequestType_PING:
-			f.flag(state.Response, ef.NodePingResponse)
-			f.flag(state.Percentage, ef.NodePingResponsePercentage)
+			nef.flag(state.Response, ef.NodePingResponse)
+			nef.flag(state.Percentage, ef.NodePingResponsePercentage)
 		}
 
 	case *controlplane.Task_ResourcePressure:
-		f.flag(true, ef.NodeEnableResourceAlteration)
+		nef.flag(true, ef.NodeEnableResourceAlteration)
 
-		rp := taskEvent.ResourcePressure
+		rp := ne.ResourcePressure
 
 		if rp.CpuUsage < 0 {
 			return errors.New("CPU usage should be at least 0")
 		}
-		f.flag(rp.CpuUsage, ef.NodeCPUUsage)
+		nef.flag(rp.CpuUsage, ef.NodeCPUUsage)
 
 		memory, err := GetInBytes(rp.MemoryUsage, "memory")
 		if err != nil {
 			return err
 		}
-		f.flag(memory, ef.NodeMemoryUsage)
+		nef.flag(memory, ef.NodeMemoryUsage)
 
 		storage, err := GetInBytes(rp.StorageUsage, "storage")
 		if err != nil {
 			return err
 		}
-		f.flag(storage, ef.NodeStorageUsage)
+		nef.flag(storage, ef.NodeStorageUsage)
 
 		ephStorage, err := GetInBytes(rp.EphemeralStorageUsage, "ephemeral storage")
 		if err != nil {
 			return err
 		}
-		f.flag(ephStorage, ef.NodeEphemeralStorageUsage)
-
-	// Pod events
-	case *controlplane.Task_PodResponseState:
-		state := taskEvent.PodResponseState
-
-		if state.Percentage < 0 || state.Percentage > 100 {
-			return errors.New("percentage should be between 0 and 100")
-		}
-
-		switch state.Type {
-		case events.RequestType_CREATE_POD:
-			f.flag(state.Response, ef.PodCreatePodResponse)
-			f.flag(state.Percentage, ef.PodCreatePodResponsePercentage)
-
-		case events.RequestType_UPDATE_POD:
-			f.flag(state.Response, ef.PodUpdatePodResponse)
-			f.flag(state.Percentage, ef.PodUpdatePodResponsePercentage)
-
-		case events.RequestType_DELETE_POD:
-			f.flag(state.Response, ef.PodDeletePodResponse)
-			f.flag(state.Percentage, ef.PodDeletePodResponsePercentage)
-
-		case events.RequestType_GET_POD:
-			f.flag(state.Response, ef.PodGetPodResponse)
-			f.flag(state.Percentage, ef.PodGetPodResponsePercentage)
-
-		case events.RequestType_GET_POD_STATUS:
-			f.flag(state.Response, ef.PodGetPodStatusResponse)
-			f.flag(state.Percentage, ef.PodGetPodStatusResponsePercentage)
-
-		default:
-			return errors.New("can't alter the GetPods / Ping response on pod level")
-		}
-
-	case *controlplane.Task_PodStatusUpdate:
-		if taskEvent.PodStatusUpdate.Percentage < 0 || taskEvent.PodStatusUpdate.Percentage > 100 {
-			return errors.New("percentage should be between 0 and 100")
-		}
-
-		f.flag(taskEvent.PodStatusUpdate.NewStatus, ef.PodUpdatePodStatus)
-		f.flag(taskEvent.PodStatusUpdate.Percentage, ef.PodUpdatePodStatusPercentage)
+		nef.flag(ephStorage, ef.NodeEphemeralStorageUsage)
 	}
 
-	et.newTask.EventFlags = f
+	et.newTask.NodeEventFlags = nef
 
 	return nil
 }
