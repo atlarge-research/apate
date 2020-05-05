@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
@@ -24,12 +25,14 @@ import (
 const (
 	defaultControlPlaneAddress = "localhost"
 	defaultControlPlanePort    = 8085
+	defaultControlPlaneTimeout = 30
 )
 
 func main() {
 	var scenarioFileLocation string
 	var controlPlaneAddress string
 	var controlPlanePort int
+	var controlPlaneTimeout int
 
 	env := container.DefaultControlPlaneEnvironment()
 
@@ -72,7 +75,7 @@ func main() {
 				Name:  "create",
 				Usage: "Creates a local control plane",
 				Action: func(c *cli.Context) error {
-					return createControlPlane(env)
+					return createControlPlane(env, controlPlaneTimeout)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -115,6 +118,39 @@ func main() {
 						DefaultText: container.DefaultPullPolicy,
 						Required:    false,
 					},
+					&cli.IntFlag{
+						Name:        "timeout",
+						Usage:       "Time before giving up on the control plane in seconds",
+						Destination: &controlPlaneTimeout,
+						Value:       defaultControlPlaneTimeout,
+						DefaultText: strconv.Itoa(defaultControlPlaneTimeout),
+						Required:    false,
+					},
+				},
+			},
+			{
+				Name:  "kubeconfig",
+				Usage: "Retrieves a kube configuration file from the control plane",
+				Action: func(c *cli.Context) error {
+					return getKubeConfig(controlPlaneAddress, controlPlanePort)
+				},
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "address",
+						Usage:       "The address of the control plane",
+						Destination: &controlPlaneAddress,
+						Value:       defaultControlPlaneAddress,
+						DefaultText: defaultControlPlaneAddress,
+						Required:    false,
+					},
+					&cli.IntFlag{
+						Name:        "port",
+						Usage:       "The port of the control plane",
+						Destination: &controlPlanePort,
+						Value:       defaultControlPlanePort,
+						DefaultText: strconv.Itoa(defaultControlPlanePort),
+						Required:    false,
+					},
 				},
 			},
 		},
@@ -127,14 +163,42 @@ func main() {
 	}
 }
 
-func createControlPlane(env container.ControlPlaneEnvironment) error {
-	fmt.Printf("%v\n", env)
-	fmt.Println("Creating control plane container")
+func getKubeConfig(address string, port int) error {
+	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false)).GetKubeConfig(context.Background())
 
-	err := container.SpawnControlPlane(context.Background(), container.PullIfNotLocal, env)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(cfg))
+	return nil
+}
+
+func createControlPlane(env container.ControlPlaneEnvironment, timeout int) error {
+	fmt.Print("Creating control plane container ")
+	ctx := context.Background()
+	err := container.SpawnControlPlane(ctx, container.PullIfNotLocal, env)
+
+	if err != nil {
+		return err
+	}
+	color.Green("DONE\n")
+	fmt.Print("Waiting for control plane to be up ")
+
+	// Polling control plane until up
+	port, _ := strconv.Atoi(env.Port)
+	statusClient := controlplane.GetStatusClient(service.NewConnectionInfo(env.Address, port, false))
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
+	defer cancel()
+	err = statusClient.WaitForControlPlane(ctx)
+
+	if err != nil {
+		return err
+	}
 
 	color.Green("DONE\n")
-	return err
+	fmt.Printf("Apate control plane created: %v\n", env)
+	return nil
 }
 
 func runScenario(scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int) error {

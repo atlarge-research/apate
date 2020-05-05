@@ -4,6 +4,8 @@ package controlplane
 import (
 	"context"
 
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/google/uuid"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
@@ -63,4 +65,15 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 func (c *ClusterOperationClient) LeaveCluster(ctx context.Context, uuid string) error {
 	_, err := c.Client.LeaveCluster(ctx, &controlplane.LeaveInformation{NodeUuid: uuid})
 	return err
+}
+
+// GetKubeConfig returns the kubeconfig file
+func (c *ClusterOperationClient) GetKubeConfig(ctx context.Context) ([]byte, error) {
+	cfg, err := c.Client.GetKubeConfig(ctx, new(empty.Empty))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg.Config, nil
 }

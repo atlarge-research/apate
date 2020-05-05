@@ -2,8 +2,6 @@
 package kind
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 
 	"sigs.k8s.io/kind/cmd/kind/app"
@@ -25,7 +23,7 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 	}
 
 	args = append(args, "--name", name)
-	args = append(args, "--kubeconfig", kubeConfigLocation)
+	args = append(args, "--kubeconfig", kubeConfigLocation+"-ext")
 	args = append(args, "--config", managerConfigPath)
 
 	// Set up a cluster
@@ -36,10 +34,6 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 	if err := c.Execute(); err != nil {
 		return err
 	}
-
-	// TODO: Move to cli command to get kubeconfig
-	cfg, _ := ioutil.ReadFile("/tmp/apate/config")
-	fmt.Print(string(cfg))
 
 	// Update kube config to use internal
 	err := useInternalKubeConfig(name, kubeConfigLocation)

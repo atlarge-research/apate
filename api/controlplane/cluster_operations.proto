@@ -15,6 +15,14 @@ service ClusterOperations {
 
     // Removes the node from the cluster
     rpc leaveCluster (LeaveInformation) returns (google.protobuf.Empty) {}
+
+    // Returns the kube config file
+    rpc getKubeConfig(google.protobuf.Empty) returns (KubeConfig) {}
+}
+
+message KubeConfig {
+    // The kube config
+    bytes config = 1;
 }
 
 message ApateletInformation {
