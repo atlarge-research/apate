@@ -5,7 +5,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 	"io/ioutil"
 	"log"
-	"strconv"
 )
 
 func init() {
@@ -15,23 +14,10 @@ func init() {
 }
 
 func main() {
-	run.SetCerts()
-
-	controlPlaneAddress := env.RetrieveFromEnvironment(env.ControlPlaneAddress, env.ControlPlaneAddressDefault)
-
-	controlPlanePort, err := strconv.Atoi(env.RetrieveFromEnvironment(env.ControlPlanePort, env.ControlPlanePortDefault))
+	environment, err := env.ApateletEnvironmentFromEnv()
 	if err != nil {
 		log.Fatalf("Error while starting apatelet: %s", err.Error())
 	}
-
-	// Retrieve own port
-	listenPort, err := strconv.Atoi(env.RetrieveFromEnvironment(env.ApateletListenPort, env.ApateletListenPortDefault))
-	if err != nil {
-		log.Fatalf("Error while starting apatelet: %s", err.Error())
-	}
-
-	// Retrieving connection information
-	listenAddress := env.RetrieveFromEnvironment(env.ApateletListenAddress, env.ApateletListenAddressDefault)
 
 	run.KubeConfigWriter = func(config []byte) {
 		err = ioutil.WriteFile("/config", config, 0600)
@@ -40,6 +26,8 @@ func main() {
 		}
 	}
 
-	run.StartApatelet(controlPlaneAddress, controlPlanePort, listenAddress, listenPort, 10250, 10255)
+	err = run.StartApatelet(environment, 10250, 10255)
+	if err != nil {
+		log.Fatalf("Error while running apatelet: %s", err.Error())
+	}
 }
-

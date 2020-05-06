@@ -4,6 +4,7 @@ package env
 
 import (
 	"os"
+	"strconv"
 )
 
 const (
@@ -90,6 +91,58 @@ const (
 	ControlPlaneImageName     = "controlplane:latest"
 	ControlPlaneFullImage     = ApateDocker + "/" + ControlPlaneImageName
 )
+
+// ApateletEnvironment represents the environment variables of the apatelet
+type ApateletEnvironment struct {
+	ListenAddress string
+	ListenPort    int
+
+	ControlPlaneAddress string
+	ControlPlanePort    int
+}
+
+// DefaultApateletEnvironment returns the default apate environment
+func DefaultApateletEnvironment() ApateletEnvironment {
+	defaultPort, _ := strconv.Atoi(ApateletListenPortDefault)
+	return ApateletEnvironment{
+		ListenAddress: ApateletListenAddressDefault,
+		ListenPort:    defaultPort,
+	}
+}
+
+func ApateletEnvironmentFromEnv() (ApateletEnvironment, error) {
+	controlPlaneAddress := RetrieveFromEnvironment(ControlPlaneAddress, ControlPlaneAddressDefault)
+
+	controlPlanePort, err := strconv.Atoi(RetrieveFromEnvironment(ControlPlanePort, ControlPlanePortDefault))
+	if err != nil {
+		return ApateletEnvironment{}, err
+	}
+
+	// Retrieve own port
+	listenPort, err := strconv.Atoi(RetrieveFromEnvironment(ApateletListenPort, ApateletListenPortDefault))
+	if err != nil {
+		return ApateletEnvironment{}, err
+	}
+
+	// Retrieving connection information
+	listenAddress := RetrieveFromEnvironment(ApateletListenAddress, ApateletListenAddressDefault)
+
+	return ApateletEnvironment{
+		ListenAddress:       listenAddress,
+		ListenPort:          listenPort,
+		ControlPlaneAddress: controlPlaneAddress,
+		ControlPlanePort:    controlPlanePort,
+	}, nil
+}
+
+func (env *ApateletEnvironment) AddConnectionInfo(address string, port int) {
+	env.ControlPlaneAddress = address
+	env.ControlPlanePort = port
+}
+
+func (env *ApateletEnvironment) Copy() ApateletEnvironment {
+	return *env
+}
 
 // RetrieveFromEnvironment allows for a value to be retrieved from the environment
 func RetrieveFromEnvironment(key, def string) string {

@@ -16,4 +16,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o apatelet 
 # Run stage
 FROM scratch
 COPY --from=build /build/apatelet /apatelet
+COPY --from=build /build/test/test.yml /tmp/apate/test.yml
 ENTRYPOINT ["/apatelet"]

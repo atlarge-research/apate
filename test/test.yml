@@ -17,8 +17,8 @@ node_groups:
   -
     group_name: testgroup1
     node_type: testnode
-    amount: 100
+    amount: 0
   -
     group_name: testgroup2
     node_type: testnode2
-    amount: 100
+    amount: 1

@@ -10,25 +10,10 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
-// ApateletEnvironment represents the environment variables of the apatelet
-type ApateletEnvironment struct {
-	Address, Port string
-}
-
-// DefaultApateEnvironment returns the default apate environment
-func DefaultApateEnvironment() ApateletEnvironment {
-	return ApateletEnvironment{
-		Address: ec.ApateletListenAddressDefault,
-		Port:    ec.ApateletListenPortDefault,
-	}
-}
-
-// SpawnApatelets spawns multiple Apatelet Docker containers
-func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.ConnectionInfo, pullPolicy string, env ApateletEnvironment) error {
+// SpawnApateletContainers spawns multiple Apatelet Docker containers
+func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy string, env ec.ApateletEnvironment) error {
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
@@ -36,7 +21,7 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 	}
 
 	// Get docker port for apatelet
-	port, err := nat.NewPort("tcp", env.Port)
+	port, err := nat.NewPort("tcp", strconv.Itoa(env.ListenPort))
 
 	if err != nil {
 		return err
@@ -52,10 +37,10 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 			c, err := cli.ContainerCreate(ctx, &container.Config{
 				Image: ec.ApateletImageName,
 				Env: []string{
-					ec.ControlPlaneAddress + "=" + info.Address,
-					ec.ControlPlanePort + "=" + strconv.Itoa(info.Port),
-					ec.ApateletListenAddress + "=" + env.Address,
-					ec.ApateletListenPort + "=" + env.Port,
+					ec.ControlPlaneAddress + "=" + env.ControlPlaneAddress,
+					ec.ControlPlanePort + "=" + strconv.Itoa(env.ControlPlanePort),
+					ec.ApateletListenAddress + "=" + env.ListenAddress,
+					ec.ApateletListenPort + "=" + strconv.Itoa(env.ListenPort),
 				},
 				ExposedPorts: nat.PortSet{
 					port:        struct{}{},
@@ -69,15 +54,15 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 
 			return cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{})
 		} else {
-			port1 := 7000 + i
-			if port1 == 8085 {
-				port1 = 6999
+			env.ListenPort = 7000 + i
+			if env.ListenPort == 8085 {
+				env.ListenPort = 6999
 			}
 
-			port2 := 12000 + i
-			port3 := 17000 + i
+			kubernetesPort := 12000 + i
+			metricsPort := 17000 + i
 
-			go run.StartApatelet(info.Address, info.Port, env.Address, port1, port2, port3)
+			go run.StartApatelet(env, kubernetesPort, metricsPort)
 			return nil
 		}
 	})

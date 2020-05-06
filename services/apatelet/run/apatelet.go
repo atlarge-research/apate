@@ -6,6 +6,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
@@ -22,16 +23,17 @@ var KubeConfigWriter = func(config []byte) {
 	// Noop by default
 }
 
-func StartApatelet(controlPlaneAddress string, controlPlanePort int, listenAddress string, listenPort int, k8sPort int, metricsPort int) {
+func StartApatelet(env ec.ApateletEnvironment, kubernetesPort, metricsPort int) error {
+	SetCerts()
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
-	connectionInfo := service.NewConnectionInfo(controlPlaneAddress, controlPlanePort, false)
+	connectionInfo := service.NewConnectionInfo(env.ControlPlaneAddress, env.ControlPlanePort, false)
 	ctx := context.Background()
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	config, res := joinApateCluster(ctx, connectionInfo, listenPort)
+	config, res := joinApateCluster(ctx, connectionInfo, env.ListenPort)
 	KubeConfigWriter(config)
 
 	// Setup health status
@@ -40,13 +42,14 @@ func StartApatelet(controlPlaneAddress string, controlPlanePort int, listenAddre
 	hc.StartStreamWithRetry(ctx, 3)
 
 	// Start the Apatelet
-	nc, cancel, err := createNodeController(ctx, res, k8sPort, metricsPort)
+	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
 		// TODO: Notify master / proper logging
 		if err = nc.Run(); err != nil {
 			hc.SetStatus(healthpb.Status_UNHEALTHY)
+			//TODO: Use error channel
 			log.Fatalf("Unable to start apatelet: %v", err)
 		}
 	}()
@@ -54,7 +57,10 @@ func StartApatelet(controlPlaneAddress string, controlPlanePort int, listenAddre
 	st := store.NewStore()
 
 	// Start gRPC server
-	server := createGRPC(listenPort, &st, listenAddress)
+	server, err := createGRPC(env.ListenPort, &st, env.ListenAddress)
+	if err != nil {
+		return err
+	}
 
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
@@ -77,6 +83,7 @@ func StartApatelet(controlPlaneAddress string, controlPlanePort int, listenAddre
 	// Stop the server on signal
 	<-stopped
 	log.Println("Apatelet stopped")
+	return nil
 }
 
 func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) {
@@ -124,16 +131,19 @@ func createNodeController(ctx context.Context, res *normalization.NodeResources,
 	return cmd, cancel, err
 }
 
-func createGRPC(listenPort int, store *store.Store, listenAddress string) *service.GRPCServer {
+func createGRPC(listenPort int, store *store.Store, listenAddress string) (*service.GRPCServer, error) {
 
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 
 	// Create gRPC server
-	server := service.NewGRPCServer(connectionInfo)
+	server, err := service.NewGRPCServer(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
 
 	// Add services
 	vkService.RegisterScenarioService(server, store)
 
-	return server
+	return server, nil
 }
