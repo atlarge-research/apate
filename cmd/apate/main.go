@@ -242,7 +242,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 	fmt.Printf("\rReading scenario file ")
 	color.Green("DONE\n")
 
-	// Read the k8s configuration file
+	// Read the k8s configuration file #nosec
 	k8sConfig, err := ioutil.ReadFile(configFileLocation)
 	if err != nil {
 		return err

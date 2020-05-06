@@ -11,6 +11,7 @@ import (
 
 const resourceConfigPathSuffix = "/apate/resourceConfig.yml"
 
+// Create calls `kubectl create` with the saved resourceconfig in [SaveResourceConfig]
 func Create(cfg kubeconfig.KubeConfig) error {
 	args := []string{
 		"create",
@@ -21,6 +22,7 @@ func Create(cfg kubeconfig.KubeConfig) error {
 	// specify config
 	args = append(args, "--kubeconfig", cfg.Path)
 
+	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("kubectl", args...)
 
 	return cmd.Run()
