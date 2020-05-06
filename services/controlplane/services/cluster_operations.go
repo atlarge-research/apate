@@ -62,7 +62,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	log.Printf("Added node to apate store: %v\n", node)
 
 	return &controlplane.JoinInformation{
-		KubeConfig: s.kubernetesCluster.KubeConfig,
+		KubeConfig: s.kubernetesCluster.KubeConfig.Bytes,
 		NodeUuid:   node.UUID.String(),
 		Hardware: &controlplane.NodeHardware{
 			Memory:           nodeResources.Memory,
