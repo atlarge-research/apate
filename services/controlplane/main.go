@@ -40,6 +40,11 @@ func main() {
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
+	// Save the kubeconfig in the store
+	if err := createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
+		log.Fatal(err)
+	}
+
 	// Start gRPC server
 	server := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)

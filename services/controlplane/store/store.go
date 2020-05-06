@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
@@ -48,15 +50,26 @@ type Store interface {
 
 	// GetApateletScenario gets the ApateletScenario
 	GetApateletScenario() (*apatelet.ApateletScenario, error)
+
+	// SetKubeConfig saves the kubeconfig to the store
+	SetKubeConfig(config kubeconfig.KubeConfig) error
+
+	// GetKubeConfig returns the saved config or an error
+	GetKubeConfig() (kubeconfig.KubeConfig, error)
 }
 
 type store struct {
-	nodes         map[uuid.UUID]Node
-	nodeLock      sync.RWMutex
+	nodes    map[uuid.UUID]Node
+	nodeLock sync.RWMutex
+
 	resourceQueue list.List
 	resourceLock  sync.Mutex
-	scenario      *apatelet.ApateletScenario
-	scenarioLock  sync.RWMutex
+
+	scenario     *apatelet.ApateletScenario
+	scenarioLock sync.RWMutex
+
+	kubeConfig     kubeconfig.KubeConfig
+	kubeConfigLock sync.RWMutex
 }
 
 // NewStore creates a new empty cluster
@@ -175,4 +188,22 @@ func (s *store) GetApateletScenario() (*apatelet.ApateletScenario, error) {
 	}
 
 	return s.scenario, nil
+}
+
+// SetKubeConfig saves the kubeconfig to the store
+func (s *store) SetKubeConfig(config kubeconfig.KubeConfig) error {
+	s.kubeConfigLock.Lock()
+	defer s.kubeConfigLock.Unlock()
+
+	s.kubeConfig = config
+
+	return nil
+}
+
+// GetKubeConfig returns the saved config or an error
+func (s *store) GetKubeConfig() (kubeconfig.KubeConfig, error) {
+	s.kubeConfigLock.RLock()
+	defer s.kubeConfigLock.RUnlock()
+
+	return s.kubeConfig, nil
 }

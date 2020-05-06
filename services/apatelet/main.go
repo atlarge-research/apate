@@ -3,6 +3,8 @@ package main
 import (
 	"strconv"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node"
@@ -123,13 +125,13 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	cancel()
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (cluster.KubeConfig, *normalization.NodeResources) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	kubeconfig, res, err := client.JoinCluster(ctx, listenPort)
+	cfg, res, err := client.JoinCluster(ctx, listenPort)
 
 	// TODO: Better error handling
 	if err != nil {
@@ -138,10 +140,10 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 
 	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return kubeconfig, res
+	return cfg, res
 }
 
-func createNodeController(ctx context.Context, kubeConfig cluster.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	restconfig, err := kubeConfig.GetConfig()

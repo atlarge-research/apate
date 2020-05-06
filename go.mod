@@ -19,8 +19,8 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
-	k8s.io/api v0.0.0 // Will be replaced
-	k8s.io/apimachinery v0.17.0 // Will be replaced
+	k8s.io/api v0.18.2 // Will be replaced
+	k8s.io/apimachinery v0.18.2 // Will be replaced
 	k8s.io/client-go v10.0.0+incompatible // Will be replaced
 	sigs.k8s.io/kind v0.7.0
 )
@@ -29,7 +29,7 @@ require (
 replace github.com/apache/thrift v0.12.0 => github.com/apache/thrift v0.13.0
 
 // Replaced due to security bug: https://access.redhat.com/errata/RHBA-2018:2652
-replace github.com/evanphx/json-patch v4.1.0+incompatible => github.com/evanphx/json-patch v4.4.0+incompatible
+replace github.com/evanphx/json-patch => github.com/evanphx/json-patch v4.5.0+incompatible
 
 // Replaced due to security bug: https://github.com/docker/cli/pull/2117
 replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
