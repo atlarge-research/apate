@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -9,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -35,7 +37,7 @@ func main() {
 
 	// Create kubernetes cluster
 	log.Println("Starting kubernetes control plane")
-	managedKubernetesCluster := createCluster(container.RetrieveFromEnvironment(container.ManagedClusterConfig, container.ManagedClusterConfigDefault))
+	managedKubernetesCluster := createCluster(env.RetrieveFromEnvironment(env.ManagedClusterConfig, env.ManagedClusterConfigDefault))
 
 	// Create apate cluster state
 	createdStore := store.NewStore()
@@ -43,6 +45,8 @@ func main() {
 	// Start gRPC server
 	server := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
+
+	err = ioutil.WriteFile("/tmp/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig, 0600)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -86,8 +90,8 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 // (it will look for the first 172.17.0.0/16 address), and finally a fallback on localhost
 func getExternalAddress() (string, error) {
 	// Check for external IP override
-	override := container.RetrieveFromEnvironment(container.ControlPlaneExternalIP, container.ControlPlaneExternalIPDefault)
-	if override != container.ControlPlaneExternalIPDefault {
+	override := env.RetrieveFromEnvironment(env.ControlPlaneExternalIP, env.ControlPlaneExternalIPDefault)
+	if override != env.ControlPlaneExternalIPDefault {
 		return override, nil
 	}
 
@@ -100,7 +104,7 @@ func getExternalAddress() (string, error) {
 
 	// Get first 172.17.0.0/16 address, if any
 	for _, address := range addresses {
-		if strings.Contains(address.String(), container.DockerAddressPrefix) {
+		if strings.Contains(address.String(), ec.DockerAddressPrefix) {
 			ip := strings.Split(address.String(), "/")[0]
 
 			return ip, nil
@@ -113,7 +117,7 @@ func getExternalAddress() (string, error) {
 
 func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) *service.GRPCServer {
 	// Retrieve from environment
-	listenAddress := container.RetrieveFromEnvironment(container.ControlPlaneListenAddress, container.ControlPlaneListenAddressDefault)
+	listenAddress := env.RetrieveFromEnvironment(env.ControlPlaneListenAddress, env.ControlPlaneListenAddressDefault)
 
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
@@ -156,7 +160,7 @@ func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	}
 
 	// Get port
-	listenPort, err := strconv.Atoi(container.RetrieveFromEnvironment(container.ControlPlaneListenPort, container.ControlPlaneListenPortDefault))
+	listenPort, err := strconv.Atoi(env.RetrieveFromEnvironment(env.ControlPlaneListenPort, env.ControlPlaneListenPortDefault))
 
 	if err != nil {
 		return nil, err

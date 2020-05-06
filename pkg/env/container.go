@@ -1,9 +1,27 @@
 // Package container provides methods to create containers for the required Apate components
 // and retrieve data from the environment and their defaults
-package container
+package env
 
 import (
 	"os"
+)
+
+const (
+	// DefaultPullPolicy returns the default pull policy
+	DefaultPullPolicy = PullIfNotLocal
+
+	// AlwaysPull will always pull the image, even if it's already locally available
+	AlwaysPull = "pull-always"
+
+	// AlwaysLocal will always use the local image, and will not pull if it's not locally available
+	AlwaysLocal = "local-always"
+
+	// PullIfNotLocal will only pull if the image is not locally available, this will not check
+	// if the local image is possibly outdated
+	PullIfNotLocal = "pull-if-not-local"
+
+	// DockerAddressPrefix specifies the docker address prefix, used for determining the docker address
+	DockerAddressPrefix = "172.17."
 )
 
 // Control plane environment variables
@@ -60,17 +78,17 @@ const (
 // Docker constants
 const (
 	// General apate docker constant
-	apateDocker = "apatekubernetes"
+	ApateDocker = "apatekubernetes"
 
 	// Apatelet docker constants
-	apateletContainerPrefix = "apatelet-"
-	apateletImageName       = "apatelet:latest"
-	apateletFullImage       = apateDocker + "/" + apateletImageName
+	ApateletContainerPrefix = "apatelet-"
+	ApateletImageName       = "apatelet:latest"
+	ApateletFullImage       = ApateDocker + "/" + ApateletImageName
 
 	// Docker docker constants
-	controlPlaneContainerName = "apate-cp"
-	controlPlaneImageName     = "controlplane:latest"
-	controlPlaneFullImage     = apateDocker + "/" + controlPlaneImageName
+	ControlPlaneContainerName = "apate-cp"
+	ControlPlaneImageName     = "controlplane:latest"
+	ControlPlaneFullImage     = ApateDocker + "/" + ControlPlaneImageName
 )
 
 // RetrieveFromEnvironment allows for a value to be retrieved from the environment
