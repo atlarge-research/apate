@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"strconv"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -57,6 +58,8 @@ func main() {
 		log.Fatalf("Error while starting apatelet: %s", err.Error())
 	}
 
+	st := store.NewStore()
+
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
 	kubeConfig, res := joinApateCluster(ctx, connectionInfo, listenPort)
@@ -67,7 +70,7 @@ func main() {
 	hc.StartStreamWithRetry(ctx, 3)
 
 	// Start the Apatelet
-	ctx, nc, cancel := createNodeController(ctx, kubeConfig, res)
+	ctx, nc, cancel := createNodeController(ctx, kubeConfig, res, &st)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -143,7 +146,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res
 }
 
-func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig, res *normalization.NodeResources) (context.Context, *node.NodeController, context.CancelFunc) {
+func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig, res *normalization.NodeResources, st *store.Store) (context.Context, *node.NodeController, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	restconfig, err := kubeConfig.GetConfig()
@@ -154,7 +157,7 @@ func createNodeController(ctx context.Context, kubeConfig *kubeconfig.KubeConfig
 	client := kubernetes.NewForConfigOrDie(restconfig)
 	n := cluster.NewNode("apatelet", "agent", "apatelet-"+res.UUID.String(), k8sVersion)
 	nc, _ := node.NewNodeController(node.NaiveNodeProvider{},
-		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res)),
+		cluster.CreateKubernetesNode(ctx, *n, vkProvider.CreateProvider(res, st)),
 		client.CoreV1().Nodes())
 
 	return ctx, nc, cancel

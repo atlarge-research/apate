@@ -28,6 +28,7 @@ message PublicScenario {
     repeated Task tasks = 3;
 
     // A kubernetes configuration file which will be deployed to the cluster
+    // https://kubectl.docs.kubernetes.io/pages/kubectl_book/resources_and_controllers.html
     bytes resource_config = 4;
 }
 

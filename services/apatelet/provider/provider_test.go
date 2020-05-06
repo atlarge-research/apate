@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"testing"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
@@ -44,7 +45,8 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 		MaxPods: 1001,
 	}
 
-	prov := CreateProvider(&resources)
+	st := store.NewStore()
+	prov := CreateProvider(&resources, &st)
 
 	fakeNode := corev1.Node{}
 

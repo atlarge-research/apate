@@ -2,7 +2,11 @@
 package provider
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
+	"math/rand"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
@@ -20,62 +24,284 @@ import (
 
 // VKProvider implements the virtual-kubelet provider interface
 type VKProvider struct {
+	store 	  *store.Store
 	Pods      map[types.UID]*corev1.Pod
 	resources *normalization.NodeResources
 }
 
 // CreateProvider returns the provider but with the vk type instead of our own.
-func CreateProvider(resources *normalization.NodeResources) vkprov.Provider {
+func CreateProvider(resources *normalization.NodeResources, store * store.Store) vkprov.Provider {
 	return &VKProvider{
 		resources: resources,
+		store: store,
 	}
 }
 
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
-func (p *VKProvider) CreatePod(_ context.Context, pod *corev1.Pod) error {
-	p.Pods[pod.UID] = pod
-	return nil
+func (p *VKProvider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
+	iflag, err := (*p.store).GetPodFlag(pod.Name, events.PodCreatePodResponse)
+	if err != nil {
+		return err
+	}
+
+	flag, ok := iflag.(scenario.Response)
+	if !ok {
+		return errors.New("invalid flag type")
+	}
+	
+	iflagp, err := (*p.store).GetPodFlag(pod.Name, events.PodCreatePodResponsePercentage)
+	if err != nil {
+		return err
+	}
+
+	flagp, ok := iflagp.(int32)
+	if !ok {
+		return errors.New("invalid percentage type")
+	}
+
+	if flagp < rand.Int31n(int32(100)) {
+		p.Pods[pod.UID] = pod
+		return nil
+	}
+
+	switch flag {
+	case scenario.Response_NORMAL:
+		p.Pods[pod.UID] = pod
+		return nil
+	case scenario.Response_TIMEOUT:
+		<-ctx.Done()
+		return nil
+	case scenario.Response_ERROR:
+		return errors.New("expected error")
+	default:
+		return errors.New("invalid response")
+	}
 }
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
-func (p *VKProvider) UpdatePod(_ context.Context, pod *corev1.Pod) error {
-	p.Pods[pod.UID] = pod
-	return nil
+func (p *VKProvider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
+	iflag, err := (*p.store).GetPodFlag(pod.Name, events.PodUpdatePodResponse)
+	if err != nil {
+		return err
+	}
+
+	flag, ok := iflag.(scenario.Response)
+	if !ok {
+		return errors.New("invalid flag type")
+	}
+
+	iflagp, err := (*p.store).GetPodFlag(pod.Name, events.PodUpdatePodResponsePercentage)
+	if err != nil {
+		return err
+	}
+
+	flagp, ok := iflagp.(int32)
+	if !ok {
+		return errors.New("invalid percentage type")
+	}
+
+	if flagp < rand.Int31n(int32(100)) {
+		p.Pods[pod.UID] = pod
+		return nil
+	}
+
+	switch flag {
+	case scenario.Response_NORMAL:
+		p.Pods[pod.UID] = pod
+		return nil
+	case scenario.Response_TIMEOUT:
+		<-ctx.Done()
+		return nil
+	case scenario.Response_ERROR:
+		return errors.New("expected error")
+	default:
+		return errors.New("invalid response")
+	}
 }
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
-func (p *VKProvider) DeletePod(_ context.Context, pod *corev1.Pod) error {
-	delete(p.Pods, pod.UID)
-	return nil
+func (p *VKProvider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
+	iflag, err := (*p.store).GetPodFlag(pod.Name, events.PodDeletePodResponse)
+	if err != nil {
+		return err
+	}
+
+	flag, ok := iflag.(scenario.Response)
+	if !ok {
+		return errors.New("invalid flag type")
+	}
+
+	iflagp, err := (*p.store).GetPodFlag(pod.Name, events.PodDeletePodResponsePercentage)
+	if err != nil {
+		return err
+	}
+
+	flagp, ok := iflagp.(int32)
+	if !ok {
+		return errors.New("invalid percentage type")
+	}
+
+	if flagp < rand.Int31n(int32(100)) {
+		delete(p.Pods, pod.UID)
+		return nil
+	}
+
+	switch flag {
+	case scenario.Response_NORMAL:
+		delete(p.Pods, pod.UID)
+		return nil
+	case scenario.Response_TIMEOUT:
+		<-ctx.Done()
+		return nil
+	case scenario.Response_ERROR:
+		return errors.New("expected error")
+	default:
+		return errors.New("invalid response")
+	}
 }
 
 // GetPod retrieves a pod by name.
-func (p *VKProvider) GetPod(_ context.Context, namespace, name string) (*corev1.Pod, error) {
-	// TODO: think about better structure for p.Pods
+func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+
+	iflag, err := (*p.store).GetPodFlag(name, events.PodDeletePodResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	flag, ok := iflag.(scenario.Response)
+	if !ok {
+		return nil, errors.New("invalid flag type")
+	}
+
+	iflagp, err := (*p.store).GetPodFlag(name, events.PodDeletePodResponsePercentage)
+	if err != nil {
+		return nil, err
+	}
+
+	flagp, ok := iflagp.(int32)
+	if !ok {
+		return nil, errors.New("invalid percentage type")
+	}
+
+	if flagp < rand.Int31n(int32(100)) {
+		return getPod(p, namespace, name)
+	}
+
+	switch flag {
+	case scenario.Response_NORMAL:
+		// TODO: think about better structure for p.Pods
+		return getPod(p, namespace, name)
+	case scenario.Response_TIMEOUT:
+		<-ctx.Done()
+		return nil, nil
+	case scenario.Response_ERROR:
+		return nil, errors.New("expected error")
+	default:
+		return nil, errors.New("invalid response")
+	}
+}
+
+func getPod(p *VKProvider, namespace string, name string) (*corev1.Pod, error) {
 	for _, element := range p.Pods {
 		if element.Namespace == namespace && element.Name == name {
 			return element, nil
 		}
 	}
-
 	return nil, errors.New("unable to find pod")
 }
 
 // GetPodStatus retrieves the status of a pod by name.
-func (p *VKProvider) GetPodStatus(context.Context, string, string) (*corev1.PodStatus, error) {
-	return &corev1.PodStatus{}, nil
+func (p *VKProvider) GetPodStatus(ctx context.Context, namespace string, name string) (*corev1.PodStatus, error) {
+	runningStatus := corev1.PodStatus{
+		Phase:                 corev1.PodRunning,
+		Message:               "Emulating pod successfully",
+	}
+	
+	iflag, err := (*p.store).GetPodFlag(name, events.PodGetPodStatusResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	flag, ok := iflag.(scenario.Response)
+	if !ok {
+		return nil, errors.New("invalid flag type")
+	}
+
+	iflagp, err := (*p.store).GetPodFlag(name, events.PodGetPodStatusResponsePercentage)
+	if err != nil {
+		return nil, err
+	}
+
+	flagp, ok := iflagp.(int32)
+	if !ok {
+		return nil, errors.New("invalid percentage type")
+	}
+
+	if flagp < rand.Int31n(int32(100)) {
+		return &runningStatus, nil
+	}
+
+	switch flag {
+	case scenario.Response_NORMAL:
+		return &runningStatus, nil
+	case scenario.Response_TIMEOUT:
+		<-ctx.Done()
+		return nil, nil
+	case scenario.Response_ERROR:
+		return nil, errors.New("expected error")
+	default:
+		return nil, errors.New("invalid response")
+	}
+
 }
 
 // GetPods retrieves a list of all pods running.
-func (p *VKProvider) GetPods(context.Context) ([]*corev1.Pod, error) {
-	// TODO: Improve
+func (p *VKProvider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
+	iflag, err := (*p.store).GetNodeFlag(events.NodeGetPodsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	flag, ok := iflag.(scenario.Response)
+	if !ok {
+		return nil, errors.New("invalid flag type")
+	}
+
+	iflagp, err := (*p.store).GetNodeFlag(events.NodeGetPodsResponsePercentage)
+	if err != nil {
+		return nil, err
+	}
+
+	flagp, ok := iflagp.(int32)
+	if !ok {
+		return nil, errors.New("invalid percentage type")
+	}
+
+	if flagp < rand.Int31n(int32(100)) {
+		return getPods(p), nil
+	}
+
+	switch flag {
+	case scenario.Response_NORMAL:
+		return getPods(p), nil
+	case scenario.Response_TIMEOUT:
+		<-ctx.Done()
+		return nil, nil
+	case scenario.Response_ERROR:
+		return nil, errors.New("expected error")
+	default:
+		return nil, errors.New("invalid response")
+	}
+}
+
+// TODO: Improve?
+func getPods(p *VKProvider) []*corev1.Pod {
 	var arr []*corev1.Pod
 
 	for _, element := range p.Pods {
 		arr = append(arr, element)
 	}
-
-	return arr, nil
+	return arr
 }
 
 // GetContainerLogs retrieves the log of a specific container.
