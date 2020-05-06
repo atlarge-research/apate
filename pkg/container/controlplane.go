@@ -29,8 +29,8 @@ func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 	}
 }
 
-// SpawnControlPlane spawns a single control plane container
-func SpawnControlPlane(ctx context.Context, pullPolicy string, env ControlPlaneEnvironment) error {
+// SpawnControlPlaneContainer spawns a single control plane container
+func SpawnControlPlaneContainer(ctx context.Context, pullPolicy string, env ControlPlaneEnvironment) error {
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {

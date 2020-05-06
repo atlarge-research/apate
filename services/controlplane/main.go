@@ -43,7 +43,11 @@ func main() {
 	createdStore := store.NewStore()
 
 	// Start gRPC server
-	server := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
+	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
+	if err != nil {
+		log.Fatalf("Error while starting control plane: %s", err.Error())
+	}
+
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	err = ioutil.WriteFile("/tmp/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig, 0600)
@@ -115,7 +119,7 @@ func getExternalAddress() (string, error) {
 	return "localhost", nil
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) *service.GRPCServer {
+func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
 	// Retrieve from environment
 	listenAddress := env.RetrieveFromEnvironment(env.ControlPlaneListenAddress, env.ControlPlaneListenAddressDefault)
 
@@ -123,7 +127,10 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
 
 	// Create gRPC server
-	server := service.NewGRPCServer(connectionInfo)
+	server, err := service.NewGRPCServer(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
 
 	// Add services
 	services.RegisterStatusService(server, createdStore)
@@ -131,7 +138,7 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	services.RegisterClusterOperationService(server, createdStore, kubernetesCluster)
 	services.RegisterHealthService(server, createdStore)
 
-	return server
+	return server, nil
 }
 
 func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {

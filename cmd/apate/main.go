@@ -181,7 +181,7 @@ func createControlPlane(ctx context.Context, env container.ControlPlaneEnvironme
 		return err
 	}
 
-	err = container.SpawnControlPlane(ctx, pullPolicy, env)
+	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, env)
 
 	if err != nil {
 		return err

@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run"
+	apateletStart "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 	"log"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
@@ -65,7 +65,12 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	pullPolicy := env.RetrieveFromEnvironment(env.ControlPlaneDockerPolicy, env.ControlPlaneDockerPolicyDefault)
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
-	if err := container.SpawnApatelets(ctx, len(resources), s.info, pullPolicy, container.DefaultApateEnvironment()); err != nil {
+	// Create environment for apatelets
+	environment := env.DefaultApateletEnvironment()
+	environment.AddConnectionInfo(s.info.Address, s.info.Port)
+
+	// Start the apatelets
+	if err := run.StartApatelets(ctx, len(resources), environment, apateletStart.StartApatelet); err != nil {
 		log.Print(err)
 		return nil, err
 	}
