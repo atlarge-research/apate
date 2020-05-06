@@ -71,7 +71,6 @@ func main() {
 						Required:    true,
 						Destination: &k8sConfigurationFileLocation,
 						Value:       defaultK8sConfigurationFileLocation,
-						DefaultText: defaultControlPlaneAddress,
 					},
 					&cli.IntFlag{
 						Name:        "port",
