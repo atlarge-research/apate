@@ -6,7 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/virtual-kubelet/node-cli/provider"
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"log"
 	"net"
 	"strings"
 )
@@ -108,8 +110,67 @@ func (p *Provider) ConfigureNode(_ context.Context, node *corev1.Node) {
 	node.Spec = p.spec()
 	node.ObjectMeta = p.objectMeta()
 	node.Status = p.nodeStatus()
+}
 
-	// TODO: https://github.com/virtual-kubelet/azure-aci/blob/4ad70d2ccfbc90b24e48bf7fd4e76f293dc3cca5/provider/aci.go#L1172
+func (p *Provider) nodeConditions() []corev1.NodeCondition {
+	log.Println("Received nodeConditions request.")
+
+	lastHeartbeatTime := metav1.Now()
+	lastTransitionTime := metav1.Now()
+	lastTransitionReason := "Apate cluster is ready"
+	lastTransitionMessage := "ok"
+
+	// Return static thumbs-up values for all conditions.
+	return []corev1.NodeCondition{
+		{
+			Type:               corev1.NodeReady,
+			Status:             corev1.ConditionTrue,
+			LastHeartbeatTime:  lastHeartbeatTime,
+			LastTransitionTime: lastTransitionTime,
+			Reason:             lastTransitionReason,
+			Message:            lastTransitionMessage,
+		},
+		{
+			Type:               corev1.NodeOutOfDisk,
+			Status:             corev1.ConditionFalse,
+			LastHeartbeatTime:  lastHeartbeatTime,
+			LastTransitionTime: lastTransitionTime,
+			Reason:             lastTransitionReason,
+			Message:            lastTransitionMessage,
+		},
+		{
+			Type:               corev1.NodeMemoryPressure,
+			Status:             corev1.ConditionFalse,
+			LastHeartbeatTime:  lastHeartbeatTime,
+			LastTransitionTime: lastTransitionTime,
+			Reason:             lastTransitionReason,
+			Message:            lastTransitionMessage,
+		},
+		{
+			Type:               corev1.NodeDiskPressure,
+			Status:             corev1.ConditionFalse,
+			LastHeartbeatTime:  lastHeartbeatTime,
+			LastTransitionTime: lastTransitionTime,
+			Reason:             lastTransitionReason,
+			Message:            lastTransitionMessage,
+		},
+		{
+			Type:               corev1.NodeNetworkUnavailable,
+			Status:             corev1.ConditionFalse,
+			LastHeartbeatTime:  lastHeartbeatTime,
+			LastTransitionTime: lastTransitionTime,
+			Reason:             lastTransitionReason,
+			Message:            lastTransitionMessage,
+		},
+		{
+			Type:               "KubeletConfigOk",
+			Status:             corev1.ConditionTrue,
+			LastHeartbeatTime:  lastHeartbeatTime,
+			LastTransitionTime: lastTransitionTime,
+			Reason:             lastTransitionReason,
+			Message:            lastTransitionMessage,
+		},
+	}
 }
 
 func (p *Provider) nodeStatus() corev1.NodeStatus {
@@ -121,6 +182,7 @@ func (p *Provider) nodeStatus() corev1.NodeStatus {
 		DaemonEndpoints: p.nodeDaemonEndpoints(),
 		Addresses:       p.addresses(),
 		Capacity:        p.capacity(),
+		Conditions:      p.nodeConditions(),
 	}
 }
 
@@ -158,8 +220,8 @@ func (p *Provider) addresses() []corev1.NodeAddress {
 // TODO: Make better, rename, basically everything except code
 func getExternalAddress() string {
 	// Check for external IP override
-	override := container.RetrieveFromEnvironment(container.ControlPlaneExternalIP, container.ControlPlaneExternalIPDefault)
-	if override != container.ControlPlaneExternalIPDefault {
+	override := env.RetrieveFromEnvironment(env.ControlPlaneExternalIP, env.ControlPlaneExternalIPDefault)
+	if override != env.ControlPlaneExternalIPDefault {
 		return override
 	}
 
@@ -172,7 +234,7 @@ func getExternalAddress() string {
 
 	// Get first 172.17.0.0/16 address, if any
 	for _, address := range addresses {
-		if strings.Contains(address.String(), container.DockerAddressPrefix) {
+		if strings.Contains(address.String(), ec.DockerAddressPrefix) {
 			ip := strings.Split(address.String(), "/")[0]
 
 			return ip

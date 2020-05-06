@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -117,7 +118,7 @@ func main() {
 						Name:        "docker-policy",
 						Usage:       "Docker pull policy used for creating the control plane",
 						Destination: &pullPolicy,
-						Value:       container.DefaultPullPolicy,
+						Value:       ec.DefaultPullPolicy,
 						Required:    false,
 					},
 					&cli.IntFlag{

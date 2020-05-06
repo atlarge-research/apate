@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"log"
 	"time"
 
@@ -61,7 +62,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	}
 
 	// Retrieve pull policy
-	pullPolicy := container.RetrieveFromEnvironment(container.ControlPlaneDockerPolicy, container.ControlPlaneDockerPolicyDefault)
+	pullPolicy := env.RetrieveFromEnvironment(env.ControlPlaneDockerPolicy, env.ControlPlaneDockerPolicyDefault)
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
 	if err := container.SpawnApatelets(ctx, len(resources), s.info, pullPolicy, container.DefaultApateEnvironment()); err != nil {

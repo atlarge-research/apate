@@ -5,29 +5,14 @@ import (
 	"errors"
 	"fmt"
 
+	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"golang.org/x/sync/errgroup"
 )
 
-const (
-	// DefaultPullPolicy returns the default pull policy
-	DefaultPullPolicy = PullIfNotLocal
 
-	// AlwaysPull will always pull the image, even if it's already locally available
-	AlwaysPull = "pull-always"
-
-	// AlwaysLocal will always use the local image, and will not pull if it's not locally available
-	AlwaysLocal = "local-always"
-
-	// PullIfNotLocal will only pull if the image is not locally available, this will not check
-	// if the local image is possibly outdated
-	PullIfNotLocal = "pull-if-not-local"
-
-	// DockerAddressPrefix specifies the docker address prefix, used for determining the docker address
-	DockerAddressPrefix = "172.17."
-)
 
 // SpawnCall is function which takes in the number of the container, then spawns the container
 // and finally returns any error that might have occurred in the process
@@ -122,11 +107,11 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 
 func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy string) error {
 	switch pullPolicy {
-	case AlwaysPull:
+	case ec.AlwaysPull:
 		return alwaysPull(ctx, cli, imageName)
-	case PullIfNotLocal:
+	case ec.PullIfNotLocal:
 		return pullIfNotLocal(ctx, cli, imageName)
-	case AlwaysLocal:
+	case ec.AlwaysLocal:
 		return alwaysCache(ctx, cli, imageName)
 	default:
 		return fmt.Errorf("unknown docker pull policy: %s", pullPolicy)

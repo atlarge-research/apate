@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
@@ -20,11 +21,11 @@ type ControlPlaneEnvironment struct {
 // DefaultControlPlaneEnvironment returns the default control plane environment
 func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 	return ControlPlaneEnvironment{
-		Address:       ControlPlaneListenAddressDefault,
-		Port:          ControlPlaneListenPortDefault,
-		ManagerConfig: ManagedClusterConfigDefault,
-		ExternalIP:    ControlPlaneExternalIPDefault,
-		DockerPolicy:  ControlPlaneDockerPolicyDefault,
+		Address:       ec.ControlPlaneListenAddressDefault,
+		Port:          ec.ControlPlaneListenPortDefault,
+		ManagerConfig: ec.ManagedClusterConfigDefault,
+		ExternalIP:    ec.ControlPlaneExternalIPDefault,
+		DockerPolicy:  ec.ControlPlaneDockerPolicyDefault,
 	}
 }
 
@@ -44,15 +45,15 @@ func SpawnControlPlane(ctx context.Context, pullPolicy string, env ControlPlaneE
 	}
 
 	// Set spawn information
-	spawnInfo := NewSpawnInformation(pullPolicy, controlPlaneFullImage, controlPlaneContainerName, 1, func(i int, ctx context.Context) error {
+	spawnInfo := NewSpawnInformation(pullPolicy, ec.ControlPlaneFullImage, ec.ControlPlaneContainerName, 1, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
-			Image: controlPlaneImageName,
+			Image: ec.ControlPlaneImageName,
 			Env: []string{
-				ControlPlaneListenAddress + "=" + env.Address,
-				ControlPlaneListenPort + "=" + env.Port,
-				ManagedClusterConfig + "=" + env.ManagerConfig,
-				ControlPlaneExternalIP + "=" + env.ExternalIP,
-				ControlPlaneDockerPolicy + "=" + env.DockerPolicy,
+				ec.ControlPlaneListenAddress + "=" + env.Address,
+				ec.ControlPlaneListenPort + "=" + env.Port,
+				ec.ManagedClusterConfig + "=" + env.ManagerConfig,
+				ec.ControlPlaneExternalIP + "=" + env.ExternalIP,
+				ec.ControlPlaneDockerPolicy + "=" + env.DockerPolicy,
 			},
 			ExposedPorts: nat.PortSet{
 				port: struct{}{},
@@ -73,7 +74,7 @@ func SpawnControlPlane(ctx context.Context, pullPolicy string, env ControlPlaneE
 					Target: "/var/run/docker.sock",
 				},
 			},
-		}, &network.NetworkingConfig{}, controlPlaneContainerName)
+		}, &network.NetworkingConfig{}, ec.ControlPlaneContainerName)
 
 		if err != nil {
 			return err
