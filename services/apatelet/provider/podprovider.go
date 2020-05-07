@@ -5,24 +5,26 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-	"github.com/virtual-kubelet/node-cli/provider"
-	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	"io"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/virtual-kubelet/node-cli/provider"
+	"github.com/virtual-kubelet/virtual-kubelet/node/api"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 )
 
+// Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
 	Pods      map[types.UID]*corev1.Pod
 	resources *normalization.NodeResources
@@ -30,7 +32,7 @@ type Provider struct {
 	nodeInfo  cluster.NodeInfo
 }
 
-// CreateProvider returns the provider but with the vk type instead of our own.
+// NewProvider returns the provider but with the vk type instead of our own.
 func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo) provider.Provider {
 	return &Provider{
 		Pods:      make(map[types.UID]*corev1.Pod),
@@ -248,7 +250,7 @@ func getExternalAddress() string {
 
 	// Get first 172.17.0.0/16 address, if any
 	for _, address := range addresses {
-		if strings.Contains(address.String(), ec.DockerAddressPrefix) {
+		if strings.Contains(address.String(), env.DockerAddressPrefix) {
 			ip := strings.Split(address.String(), "/")[0]
 
 			return ip

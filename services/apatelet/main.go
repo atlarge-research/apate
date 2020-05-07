@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 	"io/ioutil"
 	"log"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 )
 
 func init() {
@@ -19,10 +20,14 @@ func main() {
 		log.Fatalf("Error while starting apatelet: %s", err.Error())
 	}
 
+	if err = run.SetCerts(); err != nil {
+		log.Fatal(err)
+	}
+
 	run.KubeConfigWriter = func(config []byte) {
 		err = ioutil.WriteFile("/config", config, 0600)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}
 

@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run"
-	apateletStart "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 	"log"
 	"time"
 
 	"golang.org/x/sync/errgroup"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/run"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 
@@ -70,7 +70,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	environment.AddConnectionInfo(s.info.Address, s.info.Port)
 
 	// Start the apatelets
-	if err := run.StartApatelets(ctx, len(resources), environment, apateletStart.StartApatelet); err != nil {
+	if err := run.StartApatelets(ctx, len(resources), environment); err != nil {
 		log.Print(err)
 		return nil, err
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"io/ioutil"
 	"log"
 	"net"
@@ -11,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -50,7 +49,9 @@ func main() {
 
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
-	err = ioutil.WriteFile("/tmp/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig, 0600)
+	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig, 0600); err != nil {
+		log.Fatalf("Error while starting control plane: %s", err.Error())
+	}
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -115,7 +116,7 @@ func getExternalAddress() (string, error) {
 
 	// Get first 172.17.0.0/16 address, if any
 	for _, address := range addresses {
-		if strings.Contains(address.String(), ec.DockerAddressPrefix) {
+		if strings.Contains(address.String(), env.DockerAddressPrefix) {
 			ip := strings.Split(address.String(), "/")[0]
 
 			return ip, nil

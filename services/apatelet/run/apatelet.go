@@ -1,40 +1,47 @@
+// Package run is the entry point of the actual apatelet
 package run
 
 import (
 	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	cli "github.com/virtual-kubelet/node-cli"
+
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	cli "github.com/virtual-kubelet/node-cli"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
+// KubeConfigWriter is the function used for writing the kube config to the local file system
 var KubeConfigWriter = func(config []byte) {
 	// Noop by default
 }
 
-func StartApatelet(env ec.ApateletEnvironment, kubernetesPort, metricsPort int) error {
-	SetCerts()
+// StartApatelet starts the apatelet
+func StartApatelet(cpEnv env.ApateletEnvironment, kubernetesPort, metricsPort int) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
-	connectionInfo := service.NewConnectionInfo(env.ControlPlaneAddress, env.ControlPlanePort, false)
+	connectionInfo := service.NewConnectionInfo(cpEnv.ControlPlaneAddress, cpEnv.ControlPlanePort, false)
 	ctx := context.Background()
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	config, res := joinApateCluster(ctx, connectionInfo, env.ListenPort)
+	config, res, err := joinApateCluster(ctx, connectionInfo, cpEnv.ListenPort)
 	KubeConfigWriter(config)
+	if err != nil {
+		return err
+	}
 
 	k, err := cluster.KubernetesClusterFromKubeConfig(config)
 
@@ -71,7 +78,7 @@ func StartApatelet(env ec.ApateletEnvironment, kubernetesPort, metricsPort int) 
 	st := store.NewStore()
 
 	// Start gRPC server
-	server, err := createGRPC(env.ListenPort, &st, env.ListenAddress)
+	server, err := createGRPC(cpEnv.ListenPort, &st, cpEnv.ListenAddress)
 	if err != nil {
 		return err
 	}
@@ -128,7 +135,7 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	cancel()
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (cluster.KubeConfig, *normalization.NodeResources) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (cluster.KubeConfig, *normalization.NodeResources, error) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
@@ -136,14 +143,13 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 
 	kubeconfig, res, err := client.JoinCluster(ctx, listenPort)
 
-	// TODO: Better error handling
 	if err != nil {
-		log.Fatalf("Unable to join cluster: %v", err)
+		return nil, nil, err
 	}
 
 	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return kubeconfig, res
+	return kubeconfig, res, nil
 }
 
 func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int) (*cli.Command, context.CancelFunc, error) {
@@ -153,7 +159,6 @@ func createNodeController(ctx context.Context, res *normalization.NodeResources,
 }
 
 func createGRPC(listenPort int, store *store.Store, listenAddress string) (*service.GRPCServer, error) {
-
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 

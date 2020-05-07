@@ -1,3 +1,4 @@
+// Package container deals with the creation of docker containers
 package container
 
 import (
@@ -5,14 +6,13 @@ import (
 	"errors"
 	"fmt"
 
-	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 )
-
-
 
 // SpawnCall is function which takes in the number of the container, then spawns the container
 // and finally returns any error that might have occurred in the process
@@ -105,13 +105,13 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 	return nil
 }
 
-func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy string) error {
+func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy env.PullPolicy) error {
 	switch pullPolicy {
-	case ec.AlwaysPull:
+	case env.AlwaysPull:
 		return alwaysPull(ctx, cli, imageName)
-	case ec.PullIfNotLocal:
+	case env.PullIfNotLocal:
 		return pullIfNotLocal(ctx, cli, imageName)
-	case ec.AlwaysLocal:
+	case env.AlwaysLocal:
 		return alwaysCache(ctx, cli, imageName)
 	default:
 		return fmt.Errorf("unknown docker pull policy: %s", pullPolicy)
