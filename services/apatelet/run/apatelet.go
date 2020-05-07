@@ -56,13 +56,15 @@ func StartApatelet(env ec.ApateletEnvironment, kubernetesPort, metricsPort int) 
 	// Start the Apatelet
 	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort)
 
+	// Create virtual kubelet
+	errch := make(chan error)
+
 	log.Println("Joining kubernetes cluster")
 	go func() {
 		// TODO: Notify master / proper logging
 		if err = nc.Run(); err != nil {
 			hc.SetStatus(healthpb.Status_UNHEALTHY)
-			//TODO: Use error channel
-			log.Fatalf("Unable to start apatelet: %v", err)
+			errch <- err
 		}
 	}()
 
@@ -82,6 +84,13 @@ func StartApatelet(env ec.ApateletEnvironment, kubernetesPort, metricsPort int) 
 	signals := make(chan os.Signal, 1)
 	stopped := make(chan bool, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		//TODO: Bubble up error to run.go
+		err := <-errch
+		log.Print(err)
+		signals <- os.Kill
+	}()
 
 	go func() {
 		<-signals

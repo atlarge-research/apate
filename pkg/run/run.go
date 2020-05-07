@@ -6,6 +6,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"log"
+	"time"
 )
 
 type ApateletStartFunction = func(env.ApateletEnvironment, int, int) error
@@ -50,6 +51,8 @@ func useRoutines(_ context.Context, amountOfNodes int, environment env.ApateletE
 			err := fun(apateletEnv, kubernetesPort, metricsPort)
 			panic(err)
 		}()
+
+		time.Sleep(time.Millisecond * 50)
 	}
 	return nil
 }
