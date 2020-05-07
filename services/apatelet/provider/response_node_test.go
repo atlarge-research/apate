@@ -35,7 +35,7 @@ func TestMagicNodeNormal100(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -70,7 +70,7 @@ func TestMagicNodeNormal0(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -107,7 +107,7 @@ func TestMagicNodeNormal50A(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -144,7 +144,7 @@ func TestMagicNodeNormal50B(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -179,7 +179,7 @@ func TestMagicNodeStoreError1(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -215,7 +215,7 @@ func TestMagicNodeStoreError2(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -250,7 +250,7 @@ func TestMagicNodeInvalidPercentage(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -284,7 +284,7 @@ func TestMagicNodeInvalidResponseType(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -321,7 +321,7 @@ func TestMagicNodeInvalidResponse(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -361,7 +361,7 @@ func TestMagicNodeTimeOut(t *testing.T) {
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
 		ctx: ctx,
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},

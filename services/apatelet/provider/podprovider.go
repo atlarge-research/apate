@@ -1,0 +1,264 @@
+package provider
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"io"
+	"io/ioutil"
+	"math/rand"
+	"time"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node/api"
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
+)
+
+// CreatePod takes a Kubernetes Pod and deploys it within the provider.
+func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
+		podResponseArgs: podResponseArgs{
+			pod.Name,
+			events.PodCreatePodResponse,
+			events.PodCreatePodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeCreatePodResponse,
+			events.NodeCreatePodResponsePercentage,
+		},
+	})
+
+	return err
+}
+
+// UpdatePod takes a Kubernetes Pod and updates it within the provider.
+func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
+		podResponseArgs: podResponseArgs{
+			pod.Name,
+			events.PodUpdatePodResponse,
+			events.PodUpdatePodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeUpdatePodResponse,
+			events.NodeUpdatePodResponsePercentage,
+		},
+	})
+
+	return err
+}
+
+func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
+	return func() (interface{}, error) {
+		p.podLock.Lock()
+		p.pods[pod.UID] = pod
+		p.podLock.Unlock()
+		return nil, nil
+	}
+}
+
+// DeletePod takes a Kubernetes Pod and deletes it from the provider.
+func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+			p.podLock.Lock()
+			delete(p.pods, pod.UID)
+			p.podLock.Unlock()
+			return nil, nil
+		}},
+		podResponseArgs: podResponseArgs{
+			pod.Name,
+			events.PodDeletePodResponse,
+			events.PodDeletePodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeDeletePodResponse,
+			events.NodeDeletePodResponsePercentage,
+		},
+	})
+
+	return err
+}
+
+// GetPod retrieves a pod by name.
+func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
+	}
+
+	pod, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+			p.podLock.RLock()
+			defer p.podLock.RUnlock()
+			for _, element := range p.pods {
+				if element.Namespace == namespace && element.Name == name {
+					return element, nil
+				}
+			}
+			return nil, throw.Exception("unable to find pod")
+		}},
+		podResponseArgs: podResponseArgs{
+			name,
+			events.PodGetPodResponse,
+			events.PodGetPodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeGetPodResponse,
+			events.NodeGetPodResponsePercentage,
+		},
+	})
+
+	return pod.(*corev1.Pod), err
+}
+
+func podStatusToPhase(status interface{}) corev1.PodPhase {
+	switch status {
+	case scenario.PodStatus_POD_PENDING:
+		return corev1.PodPending
+	case scenario.PodStatus_POD_RUNNING:
+		return corev1.PodRunning
+	case scenario.PodStatus_POD_SUCCEEDED:
+		return corev1.PodSucceeded
+	case scenario.PodStatus_POD_FAILED:
+		return corev1.PodFailed
+	case scenario.PodStatus_POD_UNKNOWN:
+		fallthrough
+	default:
+		return corev1.PodUnknown
+	}
+}
+
+// GetPodStatus retrieves the status of a pod by name.
+func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name string) (*corev1.PodStatus, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
+	}
+
+	pod, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+			status, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatus)
+			if err != nil {
+				return nil, throw.Exception(err.Error())
+			}
+
+			ipercent, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatusPercentage)
+			if err != nil {
+				return nil, throw.Exception(err.Error())
+			}
+
+			percent, ok := ipercent.(int32)
+			if !ok {
+				return nil, throw.Exception("cast error")
+			}
+
+			if percent < rand.Int31n(int32(100)) {
+				return &corev1.PodStatus{
+					Phase:   corev1.PodRunning,
+					Message: "Emulating pod successfully",
+				}, nil
+			}
+
+			return &corev1.PodStatus{
+				Phase:   podStatusToPhase(status),
+				Message: "Emulating pod successfully",
+			}, nil
+		}},
+		podResponseArgs: podResponseArgs{
+			name,
+			events.PodGetPodStatusResponse,
+			events.PodGetPodStatusResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeGetPodStatusResponse,
+			events.NodeGetPodStatusResponsePercentage,
+		},
+	})
+
+	return pod.(*corev1.PodStatus), err
+}
+
+// GetPods retrieves a list of all pods running.
+func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
+	}
+	pod, err := nodeResponse(responseArgs{ctx, p, func() (interface{}, error) {
+		var arr []*corev1.Pod
+
+		for _, element := range p.pods {
+			arr = append(arr, element)
+		}
+		return arr, nil
+	},
+	},
+		nodeResponseArgs{
+			nodeResponseFlag:   events.NodeGetPodsResponse,
+			nodePercentageFlag: events.NodeGetPodsResponsePercentage,
+		},
+	)
+
+	return pod.([]*corev1.Pod), err
+}
+
+// GetContainerLogs retrieves the log of a specific container.
+func (p *Provider) GetContainerLogs(context.Context, string, string, string, api.ContainerLogOpts) (io.ReadCloser, error) {
+	// We return empty string as the emulated containers don't have a log.
+	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate"))), nil
+}
+
+// RunInContainer retrieves the log of a specific container.
+func (p *Provider) RunInContainer(context.Context, string, string, string, []string, api.AttachIO) error {
+	// There is no actual process running in the containers, so we can't do anything.
+	return nil
+}
+
+func (p *Provider) runLatency(ctx context.Context) error {
+	val, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyEnabled)
+	if err != nil {
+		return err
+	}
+
+	y, ok := val.(bool)
+	if !ok {
+		return errors.New("NodeAddedLatencyEnabled is not a bool")
+	}
+	if !y {
+		return nil
+	}
+
+	ims, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyMsec)
+	if err != nil {
+		return err
+	}
+
+	ms, ok := ims.(int64)
+	if !ok {
+		return errors.New("NodeAddedLatencyEnabled is not a bool")
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	time.Sleep(time.Duration(ms) * time.Millisecond)
+	return nil
+}

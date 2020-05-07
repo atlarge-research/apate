@@ -4,12 +4,11 @@ package store
 import (
 	"container/heap"
 	"errors"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 	"sync"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 )
 
 // Store represents the state of the apatelet

@@ -1,15 +1,16 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -35,19 +36,27 @@ func main() {
 
 	// Create kubernetes cluster
 	log.Println("Starting kubernetes control plane")
-	managedKubernetesCluster := createCluster(container.RetrieveFromEnvironment(container.ManagedClusterConfig, container.ManagedClusterConfigDefault))
+	managedKubernetesCluster := createCluster(env.RetrieveFromEnvironment(env.ManagedClusterConfig, env.ManagedClusterConfigDefault))
 
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
 	// Save the kubeconfig in the store
-	if err := createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
+	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
 	}
 
 	// Start gRPC server
-	server := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
+	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
+	if err != nil {
+		log.Fatalf("Error while starting control plane: %s", err.Error())
+	}
+
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
+
+	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig.Bytes, 0600); err != nil {
+		log.Fatalf("Error while starting control plane: %s", err.Error())
+	}
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
@@ -61,7 +70,7 @@ func main() {
 	}()
 
 	// Start serving request
-	server.Serve()
+	go server.Serve()
 
 	// Stop the server on signal
 	<-stopped
@@ -85,46 +94,28 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 	}
 }
 
-// TODO: Maybe check for docker subnet first somehow, people can change it from 172.17.0.0/16 to something else after all..
-
-// getExternalAddress will return the detected external IP address based on the env var, then network interfaces
-// (it will look for the first 172.17.0.0/16 address), and finally a fallback on localhost
 func getExternalAddress() (string, error) {
 	// Check for external IP override
-	override := container.RetrieveFromEnvironment(container.ControlPlaneExternalIP, container.ControlPlaneExternalIPDefault)
-	if override != container.ControlPlaneExternalIPDefault {
+	override := env.RetrieveFromEnvironment(env.ControlPlaneExternalIP, env.ControlPlaneExternalIPDefault)
+	if override != env.ControlPlaneExternalIPDefault {
 		return override, nil
 	}
 
-	// Check for IP in interface addresses
-	addresses, err := net.InterfaceAddrs()
-
-	if err != nil {
-		return "", err
-	}
-
-	// Get first 172.17.0.0/16 address, if any
-	for _, address := range addresses {
-		if strings.Contains(address.String(), container.DockerAddressPrefix) {
-			ip := strings.Split(address.String(), "/")[0]
-
-			return ip, nil
-		}
-	}
-
-	// Default to localhost
-	return "localhost", nil
+	return network.GetExternalAddress()
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) *service.GRPCServer {
+func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
 	// Retrieve from environment
-	listenAddress := container.RetrieveFromEnvironment(container.ControlPlaneListenAddress, container.ControlPlaneListenAddressDefault)
+	listenAddress := env.RetrieveFromEnvironment(env.ControlPlaneListenAddress, env.ControlPlaneListenAddressDefault)
 
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
 
 	// Create gRPC server
-	server := service.NewGRPCServer(connectionInfo)
+	server, err := service.NewGRPCServer(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
 
 	// Add services
 	services.RegisterStatusService(server, createdStore)
@@ -132,7 +123,7 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	services.RegisterClusterOperationService(server, createdStore, kubernetesCluster)
 	services.RegisterHealthService(server, createdStore)
 
-	return server
+	return server, nil
 }
 
 func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {
@@ -161,7 +152,7 @@ func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	}
 
 	// Get port
-	listenPort, err := strconv.Atoi(container.RetrieveFromEnvironment(container.ControlPlaneListenPort, container.ControlPlaneListenPortDefault))
+	listenPort, err := strconv.Atoi(env.RetrieveFromEnvironment(env.ControlPlaneListenPort, env.ControlPlaneListenPortDefault))
 
 	if err != nil {
 		return nil, err
