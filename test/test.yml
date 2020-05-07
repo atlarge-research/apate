@@ -21,4 +21,4 @@ node_groups:
   -
     group_name: testgroup2
     node_type: testnode2
-    amount: 1
+    amount: 10
