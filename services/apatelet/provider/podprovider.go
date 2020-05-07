@@ -11,6 +11,7 @@ import (
 
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -152,7 +153,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name stri
 	}
 
 	pod, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+		responseArgs: responseArgs{ctx: ctx, p: p, action: func() (interface{}, error) {
 			status, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatus)
 			if err != nil {
 				return nil, throw.Exception(err.Error())
@@ -170,7 +171,16 @@ func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name stri
 
 			if percent < rand.Int31n(int32(100)) {
 				return &corev1.PodStatus{
-					Phase:   corev1.PodRunning,
+					Phase: corev1.PodRunning,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:               corev1.PodReady,
+							Status:             corev1.ConditionTrue,
+							LastProbeTime:      metav1.Time{Time: time.Now()},
+							LastTransitionTime: metav1.Time{Time: time.Now()},
+							Message:            "Emulating pod...",
+						},
+					},
 					Message: "Emulating pod successfully",
 				}, nil
 			}
@@ -178,6 +188,15 @@ func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name stri
 			return &corev1.PodStatus{
 				Phase:   podStatusToPhase(status),
 				Message: "Emulating pod successfully",
+				Conditions: []corev1.PodCondition{
+					{
+						Type:               corev1.PodReady,
+						Status:             corev1.ConditionTrue,
+						LastProbeTime:      metav1.Time{Time: time.Now()},
+						LastTransitionTime: metav1.Time{Time: time.Now()},
+						Message:            "Emulating pod...",
+					},
+				},
 			}, nil
 		}},
 		podResponseArgs: podResponseArgs{
@@ -220,7 +239,7 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 // GetContainerLogs retrieves the log of a specific container.
 func (p *Provider) GetContainerLogs(context.Context, string, string, string, api.ContainerLogOpts) (io.ReadCloser, error) {
 	// We return empty string as the emulated containers don't have a log.
-	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate"))), nil
+	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate\n"))), nil
 }
 
 // RunInContainer retrieves the log of a specific container.
@@ -250,7 +269,7 @@ func (p *Provider) runLatency(ctx context.Context) error {
 
 	ms, ok := ims.(int64)
 	if !ok {
-		return errors.New("NodeAddedLatencyEnabled is not a bool")
+		return errors.New("NodeAddedLatencyMsec is not an int")
 	}
 
 	select {
