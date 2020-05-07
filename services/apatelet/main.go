@@ -31,7 +31,8 @@ func main() {
 		}
 	}
 
-	err = run.StartApatelet(environment, 10250, 10255)
+	ch := make(chan bool)
+	err = run.StartApatelet(environment, 10250, 10255, &ch)
 	if err != nil {
 		log.Fatalf("Error while running apatelet: %s", err.Error())
 	}
