@@ -20,6 +20,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 )
 
 type Provider struct {
@@ -32,6 +33,7 @@ type Provider struct {
 // CreateProvider returns the provider but with the vk type instead of our own.
 func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo) provider.Provider {
 	return &Provider{
+		Pods:      make(map[types.UID]*corev1.Pod),
 		resources: resources,
 		cfg:       cfg,
 		nodeInfo:  nodeInfo,
@@ -75,7 +77,19 @@ func (p *Provider) GetPod(_ context.Context, namespace, name string) (*corev1.Po
 // GetPodStatus retrieves the status of a pod by name.
 func (p *Provider) GetPodStatus(context.Context, string, string) (*corev1.PodStatus, error) {
 	fmt.Println("GetPodStatus called")
-	return &corev1.PodStatus{}, nil
+	return &corev1.PodStatus{
+		Phase: corev1.PodRunning,
+		Conditions: []corev1.PodCondition{
+			{
+				Type:               corev1.PodReady,
+				Status:             corev1.ConditionTrue,
+				LastProbeTime:      metav1.Time{Time: time.Now()},
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             "yoot",
+				Message:            "yeet",
+			},
+		},
+	}, nil
 }
 
 // GetPods retrieves a list of all pods running.

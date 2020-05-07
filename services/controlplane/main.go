@@ -63,6 +63,13 @@ func main() {
 		stopped <- true
 	}()
 
+	numberOfPods, err := managedKubernetesCluster.GetNumberOfPods("kube-system")
+	if err != nil {
+		log.Fatalf("An error occurred: %s", err.Error())
+	}
+
+	log.Printf("There are %d pods in the cluster", numberOfPods)
+
 	// Start serving request
 	server.Serve()
 

@@ -12,7 +12,6 @@ import (
 	"github.com/virtual-kubelet/virtual-kubelet/log"
 	logruslogger "github.com/virtual-kubelet/virtual-kubelet/log/logrus"
 	"strconv"
-	"time"
 )
 
 var (
@@ -29,15 +28,14 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, port 
 		return nil, err
 	}
 
+	name := "apatelet-" + res.UUID.String()
 	op.KubeConfigPath = "/tmp/apate/config"
 	op.ListenPort = int32(port)
 	op.MetricsAddr = ":" + strconv.Itoa(port2)
 	op.Provider = "apatelet"
-	op.PodSyncWorkers = 10
-	op.InformerResyncPeriod = time.Second
-	op.KubeNamespace = "kube-system"
+	op.NodeName = name
 
-	nodeInfo := cluster.NewNode("apatelet", "agent", "apatelet-"+res.UUID.String(), k8sVersion)
+	nodeInfo := cluster.NewNode("virtual-kubelet", "agent", name, k8sVersion)
 
 	node, err := cli.New(ctx,
 		cli.WithProvider("apatelet", func(cfg provider.InitConfig) (provider.Provider, error) {
