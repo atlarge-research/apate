@@ -12,8 +12,6 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	api "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
 
@@ -274,9 +272,6 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 		return err
 	}
 
-	// Add k8sconfig to the scenerio
-	scenario.ResourceConfig = k8sConfig
-
 	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
 	if err != nil {
 		return err
@@ -298,7 +293,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 	fmt.Printf("Starting scenario ")
 
 	//Finally: actually start the scenario
-	if _, err := scenarioClient.Client.StartScenario(ctx, new(empty.Empty)); err != nil {
+	if _, err := scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
 		return err
 	}
 

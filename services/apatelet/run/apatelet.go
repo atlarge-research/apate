@@ -85,7 +85,7 @@ func StartApatelet(cpEnv env.ApateletEnvironment, kubernetesPort, metricsPort in
 	go func() {
 		//TODO: Bubble up error to run.go
 		err := <-errch
-		log.Print(err)
+		log.Println(err)
 		signals <- os.Kill
 	}()
 

@@ -47,11 +47,6 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 		return nil, err
 	}
 
-	if err := kubectl.SaveResourceConfig(scenario.ResourceConfig); err != nil {
-		log.Print(err)
-		return nil, err
-	}
-
 	log.Printf("Adding %v to the queue", len(resources))
 	if err := (*s.store).AddResourcesToQueue(resources); err != nil {
 		log.Print(err)
@@ -80,7 +75,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	return new(empty.Empty), nil
 }
 
-func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+func (s *scenarioService) StartScenario(ctx context.Context, config *controlplane.StartScenarioConfig) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		scenario.Failed(err)
@@ -109,7 +104,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 	}
 
 	// TODO: This is probably very flaky
-	err = kubectl.Create(cfg)
+	err = kubectl.Create(config.ResourceConfig, cfg)
 	if err != nil {
 		scenario.Failed(err)
 		return nil, err
