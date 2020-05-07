@@ -15,33 +15,34 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
-func TestMagicPodNormal100(t *testing.T) {
+const tStr = "test"
+
+func TestMagicNodeNormal100(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_NORMAL, nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(100), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -51,72 +52,69 @@ func TestMagicPodNormal100(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodNormal0(t *testing.T) {
+func TestMagicNodeNormal0(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(0), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_NORMAL, nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(0), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
-	assert.NotNil(t, err)
-	assert.EqualError(t, flagNotSetError, err.Error())
-	assert.Nil(t, out)
+	assert.NoError(t, err)
+	assert.Equal(t, tStr, out)
 
 	ctrl.Finish()
 }
 
-func TestMagicPodNormal50A(t *testing.T) {
+func TestMagicNodeNormal50A(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(69)
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(50), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(50), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -126,35 +124,34 @@ func TestMagicPodNormal50A(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodNormal50B(t *testing.T) {
+func TestMagicNodeNormal50B(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(42)
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(50), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(50), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -165,32 +162,31 @@ func TestMagicPodNormal50B(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodStoreError1(t *testing.T) {
+func TestMagicNodeStoreError1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 	genericError := errors.New("some error")
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(nil, genericError)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(nil, genericError)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -201,33 +197,32 @@ func TestMagicPodStoreError1(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodStoreError2(t *testing.T) {
+func TestMagicNodeStoreError2(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 	genericError := errors.New("some error")
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(nil, genericError)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(nil, genericError)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -238,32 +233,31 @@ func TestMagicPodStoreError2(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodInvalidPercentage(t *testing.T) {
+func TestMagicNodeInvalidPercentage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(nil, nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(nil, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -274,31 +268,30 @@ func TestMagicPodInvalidPercentage(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodInvalidResponseType(t *testing.T) {
+func TestMagicNodeInvalidResponseType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(42, nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(42, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -309,34 +302,33 @@ func TestMagicPodInvalidResponseType(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodInvalidResponse(t *testing.T) {
+func TestMagicNodeInvalidResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(42)
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response(42), nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response(42), nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(100), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: context.TODO(),
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert
@@ -347,36 +339,36 @@ func TestMagicPodInvalidResponse(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodTimeOut(t *testing.T) {
+func TestMagicNodeTimeOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3)
 	defer cancel()
+
 	ctrl, ctx := gomock.WithContext(ctx, t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
+	PCPRF := events.NodeCreatePodResponse
+	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(42)
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_TIMEOUT, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_TIMEOUT, nil)
+	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(100), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := magicPod(magicArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx: ctx,
 		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		magicPodArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
+		nodeResponseArgs{
+			nodeResponseFlag:   PCPRF,
+			nodePercentageFlag: PCPRPF,
 		})
 
 	// Assert

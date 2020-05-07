@@ -4,6 +4,7 @@ package store
 import (
 	"container/heap"
 	"errors"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -38,13 +39,8 @@ type Store interface {
 	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
-// Error makes const errors possible
-type Error string
-
-func (e Error) Error() string { return string(e) }
-
 // FlagNotSetError is raised whenever a flag is not set
-const FlagNotSetError = Error("flag not set")
+const FlagNotSetError = throw.Exception("flag not set")
 
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags

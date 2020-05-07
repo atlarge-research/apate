@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 	"math/rand"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
@@ -10,36 +11,52 @@ import (
 )
 
 const flagNotSetError = store.FlagNotSetError
-const expectedError = wError("expected error")
-const invalidResponse = wError("invalid response")
-const invalidPercentage = wError("invalid percentage type")
-const invalidFlag = wError("invalid flag type")
+const expectedError = throw.Exception("expected error")
+const invalidResponse = throw.Exception("invalid response")
+const invalidPercentage = throw.Exception("invalid percentage type")
+const invalidFlag = throw.Exception("invalid flag type")
 
-type magicArgs struct {
+type responseArgs struct {
 	ctx    context.Context
 	p      *VKProvider
 	action func() (interface{}, error)
 }
 
-type magicPodArgs struct {
+type podResponseArgs struct {
 	name string
 
 	podResponseFlag   events.PodEventFlag
 	podPercentageFlag events.PodEventFlag
 }
 
-type magicNodeArgs struct {
+type nodeResponseArgs struct {
 	nodeResponseFlag   events.NodeEventFlag
 	nodePercentageFlag events.NodeEventFlag
 }
 
-type magicPodNodeArgs struct {
-	magicArgs
-	magicPodArgs
-	magicNodeArgs
+type podNodeResponse struct {
+	responseArgs
+	podResponseArgs
+	nodeResponseArgs
 }
 
-func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
+/**
+This file contains helper functions for the provider in the case that the provider has the structure of
+
+Two pod flags:
+	* podResponseFlag
+	* podResponsePercentageFlag
+
+and two node flags:
+	* nodeResponseFlag
+	* nodeResponsePercentageFlag
+
+the the helper function will get the flags from the store, check if they are valid,
+calculate the percentage and calls the action callback on success.
+ */
+
+// podResponse checks the passed flags and calls the passed function on success
+func podResponse(args responseArgs, podA podResponseArgs) (interface{}, error) {
 	iflag, err := (*args.p.store).GetPodFlag(podA.name, podA.podResponseFlag)
 	if err != nil {
 		return nil, err
@@ -81,7 +98,8 @@ func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
 	}
 }
 
-func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
+// nodeResponse checks the passed flags and calls the passed function on success
+func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, error) {
 	iflag, err := (*args.p.store).GetNodeFlag(nodeA.nodeResponseFlag)
 	if err != nil {
 		return nil, err
@@ -119,12 +137,13 @@ func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
 	}
 }
 
-func magicPodAndNode(args magicPodNodeArgs) (interface{}, error) {
-	pint, err := magicPod(args.magicArgs, args.magicPodArgs)
+// podAndNodeResponse first calls podResponse and if pod response is not set calls nodeResponse
+func podAndNodeResponse(args podNodeResponse) (interface{}, error) {
+	pint, err := podResponse(args.responseArgs, args.podResponseArgs)
 
 	if err != flagNotSetError {
 		return pint, err
 	}
 
-	return magicNode(args.magicArgs, args.magicNodeArgs)
+	return nodeResponse(args.responseArgs, args.nodeResponseArgs)
 }
