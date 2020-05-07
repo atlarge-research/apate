@@ -6,28 +6,15 @@ import (
 
 	"github.com/docker/go-connections/nat"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
-// ApateletEnvironment represents the environment variables of the apatelet
-type ApateletEnvironment struct {
-	Address, Port string
-}
-
-// DefaultApateEnvironment returns the default apate environment
-func DefaultApateEnvironment() ApateletEnvironment {
-	return ApateletEnvironment{
-		Address: ApateletListenAddressDefault,
-		Port:    ApateletListenPortDefault,
-	}
-}
-
-// SpawnApatelets spawns multiple Apatelet Docker containers
-func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.ConnectionInfo, pullPolicy string, env ApateletEnvironment) error {
+// SpawnApateletContainers spawns multiple Apatelet Docker containers
+func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy env.PullPolicy, cpEnv env.ApateletEnvironment) error {
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
@@ -35,26 +22,29 @@ func SpawnApatelets(ctx context.Context, amountOfNodes int, info *service.Connec
 	}
 
 	// Get docker port for apatelet
-	port, err := nat.NewPort("tcp", env.Port)
+	port, err := nat.NewPort("tcp", strconv.Itoa(cpEnv.ListenPort))
 
 	if err != nil {
 		return err
 	}
 
 	// Set spawn information
-	spawnInfo := NewSpawnInformation(pullPolicy, apateletFullImage, apateletContainerPrefix, amountOfNodes, func(i int, ctx context.Context) error {
+	spawnInfo := NewSpawnInformation(pullPolicy, env.ApateletFullImage, env.ApateletContainerPrefix, amountOfNodes, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
-			Image: apateletImageName,
+			Image: env.ApateletImageName,
 			Env: []string{
-				ControlPlaneAddress + "=" + info.Address,
-				ControlPlanePort + "=" + strconv.Itoa(info.Port),
-				ApateletListenAddress + "=" + env.Address,
-				ApateletListenPort + "=" + env.Port,
+				env.ControlPlaneAddress + "=" + cpEnv.ControlPlaneAddress,
+				env.ControlPlanePort + "=" + strconv.Itoa(cpEnv.ControlPlanePort),
+				env.ApateletListenAddress + "=" + cpEnv.ListenAddress,
+				env.ApateletListenPort + "=" + strconv.Itoa(cpEnv.ListenPort),
 			},
+			// TODO: Make variable
 			ExposedPorts: nat.PortSet{
-				port: struct{}{},
+				port:        struct{}{},
+				"10250/tcp": struct{}{},
+				"10255/tcp": struct{}{},
 			},
-		}, nil, nil, apateletContainerPrefix+strconv.Itoa(i))
+		}, nil, nil, env.ApateletContainerPrefix+strconv.Itoa(i))
 
 		if err != nil {
 			return err

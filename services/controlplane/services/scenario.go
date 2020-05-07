@@ -11,8 +11,9 @@ import (
 
 	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/run"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -46,27 +47,31 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 		return nil, err
 	}
 
-	if err := kubectl.SaveResourceConfig(scenario.ResourceConfig); err != nil {
-		log.Print(err)
-		return nil, err
-	}
-
 	log.Printf("Adding %v to the queue", len(resources))
-	if err := (*s.store).AddResourcesToQueue(resources); err != nil {
+	if err = (*s.store).AddResourcesToQueue(resources); err != nil {
 		log.Print(err)
 		return nil, err
 	}
 
-	if err := (*s.store).SetApateletScenario(normalizedScenario); err != nil {
+	if err = (*s.store).SetApateletScenario(normalizedScenario); err != nil {
 		log.Print(err)
 		return nil, err
 	}
 
 	// Retrieve pull policy
-	pullPolicy := container.RetrieveFromEnvironment(container.ControlPlaneDockerPolicy, container.ControlPlaneDockerPolicyDefault)
+	pullPolicy := env.RetrieveFromEnvironment(env.ControlPlaneDockerPolicy, env.ControlPlaneDockerPolicyDefault)
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
-	if err := container.SpawnApatelets(ctx, len(resources), s.info, pullPolicy, container.DefaultApateEnvironment()); err != nil {
+	// Create environment for apatelets
+	environment, err := env.DefaultApateletEnvironment()
+	if err != nil {
+		return nil, err
+	}
+
+	environment.AddConnectionInfo(s.info.Address, s.info.Port)
+
+	// Start the apatelets
+	if err = run.StartApatelets(ctx, len(resources), environment); err != nil {
 		log.Print(err)
 		return nil, err
 	}
@@ -74,7 +79,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	return new(empty.Empty), nil
 }
 
-func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+func (s *scenarioService) StartScenario(ctx context.Context, config *controlplane.StartScenarioConfig) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		scenario.Failed(err)
@@ -103,7 +108,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 	}
 
 	// TODO: This is probably very flaky
-	err = kubectl.Create(cfg)
+	err = kubectl.Create(config.ResourceConfig, cfg)
 	if err != nil {
 		scenario.Failed(err)
 		return nil, err

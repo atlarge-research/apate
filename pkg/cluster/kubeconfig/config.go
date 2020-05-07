@@ -19,18 +19,15 @@ type KubeConfig struct {
 }
 
 // FromBytes creates a kubeConfig struct from byte array.
-// path is optional and defaults to `os.TempDir() + "/apate/config-" + uuid.New().String()`
-func FromBytes(bytes []byte, path ...string) (*KubeConfig, error) {
-	if path[0] == "" {
-		path[0] = os.TempDir() + "/apate/config-" + uuid.New().String()
-	}
+func FromBytes(bytes []byte) (*KubeConfig, error) {
+	path := os.TempDir() + "/apate/config-" + uuid.New().String()
 
-	if err := ioutil.WriteFile(path[0], bytes, 0o600); err != nil {
+	if err := ioutil.WriteFile(path, bytes, 0o600); err != nil {
 		return nil, err
 	}
 
 	return &KubeConfig{
-		Path:  path[0],
+		Path:  path,
 		Bytes: bytes,
 	}, nil
 }
