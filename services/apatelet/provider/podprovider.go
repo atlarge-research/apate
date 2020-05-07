@@ -64,9 +64,7 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 
 func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 	return func() (interface{}, error) {
-		p.podLock.Lock()
-		p.pods[pod.UID] = pod
-		p.podLock.Unlock()
+		p.pods.AddPod(*pod)
 		return nil, nil
 	}
 }
@@ -79,9 +77,7 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 	_, err := podAndNodeResponse(podNodeResponse{
 		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
-			p.podLock.Lock()
-			delete(p.pods, pod.UID)
-			p.podLock.Unlock()
+			p.pods.DeletePod(pod)
 			return nil, nil
 		}},
 		podResponseArgs: podResponseArgs{
@@ -106,14 +102,7 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 
 	pod, err := podAndNodeResponse(podNodeResponse{
 		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
-			p.podLock.RLock()
-			defer p.podLock.RUnlock()
-			for _, element := range p.pods {
-				if element.Namespace == namespace && element.Name == name {
-					return element, nil
-				}
-			}
-			return nil, throw.Exception("unable to find pod")
+			return p.pods.GetPodByName(namespace, name), nil
 		}},
 		podResponseArgs: podResponseArgs{
 			name,
@@ -219,12 +208,7 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 		return nil, err
 	}
 	pod, err := nodeResponse(responseArgs{ctx, p, func() (interface{}, error) {
-		var arr []*corev1.Pod
-
-		for _, element := range p.pods {
-			arr = append(arr, element)
-		}
-		return arr, nil
+		return p.pods.GetAllPods(), nil
 	},
 	},
 		nodeResponseArgs{
