@@ -3,12 +3,12 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
@@ -70,7 +70,7 @@ func main() {
 	}()
 
 	// Start serving request
-	server.Serve()
+	go server.Serve()
 
 	// Stop the server on signal
 	<-stopped
@@ -94,10 +94,6 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 	}
 }
 
-// TODO: Maybe check for docker subnet first somehow, people can change it from 172.17.0.0/16 to something else after all..
-
-// getExternalAddress will return the detected external IP address based on the env var, then network interfaces
-// (it will look for the first 172.17.0.0/16 address), and finally a fallback on localhost
 func getExternalAddress() (string, error) {
 	// Check for external IP override
 	override := env.RetrieveFromEnvironment(env.ControlPlaneExternalIP, env.ControlPlaneExternalIPDefault)
@@ -105,24 +101,7 @@ func getExternalAddress() (string, error) {
 		return override, nil
 	}
 
-	// Check for IP in interface addresses
-	addresses, err := net.InterfaceAddrs()
-
-	if err != nil {
-		return "", err
-	}
-
-	// Get first 172.17.0.0/16 address, if any
-	for _, address := range addresses {
-		if strings.Contains(address.String(), env.DockerAddressPrefix) {
-			ip := strings.Split(address.String(), "/")[0]
-
-			return ip, nil
-		}
-	}
-
-	// Default to localhost
-	return "localhost", nil
+	return network.GetExternalAddress()
 }
 
 func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {

@@ -7,7 +7,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+
+	"github.com/phayes/freeport"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -22,7 +23,7 @@ func StartApatelets(ctx context.Context, amountOfNodes int, environment env.Apat
 	case env.Docker:
 		return useDocker(ctx, amountOfNodes, environment)
 	case env.Routine:
-		return useRoutines(ctx, amountOfNodes, environment)
+		return useRoutines(amountOfNodes, environment)
 	default:
 		return fmt.Errorf("unknown run type: %v", runType)
 	}
@@ -37,23 +38,22 @@ func useDocker(ctx context.Context, amountOfNodes int, environment env.ApateletE
 	return container.SpawnApateletContainers(ctx, amountOfNodes, pullPolicy, environment)
 }
 
-// TODO: Use ctx
-func useRoutines(_ context.Context, amountOfNodes int, environment env.ApateletEnvironment) error {
+func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 	if err := apateRun.SetCerts(); err != nil {
 		return err
 	}
 
+	readyCh := make(chan bool)
+
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment.Copy()
+		ports, err := freeport.GetFreePorts(3)
 
-		// TODO fix these ports
-		apateletEnv.ListenPort = 7000 + i
-		if apateletEnv.ListenPort == 8085 {
-			apateletEnv.ListenPort = 6999
+		if err != nil {
+			return err
 		}
 
-		kubernetesPort := 12000 + i
-		metricsPort := 17000 + i
+		apateletEnv.ListenPort = ports[0]
 
 		go func() {
 			defer func() {
@@ -61,11 +61,11 @@ func useRoutines(_ context.Context, amountOfNodes int, environment env.ApateletE
 					log.Printf("Apatelet failed to start: %v\n", r)
 				}
 			}()
-			err := apateRun.StartApatelet(apateletEnv, kubernetesPort, metricsPort)
+			err := apateRun.StartApatelet(apateletEnv, ports[1], ports[2], &readyCh)
 			panic(err)
 		}()
 
-		time.Sleep(time.Millisecond * 50)
+		<-readyCh
 	}
 	return nil
 }

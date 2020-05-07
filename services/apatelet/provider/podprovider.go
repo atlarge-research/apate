@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"net"
-	"strings"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
 
 	"github.com/virtual-kubelet/node-cli/provider"
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
@@ -20,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 )
 
@@ -44,28 +42,24 @@ func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig
 
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *Provider) CreatePod(_ context.Context, pod *corev1.Pod) error {
-	fmt.Println("CreatePod called")
 	p.Pods[pod.UID] = pod
 	return nil
 }
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *Provider) UpdatePod(_ context.Context, pod *corev1.Pod) error {
-	fmt.Println("UpdatePod called")
 	p.Pods[pod.UID] = pod
 	return nil
 }
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *Provider) DeletePod(_ context.Context, pod *corev1.Pod) error {
-	fmt.Println("DeletePod called")
 	delete(p.Pods, pod.UID)
 	return nil
 }
 
 // GetPod retrieves a pod by name.
 func (p *Provider) GetPod(_ context.Context, namespace, name string) (*corev1.Pod, error) {
-	fmt.Println("GetPod called")
 	// TODO: think about better structure for p.Pods
 	for _, element := range p.Pods {
 		if element.Namespace == namespace && element.Name == name {
@@ -78,7 +72,6 @@ func (p *Provider) GetPod(_ context.Context, namespace, name string) (*corev1.Po
 
 // GetPodStatus retrieves the status of a pod by name.
 func (p *Provider) GetPodStatus(context.Context, string, string) (*corev1.PodStatus, error) {
-	fmt.Println("GetPodStatus called")
 	return &corev1.PodStatus{
 		Phase: corev1.PodRunning,
 		Conditions: []corev1.PodCondition{
@@ -96,7 +89,6 @@ func (p *Provider) GetPodStatus(context.Context, string, string) (*corev1.PodSta
 
 // GetPods retrieves a list of all pods running.
 func (p *Provider) GetPods(context.Context) ([]*corev1.Pod, error) {
-	fmt.Println("GetPods called")
 	// TODO: Improve
 	var arr []*corev1.Pod
 
@@ -109,15 +101,13 @@ func (p *Provider) GetPods(context.Context) ([]*corev1.Pod, error) {
 
 // GetContainerLogs retrieves the log of a specific container.
 func (p *Provider) GetContainerLogs(context.Context, string, string, string, api.ContainerLogOpts) (io.ReadCloser, error) {
-	fmt.Println("GetContainerLogs called")
 	// We return empty string as the emulated containers don't have a log.
-	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate"))), nil
+	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate\n"))), nil
 }
 
 // RunInContainer retrieves the log of a specific container.
 func (p *Provider) RunInContainer(context.Context, string, string, string, []string, api.AttachIO) error {
 	// There is no actual process running in the containers, so we can't do anything.
-	fmt.Println("RunInContainer called")
 	return nil
 }
 
@@ -129,8 +119,6 @@ func (p *Provider) ConfigureNode(_ context.Context, node *corev1.Node) {
 }
 
 func (p *Provider) nodeConditions() []corev1.NodeCondition {
-	log.Println("Received nodeConditions request.")
-
 	lastHeartbeatTime := metav1.Now()
 	lastTransitionTime := metav1.Now()
 	lastTransitionReason := "Apate cluster is ready"
@@ -221,44 +209,22 @@ func (p *Provider) spec() corev1.NodeSpec {
 }
 
 func (p *Provider) addresses() []corev1.NodeAddress {
+	externalAddress, err := network.GetExternalAddress()
+	if err != nil {
+		log.Printf("error while retrieving ip addresses for node: %v\n", err)
+		return []corev1.NodeAddress{}
+	}
+
 	return []corev1.NodeAddress{
 		{
 			Type:    "InternalIP",
-			Address: getExternalAddress(),
+			Address: externalAddress,
 		},
 		{
 			Type:    "ExternalIP",
-			Address: getExternalAddress(),
+			Address: externalAddress,
 		},
 	}
-}
-
-// TODO: Make better, rename, basically everything except code
-func getExternalAddress() string {
-	// Check for external IP override
-	override := env.RetrieveFromEnvironment(env.ControlPlaneExternalIP, env.ControlPlaneExternalIPDefault)
-	if override != env.ControlPlaneExternalIPDefault {
-		return override
-	}
-
-	// Check for IP in interface addresses
-	addresses, err := net.InterfaceAddrs()
-
-	if err != nil {
-		return "error"
-	}
-
-	// Get first 172.17.0.0/16 address, if any
-	for _, address := range addresses {
-		if strings.Contains(address.String(), env.DockerAddressPrefix) {
-			ip := strings.Split(address.String(), "/")[0]
-
-			return ip
-		}
-	}
-
-	// Default to localhost
-	return "localhost"
 }
 
 func (p *Provider) nodeDaemonEndpoints() corev1.NodeDaemonEndpoints {

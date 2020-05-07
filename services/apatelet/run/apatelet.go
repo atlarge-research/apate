@@ -29,16 +29,16 @@ var KubeConfigWriter = func(config []byte) {
 }
 
 // StartApatelet starts the apatelet
-func StartApatelet(cpEnv env.ApateletEnvironment, kubernetesPort, metricsPort int) error {
+func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsPort int, readyCh *chan bool) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
-	connectionInfo := service.NewConnectionInfo(cpEnv.ControlPlaneAddress, cpEnv.ControlPlanePort, false)
+	connectionInfo := service.NewConnectionInfo(apateletEnv.ControlPlaneAddress, apateletEnv.ControlPlanePort, false)
 	ctx := context.Background()
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	config, res, err := joinApateCluster(ctx, connectionInfo, cpEnv.ListenPort)
+	config, res, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func StartApatelet(cpEnv env.ApateletEnvironment, kubernetesPort, metricsPort in
 	st := store.NewStore()
 
 	// Start gRPC server
-	server, err := createGRPC(cpEnv.ListenPort, &st, cpEnv.ListenAddress)
+	server, err := createGRPC(apateletEnv.ListenPort, &st, apateletEnv.ListenAddress)
 	if err != nil {
 		return err
 	}
@@ -83,25 +83,24 @@ func StartApatelet(cpEnv env.ApateletEnvironment, kubernetesPort, metricsPort in
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		//TODO: Bubble up error to run.go
-		err := <-errch
-		log.Println(err)
-		signals <- os.Kill
-	}()
-
-	go func() {
 		<-signals
 		shutdown(ctx, server, cancel, connectionInfo, res.UUID.String())
 		stopped <- true
 	}()
 
 	// Start serving request
-	server.Serve()
+	go server.Serve()
 
-	// Stop the server on signal
-	<-stopped
-	log.Println("Apatelet stopped")
-	return nil
+	*readyCh <- true
+
+	// Stop the server on signal or error
+	select {
+	case err := <-errch:
+		return err
+	case <-stopped:
+		log.Println("Apatelet stopped")
+		return nil
+	}
 }
 
 func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) {
