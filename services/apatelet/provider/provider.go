@@ -2,17 +2,15 @@
 package provider
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
-	"math/rand"
+	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"io/ioutil"
 
@@ -24,284 +22,160 @@ import (
 
 // VKProvider implements the virtual-kubelet provider interface
 type VKProvider struct {
-	store 	  *store.Store
+	store     *store.Store
 	Pods      map[types.UID]*corev1.Pod
+	PodLock   sync.RWMutex
 	resources *normalization.NodeResources
 }
 
 // CreateProvider returns the provider but with the vk type instead of our own.
-func CreateProvider(resources *normalization.NodeResources, store * store.Store) vkprov.Provider {
+func CreateProvider(resources *normalization.NodeResources, store *store.Store) vkprov.Provider {
 	return &VKProvider{
 		resources: resources,
-		store: store,
+		store:     store,
 	}
 }
 
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *VKProvider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
-	iflag, err := (*p.store).GetPodFlag(pod.Name, events.PodCreatePodResponse)
-	if err != nil {
-		return err
-	}
 
-	flag, ok := iflag.(scenario.Response)
-	if !ok {
-		return errors.New("invalid flag type")
-	}
-	
-	iflagp, err := (*p.store).GetPodFlag(pod.Name, events.PodCreatePodResponsePercentage)
-	if err != nil {
-		return err
-	}
+	_, err := magicPodAndNode(magicPodNodeArgs{
+		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
+			p.PodLock.Lock()
+			p.Pods[pod.UID] = pod
+			p.PodLock.Unlock()
+			return nil, nil
+		}},
+		magicPodArgs: magicPodArgs{
+			pod.Name,
+			events.PodCreatePodResponse,
+			events.PodCreatePodResponsePercentage,
+		},
+		magicNodeArgs: magicNodeArgs{
+			events.NodeCreatePodResponse,
+			events.NodeCreatePodResponsePercentage,
+		},
+	})
 
-	flagp, ok := iflagp.(int32)
-	if !ok {
-		return errors.New("invalid percentage type")
-	}
-
-	if flagp < rand.Int31n(int32(100)) {
-		p.Pods[pod.UID] = pod
-		return nil
-	}
-
-	switch flag {
-	case scenario.Response_NORMAL:
-		p.Pods[pod.UID] = pod
-		return nil
-	case scenario.Response_TIMEOUT:
-		<-ctx.Done()
-		return nil
-	case scenario.Response_ERROR:
-		return errors.New("expected error")
-	default:
-		return errors.New("invalid response")
-	}
+	return err
 }
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *VKProvider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
-	iflag, err := (*p.store).GetPodFlag(pod.Name, events.PodUpdatePodResponse)
-	if err != nil {
-		return err
-	}
+	_, err := magicPodAndNode(magicPodNodeArgs{
+		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
+			p.PodLock.Lock()
+			p.Pods[pod.UID] = pod
+			p.PodLock.Unlock()
+			return nil, nil
+		}},
+		magicPodArgs: magicPodArgs{
+			pod.Name,
+			events.PodUpdatePodResponse,
+			events.PodUpdatePodResponsePercentage,
+		},
+		magicNodeArgs: magicNodeArgs{
+			events.NodeUpdatePodResponse,
+			events.NodeUpdatePodResponsePercentage,
+		},
+	})
 
-	flag, ok := iflag.(scenario.Response)
-	if !ok {
-		return errors.New("invalid flag type")
-	}
-
-	iflagp, err := (*p.store).GetPodFlag(pod.Name, events.PodUpdatePodResponsePercentage)
-	if err != nil {
-		return err
-	}
-
-	flagp, ok := iflagp.(int32)
-	if !ok {
-		return errors.New("invalid percentage type")
-	}
-
-	if flagp < rand.Int31n(int32(100)) {
-		p.Pods[pod.UID] = pod
-		return nil
-	}
-
-	switch flag {
-	case scenario.Response_NORMAL:
-		p.Pods[pod.UID] = pod
-		return nil
-	case scenario.Response_TIMEOUT:
-		<-ctx.Done()
-		return nil
-	case scenario.Response_ERROR:
-		return errors.New("expected error")
-	default:
-		return errors.New("invalid response")
-	}
+	return err
 }
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *VKProvider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
-	iflag, err := (*p.store).GetPodFlag(pod.Name, events.PodDeletePodResponse)
-	if err != nil {
-		return err
-	}
+	_, err := magicPodAndNode(magicPodNodeArgs{
+		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
+			p.PodLock.Lock()
+			delete(p.Pods, pod.UID)
+			p.PodLock.Unlock()
+			return nil, nil
+		}},
+		magicPodArgs: magicPodArgs{
+			pod.Name,
+			events.PodDeletePodResponse,
+			events.PodDeletePodResponsePercentage,
+		},
+		magicNodeArgs: magicNodeArgs{
+			events.NodeDeletePodResponse,
+			events.NodeDeletePodResponsePercentage,
+		},
+	})
 
-	flag, ok := iflag.(scenario.Response)
-	if !ok {
-		return errors.New("invalid flag type")
-	}
-
-	iflagp, err := (*p.store).GetPodFlag(pod.Name, events.PodDeletePodResponsePercentage)
-	if err != nil {
-		return err
-	}
-
-	flagp, ok := iflagp.(int32)
-	if !ok {
-		return errors.New("invalid percentage type")
-	}
-
-	if flagp < rand.Int31n(int32(100)) {
-		delete(p.Pods, pod.UID)
-		return nil
-	}
-
-	switch flag {
-	case scenario.Response_NORMAL:
-		delete(p.Pods, pod.UID)
-		return nil
-	case scenario.Response_TIMEOUT:
-		<-ctx.Done()
-		return nil
-	case scenario.Response_ERROR:
-		return errors.New("expected error")
-	default:
-		return errors.New("invalid response")
-	}
+	return err
 }
 
 // GetPod retrieves a pod by name.
 func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	pod, err := magicPodAndNode(magicPodNodeArgs{
+		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
+			p.PodLock.RLock()
+			defer p.PodLock.RUnlock()
+			for _, element := range p.Pods {
+				if element.Namespace == namespace && element.Name == name {
+					return element, nil
+				}
+			}
+			return nil, wError("unable to find pod")
+		}},
+		magicPodArgs: magicPodArgs{
+			name,
+			events.PodGetPodResponse,
+			events.PodGetPodResponsePercentage,
+		},
+		magicNodeArgs: magicNodeArgs{
+			events.NodeGetPodResponse,
+			events.NodeGetPodResponsePercentage,
+		},
+	})
 
-	iflag, err := (*p.store).GetPodFlag(name, events.PodDeletePodResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	flag, ok := iflag.(scenario.Response)
-	if !ok {
-		return nil, errors.New("invalid flag type")
-	}
-
-	iflagp, err := (*p.store).GetPodFlag(name, events.PodDeletePodResponsePercentage)
-	if err != nil {
-		return nil, err
-	}
-
-	flagp, ok := iflagp.(int32)
-	if !ok {
-		return nil, errors.New("invalid percentage type")
-	}
-
-	if flagp < rand.Int31n(int32(100)) {
-		return getPod(p, namespace, name)
-	}
-
-	switch flag {
-	case scenario.Response_NORMAL:
-		// TODO: think about better structure for p.Pods
-		return getPod(p, namespace, name)
-	case scenario.Response_TIMEOUT:
-		<-ctx.Done()
-		return nil, nil
-	case scenario.Response_ERROR:
-		return nil, errors.New("expected error")
-	default:
-		return nil, errors.New("invalid response")
-	}
-}
-
-func getPod(p *VKProvider, namespace string, name string) (*corev1.Pod, error) {
-	for _, element := range p.Pods {
-		if element.Namespace == namespace && element.Name == name {
-			return element, nil
-		}
-	}
-	return nil, errors.New("unable to find pod")
+	return pod.(*corev1.Pod), err
 }
 
 // GetPodStatus retrieves the status of a pod by name.
 func (p *VKProvider) GetPodStatus(ctx context.Context, namespace string, name string) (*corev1.PodStatus, error) {
 	runningStatus := corev1.PodStatus{
-		Phase:                 corev1.PodRunning,
-		Message:               "Emulating pod successfully",
-	}
-	
-	iflag, err := (*p.store).GetPodFlag(name, events.PodGetPodStatusResponse)
-	if err != nil {
-		return nil, err
+		Phase:   corev1.PodRunning,
+		Message: "Emulating pod successfully",
 	}
 
-	flag, ok := iflag.(scenario.Response)
-	if !ok {
-		return nil, errors.New("invalid flag type")
-	}
+	pod, err := magicPodAndNode(magicPodNodeArgs{
+		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
+			return &runningStatus, nil
+		}},
+		magicPodArgs: magicPodArgs{
+			name,
+			events.PodGetPodStatusResponse,
+			events.PodGetPodStatusResponsePercentage,
+		},
+		magicNodeArgs: magicNodeArgs{
+			events.NodeGetPodStatusResponse,
+			events.NodeGetPodStatusResponsePercentage,
+		},
+	})
 
-	iflagp, err := (*p.store).GetPodFlag(name, events.PodGetPodStatusResponsePercentage)
-	if err != nil {
-		return nil, err
-	}
-
-	flagp, ok := iflagp.(int32)
-	if !ok {
-		return nil, errors.New("invalid percentage type")
-	}
-
-	if flagp < rand.Int31n(int32(100)) {
-		return &runningStatus, nil
-	}
-
-	switch flag {
-	case scenario.Response_NORMAL:
-		return &runningStatus, nil
-	case scenario.Response_TIMEOUT:
-		<-ctx.Done()
-		return nil, nil
-	case scenario.Response_ERROR:
-		return nil, errors.New("expected error")
-	default:
-		return nil, errors.New("invalid response")
-	}
-
+	return pod.(*corev1.PodStatus), err
 }
 
 // GetPods retrieves a list of all pods running.
 func (p *VKProvider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
-	iflag, err := (*p.store).GetNodeFlag(events.NodeGetPodsResponse)
-	if err != nil {
-		return nil, err
-	}
+	pod, err := magicNode(magicArgs{ctx, p, func() (interface{}, error) {
+		var arr []*corev1.Pod
 
-	flag, ok := iflag.(scenario.Response)
-	if !ok {
-		return nil, errors.New("invalid flag type")
-	}
+		for _, element := range p.Pods {
+			arr = append(arr, element)
+		}
+		return arr, nil
+	},
+	},
+		magicNodeArgs{
+			nodeResponseFlag:   events.NodeGetPodsResponse,
+			nodePercentageFlag: events.NodeGetPodsResponsePercentage,
+		},
+	)
 
-	iflagp, err := (*p.store).GetNodeFlag(events.NodeGetPodsResponsePercentage)
-	if err != nil {
-		return nil, err
-	}
-
-	flagp, ok := iflagp.(int32)
-	if !ok {
-		return nil, errors.New("invalid percentage type")
-	}
-
-	if flagp < rand.Int31n(int32(100)) {
-		return getPods(p), nil
-	}
-
-	switch flag {
-	case scenario.Response_NORMAL:
-		return getPods(p), nil
-	case scenario.Response_TIMEOUT:
-		<-ctx.Done()
-		return nil, nil
-	case scenario.Response_ERROR:
-		return nil, errors.New("expected error")
-	default:
-		return nil, errors.New("invalid response")
-	}
-}
-
-// TODO: Improve?
-func getPods(p *VKProvider) []*corev1.Pod {
-	var arr []*corev1.Pod
-
-	for _, element := range p.Pods {
-		arr = append(arr, element)
-	}
-	return arr
+	return pod.([]*corev1.Pod), err
 }
 
 // GetContainerLogs retrieves the log of a specific container.
