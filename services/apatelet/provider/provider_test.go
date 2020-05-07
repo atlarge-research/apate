@@ -222,7 +222,7 @@ func TestGetPods(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestGetPodStatus(t *testing.T) {
+func TestGetPodStatus100(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -238,6 +238,44 @@ func TestGetPodStatus(t *testing.T) {
 
 	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
 	ms.EXPECT().GetPodFlag(p.Name, PCPRPF).Return(int32(100), nil)
+
+	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatus).Return(scenario.PodStatus_POD_SUCCEEDED, nil)
+	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatusPercentage).Return(int32(100), nil)
+
+	// sot
+	var s store.Store = ms
+	prov := VKProvider{
+		store: &s,
+		Pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+	}
+
+	ps, err := prov.GetPodStatus(context.TODO(), "", p.Name)
+
+	// assert
+	assert.NoError(t, err)
+	assert.Equal(t, ps.Phase, corev1.PodSucceeded)
+	ctrl.Finish()
+}
+
+func TestGetPodStatus0(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ms := mock_store.NewMockStore(ctrl)
+
+	// vars
+	p := corev1.Pod{}
+	p.Name = podName
+	p.UID = types.UID(uuid.New().String())
+	PCPRF := events.PodGetPodStatusResponse
+	PCPRPF := events.PodGetPodStatusResponsePercentage
+
+	// expect
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
+
+	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(p.Name, PCPRPF).Return(int32(100), nil)
+
+	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatus).Return(scenario.PodStatus_POD_SUCCEEDED, nil)
+	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatusPercentage).Return(int32(0), nil)
 
 	// sot
 	var s store.Store = ms

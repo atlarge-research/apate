@@ -3,8 +3,12 @@ package provider
 
 import (
 	"errors"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
+	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 
@@ -47,14 +51,14 @@ func (p *VKProvider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 		return err
 	}
 
-	_, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{ctx, p, updateMap(p, pod)},
-		magicPodArgs: magicPodArgs{
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
+		podResponseArgs: podResponseArgs{
 			pod.Name,
 			events.PodCreatePodResponse,
 			events.PodCreatePodResponsePercentage,
 		},
-		magicNodeArgs: magicNodeArgs{
+		nodeResponseArgs: nodeResponseArgs{
 			events.NodeCreatePodResponse,
 			events.NodeCreatePodResponsePercentage,
 		},
@@ -69,14 +73,14 @@ func (p *VKProvider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 		return err
 	}
 
-	_, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{ctx, p, updateMap(p, pod)},
-		magicPodArgs: magicPodArgs{
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
+		podResponseArgs: podResponseArgs{
 			pod.Name,
 			events.PodUpdatePodResponse,
 			events.PodUpdatePodResponsePercentage,
 		},
-		magicNodeArgs: magicNodeArgs{
+		nodeResponseArgs: nodeResponseArgs{
 			events.NodeUpdatePodResponse,
 			events.NodeUpdatePodResponsePercentage,
 		},
@@ -100,19 +104,19 @@ func (p *VKProvider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 		return err
 	}
 
-	_, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
 			p.PodLock.Lock()
 			delete(p.Pods, pod.UID)
 			p.PodLock.Unlock()
 			return nil, nil
 		}},
-		magicPodArgs: magicPodArgs{
+		podResponseArgs: podResponseArgs{
 			pod.Name,
 			events.PodDeletePodResponse,
 			events.PodDeletePodResponsePercentage,
 		},
-		magicNodeArgs: magicNodeArgs{
+		nodeResponseArgs: nodeResponseArgs{
 			events.NodeDeletePodResponse,
 			events.NodeDeletePodResponsePercentage,
 		},
@@ -127,8 +131,8 @@ func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev
 		return nil, err
 	}
 
-	pod, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
+	pod, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
 			p.PodLock.RLock()
 			defer p.PodLock.RUnlock()
 			for _, element := range p.Pods {
@@ -136,14 +140,14 @@ func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev
 					return element, nil
 				}
 			}
-			return nil, wError("unable to find pod")
+			return nil, throw.Exception("unable to find pod")
 		}},
-		magicPodArgs: magicPodArgs{
+		podResponseArgs: podResponseArgs{
 			name,
 			events.PodGetPodResponse,
 			events.PodGetPodResponsePercentage,
 		},
-		magicNodeArgs: magicNodeArgs{
+		nodeResponseArgs: nodeResponseArgs{
 			events.NodeGetPodResponse,
 			events.NodeGetPodResponsePercentage,
 		},
@@ -152,26 +156,64 @@ func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev
 	return pod.(*corev1.Pod), err
 }
 
+func podStatusToPhase(status interface{}) corev1.PodPhase {
+	switch status {
+	case scenario.PodStatus_POD_PENDING:
+		return corev1.PodPending
+	case scenario.PodStatus_POD_RUNNING:
+		return corev1.PodRunning
+	case scenario.PodStatus_POD_SUCCEEDED:
+		return corev1.PodSucceeded
+	case scenario.PodStatus_POD_FAILED:
+		return corev1.PodFailed
+	case scenario.PodStatus_POD_UNKNOWN:
+		fallthrough
+	default:
+		return corev1.PodUnknown
+	}
+}
+
 // GetPodStatus retrieves the status of a pod by name.
 func (p *VKProvider) GetPodStatus(ctx context.Context, namespace string, name string) (*corev1.PodStatus, error) {
 	if err := p.runLatency(ctx); err != nil {
 		return nil, err
 	}
-	runningStatus := corev1.PodStatus{
-		Phase:   corev1.PodRunning,
-		Message: "Emulating pod successfully",
-	}
 
-	pod, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
-			return &runningStatus, nil
+	pod, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+			status, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatus)
+			if err != nil {
+				return nil, throw.Exception(err.Error())
+			}
+
+			ipercent, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatusPercentage)
+			if err != nil {
+				return nil, throw.Exception(err.Error())
+			}
+
+			percent, ok := ipercent.(int32)
+			if !ok {
+				return nil, throw.Exception("cast error")
+			}
+
+			if percent < rand.Int31n(int32(100)) {
+				return &corev1.PodStatus{
+					Phase:   corev1.PodRunning,
+					Message: "Emulating pod successfully",
+				}, nil
+			}
+
+			return &corev1.PodStatus{
+				Phase:   podStatusToPhase(status),
+				Message: "Emulating pod successfully",
+			}, nil
 		}},
-		magicPodArgs: magicPodArgs{
+		podResponseArgs: podResponseArgs{
 			name,
 			events.PodGetPodStatusResponse,
 			events.PodGetPodStatusResponsePercentage,
 		},
-		magicNodeArgs: magicNodeArgs{
+		nodeResponseArgs: nodeResponseArgs{
 			events.NodeGetPodStatusResponse,
 			events.NodeGetPodStatusResponsePercentage,
 		},
@@ -185,7 +227,7 @@ func (p *VKProvider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 	if err := p.runLatency(ctx); err != nil {
 		return nil, err
 	}
-	pod, err := magicNode(magicArgs{ctx, p, func() (interface{}, error) {
+	pod, err := nodeResponse(responseArgs{ctx, p, func() (interface{}, error) {
 		var arr []*corev1.Pod
 
 		for _, element := range p.Pods {
@@ -194,7 +236,7 @@ func (p *VKProvider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 		return arr, nil
 	},
 	},
-		magicNodeArgs{
+		nodeResponseArgs{
 			nodeResponseFlag:   events.NodeGetPodsResponse,
 			nodePercentageFlag: events.NodeGetPodsResponsePercentage,
 		},

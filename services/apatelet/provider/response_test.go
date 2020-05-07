@@ -31,15 +31,15 @@ func TestMagicPodAndNodePod(t *testing.T) {
 	// SOT
 	var s store.Store = ms
 
-	out, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{
+	out, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{
 			ctx: context.TODO(),
 			p:   &VKProvider{store: &s},
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			},
 		},
-		magicPodArgs: magicPodArgs{
+		podResponseArgs: podResponseArgs{
 			name:              podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
@@ -75,20 +75,20 @@ func TestMagicPodAndNodeNode(t *testing.T) {
 	// SOT
 	var s store.Store = ms
 
-	out, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{
+	out, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{
 			ctx: context.TODO(),
 			p:   &VKProvider{store: &s},
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			},
 		},
-		magicPodArgs: magicPodArgs{
+		podResponseArgs: podResponseArgs{
 			name:              podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		},
-		magicNodeArgs: magicNodeArgs{
+		nodeResponseArgs: nodeResponseArgs{
 			nodeResponseFlag:   NCPRF,
 			nodePercentageFlag: NCPRPF,
 		},
