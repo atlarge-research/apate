@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events";
 package apate.controlplane.events;
 
+import "google/protobuf/any.proto";
 import "scenario/events.proto";
 
 // A percentage of lifecycle requests will error
@@ -15,6 +16,13 @@ message ResponseState {
 
     // The percentage of requests to handle like this
     int32 percentage = 3;
+}
+
+// The flags given by this message will be overridden on the apatelets
+message CustomFlags {
+
+    // The actual flags to be overridden
+    map<int32, google.protobuf.Any> custom_flags = 1;
 }
 
 // See https://github.com/virtual-kubelet/virtual-kubelet/#podlifecylcehandler

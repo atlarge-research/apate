@@ -8,12 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+
 	cli "github.com/virtual-kubelet/node-cli"
 
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
@@ -38,22 +39,11 @@ func StartApatelet(cpEnv env.ApateletEnvironment, kubernetesPort, metricsPort in
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
 	config, res, err := joinApateCluster(ctx, connectionInfo, cpEnv.ListenPort)
-	KubeConfigWriter(config)
 	if err != nil {
 		return err
 	}
 
-	k, err := cluster.KubernetesClusterFromKubeConfig(config)
-
-	if err != nil {
-		return err
-	}
-
-	n, err := k.GetNumberOfPods("kube-system")
-	if err != nil {
-		return err
-	}
-	log.Printf("Pods: %d\n", n)
+	KubeConfigWriter(config.Bytes)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -135,13 +125,13 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	cancel()
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (cluster.KubeConfig, *normalization.NodeResources, error) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources, error) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		_ = client.Conn.Close()
 	}()
 
-	kubeconfig, res, err := client.JoinCluster(ctx, listenPort)
+	cfg, res, err := client.JoinCluster(ctx, listenPort)
 
 	if err != nil {
 		return nil, nil, err
@@ -149,7 +139,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 
 	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return kubeconfig, res, nil
+	return cfg, res, nil
 }
 
 func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int) (*cli.Command, context.CancelFunc, error) {

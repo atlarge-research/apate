@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kind"
 )
 
@@ -55,7 +57,7 @@ func (b *Builder) WithCreator(creator Manager) *Builder {
 }
 
 func (b *Builder) unmanaged() (KubernetesCluster, error) {
-	config, err := GetKubeConfig(b.kubeConfigLocation)
+	config, err := kubeconfig.FromPath(b.kubeConfigLocation)
 	if err != nil {
 		return KubernetesCluster{}, err
 	}
