@@ -11,7 +11,15 @@ import "controlplane/events/pod_events.proto";
 
 service Scenario {
     rpc loadScenario (PublicScenario) returns (google.protobuf.Empty) {}
-    rpc startScenario (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    rpc startScenario (StartScenarioConfig) returns (google.protobuf.Empty) {}
+}
+
+// StartScenarioConfig represents the data passed when starting a previously loaded scenario
+message StartScenarioConfig {
+    // A kubernetes configuration file which will be deployed to the cluster
+    // Is optional, if not provided nothing will be deployed
+    // // https://kubectl.docs.kubernetes.io/pages/kubectl_book/resources_and_controllers.html
+    bytes resource_config = 1;
 }
 
 // Scenario represents a full scenario as given in the scenario configuration file.
@@ -26,10 +34,6 @@ message PublicScenario {
 
     // A scenario consists of an number of tasks.
     repeated Task tasks = 3;
-
-    // A kubernetes configuration file which will be deployed to the cluster
-    // https://kubectl.docs.kubernetes.io/pages/kubectl_book/resources_and_controllers.html
-    bytes resource_config = 4;
 }
 
 // A task is a part of a scenario describing what happens at a certain point in time.

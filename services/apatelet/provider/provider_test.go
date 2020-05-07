@@ -7,10 +7,12 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/virtual-kubelet/node-cli/provider"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -27,8 +29,8 @@ func TestConfigureNode(t *testing.T) {
 		MaxPods: 1001,
 	}
 
-	prov := VKProvider{
-		Pods:      nil,
+	prov := Provider{
+		pods:      nil,
 		resources: &resources,
 	}
 
@@ -51,7 +53,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	}
 
 	st := store.NewStore()
-	prov := CreateProvider(&resources, &st)
+	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st)
 
 	fakeNode := corev1.Node{}
 
@@ -81,16 +83,16 @@ func TestCreatePod(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	p := VKProvider{
+	p := Provider{
 		store: &s,
-		Pods:  make(map[types.UID]*corev1.Pod),
+		pods:  make(map[types.UID]*corev1.Pod),
 	}
 
 	err := p.CreatePod(context.TODO(), &pod)
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, &pod, p.Pods[pod.UID])
+	assert.Equal(t, &pod, p.pods[pod.UID])
 	ctrl.Finish()
 }
 
@@ -113,16 +115,16 @@ func TestUpdatePod(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	p := VKProvider{
+	p := Provider{
 		store: &s,
-		Pods:  make(map[types.UID]*corev1.Pod),
+		pods:  make(map[types.UID]*corev1.Pod),
 	}
 
 	err := p.UpdatePod(context.TODO(), &pod)
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, &pod, p.Pods[pod.UID])
+	assert.Equal(t, &pod, p.pods[pod.UID])
 	ctrl.Finish()
 }
 
@@ -145,16 +147,16 @@ func TestDeletePod(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	p := VKProvider{
+	p := Provider{
 		store: &s,
-		Pods:  map[types.UID]*corev1.Pod{pod.UID: &pod},
+		pods:  map[types.UID]*corev1.Pod{pod.UID: &pod},
 	}
 
 	err := p.DeletePod(context.TODO(), &pod)
 
 	// assert
 	assert.NoError(t, err)
-	assert.NotContains(t, p.Pods, &pod)
+	assert.NotContains(t, p.pods, &pod)
 	ctrl.Finish()
 }
 
@@ -177,9 +179,9 @@ func TestGetPod(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	prov := VKProvider{
+	prov := Provider{
 		store: &s,
-		Pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
 	}
 
 	np, err := prov.GetPod(context.TODO(), "", p.Name)
@@ -209,16 +211,16 @@ func TestGetPods(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	prov := VKProvider{
+	prov := Provider{
 		store: &s,
-		Pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
 	}
 
 	ps, err := prov.GetPods(context.TODO())
 
 	// assert
 	assert.NoError(t, err)
-	assert.Contains(t, ps, prov.Pods[p.UID])
+	assert.Contains(t, ps, prov.pods[p.UID])
 	ctrl.Finish()
 }
 
@@ -244,9 +246,9 @@ func TestGetPodStatus100(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	prov := VKProvider{
+	prov := Provider{
 		store: &s,
-		Pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
 	}
 
 	ps, err := prov.GetPodStatus(context.TODO(), "", p.Name)
@@ -279,9 +281,9 @@ func TestGetPodStatus0(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	prov := VKProvider{
+	prov := Provider{
 		store: &s,
-		Pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
 	}
 
 	ps, err := prov.GetPodStatus(context.TODO(), "", p.Name)

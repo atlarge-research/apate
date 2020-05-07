@@ -146,7 +146,7 @@ func TestSetNodeFlag(t *testing.T) {
 	assert.Error(t, err, "flag not set")
 }
 
-// Pods
+// pods
 
 // TestUnsetPodFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
 func TestUnsetPodFlag(t *testing.T) {

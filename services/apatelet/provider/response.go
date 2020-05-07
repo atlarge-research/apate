@@ -2,11 +2,11 @@ package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 	"math/rand"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -18,7 +18,7 @@ const invalidFlag = throw.Exception("invalid flag type")
 
 type responseArgs struct {
 	ctx    context.Context
-	p      *VKProvider
+	p      *Provider
 	action func() (interface{}, error)
 }
 
@@ -53,7 +53,7 @@ and two node flags:
 
 the the helper function will get the flags from the store, check if they are valid,
 calculate the percentage and calls the action callback on success.
- */
+*/
 
 // podResponse checks the passed flags and calls the passed function on success
 func podResponse(args responseArgs, podA podResponseArgs) (interface{}, error) {

@@ -1,3 +1,4 @@
+// Package container deals with the creation of docker containers
 package container
 
 import (
@@ -9,24 +10,8 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"golang.org/x/sync/errgroup"
-)
 
-const (
-	// DefaultPullPolicy returns the default pull policy
-	DefaultPullPolicy = PullIfNotLocal
-
-	// AlwaysPull will always pull the image, even if it's already locally available
-	AlwaysPull = "pull-always"
-
-	// AlwaysLocal will always use the local image, and will not pull if it's not locally available
-	AlwaysLocal = "local-always"
-
-	// PullIfNotLocal will only pull if the image is not locally available, this will not check
-	// if the local image is possibly outdated
-	PullIfNotLocal = "pull-if-not-local"
-
-	// DockerAddressPrefix specifies the docker address prefix, used for determining the docker address
-	DockerAddressPrefix = "172.17."
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 )
 
 // SpawnCall is function which takes in the number of the container, then spawns the container
@@ -35,13 +20,14 @@ type SpawnCall func(int, context.Context) error
 
 // SpawnInformation represents all required information to prepare the docker environment for spawning the containers
 type SpawnInformation struct {
-	pullPolicy, image, containerName string
-	amount                           int
-	callback                         SpawnCall
+	pullPolicy           env.PullPolicy
+	image, containerName string
+	amount               int
+	callback             SpawnCall
 }
 
 // NewSpawnInformation creates a new SpawnInformation struct using the given information
-func NewSpawnInformation(pullPolicy, image, containerName string, amount int, callback SpawnCall) SpawnInformation {
+func NewSpawnInformation(pullPolicy env.PullPolicy, image, containerName string, amount int, callback SpawnCall) SpawnInformation {
 	return SpawnInformation{
 		pullPolicy:    pullPolicy,
 		image:         image,
@@ -120,13 +106,13 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 	return nil
 }
 
-func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy string) error {
+func prepareImage(ctx context.Context, cli *client.Client, imageName string, pullPolicy env.PullPolicy) error {
 	switch pullPolicy {
-	case AlwaysPull:
+	case env.AlwaysPull:
 		return alwaysPull(ctx, cli, imageName)
-	case PullIfNotLocal:
+	case env.PullIfNotLocal:
 		return pullIfNotLocal(ctx, cli, imageName)
-	case AlwaysLocal:
+	case env.AlwaysLocal:
 		return alwaysCache(ctx, cli, imageName)
 	default:
 		return fmt.Errorf("unknown docker pull policy: %s", pullPolicy)

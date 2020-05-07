@@ -33,7 +33,7 @@ func TestMagicPodNormal100(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -69,7 +69,7 @@ func TestMagicPodNormal0(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -108,7 +108,7 @@ func TestMagicPodNormal50A(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -146,7 +146,7 @@ func TestMagicPodNormal50B(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -182,7 +182,7 @@ func TestMagicPodStoreError1(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -219,7 +219,7 @@ func TestMagicPodStoreError2(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -255,7 +255,7 @@ func TestMagicPodInvalidPercentage(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -290,7 +290,7 @@ func TestMagicPodInvalidResponseType(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -328,7 +328,7 @@ func TestMagicPodInvalidResponse(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: context.TODO(),
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -368,7 +368,7 @@ func TestMagicPodTimeOut(t *testing.T) {
 	// Run code under test
 	out, err := podResponse(responseArgs{
 		ctx: ctx,
-		p:   &VKProvider{store: &s},
+		p:   &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
