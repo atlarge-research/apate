@@ -8,8 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-//TODO: Add more information for node
-
 // Node represents a Apatelet in the Apate cluster
 type Node struct {
 	ConnectionInfo service.ConnectionInfo

@@ -79,9 +79,5 @@ func TestForceCreateCluster_e2e(t *testing.T) {
 	cluster, err := clusterBuilder.WithName("TestForceCreateCluster").ForceCreate()
 	assert.NoError(t, err)
 
-	// TODO: There's currently no way to test if the old cluster was actually deleted (but it kinda has to be)
-	//		 but more importantly: it might be useful to have a way that other Cluster structs with the same name
-	//		 as a force created one are marked as invalid so they can't be used to interact with the cluster anymore.
-
 	assert.NoError(t, cluster.Delete())
 }
