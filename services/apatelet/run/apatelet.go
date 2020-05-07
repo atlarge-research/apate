@@ -36,6 +36,18 @@ func StartApatelet(env ec.ApateletEnvironment, kubernetesPort, metricsPort int) 
 	config, res := joinApateCluster(ctx, connectionInfo, env.ListenPort)
 	KubeConfigWriter(config)
 
+	k, err := cluster.KubernetesClusterFromKubeConfig(config)
+
+	if err != nil {
+		return err
+	}
+
+	n, err := k.GetNumberOfPods("kube-system")
+	if err != nil {
+		return err
+	}
+	log.Printf("Pods: %d\n", n)
+
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
 	hc.SetStatus(healthpb.Status_UNKNOWN)

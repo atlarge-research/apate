@@ -11,7 +11,7 @@ import (
 type ApateletStartFunction = func(env.ApateletEnvironment, int, int) error
 
 func StartApatelets(ctx context.Context, amountOfNodes int, environment env.ApateletEnvironment, fun ApateletStartFunction) error {
-	docker := true // TODO: Get from env
+	docker := false // TODO: Get from env
 
 	if docker {
 		return useDocker(ctx, amountOfNodes, environment)
