@@ -50,10 +50,6 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 
 	server = grpc.NewServer(options...)
 
-	if err != nil {
-		return
-	}
-
 	return
 }
 

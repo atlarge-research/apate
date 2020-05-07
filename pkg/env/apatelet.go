@@ -35,12 +35,16 @@ type ApateletEnvironment struct {
 }
 
 // DefaultApateletEnvironment returns the default apate environment
-func DefaultApateletEnvironment() ApateletEnvironment {
-	defaultPort, _ := strconv.Atoi(ApateletListenPortDefault)
+func DefaultApateletEnvironment() (ApateletEnvironment, error) {
+	defaultPort, err := strconv.Atoi(ApateletListenPortDefault)
+	if err != nil {
+		return ApateletEnvironment{}, err
+	}
+
 	return ApateletEnvironment{
 		ListenAddress: ApateletListenAddressDefault,
 		ListenPort:    defaultPort,
-	}
+	}, nil
 }
 
 // ApateletEnvironmentFromEnv build an ApateletEnvironment based on the actual environment
@@ -73,9 +77,4 @@ func ApateletEnvironmentFromEnv() (ApateletEnvironment, error) {
 func (env *ApateletEnvironment) AddConnectionInfo(address string, port int) {
 	env.ControlPlaneAddress = address
 	env.ControlPlanePort = port
-}
-
-// Copy copies the environment to a new instance
-func (env *ApateletEnvironment) Copy() ApateletEnvironment {
-	return *env
 }

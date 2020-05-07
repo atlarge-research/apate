@@ -48,12 +48,12 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	}
 
 	log.Printf("Adding %v to the queue", len(resources))
-	if err := (*s.store).AddResourcesToQueue(resources); err != nil {
+	if err = (*s.store).AddResourcesToQueue(resources); err != nil {
 		log.Print(err)
 		return nil, err
 	}
 
-	if err := (*s.store).SetApateletScenario(normalizedScenario); err != nil {
+	if err = (*s.store).SetApateletScenario(normalizedScenario); err != nil {
 		log.Print(err)
 		return nil, err
 	}
@@ -63,11 +63,15 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
 	// Create environment for apatelets
-	environment := env.DefaultApateletEnvironment()
+	environment, err := env.DefaultApateletEnvironment()
+	if err != nil {
+		return nil, err
+	}
+
 	environment.AddConnectionInfo(s.info.Address, s.info.Port)
 
 	// Start the apatelets
-	if err := run.StartApatelets(ctx, len(resources), environment); err != nil {
+	if err = run.StartApatelets(ctx, len(resources), environment); err != nil {
 		log.Print(err)
 		return nil, err
 	}

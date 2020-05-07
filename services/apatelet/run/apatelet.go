@@ -24,9 +24,9 @@ import (
 )
 
 // KubeConfigWriter is the function used for writing the kube config to the local file system
-var KubeConfigWriter = func(config []byte) {
-	// Noop by default
-}
+// Because we only want to write it once and not on every apatelet, this should only be set in main.go, for standalone instances
+// For goroutines, this should be written to file earlier
+var KubeConfigWriter func(config []byte) = nil
 
 // StartApatelet starts the apatelet
 func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsPort int, readyCh *chan bool) error {
@@ -43,7 +43,9 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		return err
 	}
 
-	KubeConfigWriter(config.Bytes)
+	if KubeConfigWriter != nil {
+		KubeConfigWriter(config.Bytes)
+	}
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -52,6 +54,9 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 	// Start the Apatelet
 	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort)
+	if err != nil {
+		return err
+	}
 
 	// Create virtual kubelet
 	errch := make(chan error)
@@ -59,7 +64,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	log.Println("Joining kubernetes cluster")
 	go func() {
 		// TODO: Notify master / proper logging
-		if err = nc.Run(); err != nil {
+		if err = nc.Run(ctx); err != nil {
 			hc.SetStatus(healthpb.Status_UNHEALTHY)
 			errch <- err
 		}
@@ -113,7 +118,10 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
-		_ = client.Conn.Close()
+		err := client.Conn.Close()
+		if err != nil {
+			log.Printf("could not close connection: %v\n", err)
+		}
 	}()
 
 	if err := client.LeaveCluster(ctx, uuid); err != nil {
@@ -127,7 +135,10 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources, error) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
-		_ = client.Conn.Close()
+		err := client.Conn.Close()
+		if err != nil {
+			log.Printf("could not close connection: %v\n", err)
+		}
 	}()
 
 	cfg, res, err := client.JoinCluster(ctx, listenPort)

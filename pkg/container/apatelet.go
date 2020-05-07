@@ -14,7 +14,7 @@ import (
 )
 
 // SpawnApateletContainers spawns multiple Apatelet Docker containers
-func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy string, cpEnv env.ApateletEnvironment) error {
+func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy env.PullPolicy, cpEnv env.ApateletEnvironment) error {
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {

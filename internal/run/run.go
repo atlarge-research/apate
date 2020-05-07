@@ -46,7 +46,7 @@ func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 	readyCh := make(chan bool)
 
 	for i := 0; i < amountOfNodes; i++ {
-		apateletEnv := environment.Copy()
+		apateletEnv := environment
 		ports, err := freeport.GetFreePorts(3)
 
 		if err != nil {
@@ -56,13 +56,16 @@ func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 		apateletEnv.ListenPort = ports[0]
 
 		go func() {
+			// TODO: Add retry logic
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("Apatelet failed to start: %v\n", r)
 				}
 			}()
 			err := apateRun.StartApatelet(apateletEnv, ports[1], ports[2], &readyCh)
-			panic(err)
+			if err != nil {
+				log.Printf("Apatelet failed to start: %v\n", err)
+			}
 		}()
 
 		<-readyCh

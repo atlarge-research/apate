@@ -17,6 +17,8 @@ import (
 	"github.com/google/uuid"
 )
 
+//TODO: Multi-master soon :tm:
+
 // Store represents the store of the control plane
 type Store interface {
 	// AddNode adds the given Node to the Apate cluster
