@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
-	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -37,7 +38,7 @@ func main() {
 	var pullPolicy string
 
 	ctx := context.Background()
-	env := container.DefaultControlPlaneEnvironment()
+	cpEnv := env.DefaultControlPlaneEnvironment()
 
 	app := &cli.App{
 		Name:  "apate-cli",
@@ -76,49 +77,49 @@ func main() {
 				Name:  "create",
 				Usage: "Creates a local control plane",
 				Action: func(c *cli.Context) error {
-					return createControlPlane(ctx, env, controlPlaneTimeout, pullPolicy)
+					return createControlPlane(ctx, cpEnv, controlPlaneTimeout, pullPolicy)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:        "address",
 						Usage:       "Listen address of control plane",
-						Destination: &env.Address,
-						Value:       env.Address,
+						Destination: &cpEnv.Address,
+						Value:       cpEnv.Address,
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "port",
 						Usage:       "The port of the control plane",
-						Destination: &env.Port,
-						Value:       env.Port,
+						Destination: &cpEnv.Port,
+						Value:       cpEnv.Port,
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "config",
 						Usage:       "Manager config of cluster manager",
-						Destination: &env.ManagerConfig,
-						Value:       env.ManagerConfig,
+						Destination: &cpEnv.ManagerConfig,
+						Value:       cpEnv.ManagerConfig,
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "external-ip",
 						Usage:       "IP used by apatelets to connect to control plane",
-						Destination: &env.ExternalIP,
-						Value:       env.ExternalIP,
+						Destination: &cpEnv.ExternalIP,
+						Value:       cpEnv.ExternalIP,
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "docker-policy-cp",
 						Usage:       "Docker pull policy for control plane",
-						Destination: &env.DockerPolicy,
-						Value:       env.DockerPolicy,
+						Destination: &cpEnv.DockerPolicy,
+						Value:       cpEnv.DockerPolicy,
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "docker-policy",
 						Usage:       "Docker pull policy used for creating the control plane",
 						Destination: &pullPolicy,
-						Value:       ec.DefaultPullPolicy,
+						Value:       env.DefaultPullPolicy,
 						Required:    false,
 					},
 					&cli.IntFlag{
@@ -126,6 +127,13 @@ func main() {
 						Usage:       "Time before giving up on the control plane in seconds",
 						Destination: &controlPlaneTimeout,
 						Value:       defaultControlPlaneTimeout,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "runtype",
+						Usage:       "How the control plane runs new apatelets. Can be DOCKER or ROUTINE.",
+						Destination: &cpEnv.ApateletRunType,
+						Value:       cpEnv.ApateletRunType,
 						Required:    false,
 					},
 				},
@@ -174,14 +182,14 @@ func getKubeConfig(ctx context.Context, address string, port int) error {
 	return nil
 }
 
-func createControlPlane(ctx context.Context, env container.ControlPlaneEnvironment, timeout int, pullPolicy string) error {
+func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, timeout int, pullPolicy string) error {
 	fmt.Print("Creating control plane container ")
-	port, err := strconv.Atoi(env.Port)
+	port, err := strconv.Atoi(cpEnv.Port)
 	if err != nil {
 		return err
 	}
 
-	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, env)
+	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, cpEnv)
 
 	if err != nil {
 		return err
@@ -190,7 +198,7 @@ func createControlPlane(ctx context.Context, env container.ControlPlaneEnvironme
 	fmt.Print("Waiting for control plane to be up ")
 
 	// Polling control plane until up
-	statusClient := controlplane.GetStatusClient(service.NewConnectionInfo(env.Address, port, false))
+	statusClient := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
 	defer cancel()
 	err = statusClient.WaitForControlPlane(ctx)
@@ -200,7 +208,7 @@ func createControlPlane(ctx context.Context, env container.ControlPlaneEnvironme
 	}
 
 	color.Green("DONE\n")
-	fmt.Printf("Apate control plane created: %v\n", env)
+	fmt.Printf("Apate control plane created: %v\n", cpEnv)
 	return nil
 }
 

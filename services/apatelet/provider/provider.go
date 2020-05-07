@@ -1,9 +1,10 @@
+// Package provider handles the interaction with the virtual kubelet library (and node-cli)
 package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	"strconv"
+
 	"github.com/sirupsen/logrus"
 	cli "github.com/virtual-kubelet/node-cli"
 	logruscli "github.com/virtual-kubelet/node-cli/logrus"
@@ -11,13 +12,16 @@ import (
 	"github.com/virtual-kubelet/node-cli/provider"
 	"github.com/virtual-kubelet/virtual-kubelet/log"
 	logruslogger "github.com/virtual-kubelet/virtual-kubelet/log/logrus"
-	"strconv"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 )
 
 var (
 	k8sVersion = "v1.15.2" // This should follow the version of k8s.io/kubernetes we are importing
 )
 
+// CreateProvider creates the node-cli (virtual kubelet) command
 func CreateProvider(ctx context.Context, res *normalization.NodeResources, port int, port2 int) (*cli.Command, error) {
 	logger := logrus.StandardLogger()
 

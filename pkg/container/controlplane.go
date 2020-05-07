@@ -2,7 +2,8 @@ package container
 
 import (
 	"context"
-	ec "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
@@ -13,24 +14,8 @@ import (
 	"github.com/docker/docker/client"
 )
 
-// ControlPlaneEnvironment represents the environment variables of the control plane
-type ControlPlaneEnvironment struct {
-	Address, Port, ManagerConfig, ExternalIP, DockerPolicy string
-}
-
-// DefaultControlPlaneEnvironment returns the default control plane environment
-func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
-	return ControlPlaneEnvironment{
-		Address:       ec.ControlPlaneListenAddressDefault,
-		Port:          ec.ControlPlaneListenPortDefault,
-		ManagerConfig: ec.ManagedClusterConfigDefault,
-		ExternalIP:    ec.ControlPlaneExternalIPDefault,
-		DockerPolicy:  ec.ControlPlaneDockerPolicyDefault,
-	}
-}
-
 // SpawnControlPlaneContainer spawns a single control plane container
-func SpawnControlPlaneContainer(ctx context.Context, pullPolicy string, env ControlPlaneEnvironment) error {
+func SpawnControlPlaneContainer(ctx context.Context, pullPolicy string, cpEnv env.ControlPlaneEnvironment) error {
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
@@ -38,22 +23,22 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy string, env Cont
 	}
 
 	// Get docker port for control plane
-	port, err := nat.NewPort("tcp", env.Port)
+	port, err := nat.NewPort("tcp", cpEnv.Port)
 
 	if err != nil {
 		return err
 	}
 
 	// Set spawn information
-	spawnInfo := NewSpawnInformation(pullPolicy, ec.ControlPlaneFullImage, ec.ControlPlaneContainerName, 1, func(i int, ctx context.Context) error {
+	spawnInfo := NewSpawnInformation(pullPolicy, env.ControlPlaneFullImage, env.ControlPlaneContainerName, 1, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
-			Image: ec.ControlPlaneImageName,
+			Image: env.ControlPlaneImageName,
 			Env: []string{
-				ec.ControlPlaneListenAddress + "=" + env.Address,
-				ec.ControlPlaneListenPort + "=" + env.Port,
-				ec.ManagedClusterConfig + "=" + env.ManagerConfig,
-				ec.ControlPlaneExternalIP + "=" + env.ExternalIP,
-				ec.ControlPlaneDockerPolicy + "=" + env.DockerPolicy,
+				env.ControlPlaneListenAddress + "=" + cpEnv.Address,
+				env.ControlPlaneListenPort + "=" + cpEnv.Port,
+				env.ManagedClusterConfig + "=" + cpEnv.ManagerConfig,
+				env.ControlPlaneExternalIP + "=" + cpEnv.ExternalIP,
+				env.ControlPlaneDockerPolicy + "=" + cpEnv.DockerPolicy,
 			},
 			ExposedPorts: nat.PortSet{
 				port: struct{}{},
@@ -63,7 +48,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy string, env Cont
 				port: []nat.PortBinding{
 					{
 						HostIP:   "0.0.0.0",
-						HostPort: env.Port,
+						HostPort: cpEnv.Port,
 					},
 				},
 			},
@@ -74,7 +59,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy string, env Cont
 					Target: "/var/run/docker.sock",
 				},
 			},
-		}, &network.NetworkingConfig{}, ec.ControlPlaneContainerName)
+		}, &network.NetworkingConfig{}, "apate-cp")
 
 		if err != nil {
 			return err
