@@ -41,6 +41,11 @@ func main() {
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
+	// Save the kubeconfig in the store
+	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
+		log.Fatal(err)
+	}
+
 	// Start gRPC server
 	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
 	if err != nil {
@@ -49,7 +54,7 @@ func main() {
 
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
-	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig, 0600); err != nil {
+	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig.Bytes, 0600); err != nil {
 		log.Fatalf("Error while starting control plane: %s", err.Error())
 	}
 
@@ -63,13 +68,6 @@ func main() {
 		shutdown(&createdStore, &managedKubernetesCluster, server)
 		stopped <- true
 	}()
-
-	numberOfPods, err := managedKubernetesCluster.GetNumberOfPods("kube-system")
-	if err != nil {
-		log.Fatalf("An error occurred: %s", err.Error())
-	}
-
-	log.Printf("There are %d pods in the cluster", numberOfPods)
 
 	// Start serving request
 	server.Serve()

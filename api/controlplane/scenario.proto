@@ -26,6 +26,9 @@ message PublicScenario {
 
     // A scenario consists of an number of tasks.
     repeated Task tasks = 3;
+
+    // A kubernetes configuration file which will be deployed to the cluster
+    bytes resource_config = 4;
 }
 
 // A task is a part of a scenario describing what happens at a certain point in time.
@@ -58,11 +61,13 @@ message Task {
         events.ResponseState node_response_state = 9;
 
         events.ResourcePressure resource_pressure = 10;
+
+        events.CustomFlags custom_flags = 11;
     }
 
     // The pod events to be executed
     // This field will be ignored when revert is true
-    repeated PodConfig pod_configs = 11;
+    repeated PodConfig pod_configs = 12;
 }
 
 message PodConfig {
@@ -73,6 +78,8 @@ message PodConfig {
         events.ResponseState pod_response_state = 2;
 
         events.PodStatusUpdate pod_status_update = 3;
+
+        events.CustomFlags custom_flags = 4;
     }
 }
 
