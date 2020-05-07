@@ -15,7 +15,7 @@ import (
 )
 
 // SpawnControlPlaneContainer spawns a single control plane container
-func SpawnControlPlaneContainer(ctx context.Context, pullPolicy string, cpEnv env.ControlPlaneEnvironment) error {
+func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, cpEnv env.ControlPlaneEnvironment) error {
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {

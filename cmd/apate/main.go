@@ -34,7 +34,7 @@ func main() {
 	var controlPlaneAddress string
 	var controlPlanePort int
 	var controlPlaneTimeout int
-	var pullPolicy string
+	var pullPolicy env.PullPolicy
 
 	ctx := context.Background()
 	cpEnv := env.DefaultControlPlaneEnvironment()
@@ -189,7 +189,7 @@ func getKubeConfig(ctx context.Context, address string, port int) error {
 	return nil
 }
 
-func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, timeout int, pullPolicy string) error {
+func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, timeout int, pullPolicy env.PullPolicy) error {
 	fmt.Print("Creating control plane container ")
 	port, err := strconv.Atoi(cpEnv.Port)
 	if err != nil {

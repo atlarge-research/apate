@@ -20,13 +20,14 @@ type SpawnCall func(int, context.Context) error
 
 // SpawnInformation represents all required information to prepare the docker environment for spawning the containers
 type SpawnInformation struct {
-	pullPolicy, image, containerName string
-	amount                           int
-	callback                         SpawnCall
+	pullPolicy           env.PullPolicy
+	image, containerName string
+	amount               int
+	callback             SpawnCall
 }
 
 // NewSpawnInformation creates a new SpawnInformation struct using the given information
-func NewSpawnInformation(pullPolicy, image, containerName string, amount int, callback SpawnCall) SpawnInformation {
+func NewSpawnInformation(pullPolicy env.PullPolicy, image, containerName string, amount int, callback SpawnCall) SpawnInformation {
 	return SpawnInformation{
 		pullPolicy:    pullPolicy,
 		image:         image,
