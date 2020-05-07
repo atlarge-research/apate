@@ -9,6 +9,10 @@ import (
 )
 
 const FlagNotSetError = store.FlagNotSetError
+const ExpectedError = wError("expected error")
+const InvalidResponse = wError("invalid response")
+const InvalidPercentage = wError("invalid percentage type")
+const InvalidFlag = wError("invalid flag type")
 
 type magicArgs struct {
 	ctx context.Context
@@ -42,7 +46,7 @@ func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, wError("invalid flag type")
+		return nil, InvalidFlag
 	}
 
 	iflagp, err := (*args.p.store).GetPodFlag(podA.name, podA.podPercentageFlag)
@@ -52,7 +56,7 @@ func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
 
 	flagp, ok := iflagp.(int32)
 	if !ok {
-		return nil, wError("invalid percentage type")
+		return nil, InvalidPercentage
 	}
 
 	if flagp == 0 {
@@ -70,9 +74,9 @@ func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
 		<-args.ctx.Done()
 		return nil, nil
 	case scenario.Response_ERROR:
-		return nil, wError("expected error")
+		return nil, ExpectedError
 	default:
-		return nil, wError("invalid response")
+		return nil, InvalidResponse
 	}
 }
 
@@ -84,7 +88,7 @@ func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, wError("invalid flag type")
+		return nil, InvalidFlag
 	}
 
 	iflagp, err := (*args.p.store).GetNodeFlag(nodeA.nodePercentageFlag)
@@ -94,7 +98,7 @@ func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
 
 	flagp, ok := iflagp.(int32)
 	if !ok {
-		return nil, wError("invalid percentage type")
+		return nil, InvalidPercentage
 	}
 
 	if flagp < rand.Int31n(int32(100)) {
@@ -108,9 +112,9 @@ func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
 		<-args.ctx.Done()
 		return nil, nil
 	case scenario.Response_ERROR:
-		return nil, wError("expected error")
+		return nil, ExpectedError
 	default:
-		return nil, wError("invalid response")
+		return nil, InvalidResponse
 	}
 }
 
