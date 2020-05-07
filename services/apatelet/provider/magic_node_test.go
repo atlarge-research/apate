@@ -3,15 +3,19 @@ package provider
 import (
 	"context"
 	"errors"
+	"math/rand"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"math/rand"
-	"testing"
 )
+
+const tStr = "test"
 
 func TestMagicNodeNormal100(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -19,7 +23,6 @@ func TestMagicNodeNormal100(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -31,8 +34,8 @@ func TestMagicNodeNormal100(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -55,7 +58,6 @@ func TestMagicNodeNormal0(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -67,8 +69,8 @@ func TestMagicNodeNormal0(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -85,14 +87,12 @@ func TestMagicNodeNormal0(t *testing.T) {
 	ctrl.Finish()
 }
 
-
 func TestMagicNodeNormal50A(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -106,8 +106,8 @@ func TestMagicNodeNormal50A(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -130,7 +130,6 @@ func TestMagicNodeNormal50B(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -144,8 +143,8 @@ func TestMagicNodeNormal50B(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -157,7 +156,7 @@ func TestMagicNodeNormal50B(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, ExpectedError, err.Error())
+	assert.EqualError(t, expectedError, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -168,7 +167,6 @@ func TestMagicNodeStoreError1(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 	genericError := errors.New("some error")
@@ -180,8 +178,8 @@ func TestMagicNodeStoreError1(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -204,7 +202,6 @@ func TestMagicNodeStoreError2(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 	genericError := errors.New("some error")
@@ -217,8 +214,8 @@ func TestMagicNodeStoreError2(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -241,7 +238,6 @@ func TestMagicNodeInvalidPercentage(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -253,8 +249,8 @@ func TestMagicNodeInvalidPercentage(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -266,7 +262,7 @@ func TestMagicNodeInvalidPercentage(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, InvalidPercentage, err.Error())
+	assert.EqualError(t, invalidPercentage, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -277,7 +273,6 @@ func TestMagicNodeInvalidResponseType(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -288,8 +283,8 @@ func TestMagicNodeInvalidResponseType(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -301,20 +296,17 @@ func TestMagicNodeInvalidResponseType(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, InvalidFlag, err.Error())
+	assert.EqualError(t, invalidFlag, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
 }
-
-
 
 func TestMagicNodeInvalidResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -328,8 +320,8 @@ func TestMagicNodeInvalidResponse(t *testing.T) {
 
 	// Run code under test
 	out, err := magicNode(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -341,19 +333,20 @@ func TestMagicNodeInvalidResponse(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, InvalidResponse, err.Error())
+	assert.EqualError(t, invalidResponse, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
 }
 
 func TestMagicNodeTimeOut(t *testing.T) {
-	ctx, _ := context.WithTimeout(context.Background(), 3)
+	ctx, cancel := context.WithTimeout(context.Background(), 3)
+	defer cancel()
+
 	ctrl, ctx := gomock.WithContext(ctx, t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
 	PCPRF := events.NodeCreatePodResponse
 	PCPRPF := events.NodeCreatePodResponsePercentage
 
@@ -366,9 +359,9 @@ func TestMagicNodeTimeOut(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err :=  magicNode(magicArgs{
-		ctx:    ctx,
-		p: &VKProvider{store: &s},
+	out, err := magicNode(magicArgs{
+		ctx: ctx,
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -384,4 +377,3 @@ func TestMagicNodeTimeOut(t *testing.T) {
 
 	ctrl.Finish()
 }
-

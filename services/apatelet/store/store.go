@@ -38,10 +38,12 @@ type Store interface {
 	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
+// Error makes const errors possible
 type Error string
 
 func (e Error) Error() string { return string(e) }
 
+// FlagNotSetError is raised whenever a flag is not set
 const FlagNotSetError = Error("flag not set")
 
 type flags map[events.EventFlag]interface{}

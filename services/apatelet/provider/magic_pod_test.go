@@ -3,14 +3,16 @@ package provider
 import (
 	"context"
 	"errors"
+	"math/rand"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"math/rand"
-	"testing"
 )
 
 func TestMagicPodNormal100(t *testing.T) {
@@ -19,30 +21,28 @@ func TestMagicPodNormal100(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
 	// Expectations
 	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
 	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
-	
+
 	var s store.Store = ms
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-	magicPodArgs{
-		name:              podName,
-		podResponseFlag:   PCPRF,
-		podPercentageFlag: PCPRPF,
-	})
+		magicPodArgs{
+			name:              podName,
+			podResponseFlag:   PCPRF,
+			podPercentageFlag: PCPRPF,
+		})
 
 	// Assert
 	assert.NoError(t, err)
@@ -57,8 +57,6 @@ func TestMagicPodNormal0(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
@@ -70,8 +68,8 @@ func TestMagicPodNormal0(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -84,12 +82,11 @@ func TestMagicPodNormal0(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, FlagNotSetError, err.Error())
+	assert.EqualError(t, flagNotSetError, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
 }
-
 
 func TestMagicPodNormal50A(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -97,8 +94,6 @@ func TestMagicPodNormal50A(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
@@ -112,8 +107,8 @@ func TestMagicPodNormal50A(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -137,8 +132,6 @@ func TestMagicPodNormal50B(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
@@ -152,8 +145,8 @@ func TestMagicPodNormal50B(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -166,7 +159,7 @@ func TestMagicPodNormal50B(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, ExpectedError, err.Error())
+	assert.EqualError(t, expectedError, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -177,8 +170,6 @@ func TestMagicPodStoreError1(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 	genericError := errors.New("some error")
@@ -190,8 +181,8 @@ func TestMagicPodStoreError1(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -215,8 +206,6 @@ func TestMagicPodStoreError2(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 	genericError := errors.New("some error")
@@ -229,8 +218,8 @@ func TestMagicPodStoreError2(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -254,8 +243,6 @@ func TestMagicPodInvalidPercentage(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
@@ -267,8 +254,8 @@ func TestMagicPodInvalidPercentage(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -281,7 +268,7 @@ func TestMagicPodInvalidPercentage(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, InvalidPercentage, err.Error())
+	assert.EqualError(t, invalidPercentage, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -292,8 +279,6 @@ func TestMagicPodInvalidResponseType(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
@@ -304,8 +289,8 @@ func TestMagicPodInvalidResponseType(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -318,21 +303,17 @@ func TestMagicPodInvalidResponseType(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, InvalidFlag, err.Error())
+	assert.EqualError(t, invalidFlag, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
 }
-
-
 
 func TestMagicPodInvalidResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
@@ -346,8 +327,8 @@ func TestMagicPodInvalidResponse(t *testing.T) {
 
 	// Run code under test
 	out, err := magicPod(magicArgs{
-		ctx:    context.TODO(),
-		p: &VKProvider{store: &s},
+		ctx: context.TODO(),
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -360,20 +341,19 @@ func TestMagicPodInvalidResponse(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, InvalidResponse, err.Error())
+	assert.EqualError(t, invalidResponse, err.Error())
 	assert.Nil(t, out)
 
 	ctrl.Finish()
 }
 
 func TestMagicPodTimeOut(t *testing.T) {
-	ctx, _ := context.WithTimeout(context.Background(), 3)
+	ctx, cancel := context.WithTimeout(context.Background(), 3)
+	defer cancel()
 	ctrl, ctx := gomock.WithContext(ctx, t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	tStr := "test"
-	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
@@ -386,9 +366,9 @@ func TestMagicPodTimeOut(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err :=  magicPod(magicArgs{
-		ctx:    ctx,
-		p: &VKProvider{store: &s},
+	out, err := magicPod(magicArgs{
+		ctx: ctx,
+		p:   &VKProvider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
