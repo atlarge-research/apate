@@ -38,6 +38,12 @@ type Store interface {
 	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
+type Error string
+
+func (e Error) Error() string { return string(e) }
+
+const FlagNotSetError = Error("flag not set")
+
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
 
@@ -104,7 +110,7 @@ func (s *store) GetNodeFlag(id events.NodeEventFlag) (interface{}, error) {
 		return val, nil
 	}
 
-	return nil, errors.New("flag not set")
+	return nil, FlagNotSetError
 }
 
 func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
@@ -122,7 +128,7 @@ func (s *store) GetPodFlag(configuration string, flag events.PodEventFlag) (inte
 		return val, nil
 	}
 
-	return nil, errors.New("flag not set")
+	return nil, FlagNotSetError
 }
 
 func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val interface{}) {
