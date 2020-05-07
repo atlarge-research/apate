@@ -30,7 +30,7 @@ func TestConfigureNode(t *testing.T) {
 	}
 
 	prov := Provider{
-		pods:      nil,
+		pods:      NewPodManager(),
 		resources: &resources,
 	}
 
@@ -85,14 +85,14 @@ func TestCreatePod(t *testing.T) {
 	var s store.Store = ms
 	p := Provider{
 		store: &s,
-		pods:  make(map[types.UID]*corev1.Pod),
+		pods:  NewPodManager(),
 	}
 
 	err := p.CreatePod(context.TODO(), &pod)
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, &pod, p.pods[pod.UID])
+	assert.Equal(t, &pod, p.pods.GetPodByUID(pod.UID))
 	ctrl.Finish()
 }
 
@@ -117,14 +117,14 @@ func TestUpdatePod(t *testing.T) {
 	var s store.Store = ms
 	p := Provider{
 		store: &s,
-		pods:  make(map[types.UID]*corev1.Pod),
+		pods:  NewPodManager(),
 	}
 
 	err := p.UpdatePod(context.TODO(), &pod)
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, &pod, p.pods[pod.UID])
+	assert.Equal(t, &pod, p.pods.GetPodByUID(pod.UID))
 	ctrl.Finish()
 }
 
@@ -149,14 +149,14 @@ func TestDeletePod(t *testing.T) {
 	var s store.Store = ms
 	p := Provider{
 		store: &s,
-		pods:  map[types.UID]*corev1.Pod{pod.UID: &pod},
+		pods: NewPodManager(),
 	}
 
 	err := p.DeletePod(context.TODO(), &pod)
 
 	// assert
 	assert.NoError(t, err)
-	assert.NotContains(t, p.pods, &pod)
+	assert.NotContains(t, p.pods.uidToPod, &pod)
 	ctrl.Finish()
 }
 
@@ -181,8 +181,10 @@ func TestGetPod(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods:  NewPodManager(),
 	}
+
+	prov.pods.AddPod(p)
 
 	np, err := prov.GetPod(context.TODO(), "", p.Name)
 
@@ -213,14 +215,15 @@ func TestGetPods(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods: NewPodManager(),
 	}
+	prov.pods.AddPod(p)
 
 	ps, err := prov.GetPods(context.TODO())
 
 	// assert
 	assert.NoError(t, err)
-	assert.Contains(t, ps, prov.pods[p.UID])
+	assert.Contains(t, ps, prov.pods.GetPodByUID(p.UID))
 	ctrl.Finish()
 }
 
@@ -248,8 +251,9 @@ func TestGetPodStatus100(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods:  NewPodManager(),
 	}
+	prov.pods.AddPod(p)
 
 	ps, err := prov.GetPodStatus(context.TODO(), "", p.Name)
 
@@ -283,8 +287,9 @@ func TestGetPodStatus0(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods:  map[types.UID]*corev1.Pod{p.UID: &p},
+		pods: NewPodManager(),
 	}
+	prov.pods.AddPod(p)
 
 	ps, err := prov.GetPodStatus(context.TODO(), "", p.Name)
 

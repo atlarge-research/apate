@@ -3,19 +3,14 @@ package provider
 
 import (
 	"context"
-	"os"
-	"strconv"
-	"sync"
-
-	cli "github.com/virtual-kubelet/node-cli"
-	"github.com/virtual-kubelet/node-cli/opts"
-	"github.com/virtual-kubelet/node-cli/provider"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	cli "github.com/virtual-kubelet/node-cli"
+	"github.com/virtual-kubelet/node-cli/opts"
+	"github.com/virtual-kubelet/node-cli/provider"
+	"os"
+	"strconv"
 )
 
 var (
@@ -25,8 +20,7 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	pods      map[types.UID]*corev1.Pod
-	podLock   sync.RWMutex
+	pods      PodManager
 	resources *normalization.NodeResources
 	cfg       provider.InitConfig
 	nodeInfo  cluster.NodeInfo
@@ -63,7 +57,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 // NewProvider returns the provider but with the vk type instead of our own.
 func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store) provider.Provider {
 	return &Provider{
-		pods:      make(map[types.UID]*corev1.Pod),
+		pods:      NewPodManager(),
 		resources: resources,
 		cfg:       cfg,
 		nodeInfo:  nodeInfo,
