@@ -2,13 +2,15 @@ package provider
 
 import (
 	"context"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestMagicPodAndNodePod(t *testing.T) {
@@ -31,13 +33,13 @@ func TestMagicPodAndNodePod(t *testing.T) {
 
 	out, err := magicPodAndNode(magicPodNodeArgs{
 		magicArgs: magicArgs{
-			ctx:    context.TODO(),
-			p: &VKProvider{store: &s},
+			ctx: context.TODO(),
+			p:   &VKProvider{store: &s},
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			},
 		},
-		magicPodArgs:  magicPodArgs{
+		magicPodArgs: magicPodArgs{
 			name:              podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
@@ -63,26 +65,25 @@ func TestMagicPodAndNodeNode(t *testing.T) {
 	NCPRF := events.PodCreatePodResponse
 	NCPRPF := events.PodCreatePodResponsePercentage
 
-
 	// Expectations
 	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
 	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(0), nil)
 
 	ms.EXPECT().GetNodeFlag(NCPRF).Return(scenario.Response_NORMAL, nil)
 	ms.EXPECT().GetNodeFlag(NCPRPF).Return(int32(100), nil)
-	
+
 	// SOT
 	var s store.Store = ms
 
 	out, err := magicPodAndNode(magicPodNodeArgs{
 		magicArgs: magicArgs{
-			ctx:    context.TODO(),
-			p: &VKProvider{store: &s},
+			ctx: context.TODO(),
+			p:   &VKProvider{store: &s},
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			},
 		},
-		magicPodArgs:  magicPodArgs{
+		magicPodArgs: magicPodArgs{
 			name:              podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,

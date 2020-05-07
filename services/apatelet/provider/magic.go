@@ -2,33 +2,34 @@ package provider
 
 import (
 	"context"
+	"math/rand"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"math/rand"
 )
 
-const FlagNotSetError = store.FlagNotSetError
-const ExpectedError = wError("expected error")
-const InvalidResponse = wError("invalid response")
-const InvalidPercentage = wError("invalid percentage type")
-const InvalidFlag = wError("invalid flag type")
+const flagNotSetError = store.FlagNotSetError
+const expectedError = wError("expected error")
+const invalidResponse = wError("invalid response")
+const invalidPercentage = wError("invalid percentage type")
+const invalidFlag = wError("invalid flag type")
 
 type magicArgs struct {
-	ctx context.Context
-	p *VKProvider
+	ctx    context.Context
+	p      *VKProvider
 	action func() (interface{}, error)
 }
 
 type magicPodArgs struct {
 	name string
 
-	podResponseFlag events.PodEventFlag
+	podResponseFlag   events.PodEventFlag
 	podPercentageFlag events.PodEventFlag
 }
 
 type magicNodeArgs struct {
-	nodeResponseFlag events.NodeEventFlag
+	nodeResponseFlag   events.NodeEventFlag
 	nodePercentageFlag events.NodeEventFlag
 }
 
@@ -46,7 +47,7 @@ func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, InvalidFlag
+		return nil, invalidFlag
 	}
 
 	iflagp, err := (*args.p.store).GetPodFlag(podA.name, podA.podPercentageFlag)
@@ -56,11 +57,11 @@ func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
 
 	flagp, ok := iflagp.(int32)
 	if !ok {
-		return nil, InvalidPercentage
+		return nil, invalidPercentage
 	}
 
 	if flagp == 0 {
-		return nil, FlagNotSetError
+		return nil, flagNotSetError
 	}
 
 	if flagp < rand.Int31n(int32(100)) {
@@ -74,9 +75,9 @@ func magicPod(args magicArgs, podA magicPodArgs) (interface{}, error) {
 		<-args.ctx.Done()
 		return nil, nil
 	case scenario.Response_ERROR:
-		return nil, ExpectedError
+		return nil, expectedError
 	default:
-		return nil, InvalidResponse
+		return nil, invalidResponse
 	}
 }
 
@@ -88,7 +89,7 @@ func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, InvalidFlag
+		return nil, invalidFlag
 	}
 
 	iflagp, err := (*args.p.store).GetNodeFlag(nodeA.nodePercentageFlag)
@@ -98,7 +99,7 @@ func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
 
 	flagp, ok := iflagp.(int32)
 	if !ok {
-		return nil, InvalidPercentage
+		return nil, invalidPercentage
 	}
 
 	if flagp < rand.Int31n(int32(100)) {
@@ -112,16 +113,16 @@ func magicNode(args magicArgs, nodeA magicNodeArgs) (interface{}, error) {
 		<-args.ctx.Done()
 		return nil, nil
 	case scenario.Response_ERROR:
-		return nil, ExpectedError
+		return nil, expectedError
 	default:
-		return nil, InvalidResponse
+		return nil, invalidResponse
 	}
 }
 
 func magicPodAndNode(args magicPodNodeArgs) (interface{}, error) {
 	pint, err := magicPod(args.magicArgs, args.magicPodArgs)
 
-	if err != FlagNotSetError {
+	if err != flagNotSetError {
 		return pint, err
 	}
 

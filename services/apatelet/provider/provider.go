@@ -2,10 +2,14 @@
 package provider
 
 import (
+	"errors"
+	"sync"
+	"time"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node/api"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/virtual-kubelet/virtual-kubelet/node/api"
-	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
@@ -33,19 +37,18 @@ func CreateProvider(resources *normalization.NodeResources, store *store.Store) 
 	return &VKProvider{
 		resources: resources,
 		store:     store,
+		Pods:      make(map[types.UID]*corev1.Pod),
 	}
 }
 
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *VKProvider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
 
 	_, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
-			p.PodLock.Lock()
-			p.Pods[pod.UID] = pod
-			p.PodLock.Unlock()
-			return nil, nil
-		}},
+		magicArgs: magicArgs{ctx, p, updateMap(p, pod)},
 		magicPodArgs: magicPodArgs{
 			pod.Name,
 			events.PodCreatePodResponse,
@@ -62,13 +65,12 @@ func (p *VKProvider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *VKProvider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
 	_, err := magicPodAndNode(magicPodNodeArgs{
-		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
-			p.PodLock.Lock()
-			p.Pods[pod.UID] = pod
-			p.PodLock.Unlock()
-			return nil, nil
-		}},
+		magicArgs: magicArgs{ctx, p, updateMap(p, pod)},
 		magicPodArgs: magicPodArgs{
 			pod.Name,
 			events.PodUpdatePodResponse,
@@ -83,8 +85,21 @@ func (p *VKProvider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 	return err
 }
 
+func updateMap(p *VKProvider, pod *corev1.Pod) func() (interface{}, error) {
+	return func() (interface{}, error) {
+		p.PodLock.Lock()
+		p.Pods[pod.UID] = pod
+		p.PodLock.Unlock()
+		return nil, nil
+	}
+}
+
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *VKProvider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
 	_, err := magicPodAndNode(magicPodNodeArgs{
 		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
 			p.PodLock.Lock()
@@ -108,6 +123,10 @@ func (p *VKProvider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 // GetPod retrieves a pod by name.
 func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
+	}
+
 	pod, err := magicPodAndNode(magicPodNodeArgs{
 		magicArgs: magicArgs{ctx, p, func() (interface{}, error) {
 			p.PodLock.RLock()
@@ -135,6 +154,9 @@ func (p *VKProvider) GetPod(ctx context.Context, namespace, name string) (*corev
 
 // GetPodStatus retrieves the status of a pod by name.
 func (p *VKProvider) GetPodStatus(ctx context.Context, namespace string, name string) (*corev1.PodStatus, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
+	}
 	runningStatus := corev1.PodStatus{
 		Phase:   corev1.PodRunning,
 		Message: "Emulating pod successfully",
@@ -160,6 +182,9 @@ func (p *VKProvider) GetPodStatus(ctx context.Context, namespace string, name st
 
 // GetPods retrieves a list of all pods running.
 func (p *VKProvider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
+	}
 	pod, err := magicNode(magicArgs{ctx, p, func() (interface{}, error) {
 		var arr []*corev1.Pod
 
@@ -214,4 +239,38 @@ func (p *VKProvider) ConfigureNode(_ context.Context, v *corev1.Node) {
 		corev1.ResourceStorage:          storage,
 		corev1.ResourceEphemeralStorage: ephemeralStorage,
 	}
+}
+
+func (p *VKProvider) runLatency(ctx context.Context) error {
+	val, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyEnabled)
+	if err != nil {
+		return err
+	}
+
+	y, ok := val.(bool)
+	if !ok {
+		return errors.New("NodeAddedLatencyEnabled is not a bool")
+	}
+	if !y {
+		return nil
+	}
+
+	ims, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyMsec)
+	if err != nil {
+		return err
+	}
+
+	ms, ok := ims.(int64)
+	if !ok {
+		return errors.New("NodeAddedLatencyEnabled is not a bool")
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	time.Sleep(time.Duration(ms) * time.Millisecond)
+	return nil
 }
