@@ -15,7 +15,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
-func TestMagicPodNormal100(t *testing.T) {
+func TestPodNormal100(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -32,8 +32,8 @@ func TestMagicPodNormal100(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -51,7 +51,7 @@ func TestMagicPodNormal100(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodNormal0(t *testing.T) {
+func TestPodNormal0(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -68,8 +68,8 @@ func TestMagicPodNormal0(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -88,7 +88,7 @@ func TestMagicPodNormal0(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodNormal50A(t *testing.T) {
+func TestPodNormal50A(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -107,8 +107,8 @@ func TestMagicPodNormal50A(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -126,7 +126,7 @@ func TestMagicPodNormal50A(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodNormal50B(t *testing.T) {
+func TestPodNormal50B(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -145,8 +145,8 @@ func TestMagicPodNormal50B(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -165,7 +165,7 @@ func TestMagicPodNormal50B(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodStoreError1(t *testing.T) {
+func TestPodStoreError1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -181,8 +181,8 @@ func TestMagicPodStoreError1(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -201,7 +201,7 @@ func TestMagicPodStoreError1(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodStoreError2(t *testing.T) {
+func TestPodStoreError2(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -218,8 +218,8 @@ func TestMagicPodStoreError2(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -238,7 +238,7 @@ func TestMagicPodStoreError2(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodInvalidPercentage(t *testing.T) {
+func TestPodInvalidPercentage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -254,8 +254,8 @@ func TestMagicPodInvalidPercentage(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -274,7 +274,7 @@ func TestMagicPodInvalidPercentage(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodInvalidResponseType(t *testing.T) {
+func TestPodInvalidResponseType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -289,8 +289,8 @@ func TestMagicPodInvalidResponseType(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -309,7 +309,7 @@ func TestMagicPodInvalidResponseType(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodInvalidResponse(t *testing.T) {
+func TestPodInvalidResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -327,8 +327,8 @@ func TestMagicPodInvalidResponse(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -347,7 +347,7 @@ func TestMagicPodInvalidResponse(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicPodTimeOut(t *testing.T) {
+func TestPodTimeOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3)
 	defer cancel()
 	ctrl, ctx := gomock.WithContext(ctx, t)
@@ -367,8 +367,8 @@ func TestMagicPodTimeOut(t *testing.T) {
 
 	// Run code under test
 	out, err := podResponse(responseArgs{
-		ctx: ctx,
-		p:   &Provider{store: &s},
+		ctx:      ctx,
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},

@@ -31,7 +31,7 @@ func (p *Provider) ConfigureNode(_ context.Context, node *corev1.Node) {
 func (p *Provider) nodeConditions() []corev1.NodeCondition {
 	lastHeartbeatTime := metav1.Now()
 	lastTransitionTime := metav1.Now()
-	lastTransitionReason := "Apate cluster is ready"
+	lastTransitionReason := "Apatelet is ready"
 	lastTransitionMessage := "ok"
 
 	// Return static thumbs-up values for all conditions.

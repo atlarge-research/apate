@@ -17,9 +17,9 @@ const invalidPercentage = throw.Exception("invalid percentage type")
 const invalidFlag = throw.Exception("invalid flag type")
 
 type responseArgs struct {
-	ctx    context.Context
-	p      *Provider
-	action func() (interface{}, error)
+	ctx      context.Context
+	provider *Provider
+	action   func() (interface{}, error)
 }
 
 type podResponseArgs struct {
@@ -57,7 +57,7 @@ calculate the percentage and calls the action callback on success.
 
 // podResponse checks the passed flags and calls the passed function on success
 func podResponse(args responseArgs, podA podResponseArgs) (interface{}, error) {
-	iflag, err := (*args.p.store).GetPodFlag(podA.name, podA.podResponseFlag)
+	iflag, err := (*args.provider.store).GetPodFlag(podA.name, podA.podResponseFlag)
 	if err != nil {
 		return nil, err
 	}
@@ -67,21 +67,21 @@ func podResponse(args responseArgs, podA podResponseArgs) (interface{}, error) {
 		return nil, invalidFlag
 	}
 
-	iflagp, err := (*args.p.store).GetPodFlag(podA.name, podA.podPercentageFlag)
+	iflagpercent, err := (*args.provider.store).GetPodFlag(podA.name, podA.podPercentageFlag)
 	if err != nil {
 		return nil, err
 	}
 
-	flagp, ok := iflagp.(int32)
+	flagpercent, ok := iflagpercent.(int32)
 	if !ok {
 		return nil, invalidPercentage
 	}
 
-	if flagp == 0 {
+	if flagpercent == 0 {
 		return nil, flagNotSetError
 	}
 
-	if flagp < rand.Int31n(int32(100)) {
+	if flagpercent < rand.Int31n(int32(100)) {
 		return args.action()
 	}
 
@@ -100,7 +100,7 @@ func podResponse(args responseArgs, podA podResponseArgs) (interface{}, error) {
 
 // nodeResponse checks the passed flags and calls the passed function on success
 func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, error) {
-	iflag, err := (*args.p.store).GetNodeFlag(nodeA.nodeResponseFlag)
+	iflag, err := (*args.provider.store).GetNodeFlag(nodeA.nodeResponseFlag)
 	if err != nil {
 		return nil, err
 	}
@@ -110,17 +110,17 @@ func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, error
 		return nil, invalidFlag
 	}
 
-	iflagp, err := (*args.p.store).GetNodeFlag(nodeA.nodePercentageFlag)
+	iflagpercent, err := (*args.provider.store).GetNodeFlag(nodeA.nodePercentageFlag)
 	if err != nil {
 		return nil, err
 	}
 
-	flagp, ok := iflagp.(int32)
+	flagpercent, ok := iflagpercent.(int32)
 	if !ok {
 		return nil, invalidPercentage
 	}
 
-	if flagp < rand.Int31n(int32(100)) {
+	if flagpercent < rand.Int31n(int32(100)) {
 		return args.action()
 	}
 
@@ -139,10 +139,10 @@ func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, error
 
 // podAndNodeResponse first calls podResponse and if pod response is not set calls nodeResponse
 func podAndNodeResponse(args podNodeResponse) (interface{}, error) {
-	pint, err := podResponse(args.responseArgs, args.podResponseArgs)
+	pod, err := podResponse(args.responseArgs, args.podResponseArgs)
 
 	if err != flagNotSetError {
-		return pint, err
+		return pod, err
 	}
 
 	return nodeResponse(args.responseArgs, args.nodeResponseArgs)

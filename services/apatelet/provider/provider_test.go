@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +32,7 @@ func TestConfigureNode(t *testing.T) {
 	}
 
 	prov := Provider{
-		pods:      NewPodManager(),
+		pods:      podmanager.New(),
 		resources: &resources,
 	}
 
@@ -85,7 +87,7 @@ func TestCreatePod(t *testing.T) {
 	var s store.Store = ms
 	p := Provider{
 		store: &s,
-		pods:  NewPodManager(),
+		pods:  podmanager.New(),
 	}
 
 	err := p.CreatePod(context.TODO(), &pod)
@@ -117,7 +119,7 @@ func TestUpdatePod(t *testing.T) {
 	var s store.Store = ms
 	p := Provider{
 		store: &s,
-		pods:  NewPodManager(),
+		pods:  podmanager.New(),
 	}
 
 	err := p.UpdatePod(context.TODO(), &pod)
@@ -149,14 +151,14 @@ func TestDeletePod(t *testing.T) {
 	var s store.Store = ms
 	p := Provider{
 		store: &s,
-		pods: NewPodManager(),
+		pods:  podmanager.New(),
 	}
 
 	err := p.DeletePod(context.TODO(), &pod)
 
 	// assert
 	assert.NoError(t, err)
-	assert.NotContains(t, p.pods.uidToPod, &pod)
+	assert.NotContains(t, p.pods.GetAllPods(), &pod)
 	ctrl.Finish()
 }
 
@@ -181,7 +183,7 @@ func TestGetPod(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods:  NewPodManager(),
+		pods:  podmanager.New(),
 	}
 
 	prov.pods.AddPod(p)
@@ -215,7 +217,7 @@ func TestGetPods(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods: NewPodManager(),
+		pods:  podmanager.New(),
 	}
 	prov.pods.AddPod(p)
 
@@ -251,7 +253,7 @@ func TestGetPodStatus100(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods:  NewPodManager(),
+		pods:  podmanager.New(),
 	}
 	prov.pods.AddPod(p)
 
@@ -287,7 +289,7 @@ func TestGetPodStatus0(t *testing.T) {
 	var s store.Store = ms
 	prov := Provider{
 		store: &s,
-		pods: NewPodManager(),
+		pods:  podmanager.New(),
 	}
 	prov.pods.AddPod(p)
 
