@@ -52,8 +52,11 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	hc.StartStreamWithRetry(ctx, 3)
 
+	// Create store
+	st := store.NewStore()
+
 	// Start the Apatelet
-	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort)
+	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st)
 	if err != nil {
 		return err
 	}
@@ -69,8 +72,6 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 			errch <- err
 		}
 	}()
-
-	st := store.NewStore()
 
 	// Start gRPC server
 	server, err := createGRPC(apateletEnv.ListenPort, &st, apateletEnv.ListenAddress)
@@ -152,9 +153,9 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int) (*cli.Command, context.CancelFunc, error) {
+func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort)
+	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
 	return cmd, cancel, err
 }
 
