@@ -142,7 +142,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name stri
 	}
 
 	pod, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{ctx: ctx, p: p, action: func() (interface{}, error) {
+		responseArgs: responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
 			status, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatus)
 			if err != nil {
 				return nil, throw.Exception(err.Error())

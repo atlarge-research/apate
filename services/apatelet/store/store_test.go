@@ -8,9 +8,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )
 
-// TODO: Change tests to use absolute timestamp instead of relative one
-// TODO: Use int64 from absolute timestamp
-
 // TestEmptyQueue ensures the store starts with an empty queue
 func TestEmptyQueue(t *testing.T) {
 	st := NewStore()

@@ -17,7 +17,7 @@ import (
 
 const tStr = "test"
 
-func TestMagicNodeNormal100(t *testing.T) {
+func TestNodeNormal100(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -34,8 +34,8 @@ func TestMagicNodeNormal100(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -52,7 +52,7 @@ func TestMagicNodeNormal100(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeNormal0(t *testing.T) {
+func TestNodeNormal0(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -69,8 +69,8 @@ func TestMagicNodeNormal0(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -87,7 +87,7 @@ func TestMagicNodeNormal0(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeNormal50A(t *testing.T) {
+func TestNodeNormal50A(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -106,8 +106,8 @@ func TestMagicNodeNormal50A(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -124,7 +124,7 @@ func TestMagicNodeNormal50A(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeNormal50B(t *testing.T) {
+func TestNodeNormal50B(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -143,8 +143,8 @@ func TestMagicNodeNormal50B(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -162,7 +162,7 @@ func TestMagicNodeNormal50B(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeStoreError1(t *testing.T) {
+func TestNodeStoreError1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -178,8 +178,8 @@ func TestMagicNodeStoreError1(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -197,7 +197,7 @@ func TestMagicNodeStoreError1(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeStoreError2(t *testing.T) {
+func TestNodeStoreError2(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -214,8 +214,8 @@ func TestMagicNodeStoreError2(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -233,7 +233,7 @@ func TestMagicNodeStoreError2(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeInvalidPercentage(t *testing.T) {
+func TestNodeInvalidPercentage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -249,8 +249,8 @@ func TestMagicNodeInvalidPercentage(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -268,7 +268,7 @@ func TestMagicNodeInvalidPercentage(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeInvalidResponseType(t *testing.T) {
+func TestNodeInvalidResponseType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -283,8 +283,8 @@ func TestMagicNodeInvalidResponseType(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -302,7 +302,7 @@ func TestMagicNodeInvalidResponseType(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeInvalidResponse(t *testing.T) {
+func TestNodeInvalidResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -320,8 +320,8 @@ func TestMagicNodeInvalidResponse(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: context.TODO(),
-		p:   &Provider{store: &s},
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
@@ -339,7 +339,7 @@ func TestMagicNodeInvalidResponse(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestMagicNodeTimeOut(t *testing.T) {
+func TestNodeTimeOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3)
 	defer cancel()
 
@@ -360,8 +360,8 @@ func TestMagicNodeTimeOut(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx: ctx,
-		p:   &Provider{store: &s},
+		ctx:      ctx,
+		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},

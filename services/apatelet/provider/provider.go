@@ -3,14 +3,18 @@ package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	"os"
+	"strconv"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
+
 	cli "github.com/virtual-kubelet/node-cli"
 	"github.com/virtual-kubelet/node-cli/opts"
 	"github.com/virtual-kubelet/node-cli/provider"
-	"os"
-	"strconv"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 var (
@@ -20,7 +24,7 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	pods      PodManager
+	pods      podmanager.PodManager
 	resources *normalization.NodeResources
 	cfg       provider.InitConfig
 	nodeInfo  cluster.NodeInfo
@@ -57,7 +61,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 // NewProvider returns the provider but with the vk type instead of our own.
 func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store) provider.Provider {
 	return &Provider{
-		pods:      NewPodManager(),
+		pods:      podmanager.New(),
 		resources: resources,
 		cfg:       cfg,
 		nodeInfo:  nodeInfo,
