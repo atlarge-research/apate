@@ -6,9 +6,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 )
 
 // Store represents the state of the apatelet
@@ -37,6 +37,9 @@ type Store interface {
 	// SetNodeFlag sets the value of the given pod flag for a configuration
 	SetPodFlag(string, events.PodEventFlag, interface{})
 }
+
+// FlagNotSetError is raised whenever a flag is not set
+const FlagNotSetError = throw.Exception("flag not set")
 
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
@@ -104,7 +107,7 @@ func (s *store) GetNodeFlag(id events.NodeEventFlag) (interface{}, error) {
 		return val, nil
 	}
 
-	return nil, errors.New("flag not set")
+	return nil, FlagNotSetError
 }
 
 func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
@@ -122,7 +125,7 @@ func (s *store) GetPodFlag(configuration string, flag events.PodEventFlag) (inte
 		return val, nil
 	}
 
-	return nil, errors.New("flag not set")
+	return nil, FlagNotSetError
 }
 
 func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val interface{}) {

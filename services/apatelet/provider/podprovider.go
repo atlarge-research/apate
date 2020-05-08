@@ -6,97 +6,218 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
+	"math/rand"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
-
-	"github.com/virtual-kubelet/node-cli/provider"
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 )
 
-// Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
-type Provider struct {
-	Pods      map[types.UID]*corev1.Pod
-	resources *normalization.NodeResources
-	cfg       provider.InitConfig
-	nodeInfo  cluster.NodeInfo
-}
-
-// NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo) provider.Provider {
-	return &Provider{
-		Pods:      make(map[types.UID]*corev1.Pod),
-		resources: resources,
-		cfg:       cfg,
-		nodeInfo:  nodeInfo,
-	}
-}
-
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
-func (p *Provider) CreatePod(_ context.Context, pod *corev1.Pod) error {
-	p.Pods[pod.UID] = pod
-	return nil
+func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
+		podResponseArgs: podResponseArgs{
+			pod.Name,
+			events.PodCreatePodResponse,
+			events.PodCreatePodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeCreatePodResponse,
+			events.NodeCreatePodResponsePercentage,
+		},
+	})
+
+	return err
 }
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
-func (p *Provider) UpdatePod(_ context.Context, pod *corev1.Pod) error {
-	p.Pods[pod.UID] = pod
-	return nil
+func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
+		podResponseArgs: podResponseArgs{
+			pod.Name,
+			events.PodUpdatePodResponse,
+			events.PodUpdatePodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeUpdatePodResponse,
+			events.NodeUpdatePodResponsePercentage,
+		},
+	})
+
+	return err
+}
+
+func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
+	return func() (interface{}, error) {
+		p.pods.AddPod(*pod)
+		return nil, nil
+	}
 }
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
-func (p *Provider) DeletePod(_ context.Context, pod *corev1.Pod) error {
-	delete(p.Pods, pod.UID)
-	return nil
+func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := p.runLatency(ctx); err != nil {
+		return err
+	}
+
+	_, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+			p.pods.DeletePod(pod)
+			return nil, nil
+		}},
+		podResponseArgs: podResponseArgs{
+			pod.Name,
+			events.PodDeletePodResponse,
+			events.PodDeletePodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeDeletePodResponse,
+			events.NodeDeletePodResponsePercentage,
+		},
+	})
+
+	return err
 }
 
 // GetPod retrieves a pod by name.
-func (p *Provider) GetPod(_ context.Context, namespace, name string) (*corev1.Pod, error) {
-	// TODO: think about better structure for p.Pods
-	for _, element := range p.Pods {
-		if element.Namespace == namespace && element.Name == name {
-			return element, nil
-		}
+func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
 	}
 
-	return nil, errors.New("unable to find pod")
+	pod, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+			return p.pods.GetPodByName(namespace, name), nil
+		}},
+		podResponseArgs: podResponseArgs{
+			name,
+			events.PodGetPodResponse,
+			events.PodGetPodResponsePercentage,
+		},
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeGetPodResponse,
+			events.NodeGetPodResponsePercentage,
+		},
+	})
+
+	return pod.(*corev1.Pod), err
+}
+
+func podStatusToPhase(status interface{}) corev1.PodPhase {
+	switch status {
+	case scenario.PodStatus_POD_PENDING:
+		return corev1.PodPending
+	case scenario.PodStatus_POD_RUNNING:
+		return corev1.PodRunning
+	case scenario.PodStatus_POD_SUCCEEDED:
+		return corev1.PodSucceeded
+	case scenario.PodStatus_POD_FAILED:
+		return corev1.PodFailed
+	case scenario.PodStatus_POD_UNKNOWN:
+		fallthrough
+	default:
+		return corev1.PodUnknown
+	}
 }
 
 // GetPodStatus retrieves the status of a pod by name.
-func (p *Provider) GetPodStatus(context.Context, string, string) (*corev1.PodStatus, error) {
-	return &corev1.PodStatus{
-		Phase: corev1.PodRunning,
-		Conditions: []corev1.PodCondition{
-			{
-				Type:               corev1.PodReady,
-				Status:             corev1.ConditionTrue,
-				LastProbeTime:      metav1.Time{Time: time.Now()},
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             "yoot",
-				Message:            "yeet",
-			},
+func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name string) (*corev1.PodStatus, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
+	}
+
+	pod, err := podAndNodeResponse(podNodeResponse{
+		responseArgs: responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
+			status, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatus)
+			if err != nil {
+				return nil, throw.Exception(err.Error())
+			}
+
+			ipercent, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatusPercentage)
+			if err != nil {
+				return nil, throw.Exception(err.Error())
+			}
+
+			percent, ok := ipercent.(int32)
+			if !ok {
+				return nil, throw.Exception("cast error")
+			}
+
+			if percent < rand.Int31n(int32(100)) {
+				return &corev1.PodStatus{
+					Phase: corev1.PodRunning,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:               corev1.PodReady,
+							Status:             corev1.ConditionTrue,
+							LastProbeTime:      metav1.Time{Time: time.Now()},
+							LastTransitionTime: metav1.Time{Time: time.Now()},
+							Message:            "Emulating pod...",
+						},
+					},
+					Message: "Emulating pod successfully",
+				}, nil
+			}
+
+			return &corev1.PodStatus{
+				Phase:   podStatusToPhase(status),
+				Message: "Emulating pod successfully",
+				Conditions: []corev1.PodCondition{
+					{
+						Type:               corev1.PodReady,
+						Status:             corev1.ConditionTrue,
+						LastProbeTime:      metav1.Time{Time: time.Now()},
+						LastTransitionTime: metav1.Time{Time: time.Now()},
+						Message:            "Emulating pod...",
+					},
+				},
+			}, nil
+		}},
+		podResponseArgs: podResponseArgs{
+			name,
+			events.PodGetPodStatusResponse,
+			events.PodGetPodStatusResponsePercentage,
 		},
-	}, nil
+		nodeResponseArgs: nodeResponseArgs{
+			events.NodeGetPodStatusResponse,
+			events.NodeGetPodStatusResponsePercentage,
+		},
+	})
+
+	return pod.(*corev1.PodStatus), err
 }
 
 // GetPods retrieves a list of all pods running.
-func (p *Provider) GetPods(context.Context) ([]*corev1.Pod, error) {
-	// TODO: Improve
-	var arr []*corev1.Pod
-
-	for _, element := range p.Pods {
-		arr = append(arr, element)
+func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
+	if err := p.runLatency(ctx); err != nil {
+		return nil, err
 	}
+	pod, err := nodeResponse(responseArgs{ctx, p, func() (interface{}, error) {
+		return p.pods.GetAllPods(), nil
+	},
+	},
+		nodeResponseArgs{
+			nodeResponseFlag:   events.NodeGetPodsResponse,
+			nodePercentageFlag: events.NodeGetPodsResponsePercentage,
+		},
+	)
 
-	return arr, nil
+	return pod.([]*corev1.Pod), err
 }
 
 // GetContainerLogs retrieves the log of a specific container.
@@ -111,151 +232,36 @@ func (p *Provider) RunInContainer(context.Context, string, string, string, []str
 	return nil
 }
 
-// ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
-func (p *Provider) ConfigureNode(_ context.Context, node *corev1.Node) {
-	node.Spec = p.spec()
-	node.ObjectMeta = p.objectMeta()
-	node.Status = p.nodeStatus()
-}
-
-func (p *Provider) nodeConditions() []corev1.NodeCondition {
-	lastHeartbeatTime := metav1.Now()
-	lastTransitionTime := metav1.Now()
-	lastTransitionReason := "Apate cluster is ready"
-	lastTransitionMessage := "ok"
-
-	// Return static thumbs-up values for all conditions.
-	return []corev1.NodeCondition{
-		{
-			Type:               corev1.NodeReady,
-			Status:             corev1.ConditionTrue,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeOutOfDisk,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeMemoryPressure,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeDiskPressure,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeNetworkUnavailable,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               "KubeletConfigOk",
-			Status:             corev1.ConditionTrue,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-	}
-}
-
-func (p *Provider) nodeStatus() corev1.NodeStatus {
-	return corev1.NodeStatus{
-		NodeInfo: corev1.NodeSystemInfo{
-			Architecture:   "amd64",
-			KubeletVersion: p.nodeInfo.Version,
-		},
-		DaemonEndpoints: p.nodeDaemonEndpoints(),
-		Addresses:       p.addresses(),
-		Capacity:        p.capacity(),
-		Conditions:      p.nodeConditions(),
-	}
-}
-
-func (p *Provider) objectMeta() metav1.ObjectMeta {
-	return metav1.ObjectMeta{
-		Name: p.nodeInfo.Name,
-		Labels: map[string]string{
-			"type":                   p.nodeInfo.NodeType,
-			"kubernetes.io/role":     p.nodeInfo.Role,
-			"kubernetes.io/hostname": p.nodeInfo.Name,
-		},
-	}
-}
-
-func (p *Provider) spec() corev1.NodeSpec {
-	taints := make([]corev1.Taint, 0)
-	return corev1.NodeSpec{
-		Taints: taints,
-	}
-}
-
-func (p *Provider) addresses() []corev1.NodeAddress {
-	externalAddress, err := network.GetExternalAddress()
+func (p *Provider) runLatency(ctx context.Context) error {
+	val, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyEnabled)
 	if err != nil {
-		log.Printf("error while retrieving ip addresses for node: %v\n", err)
-		return []corev1.NodeAddress{}
+		return err
 	}
 
-	return []corev1.NodeAddress{
-		{
-			Type:    "InternalIP",
-			Address: externalAddress,
-		},
-		{
-			Type:    "ExternalIP",
-			Address: externalAddress,
-		},
+	y, ok := val.(bool)
+	if !ok {
+		return errors.New("NodeAddedLatencyEnabled is not a bool")
 	}
-}
-
-func (p *Provider) nodeDaemonEndpoints() corev1.NodeDaemonEndpoints {
-	return corev1.NodeDaemonEndpoints{
-		KubeletEndpoint: corev1.DaemonEndpoint{
-			Port: p.cfg.DaemonPort,
-		},
+	if !y {
+		return nil
 	}
-}
 
-func (p *Provider) capacity() corev1.ResourceList {
-	var cpu resource.Quantity
-	cpu.Set(p.resources.CPU)
-
-	var mem resource.Quantity
-	mem.Set(p.resources.Memory)
-
-	var pods resource.Quantity
-	pods.Set(p.resources.MaxPods)
-
-	var storage resource.Quantity
-	storage.Set(p.resources.Storage)
-
-	var ephemeralStorage resource.Quantity
-	ephemeralStorage.Set(p.resources.EphemeralStorage)
-
-	return corev1.ResourceList{
-		corev1.ResourceCPU:              cpu,
-		corev1.ResourceMemory:           mem,
-		corev1.ResourcePods:             pods,
-		corev1.ResourceStorage:          storage,
-		corev1.ResourceEphemeralStorage: ephemeralStorage,
+	ims, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyMsec)
+	if err != nil {
+		return err
 	}
+
+	ms, ok := ims.(int64)
+	if !ok {
+		return errors.New("NodeAddedLatencyMsec is not an int")
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	time.Sleep(time.Duration(ms) * time.Millisecond)
+	return nil
 }
