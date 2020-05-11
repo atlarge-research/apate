@@ -6,7 +6,10 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
 
@@ -44,6 +47,12 @@ func main() {
 	// Save the kubeconfig in the store
 	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
+	}
+
+	// Create prometheus stack
+	createPrometheus := env.RetrieveFromEnvironment(env.PrometheusStackEnabled, env.PrometheusStackEnabledDefault)
+	if strings.ToLower(createPrometheus) == env.PrometheusStackEnabledDefault {
+		kubectl.CreatePrometheusStack("monitoring", managedKubernetesCluster.KubeConfig)
 	}
 
 	// Start gRPC server

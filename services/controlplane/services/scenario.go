@@ -108,7 +108,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	}
 
 	// TODO: This is probably very flaky
-	err = kubectl.Create(config.ResourceConfig, cfg)
+	err = kubectl.Create(config.ResourceConfig, &cfg)
 	if err != nil {
 		scenario.Failed(err)
 		return nil, err
