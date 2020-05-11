@@ -2,6 +2,7 @@
 package kubectl
 
 import (
+	"os"
 	"os/exec"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -9,10 +10,20 @@ import (
 
 // Create calls `kubectl create` with the given resourceConfig
 // When this config is empty, it will not be called
-func Create(resourceConfig []byte, kubeConfig kubeconfig.KubeConfig) error {
+func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
+	return call("create", resourceConfig, kubeConfig)
+}
+
+// Create calls `kubectl create` with the given resourceConfig
+// When this config is empty, it will not be called
+func Apply(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
+	return call("apply", resourceConfig, kubeConfig)
+}
+
+func call(command string, resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
 	if len(resourceConfig) > 0 {
 		args := []string{
-			"create",
+			command,
 			"-f",
 			"-",
 		}
@@ -31,6 +42,9 @@ func Create(resourceConfig []byte, kubeConfig kubeconfig.KubeConfig) error {
 		if err != nil {
 			return err
 		}
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
 		if err := pipe.Close(); err != nil {
 			return err

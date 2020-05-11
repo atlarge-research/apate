@@ -1,0 +1,6 @@
+apiVersion: apate.opendc.org/v1
+kind: EmulatedPod
+metadata:
+    name: crd-deployment
+spec:
+    test: 1
