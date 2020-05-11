@@ -31,6 +31,11 @@ const (
 	ControlPlaneApateletRunType = "CP_APATELET_RUN_TYPE"
 	// ControlPlaneApateletRunTypeDefault is the default for ControlPlaneApateletRunType
 	ControlPlaneApateletRunTypeDefault = Routine
+
+	// PrometheusStackEnabled specifies
+	PrometheusStackEnabled = "CP_PROMETHEUS"
+	// PrometheusStackEnabledDefault is the default for PrometheusStackEnabled
+	PrometheusStackEnabledDefault = "true"
 )
 
 // RunType is the run strategy used by the control plane to run apalets
