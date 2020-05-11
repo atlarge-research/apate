@@ -52,7 +52,7 @@ func main() {
 	// Create prometheus stack
 	createPrometheus := env.RetrieveFromEnvironment(env.PrometheusStackEnabled, env.PrometheusStackEnabledDefault)
 	if strings.ToLower(createPrometheus) == env.PrometheusStackEnabledDefault {
-		kubectl.CreatePrometheusStack("monitoring", managedKubernetesCluster.KubeConfig)
+		kubectl.CreatePrometheusStack(managedKubernetesCluster.KubeConfig)
 	}
 
 	// Start gRPC server

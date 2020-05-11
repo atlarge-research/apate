@@ -25,7 +25,7 @@ import (
 const (
 	defaultControlPlaneAddress = "localhost"
 	defaultControlPlanePort    = 8085
-	defaultControlPlaneTimeout = 30
+	defaultControlPlaneTimeout = 45
 )
 
 func main() {

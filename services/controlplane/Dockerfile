@@ -17,16 +17,16 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o controlpl
 FROM alpine/helm as prom
 WORKDIR /
 RUN helm repo add google https://kubernetes-charts.storage.googleapis.com/
-RUN helm template prometheus google/prometheus > /prom
+RUN helm template prometheus-operator google/prometheus-operator --namespace apate-prometheus > /prom
 
 # Run stage
-FROM docker
+FROM docker:
 COPY --from=build /build/controlplane /controlplane
 COPY --from=build /build/config/kind /tmp/apate/manager
-COPY --from=prom  /prom /tmp/prometheus
+COPY --from=prom  /prom /tmp/prometheus.yml
 
 RUN apk add curl --no-cache && \
-    curl -L -o /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl && \
+    curl -L -o /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl && \
     chmod +x /usr/bin/kubectl && \
     apk del curl
 
