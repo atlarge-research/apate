@@ -2,17 +2,11 @@
 package kubectl
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
-	"time"
-)
 
-const (
-	helmTemplatePathSuffix = "/prometheus.yml"
-	prometheusNamespace    = "apate-prom"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 )
 
 func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error {
@@ -54,19 +48,6 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 
 		// #nosec as the arguments are controlled this is not a security problem
 		cmd := exec.Command("kubectl", args...)
-		//pipe, err := cmd.StdinPipe()
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//_, err = pipe.Write(resourceConfig)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//if err := pipe.Close(); err != nil {
-		//	return err
-		//}
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -80,27 +61,4 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 // When this config is empty, it will not be called
 func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
 	return CreateWithNameSpace(resourceConfig, kubeConfig, "")
-}
-
-// CreatePrometheusStack attempts to create the prometheus operator in the kubernetes cluster
-// if the file cannot be found it will simply log an error.
-func CreatePrometheusStack(kubeConfig *kubeconfig.KubeConfig) {
-	bytes, err := ioutil.ReadFile(os.TempDir() + helmTemplatePathSuffix)
-	if err != nil {
-		log.Printf("error while creating prometheus cluster: %v, prometheus stack not installed on the cluster\n", err)
-		return
-	}
-
-	if err := createNameSpace(prometheusNamespace, kubeConfig); err != nil {
-		log.Printf("error while creating prometheus namespace: %v", err)
-		return
-	}
-
-	time.Sleep(time.Second)
-	err = Create(bytes, kubeConfig)
-
-	if err != nil {
-		log.Printf("error while creating prometheus cluster: %v, prometheus stack not installed on the cluster\n", err)
-		return
-	}
 }
