@@ -34,7 +34,7 @@ func main() {
 	externalInformation, err := createExternalConnectionInformation()
 
 	if err != nil {
-		log.Fatalf("Error while starting control plane: %s", err.Error())
+		log.Fatalf("error while starting control plane: %s", err.Error())
 	}
 
 	// Create kubernetes cluster
@@ -58,13 +58,13 @@ func main() {
 	// Start gRPC server
 	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
 	if err != nil {
-		log.Fatalf("Error while starting control plane: %s", err.Error())
+		log.Fatalf("error while starting control plane: %s", err.Error())
 	}
 
 	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig.Bytes, 0600); err != nil {
-		log.Fatalf("Error while starting control plane: %s", err.Error())
+		log.Fatalf("error while starting control plane: %s", err.Error())
 	}
 
 	// Handle signals
@@ -94,12 +94,12 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 
 	// TODO: Actual cleanup for other nodes, for now just wipe state
 	if err := (*store).ClearNodes(); err != nil {
-		log.Printf("An error occurred while cleaning the apate store: %s", err.Error())
+		log.Printf("an error occurred while cleaning the apate store: %s", err.Error())
 	}
 
 	log.Println("Stopping kubernetes control plane")
 	if err := kubernetesCluster.Delete(); err != nil {
-		log.Printf("An error occurred while deleting the kubernetes store: %s", err.Error())
+		log.Printf("an error occurred while deleting the kubernetes store: %s", err.Error())
 	}
 }
 
@@ -139,12 +139,12 @@ func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {
 	cb := cluster.Default()
 	c, err := cb.WithName("Apate").WithManagerConfig(managedClusterConfigPath).ForceCreate()
 	if err != nil {
-		log.Fatalf("An error occurred: %s", err.Error())
+		log.Fatalf("an error occurred: %s", err.Error())
 	}
 
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
-		log.Fatalf("An error occurred: %s", err.Error())
+		log.Fatalf("an error occurred: %s", err.Error())
 	}
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)

@@ -36,10 +36,12 @@ func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
 		deadline, _ := ctx.Deadline()
 
 		if deadline.Before(time.Now()) {
+			cancel()
 			return errors.New("waiting too long on control plane, giving up")
 		}
 
 		if err == nil {
+			cancel()
 			return nil
 		}
 
