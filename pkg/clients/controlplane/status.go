@@ -30,7 +30,8 @@ func GetStatusClient(info *service.ConnectionInfo) *StatusClient {
 // WaitForControlPlane waits for the control plane to be up and running
 func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
 	for {
-		_, err := c.Client.Status(ctx, new(empty.Empty))
+		cancellable, cancel := context.WithCancel(ctx)
+		_, err := c.Client.Status(cancellable, new(empty.Empty))
 
 		deadline, _ := ctx.Deadline()
 
@@ -42,7 +43,8 @@ func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
 			return nil
 		}
 
-		time.Sleep(time.Millisecond * 800)
+		time.Sleep(time.Millisecond * 500)
+		cancel()
 	}
 }
 
