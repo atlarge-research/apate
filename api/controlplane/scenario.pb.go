@@ -39,6 +39,7 @@ type StartScenarioConfig struct {
 
 	// A kubernetes configuration file which will be deployed to the cluster
 	// Is optional, if not provided nothing will be deployed
+	// // https://kubectl.docs.kubernetes.io/pages/kubectl_book/resources_and_controllers.html
 	ResourceConfig []byte `protobuf:"bytes,1,opt,name=resource_config,json=resourceConfig,proto3" json:"resource_config,omitempty"`
 }
 

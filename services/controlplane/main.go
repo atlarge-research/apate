@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/crd"
 	"io/ioutil"
 	"log"
 	"os"
@@ -43,6 +44,10 @@ func main() {
 
 	// Save the kubeconfig in the store
 	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := crd.AddCRDToKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
 	}
 

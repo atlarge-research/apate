@@ -3,6 +3,8 @@ package run
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/crd/client"
+	"k8s.io/client-go/tools/cache"
 	"log"
 	"os"
 	"os/signal"
@@ -47,6 +49,11 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		KubeConfigWriter(config.Bytes)
 	}
 
+	crdSt, err := createCRDStore(err, config)
+	if err != nil {
+		return err
+	}
+
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
 	hc.SetStatus(healthpb.Status_UNKNOWN)
@@ -56,7 +63,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	st := store.NewStore()
 
 	// Start the Apatelet
-	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st)
+	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st, &crdSt)
 	if err != nil {
 		return err
 	}
@@ -153,9 +160,24 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
+func createCRDStore(err error, config *kubeconfig.KubeConfig) (cache.Store, error) {
+	restConfig, err := config.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	podClient, err := client.NewForConfig(restConfig, "default")
+	if err != nil {
+		return nil, err
+	}
+
+	crdSt := podClient.WatchResources()
+	return crdSt, nil
+}
+
+func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdStore *cache.Store) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
+	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store, crdStore)
 	return cmd, cancel, err
 }
 

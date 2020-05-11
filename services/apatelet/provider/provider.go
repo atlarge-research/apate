@@ -3,6 +3,7 @@ package provider
 
 import (
 	"context"
+	"k8s.io/client-go/tools/cache"
 	"os"
 	"strconv"
 
@@ -29,10 +30,11 @@ type Provider struct {
 	cfg       provider.InitConfig
 	nodeInfo  cluster.NodeInfo
 	store     *store.Store
+	crdStore  *cache.Store
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
+func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdStore *cache.Store) (*cli.Command, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, err
@@ -50,7 +52,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
 			cfg.DaemonPort = int32(k8sPort)
-			return NewProvider(res, cfg, nodeInfo, store), nil
+			return NewProvider(res, cfg, nodeInfo, store, crdStore), nil
 		}),
 		cli.WithBaseOpts(op),
 	)
@@ -59,12 +61,13 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store) provider.Provider {
+func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store, crdStore *cache.Store) provider.Provider {
 	return &Provider{
 		pods:      podmanager.New(),
 		resources: resources,
 		cfg:       cfg,
 		nodeInfo:  nodeInfo,
 		store:     store,
+		crdStore:  crdStore,
 	}
 }
