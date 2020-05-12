@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"k8s.io/client-go/tools/cache"
+
+	mockcache "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/mock_cache_store"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
 	"github.com/golang/mock/gomock"
@@ -54,8 +58,12 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 		MaxPods: 1001,
 	}
 
+	ctrl := gomock.NewController(t)
 	st := store.NewStore()
-	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st)
+	mCrdSt := mockcache.NewMockStore(ctrl)
+	var crdSt cache.Store = mCrdSt
+
+	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, &crdSt)
 
 	fakeNode := corev1.Node{}
 

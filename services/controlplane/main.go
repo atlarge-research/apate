@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	emulatedpodv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
 
@@ -47,7 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := emulatedpod.AddCRDToKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+	if err = emulatedpodv1.AddCRDToKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
 	}
 

@@ -14,6 +14,7 @@ type EmulatedPod struct {
 	Spec EmulatedPodSpec `json:"spec"`
 }
 
+// EmulatedPodList is a list of EmulatedPods.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type EmulatedPodList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -22,8 +23,7 @@ type EmulatedPodList struct {
 	Items []EmulatedPod `json:"items"`
 }
 
+// EmulatedPodSpec is the spec which belongs to the EmulatedPod CRD
 type EmulatedPodSpec struct {
 	Test int `json:"test"`
 }
-
-

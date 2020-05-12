@@ -14,12 +14,6 @@ func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
 	return call("create", resourceConfig, kubeConfig)
 }
 
-// Create calls `kubectl create` with the given resourceConfig
-// When this config is empty, it will not be called
-func Apply(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
-	return call("apply", resourceConfig, kubeConfig)
-}
-
 func call(command string, resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
 	if len(resourceConfig) > 0 {
 		args := []string{

@@ -3,12 +3,14 @@ package run
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/crd/client"
-	"k8s.io/client-go/tools/cache"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"k8s.io/client-go/tools/cache"
+
+	emulatedpodv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
@@ -49,7 +51,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		KubeConfigWriter(config.Bytes)
 	}
 
-	crdSt, err := createCRDStore(err, config)
+	crdSt, err := createCRDStore(config)
 	if err != nil {
 		return err
 	}
@@ -160,13 +162,13 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createCRDStore(err error, config *kubeconfig.KubeConfig) (cache.Store, error) {
+func createCRDStore(config *kubeconfig.KubeConfig) (cache.Store, error) {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	podClient, err := client.NewForConfig(restConfig, "default")
+	podClient, err := emulatedpodv1.NewForConfig(restConfig, "default")
 	if err != nil {
 		return nil, err
 	}
