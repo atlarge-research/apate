@@ -143,6 +143,13 @@ func main() {
 						Value:       cpEnv.ApateletRunType,
 						Required:    false,
 					},
+					&cli.StringFlag{
+						Name:        "prometheus-enabled",
+						Usage:       "If the control plane start a Prometheus stack. Can be TRUE or FALSE.",
+						Destination: &cpEnv.PrometheusStackEnabled,
+						Value:       cpEnv.PrometheusStackEnabled,
+						Required:    false,
+					},
 				},
 			},
 			{

@@ -37,7 +37,6 @@ func prepareHelm() error {
 
 	// #nosec
 	cmd = exec.Command("helm", args...)
-	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
@@ -52,18 +51,22 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 		"google/prometheus-operator",
 	}
 
+	// Basic args
 	args = append(args, "--namespace", prometheusNamespace)
 	args = append(args, "--kubeconfig", kubecfg.Path)
 
+	// Values args
+	args = append(args, "--set", "nodeExporter.enabled=false")
+
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
-	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 // CreatePrometheusStack attempts to create the prometheus operator in the kubernetes cluster
 // if the file cannot be found it will simply log an error.
 func CreatePrometheusStack(kubecfg *kubeconfig.KubeConfig) {
+	log.Println("enabling prometheus stack")
 	if err := createNameSpace(prometheusNamespace, kubecfg); err != nil {
 		log.Printf("error while creating prometheus namespace: %v", err)
 		return
@@ -75,4 +78,6 @@ func CreatePrometheusStack(kubecfg *kubeconfig.KubeConfig) {
 		log.Printf("error while creating prometheus cluster: %v, prometheus stack not installed on the cluster\n", err)
 		return
 	}
+
+	log.Println("enabled prometheus stack")
 }

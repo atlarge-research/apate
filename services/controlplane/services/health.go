@@ -79,7 +79,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 			log.Println(err)
 		}
 
-		// TODO: Improve
+		// TODO: Improves
 		// atomic.StoreInt32(&cnt, 0)
 	}
 
