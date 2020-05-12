@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/crd"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod"
 	"io/ioutil"
 	"log"
 	"os"
@@ -47,7 +47,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := crd.AddCRDToKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+	if err := emulatedpod.AddCRDToKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
 	}
 
