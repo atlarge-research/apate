@@ -31,6 +31,11 @@ const (
 	ControlPlaneApateletRunType = "CP_APATELET_RUN_TYPE"
 	// ControlPlaneApateletRunTypeDefault is the default for ControlPlaneApateletRunType
 	ControlPlaneApateletRunTypeDefault = Routine
+
+	// PrometheusStackEnabled specifies
+	PrometheusStackEnabled = "CP_PROMETHEUS"
+	// PrometheusStackEnabledDefault is the default for PrometheusStackEnabled
+	PrometheusStackEnabledDefault = "true"
 )
 
 // RunType is the run strategy used by the control plane to run apalets
@@ -46,17 +51,18 @@ const (
 
 // ControlPlaneEnvironment represents the environment variables of the control plane
 type ControlPlaneEnvironment struct {
-	Address, Port, ManagerConfig, ExternalIP, DockerPolicy, ApateletRunType string
+	Address, Port, ManagerConfig, ExternalIP, DockerPolicy, ApateletRunType, PrometheusStackEnabled string
 }
 
 // DefaultControlPlaneEnvironment returns the default control plane environment
 func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 	return ControlPlaneEnvironment{
-		Address:         ControlPlaneListenAddressDefault,
-		Port:            ControlPlaneListenPortDefault,
-		ManagerConfig:   ManagedClusterConfigDefault,
-		ExternalIP:      ControlPlaneExternalIPDefault,
-		DockerPolicy:    ControlPlaneDockerPolicyDefault,
-		ApateletRunType: ControlPlaneApateletRunTypeDefault,
+		Address:                ControlPlaneListenAddressDefault,
+		Port:                   ControlPlaneListenPortDefault,
+		ManagerConfig:          ManagedClusterConfigDefault,
+		ExternalIP:             ControlPlaneExternalIPDefault,
+		DockerPolicy:           ControlPlaneDockerPolicyDefault,
+		ApateletRunType:        ControlPlaneApateletRunTypeDefault,
+		PrometheusStackEnabled: PrometheusStackEnabledDefault,
 	}
 }

@@ -27,6 +27,7 @@ sast:
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
   VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet"
+  CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
   CP_K8S_CONFIG: "$CI_PROJECT_DIR/pkg/cluster/kind/kind"
@@ -105,7 +106,7 @@ race:
   script: # Test for race conditions in small tests as race condition testing is slow
     - go test -race -short ./...
 
-deploy-vk:
+deploy-apatelet:
   stage: deploy
   image: docker:latest
   only: [master]
@@ -116,3 +117,15 @@ deploy-vk:
   script:
     - docker build -f services/apatelet/Dockerfile -t $VK_IMAGE .
     - docker push "$VK_IMAGE"
+
+deploy-cp:
+  stage: deploy
+  image: docker:latest
+  only: [master]
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker build -f services/controlplane/Dockerfile -t $CP_IMAGE .
+    - docker push "$CP_IMAGE"

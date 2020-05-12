@@ -156,7 +156,7 @@ func TestNodeNormal50B(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, expectedError, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -262,7 +262,7 @@ func TestNodeInvalidPercentage(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, invalidPercentage, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -296,7 +296,7 @@ func TestNodeInvalidResponseType(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, invalidFlag, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -333,7 +333,7 @@ func TestNodeInvalidResponse(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, invalidResponse, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()

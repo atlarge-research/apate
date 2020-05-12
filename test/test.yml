@@ -1,24 +1,22 @@
 nodes:
-  -
-    node_type: testnode
+  - node_type: testnode
     memory: 2G
     cpu: 42
     storage: 2G
     ephemeral_storage: 2M
     max_pods: 42
-  -
-    node_type: testnode2
+
+  - node_type: testnode2
     memory: 42G
     storage: 22G
     ephemeral_storage: 21K
     cpu: 24
     max_pods: 24
 node_groups:
-  -
-    group_name: testgroup1
+  - group_name: testgroup1
     node_type: testnode
     amount: 0
-  -
-    group_name: testgroup2
+
+  - group_name: testgroup2
     node_type: testnode2
     amount: 1
