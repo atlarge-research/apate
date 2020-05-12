@@ -3,6 +3,7 @@ package kubectl
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 
@@ -28,17 +29,28 @@ func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error 
 // When this config is empty, it will not be called
 func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig, namespace string) error {
 	if len(resourceConfig) > 0 {
-		resourceConfigPath := os.TempDir() + "/apate/res" //TODO: Fancy tmp dir
-		//test, err := ioutil.TempFile("/tmp", "apate")
-
-		_ = ioutil.WriteFile(resourceConfigPath, resourceConfig, 0o600)
+		cfgFile, err := ioutil.TempFile("", "apate-")
+		if err != nil {
+			return err
+		}
+		_, err = cfgFile.Write(resourceConfig)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			err = os.Remove(cfgFile.Name())
+			if err != nil {
+				// Unable to remove temp file, doesn't matter that much but logging anyway
+				log.Printf("unable to delete temporary file: %v\n", err)
+			}
+		}()
 
 		args := []string{
 			"create",
 		}
 
 		// specify config
-		args = append(args, "-f", resourceConfigPath)
+		args = append(args, "-f", cfgFile.Name())
 		args = append(args, "--kubeconfig", kubeConfig.Path)
 
 		// If namespace is non-null
