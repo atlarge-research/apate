@@ -33,7 +33,7 @@ func TestNodeNormal100(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -68,7 +68,7 @@ func TestNodeNormal0(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -105,7 +105,7 @@ func TestNodeNormal50A(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -142,7 +142,7 @@ func TestNodeNormal50B(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -177,7 +177,7 @@ func TestNodeStoreError1(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -213,7 +213,7 @@ func TestNodeStoreError2(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -248,7 +248,7 @@ func TestNodeInvalidPercentage(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -282,7 +282,7 @@ func TestNodeInvalidResponseType(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -319,7 +319,7 @@ func TestNodeInvalidResponse(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -359,7 +359,7 @@ func TestNodeTimeOut(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := nodeResponse(responseArgs{
+	out, _, err := nodeResponse(responseArgs{
 		ctx:      ctx,
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {

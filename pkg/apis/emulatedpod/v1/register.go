@@ -17,8 +17,8 @@ import (
 // SchemeGroupVersion is the group and version of the EmulatedPod CRD
 var SchemeGroupVersion = schema.GroupVersion{Group: emulatedpod.GroupName, Version: "v1"}
 
-// RegisterCRD registers the EmulatedPod structs to the scheme, so it can deserialize responses by Kubernetes
-func RegisterCRD() error {
+// Register registers the EmulatedPod structs to the scheme, so it can deserialize responses by Kubernetes
+func Register() error {
 	schemeBuilder := runtime.NewSchemeBuilder(addKnownTypes)
 	return schemeBuilder.AddToScheme(scheme.Scheme)
 }
@@ -33,8 +33,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	return nil
 }
 
-// AddCRDToKubernetes registers the generated CRD YAML to Kubernetes
-func AddCRDToKubernetes(config *kubeconfig.KubeConfig) error {
+// CreateInKubernetes registers the generated CRD YAML to Kubernetes
+func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
 	file, err := ioutil.ReadFile("config/crd/apate.opendc.org_emulatedpods.yaml")
 	if err != nil {
 		return err
