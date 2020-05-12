@@ -13,7 +13,9 @@ import (
 )
 
 var schemeGroupVersion = schema.GroupVersion{Group: emulatedpod.GroupName, Version: "v1"}
-var schemeGroupVersionInternal = schema.GroupVersion{Group: emulatedpod.GroupName, Version: runtime.APIVersionInternal} // HACK, to register the emulated pod types with the decoder
+
+// this is a hack, to register the emulated pod types with the decoder
+var schemeGroupVersionInternal = schema.GroupVersion{Group: emulatedpod.GroupName, Version: runtime.APIVersionInternal}
 
 var (
 	// SchemeBuilder initialises a scheme builder
