@@ -54,6 +54,7 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 
 	// Values args
 	args = append(args, "--set", "nodeExporter.enabled=false")
+	//args = append(args, "--set", "kubelet.serviceMonitor.https=false")
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
