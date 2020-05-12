@@ -49,7 +49,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		KubeConfigWriter(config.Bytes)
 	}
 
-	crdSt, err := createCRDStore(config)
+	crdSt, err := createCRDInformer(config)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createCRDStore(config *kubeconfig.KubeConfig) (*emulatedpodv1.Informer, error) {
+func createCRDInformer(config *kubeconfig.KubeConfig) (*emulatedpodv1.Informer, error) {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return nil, err

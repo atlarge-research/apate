@@ -6,30 +6,34 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 )
 
-// SchemeGroupVersion is the group and version of the EmulatedPod CRD
-var SchemeGroupVersion = schema.GroupVersion{Group: emulatedpod.GroupName, Version: "v1"}
+var schemeGroupVersion = schema.GroupVersion{Group: emulatedpod.GroupName, Version: "v1"}
+var schemeGroupVersionInternal = schema.GroupVersion{Group: emulatedpod.GroupName, Version: runtime.APIVersionInternal} // HACK, to register the emulated pod types with the decoder
 
-// Register registers the EmulatedPod structs to the scheme, so it can deserialize responses by Kubernetes
-func Register() error {
-	schemeBuilder := runtime.NewSchemeBuilder(addKnownTypes)
-	return schemeBuilder.AddToScheme(scheme.Scheme)
-}
+var (
+	// SchemeBuilder initialises a scheme builder
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	// AddToScheme is a global function that registers this API group & version to a scheme
+	AddToScheme = SchemeBuilder.AddToScheme
+)
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion,
+	scheme.AddKnownTypes(schemeGroupVersion,
 		&EmulatedPod{},
 		&EmulatedPodList{},
 	)
-	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	scheme.AddKnownTypes(schemeGroupVersionInternal,
+		&EmulatedPod{},
+		&EmulatedPodList{},
+	)
+	metav1.AddToGroupVersion(scheme, schemeGroupVersion)
+
 	return nil
 }
 
