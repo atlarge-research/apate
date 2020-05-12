@@ -23,6 +23,7 @@ require (
 	k8s.io/api v0.18.2 // Will be replaced
 	k8s.io/apimachinery v0.18.2 // Will be replaced
 	k8s.io/client-go v10.0.0+incompatible // Will be replaced
+	k8s.io/kubernetes v1.15.2
 	sigs.k8s.io/kind v0.7.0
 )
 

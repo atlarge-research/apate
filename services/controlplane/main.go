@@ -6,7 +6,10 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
 
@@ -25,17 +28,17 @@ func init() {
 }
 
 func main() {
-	log.Println("Starting Apate control plane")
+	log.Println("starting Apate control plane")
 
 	// Get external connection information
 	externalInformation, err := createExternalConnectionInformation()
 
 	if err != nil {
-		log.Fatalf("Error while starting control plane: %s", err.Error())
+		log.Fatalf("error while starting control plane: %s", err.Error())
 	}
 
 	// Create kubernetes cluster
-	log.Println("Starting kubernetes control plane")
+	log.Println("starting kubernetes control plane")
 	managedKubernetesCluster := createCluster(env.RetrieveFromEnvironment(env.ManagedClusterConfig, env.ManagedClusterConfigDefault))
 
 	// Create apate cluster state
@@ -46,16 +49,22 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Create prometheus stack
+	createPrometheus := env.RetrieveFromEnvironment(env.PrometheusStackEnabled, env.PrometheusStackEnabledDefault)
+	if strings.ToLower(createPrometheus) == "true" {
+		go kubectl.CreatePrometheusStack(managedKubernetesCluster.KubeConfig)
+	}
+
 	// Start gRPC server
 	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
 	if err != nil {
-		log.Fatalf("Error while starting control plane: %s", err.Error())
+		log.Fatalf("error while starting control plane: %s", err.Error())
 	}
 
-	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
+	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig.Bytes, 0600); err != nil {
-		log.Fatalf("Error while starting control plane: %s", err.Error())
+		log.Fatalf("error while starting control plane: %s", err.Error())
 	}
 
 	// Handle signals
@@ -74,23 +83,23 @@ func main() {
 
 	// Stop the server on signal
 	<-stopped
-	log.Printf("Apate control plane stopped")
+	log.Printf("apate control plane stopped")
 }
 
 func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, server *service.GRPCServer) {
-	log.Println("Stopping Apate control plane")
+	log.Println("stopping Apate control plane")
 
-	log.Println("Stopping API")
+	log.Println("stopping API")
 	server.Server.Stop()
 
 	// TODO: Actual cleanup for other nodes, for now just wipe state
 	if err := (*store).ClearNodes(); err != nil {
-		log.Printf("An error occurred while cleaning the apate store: %s", err.Error())
+		log.Printf("an error occurred while cleaning the apate store: %s", err.Error())
 	}
 
-	log.Println("Stopping kubernetes control plane")
+	log.Println("stopping kubernetes control plane")
 	if err := kubernetesCluster.Delete(); err != nil {
-		log.Printf("An error occurred while deleting the kubernetes store: %s", err.Error())
+		log.Printf("an error occurred while deleting the kubernetes store: %s", err.Error())
 	}
 }
 
@@ -130,12 +139,12 @@ func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {
 	cb := cluster.Default()
 	c, err := cb.WithName("Apate").WithManagerConfig(managedClusterConfigPath).ForceCreate()
 	if err != nil {
-		log.Fatalf("An error occurred: %s", err.Error())
+		log.Fatalf("an error occurred: %s", err.Error())
 	}
 
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
-		log.Fatalf("An error occurred: %s", err.Error())
+		log.Fatalf("an error occurred: %s", err.Error())
 	}
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)
@@ -159,7 +168,7 @@ func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	}
 
 	// Create external information
-	log.Printf("External IP for control plane: %s", externalIP)
+	log.Printf("external IP for control plane: %s", externalIP)
 
 	return service.NewConnectionInfo(externalIP, listenPort, false), nil
 }
