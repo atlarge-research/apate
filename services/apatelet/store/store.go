@@ -4,8 +4,9 @@ package store
 import (
 	"container/heap"
 	"errors"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"sync"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -149,54 +150,54 @@ func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val i
 	}
 }
 
-var defaultNodeValues = map[events.EventFlag]interface{} {
-	events.NodeCreatePodResponse: scenario.Response_NORMAL,
-	events.NodeCreatePodResponsePercentage: 0,
+var defaultNodeValues = map[events.EventFlag]interface{}{
+	events.NodeCreatePodResponse:           scenario.Response_NORMAL,
+	events.NodeCreatePodResponsePercentage: int32(0),
 
-	events.NodeUpdatePodResponse: scenario.Response_NORMAL,
-	events.NodeUpdatePodResponsePercentage: 0,
+	events.NodeUpdatePodResponse:           scenario.Response_NORMAL,
+	events.NodeUpdatePodResponsePercentage: int32(0),
 
-	events.NodeDeletePodResponse: scenario.Response_NORMAL,
-	events.NodeDeletePodResponsePercentage: 0,
+	events.NodeDeletePodResponse:           scenario.Response_NORMAL,
+	events.NodeDeletePodResponsePercentage: int32(0),
 
-	events.NodeGetPodResponse: scenario.Response_NORMAL,
-	events.NodeGetPodResponsePercentage: 0,
+	events.NodeGetPodResponse:           scenario.Response_NORMAL,
+	events.NodeGetPodResponsePercentage: int32(0),
 
-	events.NodeGetPodStatusResponse: scenario.Response_NORMAL,
-	events.NodeGetPodStatusResponsePercentage: 0,
+	events.NodeGetPodStatusResponse:           scenario.Response_NORMAL,
+	events.NodeGetPodStatusResponsePercentage: int32(0),
 
-	events.NodeGetPodsResponse: scenario.Response_NORMAL,
-	events.NodeGetPodsResponsePercentage: 0,
+	events.NodeGetPodsResponse:           scenario.Response_NORMAL,
+	events.NodeGetPodsResponsePercentage: int32(0),
 
-	events.NodePingResponse: scenario.Response_NORMAL,
-	events.NodePingResponsePercentage: 0,
+	events.NodePingResponse:           scenario.Response_NORMAL,
+	events.NodePingResponsePercentage: int32(0),
 
 	events.NodeEnableResourceAlteration: false,
-	events.NodeMemoryUsage: 0,
-	events.NodeCPUUsage: 0,
-	events.NodeStorageUsage: 0,
-	events.NodeEphemeralStorageUsage: 0,
+	events.NodeMemoryUsage:              int64(0),
+	events.NodeCPUUsage:                 int64(0),
+	events.NodeStorageUsage:             int64(0),
+	events.NodeEphemeralStorageUsage:    int64(0),
 
 	events.NodeAddedLatencyEnabled: false,
-	events.NodeAddedLatencyMsec: 0,
+	events.NodeAddedLatencyMsec:    int64(0),
 }
 
-var defaultPodValues = map[events.PodEventFlag]interface{} {
-	events.PodCreatePodResponse: scenario.Response_NORMAL,
-	events.PodCreatePodResponsePercentage: 0,
+var defaultPodValues = map[events.PodEventFlag]interface{}{
+	events.PodCreatePodResponse:           scenario.Response_NORMAL,
+	events.PodCreatePodResponsePercentage: int32(0),
 
-	events.PodUpdatePodResponse: scenario.Response_NORMAL,
-	events.PodUpdatePodResponsePercentage: 0,
+	events.PodUpdatePodResponse:           scenario.Response_NORMAL,
+	events.PodUpdatePodResponsePercentage: int32(0),
 
-	events.PodDeletePodResponse: scenario.Response_NORMAL,
-	events.PodDeletePodResponsePercentage: 0,
+	events.PodDeletePodResponse:           scenario.Response_NORMAL,
+	events.PodDeletePodResponsePercentage: int32(0),
 
-	events.PodGetPodResponse: scenario.Response_NORMAL,
-	events.PodGetPodResponsePercentage: 0,
+	events.PodGetPodResponse:           scenario.Response_NORMAL,
+	events.PodGetPodResponsePercentage: int32(0),
 
-	events.PodGetPodStatusResponse: scenario.Response_NORMAL,
-	events.PodGetPodStatusResponsePercentage: 0,
+	events.PodGetPodStatusResponse:           scenario.Response_NORMAL,
+	events.PodGetPodStatusResponsePercentage: int32(0),
 
-	events.PodUpdatePodStatus: scenario.PodStatus_POD_RUNNING,
-	events.PodUpdatePodStatusPercentage: 0,
+	events.PodUpdatePodStatus:           scenario.PodStatus_POD_RUNNING,
+	events.PodUpdatePodStatusPercentage: int32(0),
 }

@@ -27,7 +27,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 		return err
 	}
 
-	find, exists, err := p.crdInformer.Find(pod.Labels["apate"])
+	find, exists, err := p.crdInformer.Find(pod.Namespace + "/" + pod.Labels["apate"])
 	if err != nil {
 		return err
 	}

@@ -149,6 +149,15 @@ func podAndNodeResponse(args podNodeResponse) (interface{}, error) {
 		return pod, nil
 	}
 
-	node, _, err := nodeResponse(args.responseArgs, args.nodeResponseArgs)
-	return node, err
+	node, performedAction, err := nodeResponse(args.responseArgs, args.nodeResponseArgs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if performedAction {
+		return node, nil
+	}
+
+	return nil, nil
 }

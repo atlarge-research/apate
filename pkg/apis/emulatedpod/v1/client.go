@@ -23,12 +23,12 @@ type EmulatedPodClient struct {
 
 // NewForConfig creates a new EmulatedPodClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*EmulatedPodClient, error) {
-	if err := Register(); err != nil {
+	if err := AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
 
 	config := *c
-	config.ContentConfig.GroupVersion = &SchemeGroupVersion
+	config.ContentConfig.GroupVersion = &schemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
 	config.UserAgent = rest.DefaultKubernetesUserAgent()

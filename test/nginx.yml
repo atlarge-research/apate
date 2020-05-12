@@ -1,10 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment2
+  name: nginx-deployment3
   labels:
     app: nginx
-    apate: default/crd-deployment
 spec:
   replicas: 1
   selector:
@@ -14,7 +13,7 @@ spec:
     metadata:
       labels:
         app: nginx
-        apate: default/crd-deployment
+        apate: crd-deployment
     spec:
       containers:
       - name: nginx
