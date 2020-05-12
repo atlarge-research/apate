@@ -23,6 +23,9 @@ require (
 	k8s.io/api v0.18.2 // Will be replaced
 	k8s.io/apimachinery v0.18.2 // Will be replaced
 	k8s.io/client-go v10.0.0+incompatible // Will be replaced
+	k8s.io/code-generator v0.18.2 // indirect; Will be replaced
+	k8s.io/gengo v0.0.0-20200428234225-8167cfdcfc14 // indirect
+	k8s.io/sample-controller v0.18.2 // indirect
 	sigs.k8s.io/kind v0.7.0
 )
 

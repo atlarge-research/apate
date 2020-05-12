@@ -59,3 +59,8 @@ mockgen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/m
 
 ./services/apatelet/store/mock_store/store_mock.go: ./services/apatelet/store/store.go
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store Store > $@
+
+crd_gen:
+	controller-gen object paths=./pkg/apis/emulatedpod/...
+	controller-gen crd:trivialVersions=true paths=./pkg/apis/emulatedpod/...
+	./hack/update-codegen.sh
