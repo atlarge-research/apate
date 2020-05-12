@@ -27,12 +27,12 @@ func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error 
 // CreateWithNameSpace calls `kubectl create` with the given resourceConfig in the given namespace
 // When this config is empty, it will not be called
 func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig, namespace string) error {
-	resourceConfigPath := os.TempDir() + "/apate/res" //TODO: Fancy tmp dir
-	//test, err := ioutil.TempFile("/tmp", "apate")
+	if len(resourceConfig) > 0 {
+		resourceConfigPath := os.TempDir() + "/apate/res" //TODO: Fancy tmp dir
+		//test, err := ioutil.TempFile("/tmp", "apate")
 
-	_ = ioutil.WriteFile(resourceConfigPath, resourceConfig, 0o600)
+		_ = ioutil.WriteFile(resourceConfigPath, resourceConfig, 0o600)
 
-	if len(resourceConfigPath) > 0 {
 		args := []string{
 			"create",
 		}

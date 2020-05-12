@@ -39,7 +39,7 @@ type Store interface {
 }
 
 // FlagNotSetError is raised whenever a flag is not set
-const FlagNotSetError = throw.Exception("flag not set")
+const FlagNotSetError = throw.ConstException("flag not set")
 
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
