@@ -3,9 +3,10 @@ package provider
 
 import (
 	"context"
-	"k8s.io/client-go/tools/cache"
 	"os"
 	"strconv"
+
+	"k8s.io/client-go/tools/cache"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 

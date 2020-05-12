@@ -1,25 +1,7 @@
+// Package emulatedpod contains the different API versions of the EmulatedPod CRD.
 package emulatedpod
 
-import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
-	"io/ioutil"
-)
-
 const (
+	// GroupName is the groupname of the CRD
 	GroupName = "apate.opendc.org"
 )
-
-func AddCRDToKubernetes(config *kubeconfig.KubeConfig) error {
-
-	file, err := ioutil.ReadFile("config/crd/apate.opendc.org_emulatedpods.yaml")
-	if err != nil {
-		return err
-	}
-
-	if err := kubectl.Apply(file, config); err != nil {
-		return err
-	}
-
-	return nil
-}
