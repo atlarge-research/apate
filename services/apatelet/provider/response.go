@@ -10,7 +10,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-const flagNotSetError = store.FlagNotSetError
+const flagNotSetError = store.FlagNotFoundError
 const expectedError = throw.Exception("expected error")
 const invalidResponse = throw.Exception("invalid response")
 const invalidPercentage = throw.Exception("invalid percentage type")
@@ -56,94 +56,99 @@ calculate the percentage and calls the action callback on success.
 */
 
 // podResponse checks the passed flags and calls the passed function on success
-func podResponse(args responseArgs, podA podResponseArgs) (interface{}, error) {
+func podResponse(args responseArgs, podA podResponseArgs) (interface{}, bool, error) {
 	iflag, err := (*args.provider.store).GetPodFlag(podA.name, podA.podResponseFlag)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, invalidFlag
+		return nil, false, invalidFlag
 	}
 
 	iflagpercent, err := (*args.provider.store).GetPodFlag(podA.name, podA.podPercentageFlag)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	flagpercent, ok := iflagpercent.(int32)
 	if !ok {
-		return nil, invalidPercentage
-	}
-
-	if flagpercent == 0 {
-		return nil, flagNotSetError
+		return nil, false, invalidPercentage
 	}
 
 	if flagpercent < rand.Int31n(int32(100)) {
-		return args.action()
+		res, err := args.action()
+		return res, true, err
 	}
 
 	switch flag {
 	case scenario.Response_NORMAL:
-		return args.action()
+		res, err := args.action()
+		return res, true, err
 	case scenario.Response_TIMEOUT:
 		<-args.ctx.Done()
-		return nil, nil
+		return nil, true, nil
 	case scenario.Response_ERROR:
-		return nil, expectedError
+		return nil, true, expectedError
 	default:
-		return nil, invalidResponse
+		return nil, false, invalidResponse
 	}
 }
 
 // nodeResponse checks the passed flags and calls the passed function on success
-func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, error) {
+func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, bool, error) {
 	iflag, err := (*args.provider.store).GetNodeFlag(nodeA.nodeResponseFlag)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, invalidFlag
+		return nil, false, invalidFlag
 	}
 
 	iflagpercent, err := (*args.provider.store).GetNodeFlag(nodeA.nodePercentageFlag)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	flagpercent, ok := iflagpercent.(int32)
 	if !ok {
-		return nil, invalidPercentage
+		return nil, false, invalidPercentage
 	}
 
 	if flagpercent < rand.Int31n(int32(100)) {
-		return args.action()
+		res, err := args.action()
+		return res, true, err
 	}
 
 	switch flag {
 	case scenario.Response_NORMAL:
-		return args.action()
+		res, err := args.action()
+		return res, true, err
 	case scenario.Response_TIMEOUT:
 		<-args.ctx.Done()
-		return nil, nil
+		return nil, true, nil
 	case scenario.Response_ERROR:
-		return nil, expectedError
+		return nil, true, expectedError
 	default:
-		return nil, invalidResponse
+		return nil, false, invalidResponse
 	}
 }
 
 // podAndNodeResponse first calls podResponse and if pod response is not set calls nodeResponse
 func podAndNodeResponse(args podNodeResponse) (interface{}, error) {
-	pod, err := podResponse(args.responseArgs, args.podResponseArgs)
+	pod, performedAction, err := podResponse(args.responseArgs, args.podResponseArgs)
 
-	if err != flagNotSetError {
-		return pod, err
+	if err != nil {
+		return nil, err
 	}
 
-	return nodeResponse(args.responseArgs, args.nodeResponseArgs)
+	if performedAction {
+		return pod, nil
+	}
+
+	node, _, err := nodeResponse(args.responseArgs, args.nodeResponseArgs)
+	return node, err
 }

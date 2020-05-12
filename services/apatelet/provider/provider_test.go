@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+
 	"k8s.io/client-go/tools/cache"
 
 	mockcache "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/mock_cache_store"
@@ -63,7 +65,9 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	mCrdSt := mockcache.NewMockStore(ctrl)
 	var crdSt cache.Store = mCrdSt
 
-	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, &crdSt)
+	inf := v1.NewInformer(&crdSt)
+
+	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, inf)
 
 	fakeNode := corev1.Node{}
 

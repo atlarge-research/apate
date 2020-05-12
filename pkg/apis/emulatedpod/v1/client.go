@@ -23,7 +23,7 @@ type EmulatedPodClient struct {
 
 // NewForConfig creates a new EmulatedPodClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*EmulatedPodClient, error) {
-	if err := RegisterCRD(); err != nil {
+	if err := Register(); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +42,7 @@ func NewForConfig(c *rest.Config, namespace string) (*EmulatedPodClient, error) 
 }
 
 // WatchResources creates an informer which watches for new or updated EmulatedPods and updates the returned store accordingly
-func (e *EmulatedPodClient) WatchResources() cache.Store {
+func (e *EmulatedPodClient) WatchResources() *Informer {
 	emulatedPodStore, emulatedPodController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -56,7 +56,7 @@ func (e *EmulatedPodClient) WatchResources() cache.Store {
 	)
 
 	go emulatedPodController.Run(wait.NeverStop)
-	return emulatedPodStore
+	return NewInformer(&emulatedPodStore)
 }
 
 func (e *EmulatedPodClient) list(opts metav1.ListOptions) (*EmulatedPodList, error) {

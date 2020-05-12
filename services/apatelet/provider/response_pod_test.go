@@ -31,7 +31,7 @@ func TestPodNormal100(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -67,7 +67,7 @@ func TestPodNormal0(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -106,7 +106,7 @@ func TestPodNormal50A(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -144,7 +144,7 @@ func TestPodNormal50B(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -180,7 +180,7 @@ func TestPodStoreError1(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -217,7 +217,7 @@ func TestPodStoreError2(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -253,7 +253,7 @@ func TestPodInvalidPercentage(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -288,7 +288,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -326,7 +326,7 @@ func TestPodInvalidResponse(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -366,7 +366,7 @@ func TestPodTimeOut(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, _, err := podResponse(responseArgs{
 		ctx:      ctx,
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {

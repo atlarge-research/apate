@@ -48,7 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = emulatedpodv1.AddCRDToKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+	if err = emulatedpodv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
 	}
 

@@ -4,6 +4,7 @@ package store
 import (
 	"container/heap"
 	"errors"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
@@ -38,8 +39,8 @@ type Store interface {
 	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
-// FlagNotSetError is raised whenever a flag is not set
-const FlagNotSetError = throw.Exception("flag not set")
+// FlagNotFoundError is raised whenever a flag is not set
+const FlagNotFoundError = throw.Exception("flag not found")
 
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
@@ -107,7 +108,11 @@ func (s *store) GetNodeFlag(id events.NodeEventFlag) (interface{}, error) {
 		return val, nil
 	}
 
-	return nil, FlagNotSetError
+	if dv, ok := defaultNodeValues[id]; ok {
+		return dv, nil
+	}
+
+	return nil, FlagNotFoundError
 }
 
 func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
@@ -125,7 +130,11 @@ func (s *store) GetPodFlag(configuration string, flag events.PodEventFlag) (inte
 		return val, nil
 	}
 
-	return nil, FlagNotSetError
+	if dv, ok := defaultPodValues[flag]; ok {
+		return dv, nil
+	}
+
+	return nil, FlagNotFoundError
 }
 
 func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val interface{}) {
@@ -138,4 +147,56 @@ func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val i
 		s.podFlags[configuration] = make(flags)
 		s.podFlags[configuration][flag] = val
 	}
+}
+
+var defaultNodeValues = map[events.EventFlag]interface{} {
+	events.NodeCreatePodResponse: scenario.Response_NORMAL,
+	events.NodeCreatePodResponsePercentage: 0,
+
+	events.NodeUpdatePodResponse: scenario.Response_NORMAL,
+	events.NodeUpdatePodResponsePercentage: 0,
+
+	events.NodeDeletePodResponse: scenario.Response_NORMAL,
+	events.NodeDeletePodResponsePercentage: 0,
+
+	events.NodeGetPodResponse: scenario.Response_NORMAL,
+	events.NodeGetPodResponsePercentage: 0,
+
+	events.NodeGetPodStatusResponse: scenario.Response_NORMAL,
+	events.NodeGetPodStatusResponsePercentage: 0,
+
+	events.NodeGetPodsResponse: scenario.Response_NORMAL,
+	events.NodeGetPodsResponsePercentage: 0,
+
+	events.NodePingResponse: scenario.Response_NORMAL,
+	events.NodePingResponsePercentage: 0,
+
+	events.NodeEnableResourceAlteration: false,
+	events.NodeMemoryUsage: 0,
+	events.NodeCPUUsage: 0,
+	events.NodeStorageUsage: 0,
+	events.NodeEphemeralStorageUsage: 0,
+
+	events.NodeAddedLatencyEnabled: false,
+	events.NodeAddedLatencyMsec: 0,
+}
+
+var defaultPodValues = map[events.PodEventFlag]interface{} {
+	events.PodCreatePodResponse: scenario.Response_NORMAL,
+	events.PodCreatePodResponsePercentage: 0,
+
+	events.PodUpdatePodResponse: scenario.Response_NORMAL,
+	events.PodUpdatePodResponsePercentage: 0,
+
+	events.PodDeletePodResponse: scenario.Response_NORMAL,
+	events.PodDeletePodResponsePercentage: 0,
+
+	events.PodGetPodResponse: scenario.Response_NORMAL,
+	events.PodGetPodResponsePercentage: 0,
+
+	events.PodGetPodStatusResponse: scenario.Response_NORMAL,
+	events.PodGetPodStatusResponsePercentage: 0,
+
+	events.PodUpdatePodStatus: scenario.PodStatus_POD_RUNNING,
+	events.PodUpdatePodStatusPercentage: 0,
 }
