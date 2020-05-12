@@ -82,6 +82,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 func TestCreatePod(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
+	cs := mockcache.NewMockStore(ctrl)
 
 	/// vars
 	pod := corev1.Pod{}
@@ -95,11 +96,16 @@ func TestCreatePod(t *testing.T) {
 	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
 	ms.EXPECT().GetPodFlag(pod.Name, PCPRPF).Return(int32(100), nil)
 
+	cs.EXPECT().GetByKey(pod.Namespace+"/"+pod.Labels["apate"]).Return(nil, false, nil)
+
 	// sot
 	var s store.Store = ms
+	var c cache.Store = cs
+
 	p := Provider{
-		store: &s,
-		pods:  podmanager.New(),
+		store:       &s,
+		pods:        podmanager.New(),
+		crdInformer: v1.NewInformer(&c),
 	}
 
 	err := p.CreatePod(context.TODO(), &pod)

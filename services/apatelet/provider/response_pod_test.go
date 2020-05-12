@@ -31,7 +31,7 @@ func TestPodNormal100(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -46,6 +46,7 @@ func TestPodNormal100(t *testing.T) {
 
 	// Assert
 	assert.NoError(t, err)
+	assert.True(t, changed)
 	assert.Equal(t, tStr, out)
 
 	ctrl.Finish()
@@ -67,7 +68,7 @@ func TestPodNormal0(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -81,9 +82,9 @@ func TestPodNormal0(t *testing.T) {
 		})
 
 	// Assert
-	assert.NotNil(t, err)
-	assert.EqualError(t, flagNotSetError, err.Error())
-	assert.Nil(t, out)
+	assert.NoError(t, err)
+	assert.True(t, changed)
+	assert.Equal(t, tStr, out)
 
 	ctrl.Finish()
 }
@@ -106,7 +107,7 @@ func TestPodNormal50A(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -121,6 +122,7 @@ func TestPodNormal50A(t *testing.T) {
 
 	// Assert
 	assert.NoError(t, err)
+	assert.True(t, changed)
 	assert.Equal(t, tStr, out)
 
 	ctrl.Finish()
@@ -144,7 +146,7 @@ func TestPodNormal50B(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -158,8 +160,8 @@ func TestPodNormal50B(t *testing.T) {
 		})
 
 	// Assert
-	assert.NotNil(t, err)
 	assert.Error(t, err)
+	assert.True(t, changed)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -180,7 +182,7 @@ func TestPodStoreError1(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -194,8 +196,8 @@ func TestPodStoreError1(t *testing.T) {
 		})
 
 	// Assert
-	assert.NotNil(t, err)
 	assert.Error(t, err)
+	assert.False(t, changed)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -217,7 +219,7 @@ func TestPodStoreError2(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -231,8 +233,8 @@ func TestPodStoreError2(t *testing.T) {
 		})
 
 	// Assert
-	assert.NotNil(t, err)
-	assert.EqualError(t, genericError, err.Error())
+	assert.Error(t, err)
+	assert.False(t, changed)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -253,7 +255,7 @@ func TestPodInvalidPercentage(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -267,7 +269,7 @@ func TestPodInvalidPercentage(t *testing.T) {
 		})
 
 	// Assert
-	assert.NotNil(t, err)
+	assert.False(t, changed)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 
@@ -288,7 +290,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -302,7 +304,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 		})
 
 	// Assert
-	assert.NotNil(t, err)
+	assert.False(t, changed)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 
@@ -326,7 +328,7 @@ func TestPodInvalidResponse(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -340,7 +342,7 @@ func TestPodInvalidResponse(t *testing.T) {
 		})
 
 	// Assert
-	assert.NotNil(t, err)
+	assert.False(t, changed)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 
@@ -357,8 +359,6 @@ func TestPodTimeOut(t *testing.T) {
 	PCPRF := events.PodCreatePodResponse
 	PCPRPF := events.PodCreatePodResponsePercentage
 
-	rand.Seed(42)
-
 	// Expectations
 	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_TIMEOUT, nil)
 	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
@@ -366,7 +366,7 @@ func TestPodTimeOut(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      ctx,
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
@@ -380,6 +380,7 @@ func TestPodTimeOut(t *testing.T) {
 		})
 
 	// Assert
+	assert.True(t, changed)
 	assert.Nil(t, err)
 	assert.Nil(t, out)
 
