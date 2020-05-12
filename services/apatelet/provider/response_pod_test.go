@@ -159,7 +159,7 @@ func TestPodNormal50B(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, expectedError, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -195,7 +195,7 @@ func TestPodStoreError1(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, genericError, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -268,7 +268,7 @@ func TestPodInvalidPercentage(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, invalidPercentage, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -303,7 +303,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, invalidFlag, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -341,7 +341,7 @@ func TestPodInvalidResponse(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, err)
-	assert.EqualError(t, invalidResponse, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
