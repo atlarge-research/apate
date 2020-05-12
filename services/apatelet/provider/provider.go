@@ -29,6 +29,7 @@ type Provider struct {
 	cfg       provider.InitConfig
 	nodeInfo  cluster.NodeInfo
 	store     *store.Store
+	stats     *Stats
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
@@ -66,5 +67,6 @@ func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig
 		cfg:       cfg,
 		nodeInfo:  nodeInfo,
 		store:     store,
+		stats:     NewStats(),
 	}
 }
