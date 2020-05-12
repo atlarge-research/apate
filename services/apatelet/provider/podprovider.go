@@ -160,7 +160,7 @@ func podStatusToPhase(status interface{}) corev1.PodPhase {
 }
 
 // GetPodStatus retrieves the status of a pod by name.
-func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name string) (*corev1.PodStatus, error) {
+func (p *Provider) GetPodStatus(ctx context.Context, _ string, name string) (*corev1.PodStatus, error) {
 	log.Println("Getting pod status")
 
 	if err := p.runLatency(ctx); err != nil {
@@ -171,17 +171,17 @@ func (p *Provider) GetPodStatus(ctx context.Context, namespace string, name stri
 		responseArgs: responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
 			status, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatus)
 			if err != nil {
-				return nil, throw.Exception(err.Error())
+				return nil, throw.NewException(err, "GetPodStatus failed on getting pod flag")
 			}
 
 			ipercent, err := (*p.store).GetPodFlag(name, events.PodUpdatePodStatusPercentage)
 			if err != nil {
-				return nil, throw.Exception(err.Error())
+				return nil, throw.NewException(err, "GetPodStatus failed on getting pod percent flag")
 			}
 
 			percent, ok := ipercent.(int32)
 			if !ok {
-				return nil, throw.Exception("cast error")
+				return nil, errors.New("GetPodStatus couldn't cast percent to int")
 			}
 
 			if percent < rand.Int31n(int32(100)) {

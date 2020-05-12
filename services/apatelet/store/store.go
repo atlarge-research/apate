@@ -41,7 +41,7 @@ type Store interface {
 }
 
 // FlagNotFoundError is raised whenever a flag is not set
-const FlagNotFoundError = throw.Exception("flag not found")
+const FlagNotFoundError = throw.ConstException("flag not found")
 
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags

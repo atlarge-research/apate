@@ -83,12 +83,14 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		scenario.Failed(err)
+		log.Println(err)
 		return nil, err
 	}
 
 	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {
 		scenario.Failed(err)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -98,12 +100,14 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	err = startOnNodes(ctx, nodes, apateletScenario)
 	if err != nil {
 		scenario.Failed(err)
+		log.Println(err)
 		return nil, err
 	}
 
 	cfg, err := (*s.store).GetKubeConfig()
 	if err != nil {
 		scenario.Failed(err)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -111,6 +115,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	err = kubectl.Create(config.ResourceConfig, &cfg)
 	if err != nil {
 		scenario.Failed(err)
+		log.Println(err)
 		return nil, err
 	}
 

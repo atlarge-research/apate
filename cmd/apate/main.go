@@ -25,7 +25,7 @@ import (
 const (
 	defaultControlPlaneAddress = "localhost"
 	defaultControlPlanePort    = 8085
-	defaultControlPlaneTimeout = 30
+	defaultControlPlaneTimeout = 45
 )
 
 func main() {
@@ -141,6 +141,13 @@ func main() {
 						Usage:       "How the control plane runs new apatelets. Can be DOCKER or ROUTINE.",
 						Destination: &cpEnv.ApateletRunType,
 						Value:       cpEnv.ApateletRunType,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "prometheus-enabled",
+						Usage:       "If the control plane start a Prometheus stack. Can be TRUE or FALSE.",
+						Destination: &cpEnv.PrometheusStackEnabled,
+						Value:       cpEnv.PrometheusStackEnabled,
 						Required:    false,
 					},
 				},

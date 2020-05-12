@@ -2,19 +2,12 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
-
-const flagNotSetError = store.FlagNotFoundError
-const expectedError = throw.Exception("expected error")
-const invalidResponse = throw.Exception("invalid response")
-const invalidPercentage = throw.Exception("invalid percentage type")
-const invalidFlag = throw.Exception("invalid flag type")
 
 type responseArgs struct {
 	ctx      context.Context
@@ -64,7 +57,7 @@ func podResponse(args responseArgs, podA podResponseArgs) (interface{}, bool, er
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, false, invalidFlag
+		return nil, false, errors.New("podResponse couldn't cast flag to response")
 	}
 
 	iflagpercent, err := (*args.provider.store).GetPodFlag(podA.name, podA.podPercentageFlag)
@@ -74,7 +67,7 @@ func podResponse(args responseArgs, podA podResponseArgs) (interface{}, bool, er
 
 	flagpercent, ok := iflagpercent.(int32)
 	if !ok {
-		return nil, false, invalidPercentage
+		return nil, false, errors.New("podResponse couldn't cast percent to int")
 	}
 
 	if flagpercent < rand.Int31n(int32(100)) {
@@ -90,9 +83,9 @@ func podResponse(args responseArgs, podA podResponseArgs) (interface{}, bool, er
 		<-args.ctx.Done()
 		return nil, true, nil
 	case scenario.Response_ERROR:
-		return nil, true, expectedError
+		return nil, true, errors.New("podResponse expected error")
 	default:
-		return nil, false, invalidResponse
+		return nil, false, errors.New("podResponse invalid scenario")
 	}
 }
 
@@ -105,7 +98,7 @@ func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, bool,
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, false, invalidFlag
+		return nil, false, errors.New("nodeResponse couldn't cast flag to response")
 	}
 
 	iflagpercent, err := (*args.provider.store).GetNodeFlag(nodeA.nodePercentageFlag)
@@ -115,7 +108,7 @@ func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, bool,
 
 	flagpercent, ok := iflagpercent.(int32)
 	if !ok {
-		return nil, false, invalidPercentage
+		return nil, false, errors.New("nodeResponse couldn't cast percent to int")
 	}
 
 	if flagpercent < rand.Int31n(int32(100)) {
@@ -131,9 +124,9 @@ func nodeResponse(args responseArgs, nodeA nodeResponseArgs) (interface{}, bool,
 		<-args.ctx.Done()
 		return nil, true, nil
 	case scenario.Response_ERROR:
-		return nil, true, expectedError
+		return nil, true, errors.New("nodeResponse expected error")
 	default:
-		return nil, false, invalidResponse
+		return nil, false, errors.New("nodeResponse invalid scenario")
 	}
 }
 

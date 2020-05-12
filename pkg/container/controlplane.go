@@ -39,6 +39,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 				env.ManagedClusterConfig + "=" + cpEnv.ManagerConfig,
 				env.ControlPlaneExternalIP + "=" + cpEnv.ExternalIP,
 				env.ControlPlaneDockerPolicy + "=" + cpEnv.DockerPolicy,
+				env.PrometheusStackEnabled + "=" + cpEnv.PrometheusStackEnabled,
 			},
 			ExposedPorts: nat.PortSet{
 				port: struct{}{},
