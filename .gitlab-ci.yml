@@ -23,6 +23,8 @@ sast:
   stage: verify
   tags: [xirion]
   needs: [build]
+  variables:
+    SCAN_KUBERNETES_MANIFESTS: "false"
 
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"

@@ -77,6 +77,8 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	assert.EqualValues(t, resources.CPU, fakeNode.Status.Capacity.Cpu().Value())
 	assert.EqualValues(t, resources.Memory, fakeNode.Status.Capacity.Memory().Value())
 	assert.EqualValues(t, resources.MaxPods, fakeNode.Status.Capacity.Pods().Value())
+
+	ctrl.Finish()
 }
 
 func TestCreatePod(t *testing.T) {

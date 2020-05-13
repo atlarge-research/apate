@@ -38,7 +38,7 @@ func (i *Informer) Find(label string) (*EmulatedPod, bool, error) {
 			return ep, true, nil
 		}
 
-		return nil, false, errors.New("emulated pod not an emulated pod hmmmmmmm")
+		return nil, false, errors.New("couldn't cast to emulated pod")
 	}
 
 	return nil, false, nil
