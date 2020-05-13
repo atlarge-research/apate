@@ -34,11 +34,84 @@ spec:
         metadata:
           type: object
         spec:
+          description: EmulatedPodSpec is the spec which belongs to the EmulatedPod
+            CRD
           properties:
-            test:
-              type: integer
+            tasks:
+              items:
+                properties:
+                  create_pod_response:
+                    default: NORMAL
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    type: string
+                  delete_pod_response:
+                    default: NORMAL
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    type: string
+                  get_pod_response:
+                    default: NORMAL
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    type: string
+                  get_pod_status_response:
+                    default: NORMAL
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    type: string
+                  pod_status:
+                    default: POD_RUNNING
+                    enum:
+                    - POD_PENDING
+                    - POD_RUNNING
+                    - POD_SUCCEEDED
+                    - POD_FAILED
+                    - POD_UNKNOWN
+                    type: string
+                  resource_usage:
+                    properties:
+                      cpu:
+                        default: 0
+                        format: int64
+                        type: integer
+                      ephemeral_storage:
+                        default: 0
+                        type: string
+                      memory:
+                        default: 0
+                        type: string
+                      storage:
+                        default: 0
+                        type: string
+                    type: object
+                  timestamp:
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  update_pod_response:
+                    default: NORMAL
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    type: string
+                required:
+                - timestamp
+                type: object
+              type: array
+            use_pod_start_time:
+              type: boolean
           required:
-          - test
+          - use_pod_start_time
           type: object
       required:
       - metadata

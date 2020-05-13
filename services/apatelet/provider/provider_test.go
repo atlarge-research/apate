@@ -2,9 +2,8 @@ package provider
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd"
 	"testing"
-
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 
 	"k8s.io/client-go/tools/cache"
 
@@ -65,7 +64,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	mCrdSt := mockcache.NewMockStore(ctrl)
 	var crdSt cache.Store = mCrdSt
 
-	inf := v1.NewInformer(&crdSt)
+	inf := crd.NewInformer(&crdSt)
 
 	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, inf)
 
@@ -107,7 +106,7 @@ func TestCreatePod(t *testing.T) {
 	p := Provider{
 		store:       &s,
 		pods:        podmanager.New(),
-		crdInformer: v1.NewInformer(&c),
+		crdInformer: crd.NewInformer(&c),
 	}
 
 	err := p.CreatePod(context.TODO(), &pod)

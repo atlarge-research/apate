@@ -1,7 +1,8 @@
-package v1
+package crd
 
 import (
 	"errors"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 
 	"k8s.io/client-go/tools/cache"
 )
@@ -17,23 +18,23 @@ func NewInformer(store *cache.Store) *Informer {
 }
 
 // List returns a list of emulated pods.
-func (i *Informer) List() (eps []EmulatedPod) {
+func (i *Informer) List() (eps []v1.EmulatedPod) {
 	for _, ep := range (*i.store).List() {
-		eps = append(eps, ep.(EmulatedPod))
+		eps = append(eps, ep.(v1.EmulatedPod))
 	}
 	return eps
 }
 
 // Find finds an emulated pod which can be identified by the given label
 // This label should have the format <namespace>/<name> of the emulated pod.
-func (i *Informer) Find(label string) (*EmulatedPod, bool, error) {
+func (i *Informer) Find(label string) (*v1.EmulatedPod, bool, error) {
 	key, exists, err := (*i.store).GetByKey(label)
 	if err != nil {
 		return nil, false, err
 	}
 
 	if exists {
-		ep, ok := key.(*EmulatedPod)
+		ep, ok := key.(*v1.EmulatedPod)
 		if ok {
 			return ep, true, nil
 		}

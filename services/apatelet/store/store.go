@@ -32,26 +32,17 @@ type Store interface {
 
 	// SetNodeFlag sets the value of the given node flag
 	SetNodeFlag(events.NodeEventFlag, interface{})
-
-	// GetPodFlag returns the value of the given pod flag for a configuration
-	GetPodFlag(string, events.PodEventFlag) (interface{}, error)
-
-	// SetNodeFlag sets the value of the given pod flag for a configuration
-	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
 // FlagNotFoundError is raised whenever a flag is not set
 const FlagNotFoundError = throw.ConstException("flag not found")
 
 type flags map[events.EventFlag]interface{}
-type podFlags map[string]flags
 
 type store struct {
 	queue        *taskQueue
 	nodeFlags    flags
 	nodeFlagLock sync.RWMutex
-	podFlags     podFlags
-	podFlagLock  sync.RWMutex
 }
 
 // NewStore returns an empty store
@@ -59,7 +50,6 @@ func NewStore() Store {
 	return &store{
 		queue:     newTaskQueue(),
 		nodeFlags: make(flags),
-		podFlags:  make(podFlags),
 	}
 }
 
@@ -123,33 +113,6 @@ func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
 	s.nodeFlags[id] = val
 }
 
-func (s *store) GetPodFlag(configuration string, flag events.PodEventFlag) (interface{}, error) {
-	s.podFlagLock.Lock()
-	defer s.podFlagLock.Unlock()
-
-	if val, ok := s.podFlags[configuration][flag]; ok {
-		return val, nil
-	}
-
-	if dv, ok := defaultPodValues[flag]; ok {
-		return dv, nil
-	}
-
-	return nil, FlagNotFoundError
-}
-
-func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val interface{}) {
-	s.podFlagLock.Lock()
-	defer s.podFlagLock.Unlock()
-
-	if conf, ok := s.podFlags[configuration]; ok {
-		conf[flag] = val
-	} else {
-		s.podFlags[configuration] = make(flags)
-		s.podFlags[configuration][flag] = val
-	}
-}
-
 var defaultNodeValues = map[events.EventFlag]interface{}{
 	events.NodeCreatePodResponse:           scenario.Response_NORMAL,
 	events.NodeCreatePodResponsePercentage: int32(0),
@@ -180,24 +143,4 @@ var defaultNodeValues = map[events.EventFlag]interface{}{
 
 	events.NodeAddedLatencyEnabled: false,
 	events.NodeAddedLatencyMsec:    int64(0),
-}
-
-var defaultPodValues = map[events.PodEventFlag]interface{}{
-	events.PodCreatePodResponse:           scenario.Response_NORMAL,
-	events.PodCreatePodResponsePercentage: int32(0),
-
-	events.PodUpdatePodResponse:           scenario.Response_NORMAL,
-	events.PodUpdatePodResponsePercentage: int32(0),
-
-	events.PodDeletePodResponse:           scenario.Response_NORMAL,
-	events.PodDeletePodResponsePercentage: int32(0),
-
-	events.PodGetPodResponse:           scenario.Response_NORMAL,
-	events.PodGetPodResponsePercentage: int32(0),
-
-	events.PodGetPodStatusResponse:           scenario.Response_NORMAL,
-	events.PodGetPodStatusResponsePercentage: int32(0),
-
-	events.PodUpdatePodStatus:           scenario.PodStatus_POD_RUNNING,
-	events.PodUpdatePodStatusPercentage: int32(0),
 }
