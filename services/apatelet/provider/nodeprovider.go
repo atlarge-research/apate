@@ -107,7 +107,7 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			"type":                   p.nodeInfo.NodeType,
 			"kubernetes.io/role":     p.nodeInfo.Role,
 			"kubernetes.io/hostname": p.nodeInfo.Name,
-			"metrics-port":           "1234567",
+			"metrics_port":           "1234567",
 		},
 	}
 }
