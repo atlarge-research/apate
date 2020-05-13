@@ -1,6 +1,7 @@
-package v1
+package crd
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,12 +24,12 @@ type EmulatedPodClient struct {
 
 // NewForConfig creates a new EmulatedPodClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*EmulatedPodClient, error) {
-	if err := AddToScheme(scheme.Scheme); err != nil {
+	if err := v1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
 
 	config := *c
-	config.ContentConfig.GroupVersion = &schemeGroupVersion
+	config.ContentConfig.GroupVersion = &v1.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
@@ -50,7 +51,7 @@ func (e *EmulatedPodClient) WatchResources() *Informer {
 			},
 			WatchFunc: e.watch,
 		},
-		&EmulatedPod{},
+		&v1.EmulatedPod{},
 		1*time.Minute,
 		cache.ResourceEventHandlerFuncs{},
 	)
@@ -59,8 +60,8 @@ func (e *EmulatedPodClient) WatchResources() *Informer {
 	return NewInformer(&emulatedPodStore)
 }
 
-func (e *EmulatedPodClient) list(opts metav1.ListOptions) (*EmulatedPodList, error) {
-	result := EmulatedPodList{}
+func (e *EmulatedPodClient) list(opts metav1.ListOptions) (*v1.EmulatedPodList, error) {
+	result := v1.EmulatedPodList{}
 
 	err := e.restClient.Get().
 		Namespace(e.nameSpace).

@@ -12,7 +12,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 )
 
-var schemeGroupVersion = schema.GroupVersion{Group: emulatedpod.GroupName, Version: "v1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: emulatedpod.GroupName, Version: "v1"}
 
 // this is a hack, to register the emulated pod types with the decoder
 var schemeGroupVersionInternal = schema.GroupVersion{Group: emulatedpod.GroupName, Version: runtime.APIVersionInternal}
@@ -26,7 +26,7 @@ var (
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(schemeGroupVersion,
+	scheme.AddKnownTypes(SchemeGroupVersion,
 		&EmulatedPod{},
 		&EmulatedPodList{},
 	)
@@ -35,7 +35,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&EmulatedPod{},
 		&EmulatedPodList{},
 	)
-	metav1.AddToGroupVersion(scheme, schemeGroupVersion)
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 
 	return nil
 }

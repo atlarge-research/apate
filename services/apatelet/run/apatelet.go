@@ -3,12 +3,11 @@ package run
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-
-	emulatedpodv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
@@ -160,13 +159,13 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createCRDInformer(config *kubeconfig.KubeConfig) (*emulatedpodv1.Informer, error) {
+func createCRDInformer(config *kubeconfig.KubeConfig) (*crd.Informer, error) {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	podClient, err := emulatedpodv1.NewForConfig(restConfig, "default")
+	podClient, err := crd.NewForConfig(restConfig, "default")
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +174,7 @@ func createCRDInformer(config *kubeconfig.KubeConfig) (*emulatedpodv1.Informer, 
 	return crdSt, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *emulatedpodv1.Informer) (*cli.Command, context.CancelFunc, error) {
+func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *crd.Informer) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store, crdInformer)
 	return cmd, cancel, err
