@@ -36,44 +36,62 @@ type EmulatedPodTask struct {
 	// +kubebuilder:validation:Minimum=0
 	Timestamp int64 `json:"timestamp"`
 
-	// +kubebuilder:default=NORMAL
-	CreatePodResponse    EmulatedPodResponse `json:"create_pod_response,omitempty"`
+	// +kubebuilder:default=UNSET
+	CreatePodResponse EmulatedPodResponse `json:"create_pod_response,omitempty"`
 
-	// +kubebuilder:default=NORMAL
-	UpdatePodResponse    EmulatedPodResponse `json:"update_pod_response,omitempty"`
+	// +kubebuilder:default=UNSET
+	UpdatePodResponse EmulatedPodResponse `json:"update_pod_response,omitempty"`
 
-	// +kubebuilder:default=NORMAL
-	DeletePodResponse    EmulatedPodResponse `json:"delete_pod_response,omitempty"`
+	// +kubebuilder:default=UNSET
+	DeletePodResponse EmulatedPodResponse `json:"delete_pod_response,omitempty"`
 
-	// +kubebuilder:default=NORMAL
-	GetPodResponse       EmulatedPodResponse `json:"get_pod_response,omitempty"`
+	// +kubebuilder:default=UNSET
+	GetPodResponse EmulatedPodResponse `json:"get_pod_response,omitempty"`
 
-	// +kubebuilder:default=NORMAL
+	// +kubebuilder:default=UNSET
 	GetPodStatusResponse EmulatedPodResponse `json:"get_pod_status_response,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	ResourceUsage EmulatedPodResourceUsage `json:"resource_usage,omitempty"`
+	ResourceUsage *EmulatedPodResourceUsage `json:"resource_usage,omitempty"`
 
-	// +kubebuilder:default=POD_RUNNING
+	// +kubebuilder:default=UNSET
 	PodStatus EmulatedPodStatus `json:"pod_status,omitempty"`
 }
 
 type EmulatedPodResourceUsage struct {
-	// +kubebuilder:default=0
-	Memory           string `json:"memory,omitempty"`
+	// +kubebuilder:validation:Minimum=-1
+	// +kubebuilder:default=-1
+	Memory string `json:"memory,omitempty"`
 
-	// +kubebuilder:default=0
-	CPU              int64 `json:"cpu,omitempty"`
+	// +kubebuilder:validation:Minimum=-1
+	// +kubebuilder:default=-1
+	CPU int64 `json:"cpu,omitempty"`
 
-	// +kubebuilder:default=0
-	Storage          string `json:"storage,omitempty"`
+	// +kubebuilder:validation:Minimum=-1
+	// +kubebuilder:default=-1
+	Storage string `json:"storage,omitempty"`
 
-	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum=-1
+	// +kubebuilder:default=-1
 	EphemeralStorage string `json:"ephemeral_storage,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=POD_PENDING;POD_RUNNING;POD_SUCCEEDED;POD_FAILED;POD_UNKNOWN
+// +kubebuilder:validation:Enum=POD_PENDING;POD_RUNNING;POD_SUCCEEDED;POD_FAILED;POD_UNKNOWN;UNSET
 type EmulatedPodStatus string
+const (
+	POD_STATUS_PENDING EmulatedPodResponse = "POD_PENDING"
+	POD_STATUS_RUNNING EmulatedPodResponse = "POD_RUNNING"
+	POD_STATUS_SUCCEEDED EmulatedPodResponse = "POD_SUCCEEDED"
+	POD_STATUS_FAILED EmulatedPodResponse = "POD_FAILED"
+	POD_STATUS_UNKNOWN EmulatedPodStatus = "POD_UNKNOWN"
+	POD_STATUS_UNSET EmulatedPodStatus = "UNSET"
+)
 
-// +kubebuilder:validation:Enum=NORMAL;TIMEOUT;ERROR
+// +kubebuilder:validation:Enum=NORMAL;TIMEOUT;ERROR;UNSET
 type EmulatedPodResponse string
+const (
+	RESPONSE_NORMAL EmulatedPodResponse = "NORMAL"
+	RESPONSE_TIMEOUT EmulatedPodResponse = "TIMEOUT"
+	RESPONSE_ERROR EmulatedPodResponse = "ERROR"
+	RESPONSE_UNSET EmulatedPodResponse = "UNSET"
+)

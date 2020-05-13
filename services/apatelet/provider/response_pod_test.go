@@ -39,7 +39,7 @@ func TestPodNormal100(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -76,7 +76,7 @@ func TestPodNormal0(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -115,7 +115,7 @@ func TestPodNormal50A(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -154,7 +154,7 @@ func TestPodNormal50B(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -190,7 +190,7 @@ func TestPodStoreError1(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -227,7 +227,7 @@ func TestPodStoreError2(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -263,7 +263,7 @@ func TestPodInvalidPercentage(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -298,7 +298,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -336,7 +336,7 @@ func TestPodInvalidResponse(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})
@@ -374,7 +374,7 @@ func TestPodTimeOut(t *testing.T) {
 		},
 	},
 		podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		})

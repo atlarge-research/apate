@@ -29,6 +29,16 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
 // StartScenario starts a given scenario on the current Apatelet
 func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *apatelet.ApateletScenario) (*empty.Empty, error) {
 	log.Print("Received scenario with ", len(scenario.Task), " tasks")
-	(*s.store).EnqueueTasks(scenario.Task)
+
+	var tasks []*store.Task
+	for _, task := range scenario.Task {
+		tasks = append(tasks, &store.Task{
+			AbsoluteTimestamp: task.AbsoluteTimestamp,
+			IsPod:             false,
+			OriginalTask:      task,
+		})
+	}
+	(*s.store).EnqueueTasks(tasks)
+
 	return new(empty.Empty), nil
 }

@@ -40,7 +40,7 @@ func TestMagicPodAndNodePod(t *testing.T) {
 			},
 		},
 		podResponseArgs: podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		},
@@ -84,7 +84,7 @@ func TestMagicPodAndNodeNode(t *testing.T) {
 			},
 		},
 		podResponseArgs: podResponseArgs{
-			name:              podName,
+			label:             podName,
 			podResponseFlag:   PCPRF,
 			podPercentageFlag: PCPRPF,
 		},
