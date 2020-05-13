@@ -8,7 +8,6 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	apiEvents "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	anyMarshal "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -35,21 +34,7 @@ func (cfp *customFlagParser) parse(json string) error {
 			if err := cfp.parseCustomFlags(task, &taskCustomFlags); err != nil {
 				return err
 			}
-			currentParsedTask.NodeEvent = &controlplane.Task_CustomFlags{CustomFlags: &apiEvents.CustomFlags{CustomFlags: taskCustomFlags}}
-		}
-
-		// Iterate over the pod configs
-		for j, podConfig := range task.Get("pod_configs").Array() {
-			// If this pod config has custom flags
-			if hasCustomFlags(podConfig) {
-				podCustomFlags := make(protoEventMap)
-
-				// Parse them
-				if err := cfp.parseCustomFlags(podConfig, &podCustomFlags); err != nil {
-					return err
-				}
-				currentParsedTask.PodConfigs[j].PodEvent = &controlplane.PodConfig_CustomFlags{CustomFlags: &apiEvents.CustomFlags{CustomFlags: podCustomFlags}}
-			}
+			currentParsedTask.Event = &controlplane.Task_CustomFlags{CustomFlags: &controlplane.CustomFlags{CustomFlags: taskCustomFlags}}
 		}
 	}
 
@@ -146,49 +131,6 @@ func (cfp *customFlagParser) parseKey(key string, value gjson.Result) (ef events
 	case "node_added_latency_msec":
 		ef = events.NodeAddedLatencyMsec
 		response, err = getIntMinZero(value)
-
-	case "pod_create_pod_response":
-		ef = events.PodCreatePodResponse
-		response, err = getResponse(value)
-	case "pod_create_pod_response_percentage":
-		ef = events.PodCreatePodResponsePercentage
-		response, err = getPercent(value)
-
-	case "pod_update_pod_response":
-		ef = events.PodUpdatePodResponse
-		response, err = getResponse(value)
-	case "pod_update_pod_response_percentage":
-		ef = events.PodUpdatePodResponsePercentage
-		response, err = getPercent(value)
-
-	case "pod_delete_pod_response":
-		ef = events.PodDeletePodResponse
-		response, err = getResponse(value)
-	case "pod_delete_pod_response_percentage":
-		ef = events.PodDeletePodResponsePercentage
-		response, err = getPercent(value)
-
-	case "pod_get_pod_response":
-		ef = events.PodGetPodResponse
-		response, err = getResponse(value)
-	case "pod_get_pod_response_percentage":
-		ef = events.PodGetPodResponsePercentage
-		response, err = getPercent(value)
-
-	case "pod_get_pod_status_response":
-		ef = events.PodGetPodStatusResponse
-		response, err = getResponse(value)
-	case "pod_get_pod_status_response_percentage":
-		ef = events.PodGetPodStatusResponsePercentage
-		response, err = getPercent(value)
-
-	case "pod_update_pod_status":
-		ef = events.PodUpdatePodStatus
-		response, err = getPodStatus(value)
-	case "pod_update_pod_status_percentage":
-		ef = events.PodUpdatePodStatusPercentage
-		response, err = getPercent(value)
-
 	default:
 		return 0, nil, fmt.Errorf("invalid custom flag key '%s'", key)
 	}
@@ -205,13 +147,6 @@ func getResponse(value gjson.Result) (scenario.Response, error) {
 		return scenario.Response(response), nil
 	}
 	return 0, fmt.Errorf("invalid response '%v'", value.String())
-}
-
-func getPodStatus(value gjson.Result) (scenario.PodStatus, error) {
-	if podStatus, ok := scenario.PodStatus_value[value.String()]; ok {
-		return scenario.PodStatus(podStatus), nil
-	}
-	return 0, fmt.Errorf("invalid pod status '%v'", value.String())
 }
 
 func getSize(value gjson.Result, unitName string) (int64, error) {
