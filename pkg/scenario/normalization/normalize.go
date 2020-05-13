@@ -141,7 +141,6 @@ func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask
 
 	newTask.NodeSet = savedTask.NodeSet
 	newTask.NodeEventFlags = savedTask.NodeEventFlags
-	newTask.PodConfigs = savedTask.PodConfigs
 
 	// Delete from the map so we can't revert it again
 	delete(c.taskNameParsed, task.Name)
@@ -164,32 +163,6 @@ func normalizeNodes(c *normalizationContext) error {
 	for _, nodeGroup := range c.scenario.NodeGroups {
 		for i := 0; i < int(nodeGroup.Amount); i++ {
 			id := uuid.New()
-
-			nodeType := c.nodeTypeName[nodeGroup.NodeType]
-
-			memory, err := translate.GetInBytes(nodeType.Memory, "memory")
-			if err != nil {
-				return err
-			}
-
-			storage, err := translate.GetInBytes(nodeType.Storage, "storage")
-			if err != nil {
-				return err
-			}
-
-			ephStorage, err := translate.GetInBytes(nodeType.EphemeralStorage, "ephemeral storage")
-			if err != nil {
-				return err
-			}
-
-			c.nodeResources = append(c.nodeResources, NodeResources{
-				id,
-				memory,
-				nodeType.Cpu,
-				storage,
-				ephStorage,
-				nodeType.MaxPods,
-			})
 
 			c.uuidsPerNodeGroup[nodeGroup.GroupName] = append(c.uuidsPerNodeGroup[nodeGroup.GroupName], id)
 		}
