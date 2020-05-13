@@ -30,6 +30,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&EmulatedPod{},
 		&EmulatedPodList{},
 	)
+	// TODO find out why this is necessary
 	scheme.AddKnownTypes(schemeGroupVersionInternal,
 		&EmulatedPod{},
 		&EmulatedPodList{},
@@ -46,9 +47,5 @@ func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
 		return err
 	}
 
-	if err := kubectl.Create(file, config); err != nil {
-		return err
-	}
-
-	return nil
+	return kubectl.Create(file, config)
 }
