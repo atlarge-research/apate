@@ -40,15 +40,4 @@ message Task {
 
     // The node event flags belonging to this task
     map<int32, google.protobuf.Any> node_event_flags = 5;
-
-    // The pod configurations belonging to this task
-    repeated PodConfig pod_configs = 6;
-}
-
-message PodConfig {
-    // The metadata.name from a configuration
-    string metadata_name = 1;
-
-    // The flags to be set for this specific configuration
-    map<int32, google.protobuf.Any> event_flags = 2;
 }

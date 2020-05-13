@@ -111,21 +111,6 @@ func (cfp *customFlagParser) parseKey(key string, value gjson.Result) (ef events
 		ef = events.NodePingResponsePercentage
 		response, err = getPercent(value)
 
-	case "node_enable_resource_alteration":
-		return events.NodeEnableResourceAlteration, value.Bool(), nil
-	case "node_memory_usage":
-		ef = events.NodeMemoryUsage
-		response, err = getSize(value, "memory")
-	case "node_cpu_usage":
-		ef = events.NodeCPUUsage
-		response, err = getIntMinZero(value)
-	case "node_storage_usage":
-		ef = events.NodeStorageUsage
-		response, err = getSize(value, "storage")
-	case "node_ephemeral_storage_usage":
-		ef = events.NodeEphemeralStorageUsage
-		response, err = getSize(value, "ephemeral storage")
-
 	case "node_added_latency_enabled":
 		return events.NodeAddedLatencyEnabled, value.Bool(), nil
 	case "node_added_latency_msec":
