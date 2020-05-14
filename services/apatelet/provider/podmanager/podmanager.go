@@ -2,6 +2,7 @@
 package podmanager
 
 import (
+	"fmt"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -11,9 +12,9 @@ import (
 // PodManager provides an opaque interface for thread safe fast pod mangement
 type PodManager interface {
 	// GetPodByName returns the pod identified by the namespace and name given in the parameters.
-	GetPodByName(namespace string, name string) *corev1.Pod
+	GetPodByName(namespace string, name string) (*corev1.Pod, error)
 	// GetPodByUID returns the pod identified by the uid given in the `uid` parameter.
-	GetPodByUID(uid types.UID) *corev1.Pod
+	GetPodByUID(uid types.UID) (*corev1.Pod, error)
 	// AddPod adds the pod specified in the `pod` parameter.
 	AddPod(pod corev1.Pod)
 	// DeletePod deletes the pod specified in the `pod` parameter.
@@ -37,18 +38,25 @@ func New() PodManager {
 	}
 }
 
-func (m *podManager) GetPodByName(namespace string, name string) *corev1.Pod {
+func (m *podManager) GetPodByName(namespace string, name string) (*corev1.Pod, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.nameToPod[getInternalPodName(namespace, name)]
+	if pod, ok := m.nameToPod[getInternalPodName(namespace, name)]; ok {
+		return pod, nil
+	}
+	return nil, fmt.Errorf("pod with namespace %v and name %v not found", namespace, name)
 }
 
-func (m *podManager) GetPodByUID(uid types.UID) *corev1.Pod {
+func (m *podManager) GetPodByUID(uid types.UID) (*corev1.Pod, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.uidToPod[uid]
+	if pod, ok := m.uidToPod[uid]; ok {
+		return pod, nil
+	}
+
+	return nil, fmt.Errorf("pod with uid %v not found", uid)
 }
 
 func (m *podManager) AddPod(pod corev1.Pod) {

@@ -54,7 +54,9 @@ func NormalizeScenario(scenario *controlplane.PublicScenario) (*apatelet.Apatele
 	}
 
 	// Create nodes from node group & hardware definitions
-	normalizeNodes(c)
+	if err := normalizeNodes(c); err != nil {
+		return nil, nil, err
+	}
 
 	// Normalize the tasks
 	tasks, err := normalizeTasks(c)
@@ -157,12 +159,40 @@ func getNodeUUIDs(c *normalizationContext, nodeGroupNames []string) map[string]b
 }
 
 // normalizeNodes parses the node groups in a scenario into separate nodes with a certain hardware definition
-func normalizeNodes(c *normalizationContext) {
+func normalizeNodes(c *normalizationContext) error {
 	for _, nodeGroup := range c.scenario.NodeGroups {
 		for i := 0; i < int(nodeGroup.Amount); i++ {
 			id := uuid.New()
 
+			nodeType := c.nodeTypeName[nodeGroup.NodeType]
+
+			memory, err := translate.GetInBytes(nodeType.Memory, "memory")
+			if err != nil {
+				return err
+			}
+
+			storage, err := translate.GetInBytes(nodeType.Storage, "storage")
+			if err != nil {
+				return err
+			}
+
+			ephStorage, err := translate.GetInBytes(nodeType.EphemeralStorage, "ephemeral storage")
+			if err != nil {
+				return err
+			}
+
+			c.nodeResources = append(c.nodeResources, NodeResources{
+				id,
+				memory,
+				nodeType.Cpu,
+				storage,
+				ephStorage,
+				nodeType.MaxPods,
+			})
+
 			c.uuidsPerNodeGroup[nodeGroup.GroupName] = append(c.uuidsPerNodeGroup[nodeGroup.GroupName], id)
 		}
 	}
+
+	return nil
 }

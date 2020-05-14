@@ -52,17 +52,15 @@ tasks:
            - testgroup1
        node_response_state:
            type: GET_POD
-           response: ERROR
-           percentage: 14
-   -
+           response: RESPONSE_ERROR
+   - 
        name: testtask2
        time: 10s
        node_groups:
            - all
        node_response_state:
            type: DELETE_POD
-           response: TIMEOUT
-           percentage: 42
+           response: RESPONSE_TIMEOUT
    -
        name: testtask2
        time: 20s

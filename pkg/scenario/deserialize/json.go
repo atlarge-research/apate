@@ -31,15 +31,6 @@ func (JSONScenario) FromBytes(data []byte) (Deserializer, error) {
 	if err := protojson.Unmarshal(data, &scenario); err != nil {
 		return nil, err
 	}
-
-	cfp := customFlagParser{
-		scenario: &scenario,
-	}
-
-	if err := cfp.parse(string(data)); err != nil {
-		return nil, err
-	}
-
 	return JSONScenario{&scenario}, nil
 }
 

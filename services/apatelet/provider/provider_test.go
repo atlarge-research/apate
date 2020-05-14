@@ -27,7 +27,9 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
+const podNamespace = "podnamespace"
 const podName = "pod"
+const podLabel = "label"
 
 func TestConfigureNode(t *testing.T) {
 	resources := normalization.NodeResources{
@@ -88,15 +90,18 @@ func TestCreatePod(t *testing.T) {
 
 	/// vars
 	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
 	pod.Name = podName
+	pod.Labels = map[string]string {
+		"apate": podLabel,
+	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodCreatePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
-
-	cs.EXPECT().GetByKey(pod.Namespace+"/"+pod.Labels["apate"]).Return(nil, false, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	cs.EXPECT().GetByKey(podNamespace+"/"+podLabel).Return(nil, false, nil)
 
 	// sot
 	var s store.Store = ms
@@ -112,7 +117,10 @@ func TestCreatePod(t *testing.T) {
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, &pod, p.pods.GetPodByUID(pod.UID))
+
+	uid, err := p.pods.GetPodByUID(pod.UID)
+	assert.NoError(t, err)
+	assert.Equal(t, &pod, uid)
 	ctrl.Finish()
 }
 
@@ -122,14 +130,17 @@ func TestUpdatePod(t *testing.T) {
 
 	/// vars
 	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
 	pod.Name = podName
+	pod.Labels = map[string]string {
+		"apate": podLabel,
+	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodUpdatePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// sot
 	var s store.Store = ms
@@ -142,7 +153,9 @@ func TestUpdatePod(t *testing.T) {
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, &pod, p.pods.GetPodByUID(pod.UID))
+	uid, err := p.pods.GetPodByUID(pod.UID)
+	assert.NoError(t, err)
+	assert.Equal(t, &pod, uid)
 	ctrl.Finish()
 }
 
@@ -152,14 +165,18 @@ func TestDeletePod(t *testing.T) {
 
 	/// vars
 	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
 	pod.Name = podName
+	pod.Labels = map[string]string {
+		"apate": podLabel,
+	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodDeletePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// sot
 	var s store.Store = ms
@@ -181,15 +198,19 @@ func TestGetPod(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
-	p := corev1.Pod{}
-	p.Name = podName
-	p.UID = types.UID(uuid.New().String())
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string {
+		"apate": podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodGetPodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// sot
 	var s store.Store = ms
@@ -198,13 +219,13 @@ func TestGetPod(t *testing.T) {
 		pods:  podmanager.New(),
 	}
 
-	prov.pods.AddPod(p)
+	prov.pods.AddPod(pod)
 
-	np, err := prov.GetPod(context.TODO(), "", p.Name)
+	np, err := prov.GetPod(context.TODO(), podNamespace, podName)
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, &p, np)
+	assert.Equal(t, &pod, np)
 	ctrl.Finish()
 }
 
@@ -213,9 +234,13 @@ func TestGetPods(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
-	p := corev1.Pod{}
-	p.Name = podName
-	p.UID = types.UID(uuid.New().String())
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string {
+		"apate": podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.NodeGetPodsResponse
 
 	// expect
@@ -229,32 +254,36 @@ func TestGetPods(t *testing.T) {
 		store: &s,
 		pods:  podmanager.New(),
 	}
-	prov.pods.AddPod(p)
+	prov.pods.AddPod(pod)
 
 	ps, err := prov.GetPods(context.TODO())
 
 	// assert
 	assert.NoError(t, err)
-	assert.Contains(t, ps, prov.pods.GetPodByUID(p.UID))
+	uid, err := prov.pods.GetPodByUID(pod.UID)
+	assert.NoError(t, err)
+	assert.Contains(t, ps, uid)
 	ctrl.Finish()
 }
 
-func TestGetPodStatus100(t *testing.T) {
+func TestGetPodStatus(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	p := corev1.Pod{}
-	p.Name = podName
-	p.UID = types.UID(uuid.New().String())
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string {
+		"apate": podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodGetPodStatusResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-
-	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
-
-	ms.EXPECT().GetPodFlag(p.Name, events.PodStatus).Return(scenario.PodStatus_POD_STATUS_SUCCEEDED, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatus_POD_STATUS_SUCCEEDED, nil)
 
 	// sot
 	var s store.Store = ms
@@ -262,45 +291,12 @@ func TestGetPodStatus100(t *testing.T) {
 		store: &s,
 		pods:  podmanager.New(),
 	}
-	prov.pods.AddPod(p)
+	prov.pods.AddPod(pod)
 
-	ps, err := prov.GetPodStatus(context.TODO(), "", p.Name)
+	ps, err := prov.GetPodStatus(context.TODO(), podNamespace, podName)
 
 	// assert
 	assert.NoError(t, err)
 	assert.Equal(t, ps.Phase, corev1.PodSucceeded)
-	ctrl.Finish()
-}
-
-func TestGetPodStatus0(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	p := corev1.Pod{}
-	p.Name = podName
-	p.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodGetPodStatusResponse
-
-	// expect
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-
-	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
-
-	ms.EXPECT().GetPodFlag(p.Name, events.PodStatus).Return(scenario.PodStatus_POD_STATUS_SUCCEEDED, nil)
-
-	// sot
-	var s store.Store = ms
-	prov := Provider{
-		store: &s,
-		pods:  podmanager.New(),
-	}
-	prov.pods.AddPod(p)
-
-	ps, err := prov.GetPodStatus(context.TODO(), "", p.Name)
-
-	// assert
-	assert.NoError(t, err)
-	assert.Equal(t, ps.Phase, corev1.PodRunning)
 	ctrl.Finish()
 }

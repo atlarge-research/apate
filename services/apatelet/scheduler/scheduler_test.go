@@ -158,7 +158,12 @@ func TestRunner(t *testing.T) {
 
 	// Expectations
 	ms.EXPECT().PeekTask().Return(int64(0), nil)
-	ms.EXPECT().PopTask().Return(&task, nil)
+	ms.EXPECT().PopTask().Return(&store.Task{
+		RelativeTimestamp: 0,
+		IsPod:             false,
+		PodTask:           nil,
+		NodeTask:          &task,
+	}, nil)
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
 
 	var s store.Store = ms
@@ -245,7 +250,12 @@ func TestStartScheduler(t *testing.T) {
 
 	// Expectations
 	ms.EXPECT().PeekTask().Return(int64(0), nil)
-	ms.EXPECT().PopTask().Return(&task, nil)
+	ms.EXPECT().PopTask().Return(&store.Task{
+		RelativeTimestamp: 0,
+		IsPod:             false,
+		PodTask:           nil,
+		NodeTask:          &task,
+	}, nil)
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
 
 	// any further peeks are well into the future
