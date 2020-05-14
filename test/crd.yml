@@ -3,4 +3,6 @@ kind: EmulatedPod
 metadata:
     name: crd-deployment
 spec:
-    test: 1
+    direct_task:
+        pod_resources:
+            cpu: 1000

@@ -47,7 +47,6 @@ func TestNodeNormal(t *testing.T) {
 	ctrl.Finish()
 }
 
-
 func TestNodeStoreError1(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)

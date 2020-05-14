@@ -23,26 +23,20 @@ import (
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 	if err := p.runLatency(ctx); err != nil {
+		log.Println(err)
 		return err
 	}
 
-	find, exists, err := p.crdInformer.Find(pod.Namespace + "/" + pod.Labels["apate"])
-	if err != nil {
-		return throw.NewException(err, "Error retrieving the CRDs in CreatePod")
-	}
-
-	if exists {
-		log.Printf("Found CRD %v", find)
-	} else {
-		log.Printf("No CRD found")
-	}
-
-	_, err = podAndNodeResponse(
+	_, err := podAndNodeResponse(
 		responseArgs{ctx, p, updateMap(p, pod)},
 		p.getPodLabelByPod(pod),
 		events.PodCreatePodResponse,
 		events.NodeCreatePodResponse,
 	)
+
+	if err != nil {
+		log.Println(err)
+	}
 
 	return err
 }
@@ -50,6 +44,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 	if err := p.runLatency(ctx); err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -59,6 +54,10 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 		events.PodUpdatePodResponse,
 		events.NodeUpdatePodResponse,
 	)
+
+	if err != nil {
+		log.Println(err)
+	}
 
 	return err
 }
@@ -73,6 +72,7 @@ func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 	if err := p.runLatency(ctx); err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -86,23 +86,26 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 		events.NodeDeletePodResponse,
 	)
 
+	if err != nil {
+		log.Println(err)
+	}
+
 	return err
 }
 
 // GetPod retrieves a pod by label.
 func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
 	if err := p.runLatency(ctx); err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
-	label, err := p.getPodLabelByName(namespace, name)
-	if err != nil {
-		return nil, throw.NewException(err, "error while retrieving pod label")
-	}
+	label := p.getPodLabelByName(namespace, name)
 
 	pod, err := podAndNodeResponse(
 		responseArgs{ctx, p, func() (interface{}, error) {
-			return p.pods.GetPodByName(namespace, name)
+			pod, _ := p.pods.GetPodByName(namespace, name)
+			return pod, nil
 		}},
 		label,
 		events.PodGetPodResponse,
@@ -110,16 +113,20 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 	)
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
-	return pod.(*corev1.Pod), nil
+	c := pod.(*corev1.Pod)
+	return c, nil
 }
 
 func podStatusToPhase(status interface{}) corev1.PodPhase {
 	switch status {
 	case scenario.PodStatus_POD_STATUS_PENDING:
 		return corev1.PodPending
+	case scenario.PodStatus_POD_STATUS_UNSET:
+		fallthrough // act as a normal pod
 	case scenario.PodStatus_POD_STATUS_RUNNING:
 		return corev1.PodRunning
 	case scenario.PodStatus_POD_STATUS_SUCCEEDED:
@@ -136,13 +143,11 @@ func podStatusToPhase(status interface{}) corev1.PodPhase {
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
 	if err := p.runLatency(ctx); err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
-	label, err := p.getPodLabelByName(ns, name)
-	if err != nil {
-		return nil, throw.NewException(err, "error while retrieving pod label")
-	}
+	label := p.getPodLabelByName(ns, name)
 
 	pod, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
 		status, err := (*p.store).GetPodFlag(label, events.PodStatus)
@@ -170,6 +175,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 	)
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -179,6 +185,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 // GetPods retrieves a list of all pods running.
 func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 	if err := p.runLatency(ctx); err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -189,6 +196,7 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 	)
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -256,12 +264,12 @@ func (p *Provider) runLatency(ctx context.Context) error {
 	return nil
 }
 
-func (p *Provider) getPodLabelByName(ns string, name string) (string, error) {
-	pod, err := p.pods.GetPodByName(ns, name)
-	if err != nil {
-		return "", err
+func (p *Provider) getPodLabelByName(ns string, name string) string {
+	pod, ok := p.pods.GetPodByName(ns, name)
+	if !ok {
+		return ""
 	}
-	return p.getPodLabelByPod(pod), nil
+	return p.getPodLabelByPod(pod)
 }
 
 func (p *Provider) getPodLabelByPod(pod *corev1.Pod) string {

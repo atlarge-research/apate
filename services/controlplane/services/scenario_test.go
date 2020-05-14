@@ -1,9 +1,10 @@
 package services
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"testing"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )

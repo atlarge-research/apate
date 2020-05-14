@@ -92,7 +92,7 @@ func TestCreatePod(t *testing.T) {
 	pod := corev1.Pod{}
 	pod.Namespace = podNamespace
 	pod.Name = podName
-	pod.Labels = map[string]string {
+	pod.Labels = map[string]string{
 		"apate": podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
@@ -101,7 +101,6 @@ func TestCreatePod(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
-	cs.EXPECT().GetByKey(podNamespace+"/"+podLabel).Return(nil, false, nil)
 
 	// sot
 	var s store.Store = ms
@@ -118,8 +117,8 @@ func TestCreatePod(t *testing.T) {
 	// assert
 	assert.NoError(t, err)
 
-	uid, err := p.pods.GetPodByUID(pod.UID)
-	assert.NoError(t, err)
+	uid, ok := p.pods.GetPodByUID(pod.UID)
+	assert.True(t, ok)
 	assert.Equal(t, &pod, uid)
 	ctrl.Finish()
 }
@@ -132,7 +131,7 @@ func TestUpdatePod(t *testing.T) {
 	pod := corev1.Pod{}
 	pod.Namespace = podNamespace
 	pod.Name = podName
-	pod.Labels = map[string]string {
+	pod.Labels = map[string]string{
 		"apate": podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
@@ -153,8 +152,8 @@ func TestUpdatePod(t *testing.T) {
 
 	// assert
 	assert.NoError(t, err)
-	uid, err := p.pods.GetPodByUID(pod.UID)
-	assert.NoError(t, err)
+	uid, ok := p.pods.GetPodByUID(pod.UID)
+	assert.True(t, ok)
 	assert.Equal(t, &pod, uid)
 	ctrl.Finish()
 }
@@ -167,7 +166,7 @@ func TestDeletePod(t *testing.T) {
 	pod := corev1.Pod{}
 	pod.Namespace = podNamespace
 	pod.Name = podName
-	pod.Labels = map[string]string {
+	pod.Labels = map[string]string{
 		"apate": podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
@@ -201,7 +200,7 @@ func TestGetPod(t *testing.T) {
 	pod := corev1.Pod{}
 	pod.Namespace = podNamespace
 	pod.Name = podName
-	pod.Labels = map[string]string {
+	pod.Labels = map[string]string{
 		"apate": podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
@@ -237,7 +236,7 @@ func TestGetPods(t *testing.T) {
 	pod := corev1.Pod{}
 	pod.Namespace = podNamespace
 	pod.Name = podName
-	pod.Labels = map[string]string {
+	pod.Labels = map[string]string{
 		"apate": podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
@@ -260,8 +259,8 @@ func TestGetPods(t *testing.T) {
 
 	// assert
 	assert.NoError(t, err)
-	uid, err := prov.pods.GetPodByUID(pod.UID)
-	assert.NoError(t, err)
+	uid, ok := prov.pods.GetPodByUID(pod.UID)
+	assert.True(t, ok)
 	assert.Contains(t, ps, uid)
 	ctrl.Finish()
 }
@@ -274,7 +273,7 @@ func TestGetPodStatus(t *testing.T) {
 	pod := corev1.Pod{}
 	pod.Namespace = podNamespace
 	pod.Name = podName
-	pod.Labels = map[string]string {
+	pod.Labels = map[string]string{
 		"apate": podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
