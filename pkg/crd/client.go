@@ -43,7 +43,7 @@ func NewForConfig(c *rest.Config, namespace string) (*EmulatedPodClient, error) 
 }
 
 // WatchResources creates an informer which watches for new or updated EmulatedPods and updates the returned store accordingly
-func (e *EmulatedPodClient) WatchResources() *Informer {
+func (e *EmulatedPodClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{})) *Informer {
 	emulatedPodStore, emulatedPodController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -53,7 +53,11 @@ func (e *EmulatedPodClient) WatchResources() *Informer {
 		},
 		&v1.EmulatedPod{},
 		1*time.Minute,
-		cache.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{
+			AddFunc:    addFunc,
+			UpdateFunc: updateFunc,
+			DeleteFunc: deleteFunc,
+		},
 	)
 
 	go emulatedPodController.Run(wait.NeverStop)

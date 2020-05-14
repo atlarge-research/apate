@@ -17,6 +17,10 @@ type Store interface {
 	// EnqueueTasks creates a priority queue based on these tasks
 	EnqueueTasks([]*Task)
 
+	EnqueueCRDTasks(string, []*Task)
+
+	RemoveCRDTasks(string)
+
 	// LenTasks returns the amount of tasks left to be picked up
 	LenTasks() int
 
@@ -68,6 +72,32 @@ func (s *store) EnqueueTasks(tasks []*Task) {
 	}
 
 	heap.Init(s.queue)
+}
+
+func (s *store) EnqueueCRDTasks(label string, newTasks []*Task) {
+	for i, task := range s.queue.tasks {
+		if task.PodTask.Label == label {
+			if len(newTasks) == 0 {
+				heap.Remove(s.queue, i)
+			}
+
+			s.queue.tasks[i] = newTasks[0]
+			heap.Fix(s.queue, i)
+			newTasks = newTasks[1:]
+		}
+	}
+
+	for _, remainingTask := range newTasks {
+		heap.Push(s.queue, remainingTask)
+	}
+}
+
+func (s *store) RemoveCRDTasks(label string) {
+	for i, task := range s.queue.tasks {
+		if task.PodTask.Label == label {
+			heap.Remove(s.queue, i)
+		}
+	}
 }
 
 func (s *store) LenTasks() int {
@@ -176,26 +206,20 @@ var defaultNodeValues = map[events.EventFlag]interface{}{
 }
 
 var defaultPodValues = map[events.PodEventFlag]interface{}{
-	events.PodCreatePodResponse:           scenario.Response_NORMAL,
-	events.PodCreatePodResponsePercentage: int32(0),
+	events.PodCreatePodResponse: scenario.Response_NORMAL,
 
-	events.PodUpdatePodResponse:           scenario.Response_NORMAL,
-	events.PodUpdatePodResponsePercentage: int32(0),
+	events.PodUpdatePodResponse: scenario.Response_NORMAL,
 
-	events.PodDeletePodResponse:           scenario.Response_NORMAL,
-	events.PodDeletePodResponsePercentage: int32(0),
+	events.PodDeletePodResponse: scenario.Response_NORMAL,
 
-	events.PodGetPodResponse:           scenario.Response_NORMAL,
-	events.PodGetPodResponsePercentage: int32(0),
+	events.PodGetPodResponse: scenario.Response_NORMAL,
 
-	events.PodGetPodStatusResponse:           scenario.Response_NORMAL,
-	events.PodGetPodStatusResponsePercentage: int32(0),
+	events.PodGetPodStatusResponse: scenario.Response_NORMAL,
 
-	events.PodMemoryUsage:              int64(0),
-	events.PodCPUUsage:                 int64(0),
-	events.PodStorageUsage:             int64(0),
-	events.PodEphemeralStorageUsage:    int64(0),
+	events.PodMemoryUsage:           int64(0),
+	events.PodCPUUsage:              int64(0),
+	events.PodStorageUsage:          int64(0),
+	events.PodEphemeralStorageUsage: int64(0),
 
-	events.PodUpdatePodStatus:           scenario.PodStatus_POD_RUNNING,
-	events.PodUpdatePodStatusPercentage: int32(0),
+	events.PodStatus: scenario.PodStatus_POD_RUNNING,
 }
