@@ -62,7 +62,7 @@ protobuf:
 	protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find . -type f -name "*.proto" -print`
 
 # Generates the various mocks
-mock_gen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go ./services/apatelet/store/mock_store/store_mock.go
+mock_gen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go ./services/apatelet/store/mock_store/store_mock.go ./services/apatelet/provider/mock_cache_store/mock_cache_store.go
 
 ./api/health/mock_health/health_mock.go: ./api/health/health.pb.go
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/api/health Health_HealthStreamClient,HealthClient,Health_HealthStreamServer > $@
@@ -79,5 +79,7 @@ mock_gen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/
 crd_gen:
 	controller-gen object paths=./pkg/apis/emulatedpod/...
 	controller-gen crd:trivialVersions=true paths=./pkg/apis/emulatedpod/...
+
+gen: crd_gen mock_gen protobuf
 
 FORCE:

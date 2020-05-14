@@ -3,17 +3,18 @@ package crd
 import (
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *chan error) *node.Informer {
+// CreateCRDInformer creates a new crd informer.
+func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *chan error) *pod.Informer {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return nil
 	}
 
-	podClient, err := node.NewForConfig(restConfig, "default")
+	podClient, err := pod.NewForConfig(restConfig, "default")
 	if err != nil {
 		return nil
 	}

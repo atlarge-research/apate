@@ -68,21 +68,8 @@ const (
 	// Can also be influenced on node level
 	PodGetPodStatusResponse
 
-	// PodMemoryUsage is the amount of bytes of memory used
-	// Will default to 0
-	PodMemoryUsage
-
-	// PodCPUUsage is the of milli CPUs used
-	// Will default to 0
-	PodCPUUsage
-
-	// PodStorageUsage is the amount of bytes of storage used
-	// Will default to 0
-	PodStorageUsage
-
-	// PodEphemeralStorageUsage is the amount of bytes of ephermal storage used
-	// Will default to 0
-	PodEphemeralStorageUsage
+	// PodResources are resources for the pod. See stats.PodStats
+	PodResources
 
 	// PodStatus updates the status of a certain percentage of pods in the current configuration
 	// Can be left empty to keep the status unchanged

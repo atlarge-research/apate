@@ -8,7 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	. "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -159,7 +160,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *Informer) (*cli.Command, context.CancelFunc, error) {
+func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *pod.Informer) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store, crdInformer)
 	return cmd, cancel, err
