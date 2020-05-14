@@ -209,10 +209,7 @@ var defaultPodValues = map[events.PodEventFlag]interface{}{
 	events.PodGetPodResponse:       scenario.Response_RESPONSE_UNSET,
 	events.PodGetPodStatusResponse: scenario.Response_RESPONSE_UNSET,
 
-	events.PodMemoryUsage:           int64(-1),
-	events.PodCPUUsage:              int64(-1),
-	events.PodStorageUsage:          int64(-1),
-	events.PodEphemeralStorageUsage: int64(-1),
+	events.PodResources: nil,
 
 	events.PodStatus: scenario.PodStatus_POD_STATUS_UNSET,
 }

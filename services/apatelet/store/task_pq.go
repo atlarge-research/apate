@@ -8,16 +8,26 @@ import (
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 )
 
+// Task is a task in the PQ
 type Task struct {
+	// The timestamp on which this task should be executed, relative to the start of the scenario
 	RelativeTimestamp int64
-	IsPod             bool
-	PodTask           *PodTask
-	NodeTask          NodeTask
+
+	// Whether we are dealing with a pod (then PodTask should be non-nil) or a node (then NodeTask should be non-nil)
+	IsPod    bool
+	PodTask  *PodTask
+	NodeTask NodeTask
 }
 
+// NodeTask is a task that should be executed on a node level
 type NodeTask *apatelet.Task // TODO change when moving node to CRD
+
+// PodTask is a task that should be executed on a pod elvel
 type PodTask struct {
+	// The label of the CRD, should be <namespace>/<name>
 	Label string
+
+	// The internal state to be set
 	State *v1.EmulatedPodState
 }
 

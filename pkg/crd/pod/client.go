@@ -1,4 +1,5 @@
-package node
+// Package pod defines utilities for the EmulatedPod CRD
+package pod
 
 import (
 	"time"

@@ -62,7 +62,7 @@ func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
 			ech <- err
 		}
 	} else {
-		for k, mv := range (*t.NodeTask).NodeEventFlags {
+		for k, mv := range t.NodeTask.NodeEventFlags {
 			v, err := any.Unmarshal(mv)
 			if err != nil {
 				ech <- err

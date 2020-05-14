@@ -12,6 +12,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 )
 
+// SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: emulatedpod.GroupName, Version: "v1"}
 
 // this is a hack, to register the emulated pod types with the decoder
