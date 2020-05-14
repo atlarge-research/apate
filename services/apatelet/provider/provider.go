@@ -46,7 +46,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo := cluster.NewNode("virtual-kubelet", "agent", name, k8sVersion)
+	nodeInfo := cluster.NewNode("apatelet", "agent", name, k8sVersion, metricsPort)
 
 	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
