@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"log"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -107,7 +108,7 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			"type":                   p.nodeInfo.NodeType,
 			"kubernetes.io/role":     p.nodeInfo.Role,
 			"kubernetes.io/hostname": p.nodeInfo.Name,
-			"metrics_port":           "1234567",
+			"metrics_port":           strconv.Itoa(p.nodeInfo.MetricsPort),
 		},
 	}
 }
