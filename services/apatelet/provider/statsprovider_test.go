@@ -189,6 +189,23 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: nil,
 	}
 
+	statistics4 := stats.PodStats{
+		PodRef:           stats.PodReference{UID: flag + "4"},
+		StartTime:        metav1.Time{},
+		Containers:       nil,
+		CPU:              nil,
+		Memory:           nil,
+		Network:          nil,
+		VolumeStats:      nil,
+		EphemeralStorage: nil,
+	}
+
+	statMap := make(map[string]stats.PodStats)
+	statMap[flag] = statistics
+	statMap[flag+"2"] = statistics2
+	statMap[flag+"3"] = statistics3
+	statMap[flag+"4"] = statistics4
+
 	// Setup store
 	ms.EXPECT().GetPodFlag(flag, event).Return(statistics, nil)
 	ms.EXPECT().GetPodFlag(flag+"2", event).Return(statistics2, nil)
@@ -205,8 +222,9 @@ func TestUnspecifiedPods(t *testing.T) {
 	assert.Equal(t, left, *result.Node.Memory.AvailableBytes)
 
 	// Verify pod
-	podStats := []stats.PodStats{statistics, statistics2, statistics3, {PodRef: stats.PodReference{UID: flag + "4"}}}
-	assert.EqualValues(t, podStats, result.Pods)
+	for _, podStat := range result.Pods {
+		assert.Equal(t, statMap[podStat.PodRef.UID], podStat)
+	}
 
 	ctrl.Finish()
 }

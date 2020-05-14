@@ -54,9 +54,7 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 	args = append(args, "--kubeconfig", kubecfg.Path)
 
 	// Values args
-	args = append(args, "-f", "/home/tim/tudelft/sp/emulating-k8s/config/prometheus.yml") //TODO: Change
-	//args = append(args, "--set", "nodeExporter.enabled=false")
-	//args = append(args, "--set", "kubelet.serviceMonitor.https=false")
+	args = append(args, "--set", "nodeExporter.enabled=false")
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
