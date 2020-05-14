@@ -2,11 +2,20 @@
 package crd
 
 import (
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/translate"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
+
+const negativeResourceError = throw.ConstException("you can't have negative resources")
 
 // SetPodFlags sets all flags for a pod.
 func SetPodFlags(st *store.Store, pt *store.PodTask) error {
@@ -31,7 +40,11 @@ func SetPodFlags(st *store.Store, pt *store.PodTask) error {
 	}
 
 	if pt.State.PodResources != nil {
-		(*st).SetPodFlag(pt.Label, events.PodStatus, pt.State.PodResources)
+		resources, err := translatePodResources(pt.State.PodResources)
+		if err != nil {
+			return err
+		}
+		(*st).SetPodFlag(pt.Label, events.PodStatus, resources)
 	}
 
 	if pt.State.PodStatus != v1.PodStatusUnset {
@@ -73,4 +86,64 @@ func translatePodStatus(input v1.EmulatedPodStatus) scenario.PodStatus {
 	default:
 		return scenario.PodStatus_POD_STATUS_UNSET
 	}
+}
+
+func translatePodResources(input *v1.EmulatedPodResourceUsage) (*stats.PodStats, error) {
+	memory, err := translate.GetInBytes(input.Memory, "memory")
+	if err != nil {
+		return nil, err
+	}
+	if memory < 0 {
+		return nil, negativeResourceError
+	}
+	memoryUint := uint64(memory)
+
+	storage, err := translate.GetInBytes(input.Storage, "storage")
+	if err != nil {
+		return nil, err
+	}
+	if storage < 0 {
+		return nil, negativeResourceError
+	}
+	storageUint := uint64(storage)
+
+	ephemeralStorage, err := translate.GetInBytes(input.EphemeralStorage, "ephemeral storage")
+	if err != nil {
+		return nil, err
+	}
+	if ephemeralStorage < 0 {
+		return nil, negativeResourceError
+	}
+	ephemeralStorageUint := uint64(ephemeralStorage)
+
+	return &stats.PodStats{
+		CPU: &stats.CPUStats{
+			Time: metav1.Time{
+				Time: time.Now(),
+			},
+			UsageNanoCores: &input.CPU,
+		},
+		Memory: &stats.MemoryStats{
+			Time: metav1.Time{
+				Time: time.Now(),
+			},
+			UsageBytes: &memoryUint,
+		},
+		VolumeStats: []stats.VolumeStats{
+			{
+				FsStats: stats.FsStats{
+					Time: metav1.Time{
+						Time: time.Now(),
+					},
+					UsedBytes: &storageUint,
+				},
+			},
+		},
+		EphemeralStorage: &stats.FsStats{
+			Time: metav1.Time{
+				Time: time.Now(),
+			},
+			UsedBytes: &ephemeralStorageUint,
+		},
+	}, nil
 }

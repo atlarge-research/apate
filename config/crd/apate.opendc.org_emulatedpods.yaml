@@ -1,6 +1,6 @@
 
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -17,1257 +17,216 @@ spec:
     - ep
     singular: emulatedpod
   scope: Namespaced
-  validation:
-    openAPIV3Schema:
-      description: EmulatedPod is a definition of EmulatedPod resource.
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: EmulatedPodSpec is the spec which belongs to the EmulatedPod
-            CRD
-          properties:
-            direct_task:
-              description: A direct way to update state, this will circumvent the
-                timestamps / scenario
-              properties:
-                create_pod_response:
-                  default: UNSET
-                  description: CreatePodResponse determines how to respond to the
-                    CreatePod request
-                  enum:
-                  - NORMAL
-                  - TIMEOUT
-                  - ERROR
-                  - UNSET
-                  type: string
-                delete_pod_response:
-                  default: UNSET
-                  description: DeletePodResponse determines how to respond to the
-                    DeletePod request
-                  enum:
-                  - NORMAL
-                  - TIMEOUT
-                  - ERROR
-                  - UNSET
-                  type: string
-                get_pod_response:
-                  default: UNSET
-                  description: PodGetPodResponse determines how to respond to the
-                    GetPod request
-                  enum:
-                  - NORMAL
-                  - TIMEOUT
-                  - ERROR
-                  - UNSET
-                  type: string
-                get_pod_status_response:
-                  default: UNSET
-                  description: GetPodStatusResponse determines how to respond to the
-                    GetPodStatus request
-                  enum:
-                  - NORMAL
-                  - TIMEOUT
-                  - ERROR
-                  - UNSET
-                  type: string
-                pod_resources:
-                  description: PodResources sets the amount of resources the related
-                    pods are using
-                  properties:
-                    containers:
-                      description: Stats of containers in the measured pod.
-                      items:
-                        description: ContainerStats holds container-level unprocessed
-                          sample stats.
-                        properties:
-                          accelerators:
-                            description: Metrics for Accelerators. Each Accelerator
-                              corresponds to one element in the array.
-                            items:
-                              description: AcceleratorStats contains stats for accelerators
-                                attached to the container.
-                              properties:
-                                dutyCycle:
-                                  description: Percent of time over the past sample
-                                    period (10s) during which the accelerator was
-                                    actively processing.
-                                  format: int64
-                                  type: integer
-                                id:
-                                  description: ID of the accelerator.
-                                  type: string
-                                make:
-                                  description: Make of the accelerator (nvidia, amd,
-                                    google etc.)
-                                  type: string
-                                memoryTotal:
-                                  description: 'Total accelerator memory. unit: bytes'
-                                  format: int64
-                                  type: integer
-                                memoryUsed:
-                                  description: 'Total accelerator memory allocated.
-                                    unit: bytes'
-                                  format: int64
-                                  type: integer
-                                model:
-                                  description: Model of the accelerator (tesla-p100,
-                                    tesla-k80 etc.)
-                                  type: string
-                              required:
-                              - dutyCycle
-                              - id
-                              - make
-                              - memoryTotal
-                              - memoryUsed
-                              - model
-                              type: object
-                            type: array
-                          cpu:
-                            description: Stats pertaining to CPU resources.
-                            properties:
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              usageCoreNanoSeconds:
-                                description: Cumulative CPU usage (sum of all cores)
-                                  since object creation.
-                                format: int64
-                                type: integer
-                              usageNanoCores:
-                                description: Total CPU usage (sum of all cores) averaged
-                                  over the sample window. The "core" unit can be interpreted
-                                  as CPU core-nanoseconds per second.
-                                format: int64
-                                type: integer
-                            required:
-                            - time
-                            type: object
-                          logs:
-                            description: Stats pertaining to container logs usage
-                              of filesystem resources. Logs.UsedBytes is the number
-                              of bytes used for the container logs.
-                            properties:
-                              availableBytes:
-                                description: AvailableBytes represents the storage
-                                  space available (bytes) for the filesystem.
-                                format: int64
-                                type: integer
-                              capacityBytes:
-                                description: CapacityBytes represents the total capacity
-                                  (bytes) of the filesystems underlying storage.
-                                format: int64
-                                type: integer
-                              inodes:
-                                description: Inodes represents the total inodes in
-                                  the filesystem.
-                                format: int64
-                                type: integer
-                              inodesFree:
-                                description: InodesFree represents the free inodes
-                                  in the filesystem.
-                                format: int64
-                                type: integer
-                              inodesUsed:
-                                description: InodesUsed represents the inodes used
-                                  by the filesystem This may not equal Inodes - InodesFree
-                                  because this filesystem may share inodes with other
-                                  "filesystems" e.g. For ContainerStats.Rootfs, this
-                                  is the inodes used only by that container, and does
-                                  not count inodes used by other containers.
-                                format: int64
-                                type: integer
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              usedBytes:
-                                description: UsedBytes represents the bytes used for
-                                  a specific task on the filesystem. This may differ
-                                  from the total bytes used on the filesystem and
-                                  may not equal CapacityBytes - AvailableBytes. e.g.
-                                  For ContainerStats.Rootfs this is the bytes used
-                                  by the container rootfs on the filesystem.
-                                format: int64
-                                type: integer
-                            required:
-                            - time
-                            type: object
-                          memory:
-                            description: Stats pertaining to memory (RAM) resources.
-                            properties:
-                              availableBytes:
-                                description: Available memory for use.  This is defined
-                                  as the memory limit - workingSetBytes. If memory
-                                  limit is undefined, the available bytes is omitted.
-                                format: int64
-                                type: integer
-                              majorPageFaults:
-                                description: Cumulative number of major page faults.
-                                format: int64
-                                type: integer
-                              pageFaults:
-                                description: Cumulative number of minor page faults.
-                                format: int64
-                                type: integer
-                              rssBytes:
-                                description: The amount of anonymous and swap cache
-                                  memory (includes transparent hugepages).
-                                format: int64
-                                type: integer
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              usageBytes:
-                                description: Total memory in use. This includes all
-                                  memory regardless of when it was accessed.
-                                format: int64
-                                type: integer
-                              workingSetBytes:
-                                description: The amount of working set memory. This
-                                  includes recently accessed memory, dirty memory,
-                                  and kernel memory. WorkingSetBytes is <= UsageBytes
-                                format: int64
-                                type: integer
-                            required:
-                            - time
-                            type: object
-                          name:
-                            description: Reference to the measured container.
-                            type: string
-                          rootfs:
-                            description: Stats pertaining to container rootfs usage
-                              of filesystem resources. Rootfs.UsedBytes is the number
-                              of bytes used for the container write layer.
-                            properties:
-                              availableBytes:
-                                description: AvailableBytes represents the storage
-                                  space available (bytes) for the filesystem.
-                                format: int64
-                                type: integer
-                              capacityBytes:
-                                description: CapacityBytes represents the total capacity
-                                  (bytes) of the filesystems underlying storage.
-                                format: int64
-                                type: integer
-                              inodes:
-                                description: Inodes represents the total inodes in
-                                  the filesystem.
-                                format: int64
-                                type: integer
-                              inodesFree:
-                                description: InodesFree represents the free inodes
-                                  in the filesystem.
-                                format: int64
-                                type: integer
-                              inodesUsed:
-                                description: InodesUsed represents the inodes used
-                                  by the filesystem This may not equal Inodes - InodesFree
-                                  because this filesystem may share inodes with other
-                                  "filesystems" e.g. For ContainerStats.Rootfs, this
-                                  is the inodes used only by that container, and does
-                                  not count inodes used by other containers.
-                                format: int64
-                                type: integer
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              usedBytes:
-                                description: UsedBytes represents the bytes used for
-                                  a specific task on the filesystem. This may differ
-                                  from the total bytes used on the filesystem and
-                                  may not equal CapacityBytes - AvailableBytes. e.g.
-                                  For ContainerStats.Rootfs this is the bytes used
-                                  by the container rootfs on the filesystem.
-                                format: int64
-                                type: integer
-                            required:
-                            - time
-                            type: object
-                          startTime:
-                            description: The time at which data collection for this
-                              container was (re)started.
-                            format: date-time
-                            type: string
-                          userDefinedMetrics:
-                            description: User defined metrics that are exposed by
-                              containers in the pod. Typically, we expect only one
-                              container in the pod to be exposing user defined metrics.
-                              In the event of multiple containers exposing metrics,
-                              they will be combined here.
-                            items:
-                              description: UserDefinedMetric represents a metric defined
-                                and generated by users.
-                              properties:
-                                labels:
-                                  additionalProperties:
-                                    type: string
-                                  description: Metadata labels associated with this
-                                    metric.
-                                  type: object
-                                name:
-                                  description: The name of the metric.
-                                  type: string
-                                time:
-                                  description: The time at which these stats were
-                                    updated.
-                                  format: date-time
-                                  type: string
-                                type:
-                                  description: Type of the metric.
-                                  type: string
-                                units:
-                                  description: Display Units for the stats.
-                                  type: string
-                              required:
-                              - name
-                              - time
-                              - type
-                              - units
-                              type: object
-                            type: array
-                        required:
-                        - name
-                        - startTime
-                        type: object
-                      type: array
-                    cpu:
-                      description: Stats pertaining to CPU resources consumed by pod
-                        cgroup (which includes all containers' resource usage and
-                        pod overhead).
-                      properties:
-                        time:
-                          description: The time at which these stats were updated.
-                          format: date-time
-                          type: string
-                        usageCoreNanoSeconds:
-                          description: Cumulative CPU usage (sum of all cores) since
-                            object creation.
-                          format: int64
-                          type: integer
-                        usageNanoCores:
-                          description: Total CPU usage (sum of all cores) averaged
-                            over the sample window. The "core" unit can be interpreted
-                            as CPU core-nanoseconds per second.
-                          format: int64
-                          type: integer
-                      required:
-                      - time
-                      type: object
-                    ephemeral-storage:
-                      description: EphemeralStorage reports the total filesystem usage
-                        for the containers and emptyDir-backed volumes in the measured
-                        Pod.
-                      properties:
-                        availableBytes:
-                          description: AvailableBytes represents the storage space
-                            available (bytes) for the filesystem.
-                          format: int64
-                          type: integer
-                        capacityBytes:
-                          description: CapacityBytes represents the total capacity
-                            (bytes) of the filesystems underlying storage.
-                          format: int64
-                          type: integer
-                        inodes:
-                          description: Inodes represents the total inodes in the filesystem.
-                          format: int64
-                          type: integer
-                        inodesFree:
-                          description: InodesFree represents the free inodes in the
-                            filesystem.
-                          format: int64
-                          type: integer
-                        inodesUsed:
-                          description: InodesUsed represents the inodes used by the
-                            filesystem This may not equal Inodes - InodesFree because
-                            this filesystem may share inodes with other "filesystems"
-                            e.g. For ContainerStats.Rootfs, this is the inodes used
-                            only by that container, and does not count inodes used
-                            by other containers.
-                          format: int64
-                          type: integer
-                        time:
-                          description: The time at which these stats were updated.
-                          format: date-time
-                          type: string
-                        usedBytes:
-                          description: UsedBytes represents the bytes used for a specific
-                            task on the filesystem. This may differ from the total
-                            bytes used on the filesystem and may not equal CapacityBytes
-                            - AvailableBytes. e.g. For ContainerStats.Rootfs this
-                            is the bytes used by the container rootfs on the filesystem.
-                          format: int64
-                          type: integer
-                      required:
-                      - time
-                      type: object
-                    memory:
-                      description: Stats pertaining to memory (RAM) resources consumed
-                        by pod cgroup (which includes all containers' resource usage
-                        and pod overhead).
-                      properties:
-                        availableBytes:
-                          description: Available memory for use.  This is defined
-                            as the memory limit - workingSetBytes. If memory limit
-                            is undefined, the available bytes is omitted.
-                          format: int64
-                          type: integer
-                        majorPageFaults:
-                          description: Cumulative number of major page faults.
-                          format: int64
-                          type: integer
-                        pageFaults:
-                          description: Cumulative number of minor page faults.
-                          format: int64
-                          type: integer
-                        rssBytes:
-                          description: The amount of anonymous and swap cache memory
-                            (includes transparent hugepages).
-                          format: int64
-                          type: integer
-                        time:
-                          description: The time at which these stats were updated.
-                          format: date-time
-                          type: string
-                        usageBytes:
-                          description: Total memory in use. This includes all memory
-                            regardless of when it was accessed.
-                          format: int64
-                          type: integer
-                        workingSetBytes:
-                          description: The amount of working set memory. This includes
-                            recently accessed memory, dirty memory, and kernel memory.
-                            WorkingSetBytes is <= UsageBytes
-                          format: int64
-                          type: integer
-                      required:
-                      - time
-                      type: object
-                    network:
-                      description: Stats pertaining to network resources.
-                      properties:
-                        interfaces:
-                          items:
-                            description: InterfaceStats contains resource value data
-                              about interface.
-                            properties:
-                              name:
-                                description: The name of the interface
-                                type: string
-                              rxBytes:
-                                description: Cumulative count of bytes received.
-                                format: int64
-                                type: integer
-                              rxErrors:
-                                description: Cumulative count of receive errors encountered.
-                                format: int64
-                                type: integer
-                              txBytes:
-                                description: Cumulative count of bytes transmitted.
-                                format: int64
-                                type: integer
-                              txErrors:
-                                description: Cumulative count of transmit errors encountered.
-                                format: int64
-                                type: integer
-                            required:
-                            - name
-                            type: object
-                          type: array
-                        name:
-                          description: The name of the interface
-                          type: string
-                        rxBytes:
-                          description: Cumulative count of bytes received.
-                          format: int64
-                          type: integer
-                        rxErrors:
-                          description: Cumulative count of receive errors encountered.
-                          format: int64
-                          type: integer
-                        time:
-                          description: The time at which these stats were updated.
-                          format: date-time
-                          type: string
-                        txBytes:
-                          description: Cumulative count of bytes transmitted.
-                          format: int64
-                          type: integer
-                        txErrors:
-                          description: Cumulative count of transmit errors encountered.
-                          format: int64
-                          type: integer
-                      required:
-                      - name
-                      - time
-                      type: object
-                    podRef:
-                      description: Reference to the measured Pod.
-                      properties:
-                        name:
-                          type: string
-                        namespace:
-                          type: string
-                        uid:
-                          type: string
-                      required:
-                      - name
-                      - namespace
-                      - uid
-                      type: object
-                    startTime:
-                      description: The time at which data collection for the pod-scoped
-                        (e.g. network) stats was (re)started.
-                      format: date-time
-                      type: string
-                    volume:
-                      description: Stats pertaining to volume usage of filesystem
-                        resources. VolumeStats.UsedBytes is the number of bytes used
-                        by the Volume
-                      items:
-                        description: VolumeStats contains data about Volume filesystem
-                          usage.
-                        properties:
-                          availableBytes:
-                            description: AvailableBytes represents the storage space
-                              available (bytes) for the filesystem.
-                            format: int64
-                            type: integer
-                          capacityBytes:
-                            description: CapacityBytes represents the total capacity
-                              (bytes) of the filesystems underlying storage.
-                            format: int64
-                            type: integer
-                          inodes:
-                            description: Inodes represents the total inodes in the
-                              filesystem.
-                            format: int64
-                            type: integer
-                          inodesFree:
-                            description: InodesFree represents the free inodes in
-                              the filesystem.
-                            format: int64
-                            type: integer
-                          inodesUsed:
-                            description: InodesUsed represents the inodes used by
-                              the filesystem This may not equal Inodes - InodesFree
-                              because this filesystem may share inodes with other
-                              "filesystems" e.g. For ContainerStats.Rootfs, this is
-                              the inodes used only by that container, and does not
-                              count inodes used by other containers.
-                            format: int64
-                            type: integer
-                          name:
-                            description: Name is the name given to the Volume
-                            type: string
-                          pvcRef:
-                            description: Reference to the PVC, if one exists
-                            properties:
-                              name:
-                                type: string
-                              namespace:
-                                type: string
-                            required:
-                            - name
-                            - namespace
-                            type: object
-                          time:
-                            description: The time at which these stats were updated.
-                            format: date-time
-                            type: string
-                          usedBytes:
-                            description: UsedBytes represents the bytes used for a
-                              specific task on the filesystem. This may differ from
-                              the total bytes used on the filesystem and may not equal
-                              CapacityBytes - AvailableBytes. e.g. For ContainerStats.Rootfs
-                              this is the bytes used by the container rootfs on the
-                              filesystem.
-                            format: int64
-                            type: integer
-                        required:
-                        - time
-                        type: object
-                      type: array
-                  required:
-                  - containers
-                  - podRef
-                  - startTime
-                  type: object
-                pod_status:
-                  default: UNSET
-                  description: PodStatus updates the current pod status
-                  enum:
-                  - PENDING
-                  - RUNNING
-                  - SUCCEEDED
-                  - FAILED
-                  - UNKNOWN
-                  - UNSET
-                  type: string
-                update_pod_response:
-                  default: UNSET
-                  description: UpdatePodResponse determines how to respond to the
-                    UpdatePod request
-                  enum:
-                  - NORMAL
-                  - TIMEOUT
-                  - ERROR
-                  - UNSET
-                  type: string
-              type: object
-            tasks:
-              description: The tasks to be executed
-              items:
-                description: EmulatedPodTask is a single task which updates a pod
-                  state and is executed at a timestamp
-                properties:
-                  state:
-                    description: The state to be set
-                    properties:
-                      create_pod_response:
-                        default: UNSET
-                        description: CreatePodResponse determines how to respond to
-                          the CreatePod request
-                        enum:
-                        - NORMAL
-                        - TIMEOUT
-                        - ERROR
-                        - UNSET
-                        type: string
-                      delete_pod_response:
-                        default: UNSET
-                        description: DeletePodResponse determines how to respond to
-                          the DeletePod request
-                        enum:
-                        - NORMAL
-                        - TIMEOUT
-                        - ERROR
-                        - UNSET
-                        type: string
-                      get_pod_response:
-                        default: UNSET
-                        description: PodGetPodResponse determines how to respond to
-                          the GetPod request
-                        enum:
-                        - NORMAL
-                        - TIMEOUT
-                        - ERROR
-                        - UNSET
-                        type: string
-                      get_pod_status_response:
-                        default: UNSET
-                        description: GetPodStatusResponse determines how to respond
-                          to the GetPodStatus request
-                        enum:
-                        - NORMAL
-                        - TIMEOUT
-                        - ERROR
-                        - UNSET
-                        type: string
-                      pod_resources:
-                        description: PodResources sets the amount of resources the
-                          related pods are using
-                        properties:
-                          containers:
-                            description: Stats of containers in the measured pod.
-                            items:
-                              description: ContainerStats holds container-level unprocessed
-                                sample stats.
-                              properties:
-                                accelerators:
-                                  description: Metrics for Accelerators. Each Accelerator
-                                    corresponds to one element in the array.
-                                  items:
-                                    description: AcceleratorStats contains stats for
-                                      accelerators attached to the container.
-                                    properties:
-                                      dutyCycle:
-                                        description: Percent of time over the past
-                                          sample period (10s) during which the accelerator
-                                          was actively processing.
-                                        format: int64
-                                        type: integer
-                                      id:
-                                        description: ID of the accelerator.
-                                        type: string
-                                      make:
-                                        description: Make of the accelerator (nvidia,
-                                          amd, google etc.)
-                                        type: string
-                                      memoryTotal:
-                                        description: 'Total accelerator memory. unit:
-                                          bytes'
-                                        format: int64
-                                        type: integer
-                                      memoryUsed:
-                                        description: 'Total accelerator memory allocated.
-                                          unit: bytes'
-                                        format: int64
-                                        type: integer
-                                      model:
-                                        description: Model of the accelerator (tesla-p100,
-                                          tesla-k80 etc.)
-                                        type: string
-                                    required:
-                                    - dutyCycle
-                                    - id
-                                    - make
-                                    - memoryTotal
-                                    - memoryUsed
-                                    - model
-                                    type: object
-                                  type: array
-                                cpu:
-                                  description: Stats pertaining to CPU resources.
-                                  properties:
-                                    time:
-                                      description: The time at which these stats were
-                                        updated.
-                                      format: date-time
-                                      type: string
-                                    usageCoreNanoSeconds:
-                                      description: Cumulative CPU usage (sum of all
-                                        cores) since object creation.
-                                      format: int64
-                                      type: integer
-                                    usageNanoCores:
-                                      description: Total CPU usage (sum of all cores)
-                                        averaged over the sample window. The "core"
-                                        unit can be interpreted as CPU core-nanoseconds
-                                        per second.
-                                      format: int64
-                                      type: integer
-                                  required:
-                                  - time
-                                  type: object
-                                logs:
-                                  description: Stats pertaining to container logs
-                                    usage of filesystem resources. Logs.UsedBytes
-                                    is the number of bytes used for the container
-                                    logs.
-                                  properties:
-                                    availableBytes:
-                                      description: AvailableBytes represents the storage
-                                        space available (bytes) for the filesystem.
-                                      format: int64
-                                      type: integer
-                                    capacityBytes:
-                                      description: CapacityBytes represents the total
-                                        capacity (bytes) of the filesystems underlying
-                                        storage.
-                                      format: int64
-                                      type: integer
-                                    inodes:
-                                      description: Inodes represents the total inodes
-                                        in the filesystem.
-                                      format: int64
-                                      type: integer
-                                    inodesFree:
-                                      description: InodesFree represents the free
-                                        inodes in the filesystem.
-                                      format: int64
-                                      type: integer
-                                    inodesUsed:
-                                      description: InodesUsed represents the inodes
-                                        used by the filesystem This may not equal
-                                        Inodes - InodesFree because this filesystem
-                                        may share inodes with other "filesystems"
-                                        e.g. For ContainerStats.Rootfs, this is the
-                                        inodes used only by that container, and does
-                                        not count inodes used by other containers.
-                                      format: int64
-                                      type: integer
-                                    time:
-                                      description: The time at which these stats were
-                                        updated.
-                                      format: date-time
-                                      type: string
-                                    usedBytes:
-                                      description: UsedBytes represents the bytes
-                                        used for a specific task on the filesystem.
-                                        This may differ from the total bytes used
-                                        on the filesystem and may not equal CapacityBytes
-                                        - AvailableBytes. e.g. For ContainerStats.Rootfs
-                                        this is the bytes used by the container rootfs
-                                        on the filesystem.
-                                      format: int64
-                                      type: integer
-                                  required:
-                                  - time
-                                  type: object
-                                memory:
-                                  description: Stats pertaining to memory (RAM) resources.
-                                  properties:
-                                    availableBytes:
-                                      description: Available memory for use.  This
-                                        is defined as the memory limit - workingSetBytes.
-                                        If memory limit is undefined, the available
-                                        bytes is omitted.
-                                      format: int64
-                                      type: integer
-                                    majorPageFaults:
-                                      description: Cumulative number of major page
-                                        faults.
-                                      format: int64
-                                      type: integer
-                                    pageFaults:
-                                      description: Cumulative number of minor page
-                                        faults.
-                                      format: int64
-                                      type: integer
-                                    rssBytes:
-                                      description: The amount of anonymous and swap
-                                        cache memory (includes transparent hugepages).
-                                      format: int64
-                                      type: integer
-                                    time:
-                                      description: The time at which these stats were
-                                        updated.
-                                      format: date-time
-                                      type: string
-                                    usageBytes:
-                                      description: Total memory in use. This includes
-                                        all memory regardless of when it was accessed.
-                                      format: int64
-                                      type: integer
-                                    workingSetBytes:
-                                      description: The amount of working set memory.
-                                        This includes recently accessed memory, dirty
-                                        memory, and kernel memory. WorkingSetBytes
-                                        is <= UsageBytes
-                                      format: int64
-                                      type: integer
-                                  required:
-                                  - time
-                                  type: object
-                                name:
-                                  description: Reference to the measured container.
-                                  type: string
-                                rootfs:
-                                  description: Stats pertaining to container rootfs
-                                    usage of filesystem resources. Rootfs.UsedBytes
-                                    is the number of bytes used for the container
-                                    write layer.
-                                  properties:
-                                    availableBytes:
-                                      description: AvailableBytes represents the storage
-                                        space available (bytes) for the filesystem.
-                                      format: int64
-                                      type: integer
-                                    capacityBytes:
-                                      description: CapacityBytes represents the total
-                                        capacity (bytes) of the filesystems underlying
-                                        storage.
-                                      format: int64
-                                      type: integer
-                                    inodes:
-                                      description: Inodes represents the total inodes
-                                        in the filesystem.
-                                      format: int64
-                                      type: integer
-                                    inodesFree:
-                                      description: InodesFree represents the free
-                                        inodes in the filesystem.
-                                      format: int64
-                                      type: integer
-                                    inodesUsed:
-                                      description: InodesUsed represents the inodes
-                                        used by the filesystem This may not equal
-                                        Inodes - InodesFree because this filesystem
-                                        may share inodes with other "filesystems"
-                                        e.g. For ContainerStats.Rootfs, this is the
-                                        inodes used only by that container, and does
-                                        not count inodes used by other containers.
-                                      format: int64
-                                      type: integer
-                                    time:
-                                      description: The time at which these stats were
-                                        updated.
-                                      format: date-time
-                                      type: string
-                                    usedBytes:
-                                      description: UsedBytes represents the bytes
-                                        used for a specific task on the filesystem.
-                                        This may differ from the total bytes used
-                                        on the filesystem and may not equal CapacityBytes
-                                        - AvailableBytes. e.g. For ContainerStats.Rootfs
-                                        this is the bytes used by the container rootfs
-                                        on the filesystem.
-                                      format: int64
-                                      type: integer
-                                  required:
-                                  - time
-                                  type: object
-                                startTime:
-                                  description: The time at which data collection for
-                                    this container was (re)started.
-                                  format: date-time
-                                  type: string
-                                userDefinedMetrics:
-                                  description: User defined metrics that are exposed
-                                    by containers in the pod. Typically, we expect
-                                    only one container in the pod to be exposing user
-                                    defined metrics. In the event of multiple containers
-                                    exposing metrics, they will be combined here.
-                                  items:
-                                    description: UserDefinedMetric represents a metric
-                                      defined and generated by users.
-                                    properties:
-                                      labels:
-                                        additionalProperties:
-                                          type: string
-                                        description: Metadata labels associated with
-                                          this metric.
-                                        type: object
-                                      name:
-                                        description: The name of the metric.
-                                        type: string
-                                      time:
-                                        description: The time at which these stats
-                                          were updated.
-                                        format: date-time
-                                        type: string
-                                      type:
-                                        description: Type of the metric.
-                                        type: string
-                                      units:
-                                        description: Display Units for the stats.
-                                        type: string
-                                    required:
-                                    - name
-                                    - time
-                                    - type
-                                    - units
-                                    type: object
-                                  type: array
-                              required:
-                              - name
-                              - startTime
-                              type: object
-                            type: array
-                          cpu:
-                            description: Stats pertaining to CPU resources consumed
-                              by pod cgroup (which includes all containers' resource
-                              usage and pod overhead).
-                            properties:
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              usageCoreNanoSeconds:
-                                description: Cumulative CPU usage (sum of all cores)
-                                  since object creation.
-                                format: int64
-                                type: integer
-                              usageNanoCores:
-                                description: Total CPU usage (sum of all cores) averaged
-                                  over the sample window. The "core" unit can be interpreted
-                                  as CPU core-nanoseconds per second.
-                                format: int64
-                                type: integer
-                            required:
-                            - time
-                            type: object
-                          ephemeral-storage:
-                            description: EphemeralStorage reports the total filesystem
-                              usage for the containers and emptyDir-backed volumes
-                              in the measured Pod.
-                            properties:
-                              availableBytes:
-                                description: AvailableBytes represents the storage
-                                  space available (bytes) for the filesystem.
-                                format: int64
-                                type: integer
-                              capacityBytes:
-                                description: CapacityBytes represents the total capacity
-                                  (bytes) of the filesystems underlying storage.
-                                format: int64
-                                type: integer
-                              inodes:
-                                description: Inodes represents the total inodes in
-                                  the filesystem.
-                                format: int64
-                                type: integer
-                              inodesFree:
-                                description: InodesFree represents the free inodes
-                                  in the filesystem.
-                                format: int64
-                                type: integer
-                              inodesUsed:
-                                description: InodesUsed represents the inodes used
-                                  by the filesystem This may not equal Inodes - InodesFree
-                                  because this filesystem may share inodes with other
-                                  "filesystems" e.g. For ContainerStats.Rootfs, this
-                                  is the inodes used only by that container, and does
-                                  not count inodes used by other containers.
-                                format: int64
-                                type: integer
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              usedBytes:
-                                description: UsedBytes represents the bytes used for
-                                  a specific task on the filesystem. This may differ
-                                  from the total bytes used on the filesystem and
-                                  may not equal CapacityBytes - AvailableBytes. e.g.
-                                  For ContainerStats.Rootfs this is the bytes used
-                                  by the container rootfs on the filesystem.
-                                format: int64
-                                type: integer
-                            required:
-                            - time
-                            type: object
-                          memory:
-                            description: Stats pertaining to memory (RAM) resources
-                              consumed by pod cgroup (which includes all containers'
-                              resource usage and pod overhead).
-                            properties:
-                              availableBytes:
-                                description: Available memory for use.  This is defined
-                                  as the memory limit - workingSetBytes. If memory
-                                  limit is undefined, the available bytes is omitted.
-                                format: int64
-                                type: integer
-                              majorPageFaults:
-                                description: Cumulative number of major page faults.
-                                format: int64
-                                type: integer
-                              pageFaults:
-                                description: Cumulative number of minor page faults.
-                                format: int64
-                                type: integer
-                              rssBytes:
-                                description: The amount of anonymous and swap cache
-                                  memory (includes transparent hugepages).
-                                format: int64
-                                type: integer
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              usageBytes:
-                                description: Total memory in use. This includes all
-                                  memory regardless of when it was accessed.
-                                format: int64
-                                type: integer
-                              workingSetBytes:
-                                description: The amount of working set memory. This
-                                  includes recently accessed memory, dirty memory,
-                                  and kernel memory. WorkingSetBytes is <= UsageBytes
-                                format: int64
-                                type: integer
-                            required:
-                            - time
-                            type: object
-                          network:
-                            description: Stats pertaining to network resources.
-                            properties:
-                              interfaces:
-                                items:
-                                  description: InterfaceStats contains resource value
-                                    data about interface.
-                                  properties:
-                                    name:
-                                      description: The name of the interface
-                                      type: string
-                                    rxBytes:
-                                      description: Cumulative count of bytes received.
-                                      format: int64
-                                      type: integer
-                                    rxErrors:
-                                      description: Cumulative count of receive errors
-                                        encountered.
-                                      format: int64
-                                      type: integer
-                                    txBytes:
-                                      description: Cumulative count of bytes transmitted.
-                                      format: int64
-                                      type: integer
-                                    txErrors:
-                                      description: Cumulative count of transmit errors
-                                        encountered.
-                                      format: int64
-                                      type: integer
-                                  required:
-                                  - name
-                                  type: object
-                                type: array
-                              name:
-                                description: The name of the interface
-                                type: string
-                              rxBytes:
-                                description: Cumulative count of bytes received.
-                                format: int64
-                                type: integer
-                              rxErrors:
-                                description: Cumulative count of receive errors encountered.
-                                format: int64
-                                type: integer
-                              time:
-                                description: The time at which these stats were updated.
-                                format: date-time
-                                type: string
-                              txBytes:
-                                description: Cumulative count of bytes transmitted.
-                                format: int64
-                                type: integer
-                              txErrors:
-                                description: Cumulative count of transmit errors encountered.
-                                format: int64
-                                type: integer
-                            required:
-                            - name
-                            - time
-                            type: object
-                          podRef:
-                            description: Reference to the measured Pod.
-                            properties:
-                              name:
-                                type: string
-                              namespace:
-                                type: string
-                              uid:
-                                type: string
-                            required:
-                            - name
-                            - namespace
-                            - uid
-                            type: object
-                          startTime:
-                            description: The time at which data collection for the
-                              pod-scoped (e.g. network) stats was (re)started.
-                            format: date-time
-                            type: string
-                          volume:
-                            description: Stats pertaining to volume usage of filesystem
-                              resources. VolumeStats.UsedBytes is the number of bytes
-                              used by the Volume
-                            items:
-                              description: VolumeStats contains data about Volume
-                                filesystem usage.
-                              properties:
-                                availableBytes:
-                                  description: AvailableBytes represents the storage
-                                    space available (bytes) for the filesystem.
-                                  format: int64
-                                  type: integer
-                                capacityBytes:
-                                  description: CapacityBytes represents the total
-                                    capacity (bytes) of the filesystems underlying
-                                    storage.
-                                  format: int64
-                                  type: integer
-                                inodes:
-                                  description: Inodes represents the total inodes
-                                    in the filesystem.
-                                  format: int64
-                                  type: integer
-                                inodesFree:
-                                  description: InodesFree represents the free inodes
-                                    in the filesystem.
-                                  format: int64
-                                  type: integer
-                                inodesUsed:
-                                  description: InodesUsed represents the inodes used
-                                    by the filesystem This may not equal Inodes -
-                                    InodesFree because this filesystem may share inodes
-                                    with other "filesystems" e.g. For ContainerStats.Rootfs,
-                                    this is the inodes used only by that container,
-                                    and does not count inodes used by other containers.
-                                  format: int64
-                                  type: integer
-                                name:
-                                  description: Name is the name given to the Volume
-                                  type: string
-                                pvcRef:
-                                  description: Reference to the PVC, if one exists
-                                  properties:
-                                    name:
-                                      type: string
-                                    namespace:
-                                      type: string
-                                  required:
-                                  - name
-                                  - namespace
-                                  type: object
-                                time:
-                                  description: The time at which these stats were
-                                    updated.
-                                  format: date-time
-                                  type: string
-                                usedBytes:
-                                  description: UsedBytes represents the bytes used
-                                    for a specific task on the filesystem. This may
-                                    differ from the total bytes used on the filesystem
-                                    and may not equal CapacityBytes - AvailableBytes.
-                                    e.g. For ContainerStats.Rootfs this is the bytes
-                                    used by the container rootfs on the filesystem.
-                                  format: int64
-                                  type: integer
-                              required:
-                              - time
-                              type: object
-                            type: array
-                        required:
-                        - containers
-                        - podRef
-                        - startTime
-                        type: object
-                      pod_status:
-                        default: UNSET
-                        description: PodStatus updates the current pod status
-                        enum:
-                        - PENDING
-                        - RUNNING
-                        - SUCCEEDED
-                        - FAILED
-                        - UNKNOWN
-                        - UNSET
-                        type: string
-                      update_pod_response:
-                        default: UNSET
-                        description: UpdatePodResponse determines how to respond to
-                          the UpdatePod request
-                        enum:
-                        - NORMAL
-                        - TIMEOUT
-                        - ERROR
-                        - UNSET
-                        type: string
-                    type: object
-                  timestamp:
-                    description: The timestamp at which the task is executed
-                    format: int64
-                    minimum: 0
-                    type: integer
-                required:
-                - state
-                - timestamp
-                type: object
-              type: array
-          type: object
-      required:
-      - metadata
-      - spec
-      type: object
-  version: v1
   versions:
   - name: v1
+    schema:
+      openAPIV3Schema:
+        description: EmulatedPod is a definition of EmulatedPod resource.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: EmulatedPodSpec is the spec which belongs to the EmulatedPod
+              CRD
+            properties:
+              direct_task:
+                description: A direct way to update state, this will circumvent the
+                  timestamps / scenario
+                properties:
+                  create_pod_response:
+                    default: UNSET
+                    description: CreatePodResponse determines how to respond to the
+                      CreatePod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  delete_pod_response:
+                    default: UNSET
+                    description: DeletePodResponse determines how to respond to the
+                      DeletePod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  get_pod_response:
+                    default: UNSET
+                    description: PodGetPodResponse determines how to respond to the
+                      GetPod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  get_pod_status_response:
+                    default: UNSET
+                    description: GetPodStatusResponse determines how to respond to
+                      the GetPodStatus request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  pod_resources:
+                    description: PodResources sets the amount of resources the related
+                      pods are using
+                    properties:
+                      cpu:
+                        default: 0
+                        format: int64
+                        type: integer
+                      ephemeral_storage:
+                        default: 0B
+                        type: string
+                      memory:
+                        default: 0B
+                        type: string
+                      storage:
+                        default: 0B
+                        type: string
+                    type: object
+                  pod_status:
+                    default: UNSET
+                    description: PodStatus updates the current pod status
+                    enum:
+                    - PENDING
+                    - RUNNING
+                    - SUCCEEDED
+                    - FAILED
+                    - UNKNOWN
+                    - UNSET
+                    type: string
+                  update_pod_response:
+                    default: UNSET
+                    description: UpdatePodResponse determines how to respond to the
+                      UpdatePod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                type: object
+              tasks:
+                description: The tasks to be executed
+                items:
+                  description: EmulatedPodTask is a single task which updates a pod
+                    state and is executed at a timestamp
+                  properties:
+                    state:
+                      description: The state to be set
+                      properties:
+                        create_pod_response:
+                          default: UNSET
+                          description: CreatePodResponse determines how to respond
+                            to the CreatePod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        delete_pod_response:
+                          default: UNSET
+                          description: DeletePodResponse determines how to respond
+                            to the DeletePod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        get_pod_response:
+                          default: UNSET
+                          description: PodGetPodResponse determines how to respond
+                            to the GetPod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        get_pod_status_response:
+                          default: UNSET
+                          description: GetPodStatusResponse determines how to respond
+                            to the GetPodStatus request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        pod_resources:
+                          description: PodResources sets the amount of resources the
+                            related pods are using
+                          properties:
+                            cpu:
+                              default: 0
+                              format: int64
+                              type: integer
+                            ephemeral_storage:
+                              default: 0B
+                              type: string
+                            memory:
+                              default: 0B
+                              type: string
+                            storage:
+                              default: 0B
+                              type: string
+                          type: object
+                        pod_status:
+                          default: UNSET
+                          description: PodStatus updates the current pod status
+                          enum:
+                          - PENDING
+                          - RUNNING
+                          - SUCCEEDED
+                          - FAILED
+                          - UNKNOWN
+                          - UNSET
+                          type: string
+                        update_pod_response:
+                          default: UNSET
+                          description: UpdatePodResponse determines how to respond
+                            to the UpdatePod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                      type: object
+                    timestamp:
+                      description: The timestamp at which the task is executed
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  required:
+                  - state
+                  - timestamp
+                  type: object
+                type: array
+            type: object
+        required:
+        - metadata
+        - spec
+        type: object
     served: true
     storage: true
 status:

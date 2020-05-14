@@ -51,31 +51,55 @@ type EmulatedPodTask struct {
 type EmulatedPodState struct {
 	// CreatePodResponse determines how to respond to the CreatePod request
 	// +kubebuilder:default=UNSET
+	// +kubebuilder:validation:Optional
 	CreatePodResponse EmulatedPodResponse `json:"create_pod_response,omitempty"`
 
 	// UpdatePodResponse determines how to respond to the UpdatePod request
 	// +kubebuilder:default=UNSET
+	// +kubebuilder:validation:Optional
 	UpdatePodResponse EmulatedPodResponse `json:"update_pod_response,omitempty"`
 
 	// DeletePodResponse determines how to respond to the DeletePod request
 	// +kubebuilder:default=UNSET
+	// +kubebuilder:validation:Optional
 	DeletePodResponse EmulatedPodResponse `json:"delete_pod_response,omitempty"`
 
 	// PodGetPodResponse determines how to respond to the GetPod request
 	// +kubebuilder:default=UNSET
+	// +kubebuilder:validation:Optional
 	GetPodResponse EmulatedPodResponse `json:"get_pod_response,omitempty"`
 
 	// GetPodStatusResponse determines how to respond to the GetPodStatus request
 	// +kubebuilder:default=UNSET
+	// +kubebuilder:validation:Optional
 	GetPodStatusResponse EmulatedPodResponse `json:"get_pod_status_response,omitempty"`
 
 	// PodResources sets the amount of resources the related pods are using
 	// +kubebuilder:validation:Optional
-	PodResources *PodStats `json:"pod_resources,omitempty"`
+	PodResources *EmulatedPodResourceUsage `json:"pod_resources,omitempty"`
 
 	// PodStatus updates the current pod status
 	// +kubebuilder:default=UNSET
 	PodStatus EmulatedPodStatus `json:"pod_status,omitempty"`
+}
+
+// EmulatedPodResourceUsage defines the current resource usage of the pod
+type EmulatedPodResourceUsage struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="0B"
+	Memory string `json:"memory,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=0
+	CPU uint64 `json:"cpu,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="0B"
+	Storage string `json:"storage,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="0B"
+	EphemeralStorage string `json:"ephemeral_storage,omitempty"`
 }
 
 // EmulatedPodStatus can be PENDING, RUNNING, SUCCEEDED, FAILED, UNKNOWN or UNSET, and describes the state of a pod.
