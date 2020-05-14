@@ -2,14 +2,17 @@ package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	v1 "k8s.io/api/core/v1"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 )
 
+// Stats is a simple wrapper for statistics fields
 type Stats struct {
 	startTime metav1.Time
 }
@@ -105,15 +108,29 @@ func (p *Provider) getPodStats(pod *v1.Pod) stats.PodStats {
 		if k == "apate" { //TODO: Const or something
 			event := events.PodResources
 
-			statistics, err := (*p.store).GetPodFlag(label, event)
+			unconvertedStats, err := (*p.store).GetPodFlag(label, event)
+			statistics := unconvertedStats.(stats.PodStats)
 
 			if err != nil {
 				return stats.PodStats{PodRef: stats.PodReference{Name: pod.Name, Namespace: pod.Namespace, UID: string(pod.UID)}}
 			}
 
-			return statistics.(stats.PodStats)
+			addPodSpecificStats(pod, &statistics)
+			return statistics
 		}
 	}
 
 	return stats.PodStats{PodRef: stats.PodReference{Name: pod.Name, Namespace: pod.Namespace, UID: string(pod.UID)}}
+}
+
+func addPodSpecificStats(pod *v1.Pod, statistics *stats.PodStats) {
+	statistics.PodRef = stats.PodReference{
+		Name:      pod.Name,
+		Namespace: pod.Namespace,
+		UID:       string(pod.UID),
+	}
+
+	if pod.Status.StartTime != nil {
+		statistics.StartTime = *pod.Status.StartTime
+	}
 }

@@ -2,19 +2,21 @@ package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-kubelet/node-cli/provider"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
-	"testing"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
 const (
@@ -155,7 +157,7 @@ func TestUnspecifiedPods(t *testing.T) {
 
 	// Create stats
 	statistics := stats.PodStats{
-		PodRef:           stats.PodReference{},
+		PodRef:           stats.PodReference{UID: flag},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              nil,
@@ -166,7 +168,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	}
 
 	statistics2 := stats.PodStats{
-		PodRef:           stats.PodReference{},
+		PodRef:           stats.PodReference{UID: flag + "2"},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              &stats.CPUStats{},
@@ -177,7 +179,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	}
 
 	statistics3 := stats.PodStats{
-		PodRef:           stats.PodReference{},
+		PodRef:           stats.PodReference{UID: flag + "3"},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              &stats.CPUStats{UsageNanoCores: &cpuUsage},
