@@ -48,7 +48,10 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		KubeConfigWriter(config.Bytes)
 	}
 
-	crdSt, err := createCRDInformer(config)
+	// Create store
+	st := store.NewStore()
+
+	crdSt, err := createCRDInformer(config, &st)
 	if err != nil {
 		return err
 	}
@@ -57,9 +60,6 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	hc := health.GetClient(connectionInfo, res.UUID.String())
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	hc.StartStreamWithRetry(ctx, 3)
-
-	// Create store
-	st := store.NewStore()
 
 	// Start the Apatelet
 	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st, crdSt)
@@ -157,21 +157,6 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	log.Printf("Joined apate cluster with resources: %v", res)
 
 	return cfg, res, nil
-}
-
-func createCRDInformer(config *kubeconfig.KubeConfig) (*crd.Informer, error) {
-	restConfig, err := config.GetConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	podClient, err := crd.NewForConfig(restConfig, "default")
-	if err != nil {
-		return nil, err
-	}
-
-	crdSt := podClient.WatchResources()
-	return crdSt, nil
 }
 
 func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *crd.Informer) (*cli.Command, context.CancelFunc, error) {

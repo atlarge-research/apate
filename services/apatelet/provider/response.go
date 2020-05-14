@@ -48,29 +48,14 @@ calculate the percentage and calls the action callback on success.
 
 // podResponse checks the passed flags and calls the passed function on success
 func podResponse(args responseArgs, podA podResponseArgs) (interface{}, bool, error) {
-	iflag, err := (*args.provider.store).GetPodFlag(podA.label, podA.podResponseFlag)
-	if err != nil {
+	iflag, set, err := (*args.provider.store).GetPodFlag(podA.label, podA.podResponseFlag)
+	if err != nil || !set {
 		return nil, false, err
 	}
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
 		return nil, false, errors.New("podResponse couldn't cast flag to response")
-	}
-
-	iflagpercent, err := (*args.provider.store).GetPodFlag(podA.label, podA.podPercentageFlag)
-	if err != nil {
-		return nil, false, err
-	}
-
-	flagpercent, ok := iflagpercent.(int32)
-	if !ok {
-		return nil, false, errors.New("podResponse couldn't cast percent to int")
-	}
-
-	if flagpercent < rand.Int31n(int32(100)) {
-		res, err := args.action()
-		return res, true, err
 	}
 
 	switch flag {

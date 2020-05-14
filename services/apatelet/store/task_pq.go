@@ -1,15 +1,22 @@
 package store
 
 import (
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"reflect"
 	"sync"
 )
 
 type Task struct {
 	AbsoluteTimestamp int64
-	IsPod             bool
-	Label             string
-	OriginalTask      interface{}
+	PodTask           PodTask
+	NodeTask          NodeTask
+}
+
+type NodeTask *apatelet.Task
+type PodTask struct {
+	Label string
+	Task  *v1.EmulatedPodTask
 }
 
 // taskQueue is a thread-safe priority queue based on a min-heap for tasks in the private scenario

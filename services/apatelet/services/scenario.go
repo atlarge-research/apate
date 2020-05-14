@@ -34,8 +34,7 @@ func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *apat
 	for _, task := range scenario.Task {
 		tasks = append(tasks, &store.Task{
 			AbsoluteTimestamp: task.AbsoluteTimestamp,
-			IsPod:             false,
-			OriginalTask:      task,
+			NodeTask:          task,
 		})
 	}
 	(*s.store).EnqueueTasks(tasks)

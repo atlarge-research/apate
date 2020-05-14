@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"time"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
@@ -40,7 +39,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 	_, err = podAndNodeResponse(podNodeResponse{
 		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
 		podResponseArgs: podResponseArgs{
-			pod.Name,
+			p.getPodLabelByPod(pod),
 			events.PodCreatePodResponse,
 		},
 		nodeResponseArgs: nodeResponseArgs{
@@ -61,9 +60,8 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 	_, err := podAndNodeResponse(podNodeResponse{
 		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
 		podResponseArgs: podResponseArgs{
-			pod.Name,
+			p.getPodLabelByPod(pod),
 			events.PodUpdatePodResponse,
-			events.PodUpdatePodResponsePercentage,
 		},
 		nodeResponseArgs: nodeResponseArgs{
 			events.NodeUpdatePodResponse,
@@ -93,9 +91,8 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 			return nil, nil
 		}},
 		podResponseArgs: podResponseArgs{
-			pod.Name,
+			p.getPodLabelByPod(pod),
 			events.PodDeletePodResponse,
-			events.PodDeletePodResponsePercentage,
 		},
 		nodeResponseArgs: nodeResponseArgs{
 			events.NodeDeletePodResponse,
@@ -117,9 +114,8 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 			return p.pods.GetPodByName(namespace, name), nil
 		}},
 		podResponseArgs: podResponseArgs{
-			name,
+			p.getPodLabelByName(namespace, name),
 			events.PodGetPodResponse,
-			events.PodGetPodResponsePercentage,
 		},
 		nodeResponseArgs: nodeResponseArgs{
 			events.NodeGetPodResponse,
@@ -163,7 +159,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 			if err != nil {
 				return nil, throw.NewException(err, "GetPodStatus failed on getting pod flag")
 			}
-			
+
 			return &corev1.PodStatus{
 				Phase:   podStatusToPhase(status),
 				Message: "Emulating pod successfully",
