@@ -39,8 +39,7 @@ func (et *EventTranslator) TranslateEvent() error {
 	switch ne := et.originalTask.Event.(type) {
 	// Node events
 	case *controlplane.Task_NodeFailure:
-		nef.flags(scenario.Response_TIMEOUT, nodeEventFlags)
-		nef.flags(100, nodeEventPercentageFlags)
+		nef.flags(scenario.Response_RESPONSE_TIMEOUT, nodeEventFlags)
 
 	case *controlplane.Task_NetworkLatency:
 		if ne.NetworkLatency.LatencyMsec < 0 {
@@ -51,16 +50,13 @@ func (et *EventTranslator) TranslateEvent() error {
 		nef.flag(ne.NetworkLatency.LatencyMsec, ef.NodeAddedLatencyMsec)
 
 	case *controlplane.Task_TimeoutKeepHeartbeat:
-		nef.flags(scenario.Response_TIMEOUT, nodeEventFlags)
-		nef.flags(100, nodeEventPercentageFlags)
+		nef.flags(scenario.Response_RESPONSE_TIMEOUT, nodeEventFlags)
 
 		// Reset ping
-		nef.flag(scenario.Response_NORMAL, ef.NodePingResponse)
-		nef.flag(0, ef.NodePingResponsePercentage)
+		nef.flag(scenario.Response_RESPONSE_NORMAL, ef.NodePingResponse)
 
 	case *controlplane.Task_NoTimeoutNoHeartbeat:
-		nef.flag(scenario.Response_TIMEOUT, ef.NodePingResponse)
-		nef.flag(100, ef.NodePingResponsePercentage)
+		nef.flag(scenario.Response_RESPONSE_TIMEOUT, ef.NodePingResponse)
 
 	case *controlplane.Task_NodeResponseState:
 		state := ne.NodeResponseState
@@ -72,31 +68,24 @@ func (et *EventTranslator) TranslateEvent() error {
 		switch state.Type {
 		case controlplane.RequestType_CREATE_POD:
 			nef.flag(state.Response, ef.NodeCreatePodResponse)
-			nef.flag(state.Percentage, ef.NodeCreatePodResponsePercentage)
 
 		case controlplane.RequestType_UPDATE_POD:
 			nef.flag(state.Response, ef.NodeUpdatePodResponse)
-			nef.flag(state.Percentage, ef.NodeUpdatePodResponsePercentage)
 
 		case controlplane.RequestType_DELETE_POD:
 			nef.flag(state.Response, ef.NodeDeletePodResponse)
-			nef.flag(state.Percentage, ef.NodeDeletePodResponsePercentage)
 
 		case controlplane.RequestType_GET_POD:
 			nef.flag(state.Response, ef.NodeGetPodResponse)
-			nef.flag(state.Percentage, ef.NodeGetPodResponsePercentage)
 
 		case controlplane.RequestType_GET_POD_STATUS:
 			nef.flag(state.Response, ef.NodeGetPodStatusResponse)
-			nef.flag(state.Percentage, ef.NodeGetPodStatusResponsePercentage)
 
 		case controlplane.RequestType_GET_PODS:
 			nef.flag(state.Response, ef.NodeGetPodsResponse)
-			nef.flag(state.Percentage, ef.NodeGetPodsResponsePercentage)
 
 		case controlplane.RequestType_PING:
 			nef.flag(state.Response, ef.NodePingResponse)
-			nef.flag(state.Percentage, ef.NodePingResponsePercentage)
 		}
 
 	case *controlplane.Task_CustomFlags:

@@ -18,28 +18,22 @@ func TestConvertToAbsolute(t *testing.T) {
 	input := &apatelet.ApateletScenario{Task: []*apatelet.Task{
 		{
 			RelativeTimestamp: fiveS.Nanoseconds(),
-			AbsoluteTimestamp: 0,
 		},
 		{
 			RelativeTimestamp: minusFiveM.Nanoseconds(),
-			AbsoluteTimestamp: 0,
 		},
 		{
 			RelativeTimestamp: fifteenS.Nanoseconds(),
-			AbsoluteTimestamp: 0,
 		},
 	}}
 
-	startTime := time.Now().UnixNano()
-	convertToAbsoluteTimestamp(input, startTime)
-
-	assert.Equal(t, startTime+fiveS.Nanoseconds(), input.Task[0].AbsoluteTimestamp)
+	assert.Equal(t, fiveS.Nanoseconds(), input.Task[0].RelativeTimestamp)
 	assert.Equal(t, int64(0), input.Task[0].RelativeTimestamp)
 
-	assert.Equal(t, startTime+minusFiveM.Nanoseconds(), input.Task[1].AbsoluteTimestamp)
+	assert.Equal(t, minusFiveM.Nanoseconds(), input.Task[1].RelativeTimestamp)
 	assert.Equal(t, int64(0), input.Task[1].RelativeTimestamp)
 
-	assert.Equal(t, startTime+fifteenS.Nanoseconds(), input.Task[2].AbsoluteTimestamp)
+	assert.Equal(t, fifteenS.Nanoseconds(), input.Task[2].RelativeTimestamp)
 	assert.Equal(t, int64(0), input.Task[2].RelativeTimestamp)
 }
 

@@ -28,7 +28,12 @@ func TestGetSingleTask(t *testing.T) {
 	st := NewStore()
 
 	// Enqueue single task
-	st.EnqueueTasks([]*apatelet.Task{task})
+	st.EnqueueTasks([]*Task{{
+		RelativeTimestamp: 0,
+		IsPod:             false,
+		PodTask:           nil,
+		NodeTask:          task,
+	}})
 
 	// Retrieve single task and verify it was the original one
 	retrieved, err := st.PopTask()
@@ -41,16 +46,19 @@ func TestGetSingleTask(t *testing.T) {
 
 // TestGetSingleTask ensures a polled task is not deleted
 func TestPollSingleTask(t *testing.T) {
-	task := &apatelet.Task{AbsoluteTimestamp: 424242}
+	task := &apatelet.Task{RelativeTimestamp: 424242}
 	st := NewStore()
 
 	// Enqueue single task
-	st.EnqueueTasks([]*apatelet.Task{task})
+	st.EnqueueTasks([]*Task{{
+		424242,
+		false, nil, task,
+	}})
 
 	// Poll single task and verify the timestamp is correct
 	retrieved, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task.AbsoluteTimestamp, retrieved)
+	assert.Equal(t, task.RelativeTimestamp, retrieved)
 
 	// Also verify it was not removed
 	assert.Equal(t, 1, st.LenTasks())
@@ -58,18 +66,28 @@ func TestPollSingleTask(t *testing.T) {
 
 // TestMultipleTasks ensures the priority queue actually sorts the tasks properly (earliest task first)
 func TestMultipleTasks(t *testing.T) {
-	task1 := &apatelet.Task{AbsoluteTimestamp: 213123}
-	task2 := &apatelet.Task{AbsoluteTimestamp: 4242}
-	task3 := &apatelet.Task{AbsoluteTimestamp: 83481234}
+	task1 := &apatelet.Task{RelativeTimestamp: 213123}
+	task2 := &apatelet.Task{RelativeTimestamp: 4242}
+	task3 := &apatelet.Task{RelativeTimestamp: 83481234}
 	st := NewStore()
 
 	// Enqueue tasks
-	st.EnqueueTasks([]*apatelet.Task{task1, task2, task3})
+	st.EnqueueTasks([]*Task{
+		{
+			213123, false, nil, task1,
+		},
+		{
+			4242, false, nil, task2,
+		},
+		{
+			83481234, false, nil, task3,
+		},
+	})
 
 	// Poll first task, which should be task 2
 	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2.AbsoluteTimestamp, firstTaskTime)
+	assert.Equal(t, task2.RelativeTimestamp, firstTaskTime)
 
 	// Retrieve first two tasks
 	firstTask, err := st.PopTask()
@@ -84,17 +102,21 @@ func TestMultipleTasks(t *testing.T) {
 	lastTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, st.LenTasks())
-	assert.Equal(t, task3.AbsoluteTimestamp, lastTaskTime)
+	assert.Equal(t, task3.RelativeTimestamp, lastTaskTime)
 }
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
 func TestArrayWithNil(t *testing.T) {
-	task1 := &apatelet.Task{AbsoluteTimestamp: 213123}
-	task2 := &apatelet.Task{AbsoluteTimestamp: 4242}
+	task1 := &apatelet.Task{RelativeTimestamp: 213123}
+	task2 := &apatelet.Task{RelativeTimestamp: 4242}
 	st := NewStore()
 
 	// Enqueue tasks
-	st.EnqueueTasks([]*apatelet.Task{nil, task1, nil, task2, nil, nil})
+	st.EnqueueTasks([]*Task{nil, {
+		213123, false, nil, task1,
+	}, nil, {
+		4242, false, nil, task2,
+	}, nil, nil})
 
 	// Ensure there are two tasks
 	assert.Equal(t, 2, st.LenTasks())
@@ -102,7 +124,7 @@ func TestArrayWithNil(t *testing.T) {
 	// Poll first task, which should be task 2
 	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2.AbsoluteTimestamp, firstTaskTime)
+	assert.Equal(t, task2.RelativeTimestamp, firstTaskTime)
 
 	// Retrieve first task, and confirm it's task 2
 	firstTask, err := st.PopTask()

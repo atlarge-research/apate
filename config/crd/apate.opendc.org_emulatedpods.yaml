@@ -37,74 +37,153 @@ spec:
           description: EmulatedPodSpec is the spec which belongs to the EmulatedPod
             CRD
           properties:
+            direct_task:
+              properties:
+                create_pod_response:
+                  default: UNSET
+                  enum:
+                  - NORMAL
+                  - TIMEOUT
+                  - ERROR
+                  - UNSET
+                  type: string
+                delete_pod_response:
+                  default: UNSET
+                  enum:
+                  - NORMAL
+                  - TIMEOUT
+                  - ERROR
+                  - UNSET
+                  type: string
+                get_pod_response:
+                  default: UNSET
+                  enum:
+                  - NORMAL
+                  - TIMEOUT
+                  - ERROR
+                  - UNSET
+                  type: string
+                get_pod_status_response:
+                  default: UNSET
+                  enum:
+                  - NORMAL
+                  - TIMEOUT
+                  - ERROR
+                  - UNSET
+                  type: string
+                pod_status:
+                  default: UNSET
+                  enum:
+                  - PENDING
+                  - RUNNING
+                  - SUCCEEDED
+                  - FAILED
+                  - UNKNOWN
+                  - UNSET
+                  type: string
+                resource_usage:
+                  properties:
+                    cpu:
+                      default: -1B
+                      format: int64
+                      type: integer
+                    ephemeral_storage:
+                      default: -1B
+                      type: string
+                    memory:
+                      default: -1B
+                      type: string
+                    storage:
+                      default: -1B
+                      type: string
+                  type: object
+                update_pod_response:
+                  default: UNSET
+                  enum:
+                  - NORMAL
+                  - TIMEOUT
+                  - ERROR
+                  - UNSET
+                  type: string
+              type: object
             tasks:
               items:
                 properties:
-                  create_pod_response:
-                    default: NORMAL
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    type: string
-                  delete_pod_response:
-                    default: NORMAL
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    type: string
-                  get_pod_response:
-                    default: NORMAL
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    type: string
-                  get_pod_status_response:
-                    default: NORMAL
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    type: string
-                  pod_status:
-                    default: POD_RUNNING
-                    enum:
-                    - POD_PENDING
-                    - POD_RUNNING
-                    - POD_SUCCEEDED
-                    - POD_FAILED
-                    - POD_UNKNOWN
-                    type: string
-                  resource_usage:
+                  state:
                     properties:
-                      cpu:
-                        default: 0
-                        format: int64
-                        type: integer
-                      ephemeral_storage:
-                        default: 0
+                      create_pod_response:
+                        default: UNSET
+                        enum:
+                        - NORMAL
+                        - TIMEOUT
+                        - ERROR
+                        - UNSET
                         type: string
-                      memory:
-                        default: 0
+                      delete_pod_response:
+                        default: UNSET
+                        enum:
+                        - NORMAL
+                        - TIMEOUT
+                        - ERROR
+                        - UNSET
                         type: string
-                      storage:
-                        default: 0
+                      get_pod_response:
+                        default: UNSET
+                        enum:
+                        - NORMAL
+                        - TIMEOUT
+                        - ERROR
+                        - UNSET
+                        type: string
+                      get_pod_status_response:
+                        default: UNSET
+                        enum:
+                        - NORMAL
+                        - TIMEOUT
+                        - ERROR
+                        - UNSET
+                        type: string
+                      pod_status:
+                        default: UNSET
+                        enum:
+                        - PENDING
+                        - RUNNING
+                        - SUCCEEDED
+                        - FAILED
+                        - UNKNOWN
+                        - UNSET
+                        type: string
+                      resource_usage:
+                        properties:
+                          cpu:
+                            default: -1B
+                            format: int64
+                            type: integer
+                          ephemeral_storage:
+                            default: -1B
+                            type: string
+                          memory:
+                            default: -1B
+                            type: string
+                          storage:
+                            default: -1B
+                            type: string
+                        type: object
+                      update_pod_response:
+                        default: UNSET
+                        enum:
+                        - NORMAL
+                        - TIMEOUT
+                        - ERROR
+                        - UNSET
                         type: string
                     type: object
                   timestamp:
                     format: int64
                     minimum: 0
                     type: integer
-                  update_pod_response:
-                    default: NORMAL
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    type: string
                 required:
+                - state
                 - timestamp
                 type: object
               type: array

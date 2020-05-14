@@ -2,8 +2,9 @@ package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd"
 	"testing"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
 
 	"k8s.io/client-go/tools/cache"
 
@@ -64,7 +65,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	mCrdSt := mockcache.NewMockStore(ctrl)
 	var crdSt cache.Store = mCrdSt
 
-	inf := crd.NewInformer(&crdSt)
+	inf := node.NewInformer(&crdSt)
 
 	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, inf)
 
@@ -90,12 +91,10 @@ func TestCreatePod(t *testing.T) {
 	pod.Name = podName
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	cs.EXPECT().GetByKey(pod.Namespace+"/"+pod.Labels["apate"]).Return(nil, false, nil)
 
@@ -106,7 +105,7 @@ func TestCreatePod(t *testing.T) {
 	p := Provider{
 		store:       &s,
 		pods:        podmanager.New(),
-		crdInformer: crd.NewInformer(&c),
+		crdInformer: node.NewInformer(&c),
 	}
 
 	err := p.CreatePod(context.TODO(), &pod)
@@ -126,13 +125,11 @@ func TestUpdatePod(t *testing.T) {
 	pod.Name = podName
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodUpdatePodResponse
-	PCPRPF := events.PodUpdatePodResponsePercentage
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// sot
 	var s store.Store = ms
@@ -158,13 +155,11 @@ func TestDeletePod(t *testing.T) {
 	pod.Name = podName
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodDeletePodResponse
-	PCPRPF := events.PodDeletePodResponsePercentage
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(pod.Name, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(pod.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// sot
 	var s store.Store = ms
@@ -190,13 +185,11 @@ func TestGetPod(t *testing.T) {
 	p.Name = podName
 	p.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodGetPodResponse
-	PCPRPF := events.PodGetPodResponsePercentage
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(p.Name, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// sot
 	var s store.Store = ms
@@ -224,13 +217,11 @@ func TestGetPods(t *testing.T) {
 	p.Name = podName
 	p.UID = types.UID(uuid.New().String())
 	PCPRF := events.NodeGetPodsResponse
-	PCPRPF := events.NodeGetPodsResponsePercentage
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// sot
 	var s store.Store = ms
@@ -257,16 +248,13 @@ func TestGetPodStatus100(t *testing.T) {
 	p.Name = podName
 	p.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodGetPodStatusResponse
-	PCPRPF := events.PodGetPodStatusResponsePercentage
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(p.Name, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
-	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatus).Return(scenario.PodStatus_POD_SUCCEEDED, nil)
-	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatusPercentage).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(p.Name, events.PodStatus).Return(scenario.PodStatus_POD_STATUS_SUCCEEDED, nil)
 
 	// sot
 	var s store.Store = ms
@@ -293,16 +281,13 @@ func TestGetPodStatus0(t *testing.T) {
 	p.Name = podName
 	p.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodGetPodStatusResponse
-	PCPRPF := events.PodGetPodStatusResponsePercentage
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(p.Name, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(p.Name, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
-	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatus).Return(scenario.PodStatus_POD_SUCCEEDED, nil)
-	ms.EXPECT().GetPodFlag(p.Name, events.PodUpdatePodStatusPercentage).Return(int32(0), nil)
+	ms.EXPECT().GetPodFlag(p.Name, events.PodStatus).Return(scenario.PodStatus_POD_STATUS_SUCCEEDED, nil)
 
 	// sot
 	var s store.Store = ms

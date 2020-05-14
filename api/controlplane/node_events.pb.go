@@ -313,7 +313,7 @@ func (x *ResponseState) GetResponse() scenario.Response {
 	if x != nil {
 		return x.Response
 	}
-	return scenario.Response_NORMAL
+	return scenario.Response_RESPONSE_UNSET
 }
 
 func (x *ResponseState) GetPercentage() int32 {

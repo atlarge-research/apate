@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"io"
 	"io/ioutil"
 	"log"
 	"time"
+
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
@@ -36,17 +37,12 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 		log.Printf("No CRD found")
 	}
 
-	_, err = podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
-		podResponseArgs: podResponseArgs{
-			p.getPodLabelByPod(pod),
-			events.PodCreatePodResponse,
-		},
-		nodeResponseArgs: nodeResponseArgs{
-			events.NodeCreatePodResponse,
-			events.NodeCreatePodResponsePercentage,
-		},
-	})
+	_, err = podAndNodeResponse(
+		responseArgs{ctx, p, updateMap(p, pod)},
+		p.getPodLabelByPod(pod),
+		events.PodCreatePodResponse,
+		events.NodeCreatePodResponse,
+	)
 
 	return err
 }
@@ -57,17 +53,12 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 		return err
 	}
 
-	_, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{ctx, p, updateMap(p, pod)},
-		podResponseArgs: podResponseArgs{
-			p.getPodLabelByPod(pod),
-			events.PodUpdatePodResponse,
-		},
-		nodeResponseArgs: nodeResponseArgs{
-			events.NodeUpdatePodResponse,
-			events.NodeUpdatePodResponsePercentage,
-		},
-	})
+	_, err := podAndNodeResponse(
+		responseArgs{ctx, p, updateMap(p, pod)},
+		p.getPodLabelByPod(pod),
+		events.PodUpdatePodResponse,
+		events.NodeUpdatePodResponse,
+	)
 
 	return err
 }
@@ -85,20 +76,15 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 		return err
 	}
 
-	_, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+	_, err := podAndNodeResponse(
+		responseArgs{ctx, p, func() (interface{}, error) {
 			p.pods.DeletePod(pod)
 			return nil, nil
 		}},
-		podResponseArgs: podResponseArgs{
-			p.getPodLabelByPod(pod),
-			events.PodDeletePodResponse,
-		},
-		nodeResponseArgs: nodeResponseArgs{
-			events.NodeDeletePodResponse,
-			events.NodeDeletePodResponsePercentage,
-		},
-	})
+		p.getPodLabelByPod(pod),
+		events.PodDeletePodResponse,
+		events.NodeDeletePodResponse,
+	)
 
 	return err
 }
@@ -109,19 +95,14 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return nil, err
 	}
 
-	pod, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{ctx, p, func() (interface{}, error) {
+	pod, err := podAndNodeResponse(
+		responseArgs{ctx, p, func() (interface{}, error) {
 			return p.pods.GetPodByName(namespace, name), nil
 		}},
-		podResponseArgs: podResponseArgs{
-			p.getPodLabelByName(namespace, name),
-			events.PodGetPodResponse,
-		},
-		nodeResponseArgs: nodeResponseArgs{
-			events.NodeGetPodResponse,
-			events.NodeGetPodResponsePercentage,
-		},
-	})
+		p.getPodLabelByName(namespace, name),
+		events.PodGetPodResponse,
+		events.NodeGetPodResponse,
+	)
 
 	if err != nil {
 		return nil, err
@@ -132,15 +113,15 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 
 func podStatusToPhase(status interface{}) corev1.PodPhase {
 	switch status {
-	case scenario.PodStatus_POD_PENDING:
+	case scenario.PodStatus_POD_STATUS_PENDING:
 		return corev1.PodPending
-	case scenario.PodStatus_POD_RUNNING:
+	case scenario.PodStatus_POD_STATUS_RUNNING:
 		return corev1.PodRunning
-	case scenario.PodStatus_POD_SUCCEEDED:
+	case scenario.PodStatus_POD_STATUS_SUCCEEDED:
 		return corev1.PodSucceeded
-	case scenario.PodStatus_POD_FAILED:
+	case scenario.PodStatus_POD_STATUS_FAILED:
 		return corev1.PodFailed
-	case scenario.PodStatus_POD_UNKNOWN:
+	case scenario.PodStatus_POD_STATUS_UNKNOWN:
 		fallthrough
 	default:
 		return corev1.PodUnknown
@@ -153,36 +134,30 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		return nil, err
 	}
 
-	pod, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
-			status, err := (*p.store).GetPodFlag(name, events.PodStatus)
-			if err != nil {
-				return nil, throw.NewException(err, "GetPodStatus failed on getting pod flag")
-			}
+	pod, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
+		status, err := (*p.store).GetPodFlag(name, events.PodStatus)
+		if err != nil {
+			return nil, throw.NewException(err, "GetPodStatus failed on getting pod flag")
+		}
 
-			return &corev1.PodStatus{
-				Phase:   podStatusToPhase(status),
-				Message: "Emulating pod successfully",
-				Conditions: []corev1.PodCondition{
-					{
-						Type:               corev1.PodReady,
-						Status:             corev1.ConditionTrue,
-						LastProbeTime:      metav1.Time{Time: time.Now()},
-						LastTransitionTime: metav1.Time{Time: time.Now()},
-						Message:            "Emulating pod...",
-					},
+		return &corev1.PodStatus{
+			Phase:   podStatusToPhase(status),
+			Message: "Emulating pod successfully",
+			Conditions: []corev1.PodCondition{
+				{
+					Type:               corev1.PodReady,
+					Status:             corev1.ConditionTrue,
+					LastProbeTime:      metav1.Time{Time: time.Now()},
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Message:            "Emulating pod...",
 				},
-			}, nil
-		}},
-		podResponseArgs: podResponseArgs{
-			p.getPodLabelByName(ns, name),
-			events.PodGetPodStatusResponse,
-		},
-		nodeResponseArgs: nodeResponseArgs{
-			events.NodeGetPodStatusResponse,
-			events.NodeGetPodStatusResponsePercentage,
-		},
-	})
+			},
+		}, nil
+	}},
+		p.getPodLabelByName(ns, name),
+		events.PodGetPodStatusResponse,
+		events.NodeGetPodStatusResponse,
+	)
 
 	if err != nil {
 		return nil, err
@@ -196,14 +171,11 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 	if err := p.runLatency(ctx); err != nil {
 		return nil, err
 	}
-	pod, _, err := nodeResponse(responseArgs{ctx, p, func() (interface{}, error) {
+
+	pod, err := nodeResponse(responseArgs{ctx, p, func() (interface{}, error) {
 		return p.pods.GetAllPods(), nil
-	},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   events.NodeGetPodsResponse,
-			nodePercentageFlag: events.NodeGetPodsResponsePercentage,
-		},
+	}},
+		events.NodeGetPodsResponse,
 	)
 
 	if err != nil {

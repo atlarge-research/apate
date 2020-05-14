@@ -30,14 +30,17 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store) {
 func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *apatelet.ApateletScenario) (*empty.Empty, error) {
 	log.Print("Received scenario with ", len(scenario.Task), " tasks")
 
+	// TODO remove when moving node to CRD
 	var tasks []*store.Task
 	for _, task := range scenario.Task {
 		tasks = append(tasks, &store.Task{
-			AbsoluteTimestamp: task.AbsoluteTimestamp,
+			RelativeTimestamp: task.RelativeTimestamp,
 			NodeTask:          task,
 		})
 	}
 	(*s.store).EnqueueTasks(tasks)
+
+	(*s.store).SetStartTime(scenario.StartTime)
 
 	return new(empty.Empty), nil
 }

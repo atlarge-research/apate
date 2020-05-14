@@ -29,6 +29,10 @@ type EmulatedPodList struct {
 type EmulatedPodSpec struct {
 	UsePodStartTime bool `json:"use_pod_start_time"`
 
+	// +kubebuilder:validation:Optional
+	DirectState EmulatedPodState `json:"direct_task,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	Tasks []EmulatedPodTask `json:"tasks,omitempty"`
 }
 
@@ -36,6 +40,11 @@ type EmulatedPodTask struct {
 	// +kubebuilder:validation:Minimum=0
 	Timestamp int64 `json:"timestamp"`
 
+	// +kubebuilder:validation:Required
+	State EmulatedPodState `json:"state"`
+}
+
+type EmulatedPodState struct {
 	// +kubebuilder:default=UNSET
 	CreatePodResponse EmulatedPodResponse `json:"create_pod_response,omitempty"`
 
@@ -59,39 +68,37 @@ type EmulatedPodTask struct {
 }
 
 type EmulatedPodResourceUsage struct {
-	// +kubebuilder:validation:Minimum=-1
-	// +kubebuilder:default=-1
+	// +kubebuilder:default="-1B"
 	Memory string `json:"memory,omitempty"`
 
-	// +kubebuilder:validation:Minimum=-1
-	// +kubebuilder:default=-1
+	// +kubebuilder:default="-1B"
 	CPU int64 `json:"cpu,omitempty"`
 
-	// +kubebuilder:validation:Minimum=-1
-	// +kubebuilder:default=-1
+	// +kubebuilder:default="-1B"
 	Storage string `json:"storage,omitempty"`
 
-	// +kubebuilder:validation:Minimum=-1
-	// +kubebuilder:default=-1
+	// +kubebuilder:default="-1B"
 	EphemeralStorage string `json:"ephemeral_storage,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=POD_PENDING;POD_RUNNING;POD_SUCCEEDED;POD_FAILED;POD_UNKNOWN;UNSET
+// +kubebuilder:validation:Enum=PENDING;RUNNING;SUCCEEDED;FAILED;UNKNOWN;UNSET
 type EmulatedPodStatus string
+
 const (
-	POD_STATUS_PENDING EmulatedPodResponse = "POD_PENDING"
-	POD_STATUS_RUNNING EmulatedPodResponse = "POD_RUNNING"
-	POD_STATUS_SUCCEEDED EmulatedPodResponse = "POD_SUCCEEDED"
-	POD_STATUS_FAILED EmulatedPodResponse = "POD_FAILED"
-	POD_STATUS_UNKNOWN EmulatedPodStatus = "POD_UNKNOWN"
-	POD_STATUS_UNSET EmulatedPodStatus = "UNSET"
+	POD_STATUS_PENDING   EmulatedPodStatus = "PENDING"
+	POD_STATUS_RUNNING   EmulatedPodStatus = "RUNNING"
+	POD_STATUS_SUCCEEDED EmulatedPodStatus = "SUCCEEDED"
+	POD_STATUS_FAILED    EmulatedPodStatus = "FAILED"
+	POD_STATUS_UNKNOWN   EmulatedPodStatus = "UNKNOWN"
+	POD_STATUS_UNSET     EmulatedPodStatus = "UNSET"
 )
 
 // +kubebuilder:validation:Enum=NORMAL;TIMEOUT;ERROR;UNSET
 type EmulatedPodResponse string
+
 const (
-	RESPONSE_NORMAL EmulatedPodResponse = "NORMAL"
+	RESPONSE_NORMAL  EmulatedPodResponse = "NORMAL"
 	RESPONSE_TIMEOUT EmulatedPodResponse = "TIMEOUT"
-	RESPONSE_ERROR EmulatedPodResponse = "ERROR"
-	RESPONSE_UNSET EmulatedPodResponse = "UNSET"
+	RESPONSE_ERROR   EmulatedPodResponse = "ERROR"
+	RESPONSE_UNSET   EmulatedPodResponse = "UNSET"
 )

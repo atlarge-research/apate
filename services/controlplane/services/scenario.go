@@ -95,7 +95,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	}
 
 	startTime := time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano()
-	convertToAbsoluteTimestamp(apateletScenario, startTime)
+	apateletScenario.StartTime = startTime
 
 	err = startOnNodes(ctx, nodes, apateletScenario)
 	if err != nil {
@@ -143,14 +143,6 @@ func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *api
 	}
 
 	return errs.Wait()
-}
-
-func convertToAbsoluteTimestamp(as *apiApatelet.ApateletScenario, unixNanoStartTime int64) {
-	for _, t := range as.Task {
-		newStartTimeNano := t.RelativeTimestamp + unixNanoStartTime
-		t.AbsoluteTimestamp = newStartTimeNano
-		t.RelativeTimestamp = 0 // Reset
-	}
 }
 
 func filterTasksForNode(inputTasks []*apiApatelet.Task, uuid string) []*apiApatelet.Task {
