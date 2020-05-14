@@ -9,8 +9,8 @@ type NodeInfo struct {
 	MetricsPort int
 }
 
-// NewNode create a new NodeInfo
-func NewNode(nodeType, role, name, version string, metricsPort int) NodeInfo {
+// NewNodeInfo creates a new NodeInfo
+func NewNodeInfo(nodeType, role, name, version string, metricsPort int) NodeInfo {
 	return NodeInfo{
 		NodeType:    nodeType,
 		Role:        role,
