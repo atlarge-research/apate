@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/go-units"
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 
@@ -76,65 +75,22 @@ pod_configs:
 	// Node custom flags
 	ncf := ps.Tasks[0].GetCustomFlags().CustomFlags
 
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_ERROR), ncf[events.NodeCreatePodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(5), ncf[events.NodeCreatePodResponsePercentage])
+	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_RESPONSE_ERROR), ncf[events.NodeCreatePodResponse])
 
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_TIMEOUT), ncf[events.NodeUpdatePodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(10), ncf[events.NodeUpdatePodResponsePercentage])
+	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_RESPONSE_TIMEOUT), ncf[events.NodeUpdatePodResponse])
 
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_ERROR), ncf[events.NodeDeletePodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(15), ncf[events.NodeDeletePodResponsePercentage])
+	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_RESPONSE_ERROR), ncf[events.NodeDeletePodResponse])
 
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_NORMAL), ncf[events.NodeGetPodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(20), ncf[events.NodeGetPodResponsePercentage])
+	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_RESPONSE_NORMAL), ncf[events.NodeGetPodResponse])
 
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_ERROR), ncf[events.NodeGetPodStatusResponse])
-	assert.EqualValues(t, any.MarshalOrDie(25), ncf[events.NodeGetPodStatusResponsePercentage])
+	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_RESPONSE_ERROR), ncf[events.NodeGetPodStatusResponse])
 
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_TIMEOUT), ncf[events.NodeGetPodsResponse])
-	assert.EqualValues(t, any.MarshalOrDie(50), ncf[events.NodeGetPodsResponsePercentage])
+	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_RESPONSE_TIMEOUT), ncf[events.NodeGetPodsResponse])
 
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_TIMEOUT), ncf[events.NodePingResponse])
-	assert.EqualValues(t, any.MarshalOrDie(75), ncf[events.NodePingResponsePercentage])
-
-	assert.EqualValues(t, any.MarshalOrDie(true), ncf[events.NodeEnableResourceAlteration])
-	assert.EqualValues(t, any.MarshalOrDie(10*units.MiB), ncf[events.NodeMemoryUsage])
-	assert.EqualValues(t, any.MarshalOrDie(200), ncf[events.NodeCPUUsage])
-	assert.EqualValues(t, any.MarshalOrDie(500*units.GiB), ncf[events.NodeStorageUsage])
-	assert.EqualValues(t, any.MarshalOrDie(10*units.TiB), ncf[events.NodeEphemeralStorageUsage])
+	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_RESPONSE_TIMEOUT), ncf[events.NodePingResponse])
 
 	assert.EqualValues(t, any.MarshalOrDie(true), ncf[events.NodeAddedLatencyEnabled])
 	assert.EqualValues(t, any.MarshalOrDie(500), ncf[events.NodeAddedLatencyMsec])
-
-	// Pod config 1
-	pc1 := ps.Tasks[0].GetPodConfigs()[0]
-	assert.EqualValues(t, "a", pc1.GetMetadataName())
-
-	pcf1 := pc1.GetCustomFlags().CustomFlags
-
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_ERROR), pcf1[events.PodCreatePodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(10), pcf1[events.PodCreatePodResponsePercentage])
-
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_NORMAL), pcf1[events.PodUpdatePodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(20), pcf1[events.PodUpdatePodResponsePercentage])
-
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_NORMAL), pcf1[events.PodDeletePodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(30), pcf1[events.PodDeletePodResponsePercentage])
-
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_TIMEOUT), pcf1[events.PodGetPodResponse])
-	assert.EqualValues(t, any.MarshalOrDie(40), pcf1[events.PodGetPodResponsePercentage])
-
-	// Pod config 2
-	pc2 := ps.Tasks[0].GetPodConfigs()[1]
-	assert.EqualValues(t, "b", pc2.GetMetadataName())
-
-	pcf2 := pc2.GetCustomFlags().CustomFlags
-
-	assert.EqualValues(t, any.MarshalOrDie(scenario.Response_NORMAL), pcf2[events.PodGetPodStatusResponse])
-	assert.EqualValues(t, any.MarshalOrDie(44), pcf2[events.PodGetPodStatusResponsePercentage])
-
-	assert.EqualValues(t, any.MarshalOrDie(scenario.PodStatus_POD_PENDING), pcf2[events.PodUpdatePodStatus])
-	assert.EqualValues(t, any.MarshalOrDie(55), pcf2[events.PodUpdatePodStatusPercentage])
 }
 
 func TestCustomInvalidKey(t *testing.T) {

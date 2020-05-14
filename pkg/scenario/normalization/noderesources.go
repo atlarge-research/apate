@@ -2,7 +2,7 @@ package normalization
 
 import "github.com/google/uuid"
 
-// NodeResources describe the resources of a single node, including the UUID of that node
+// NodyupeResources describe the resources of a single node, including the UUID of that node
 type NodeResources struct {
 	// The UUID of the node
 	UUID uuid.UUID

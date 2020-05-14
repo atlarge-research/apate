@@ -24,26 +24,21 @@ func TestNodeNormal100(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
 	assert.NoError(t, err)
@@ -59,26 +54,21 @@ func TestNodeNormal0(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(0), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
 	assert.NoError(t, err)
@@ -94,28 +84,23 @@ func TestNodeNormal50A(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(69)
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(50), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
 	assert.NoError(t, err)
@@ -131,28 +116,23 @@ func TestNodeNormal50B(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(42)
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(50), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
 	assert.NotNil(t, err)
@@ -168,7 +148,6 @@ func TestNodeStoreError1(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 	genericError := errors.New("some error")
 
 	// Expectations
@@ -177,17 +156,14 @@ func TestNodeStoreError1(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
 	assert.NotNil(t, err)
@@ -203,31 +179,24 @@ func TestNodeStoreError2(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
-	genericError := errors.New("some error")
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(nil, genericError)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
-	assert.EqualError(t, genericError, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -239,29 +208,23 @@ func TestNodeInvalidPercentage(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(nil, nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 
@@ -274,7 +237,6 @@ func TestNodeInvalidResponseType(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	// Expectations
 	ms.EXPECT().GetNodeFlag(PCPRF).Return(42, nil)
@@ -282,20 +244,16 @@ func TestNodeInvalidResponseType(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 
@@ -308,31 +266,25 @@ func TestNodeInvalidResponse(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(42)
 
 	// Expectations
 	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response(42), nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(100), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 
@@ -348,28 +300,23 @@ func TestNodeTimeOut(t *testing.T) {
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
-	PCPRPF := events.NodeCreatePodResponsePercentage
 
 	rand.Seed(42)
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_TIMEOUT, nil)
-	ms.EXPECT().GetNodeFlag(PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_TIMEOUT, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, _, err := nodeResponse(responseArgs{
+	out, err := nodeResponse(responseArgs{
 		ctx:      ctx,
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		nodeResponseArgs{
-			nodeResponseFlag:   PCPRF,
-			nodePercentageFlag: PCPRPF,
-		})
+		}},
+		PCPRF,
+	)
 
 	// Assert
 	assert.Nil(t, err)

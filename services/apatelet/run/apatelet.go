@@ -3,11 +3,13 @@ package run
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	. "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
@@ -51,10 +53,10 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Create store
 	st := store.NewStore()
 
-	crdSt, err := createCRDInformer(config, &st)
-	if err != nil {
-		return err
-	}
+	// Create virtual kubelet
+	errch := make(chan error)
+
+	crdSt := crd.CreateCRDInformer(config, &st, &errch)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -66,9 +68,6 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	if err != nil {
 		return err
 	}
-
-	// Create virtual kubelet
-	errch := make(chan error)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -108,6 +107,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Stop the server on signal or error
 	select {
 	case err := <-errch:
+		log.Printf("Apatelet stopped because of an error %v\n", err)
 		return err
 	case <-stopped:
 		log.Println("Apatelet stopped")
@@ -159,7 +159,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *crd.Informer) (*cli.Command, context.CancelFunc, error) {
+func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *Informer) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store, crdInformer)
 	return cmd, cancel, err

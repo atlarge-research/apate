@@ -1,22 +1,24 @@
 package store
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"reflect"
 	"sync"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 )
 
 type Task struct {
-	AbsoluteTimestamp int64
-	PodTask           PodTask
+	RelativeTimestamp int64
+	IsPod             bool
+	PodTask           *PodTask
 	NodeTask          NodeTask
 }
 
-type NodeTask *apatelet.Task
+type NodeTask *apatelet.Task // TODO change when moving node to CRD
 type PodTask struct {
 	Label string
-	Task  *v1.EmulatedPodTask
+	State *v1.EmulatedPodState
 }
 
 // taskQueue is a thread-safe priority queue based on a min-heap for tasks in the private scenario
@@ -44,7 +46,7 @@ func (q *taskQueue) Less(i, j int) bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
-	return q.tasks[i].AbsoluteTimestamp < q.tasks[j].AbsoluteTimestamp
+	return q.tasks[i].RelativeTimestamp < q.tasks[j].RelativeTimestamp
 }
 
 // Swap swaps the elements with indexes i and j

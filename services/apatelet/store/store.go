@@ -14,11 +14,16 @@ import (
 
 // Store represents the state of the apatelet
 type Store interface {
+	// SetStartTime sets the value of the starttime in the store. All other tiing is based in this
+	SetStartTime(int64)
+
 	// EnqueueTasks creates a priority queue based on these tasks
 	EnqueueTasks([]*Task)
 
+	// EnqueueCRDTasks adds or updates CRD tasks to the queue based on their label (<namespace>/<name>)
 	EnqueueCRDTasks(string, []*Task)
 
+	// RemoveCRDTasks removes CRD tasks from the queue based on their label (<namespace>/<name>)
 	RemoveCRDTasks(string)
 
 	// LenTasks returns the amount of tasks left to be picked up
@@ -50,6 +55,7 @@ type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
 
 type store struct {
+	startTime    int64
 	queue        *taskQueue
 	nodeFlags    flags
 	nodeFlagLock sync.RWMutex
@@ -64,6 +70,10 @@ func NewStore() Store {
 		nodeFlags: make(flags),
 		podFlags:  make(podFlags),
 	}
+}
+
+func (s *store) SetStartTime(time int64) {
+	s.startTime = time
 }
 
 func (s *store) EnqueueTasks(tasks []*Task) {
@@ -82,7 +92,7 @@ func (s *store) EnqueueCRDTasks(label string, newTasks []*Task) {
 			}
 
 			s.queue.tasks[i] = newTasks[0]
-			heap.Fix(s.queue, i)
+			heap.Fix(s.queue, i) // Replacing and then fixing instead of deleting all and pushing because it's slightly faster, see comments on heap.Fix
 			newTasks = newTasks[1:]
 		}
 	}
@@ -111,7 +121,7 @@ func (s *store) PeekTask() (int64, error) {
 
 	// Make sure the array in the pq didn't magically change to a different type
 	if task, ok := s.queue.First().(*Task); ok {
-		return task.AbsoluteTimestamp, nil
+		return task.RelativeTimestamp + s.startTime, nil
 	}
 
 	return -1, errors.New("array in pq magically changed to a different type")
@@ -180,46 +190,29 @@ func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface
 }
 
 var defaultNodeValues = map[events.EventFlag]interface{}{
-	events.NodeCreatePodResponse:           scenario.Response_NORMAL,
-	events.NodeCreatePodResponsePercentage: int32(0),
-
-	events.NodeUpdatePodResponse:           scenario.Response_NORMAL,
-	events.NodeUpdatePodResponsePercentage: int32(0),
-
-	events.NodeDeletePodResponse:           scenario.Response_NORMAL,
-	events.NodeDeletePodResponsePercentage: int32(0),
-
-	events.NodeGetPodResponse:           scenario.Response_NORMAL,
-	events.NodeGetPodResponsePercentage: int32(0),
-
-	events.NodeGetPodStatusResponse:           scenario.Response_NORMAL,
-	events.NodeGetPodStatusResponsePercentage: int32(0),
-
-	events.NodeGetPodsResponse:           scenario.Response_NORMAL,
-	events.NodeGetPodsResponsePercentage: int32(0),
-
-	events.NodePingResponse:           scenario.Response_NORMAL,
-	events.NodePingResponsePercentage: int32(0),
+	events.NodeCreatePodResponse:    scenario.Response_RESPONSE_NORMAL,
+	events.NodeUpdatePodResponse:    scenario.Response_RESPONSE_NORMAL,
+	events.NodeDeletePodResponse:    scenario.Response_RESPONSE_NORMAL,
+	events.NodeGetPodResponse:       scenario.Response_RESPONSE_NORMAL,
+	events.NodeGetPodStatusResponse: scenario.Response_RESPONSE_NORMAL,
+	events.NodeGetPodsResponse:      scenario.Response_RESPONSE_NORMAL,
+	events.NodePingResponse:         scenario.Response_RESPONSE_NORMAL,
 
 	events.NodeAddedLatencyEnabled: false,
 	events.NodeAddedLatencyMsec:    int64(0),
 }
 
 var defaultPodValues = map[events.PodEventFlag]interface{}{
-	events.PodCreatePodResponse: scenario.Response_NORMAL,
+	events.PodCreatePodResponse:    scenario.Response_RESPONSE_UNSET,
+	events.PodUpdatePodResponse:    scenario.Response_RESPONSE_UNSET,
+	events.PodDeletePodResponse:    scenario.Response_RESPONSE_UNSET,
+	events.PodGetPodResponse:       scenario.Response_RESPONSE_UNSET,
+	events.PodGetPodStatusResponse: scenario.Response_RESPONSE_UNSET,
 
-	events.PodUpdatePodResponse: scenario.Response_NORMAL,
+	events.PodMemoryUsage:           int64(-1),
+	events.PodCPUUsage:              int64(-1),
+	events.PodStorageUsage:          int64(-1),
+	events.PodEphemeralStorageUsage: int64(-1),
 
-	events.PodDeletePodResponse: scenario.Response_NORMAL,
-
-	events.PodGetPodResponse: scenario.Response_NORMAL,
-
-	events.PodGetPodStatusResponse: scenario.Response_NORMAL,
-
-	events.PodMemoryUsage:           int64(0),
-	events.PodCPUUsage:              int64(0),
-	events.PodStorageUsage:          int64(0),
-	events.PodEphemeralStorageUsage: int64(0),
-
-	events.PodStatus: scenario.PodStatus_POD_RUNNING,
+	events.PodStatus: scenario.PodStatus_POD_STATUS_UNSET,
 }

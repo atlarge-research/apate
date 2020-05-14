@@ -80,22 +80,19 @@ tasks:
 	assert.Equal(t, false, ps.Task[0].RevertTask)
 	assert.Equal(t, 42, len(ps.Task[0].NodeSet))
 	assert.EqualValues(t, translate.EventFlags{
-		events.NodeGetPodResponse:           any.MarshalOrDie(scenario.Response_ERROR),
-		events.NodeGetPodResponsePercentage: any.MarshalOrDie(14),
+		events.NodeGetPodResponse: any.MarshalOrDie(scenario.Response_RESPONSE_ERROR),
 	}, ps.Task[0].NodeEventFlags) // Is tested more in translator_test
 
 	assert.Equal(t, false, ps.Task[1].RevertTask)
 	assert.Equal(t, 52, len(ps.Task[1].NodeSet))
 	assert.EqualValues(t, translate.EventFlags{
-		events.NodeDeletePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
-		events.NodeDeletePodResponsePercentage: any.MarshalOrDie(42),
+		events.NodeDeletePodResponse: any.MarshalOrDie(scenario.Response_RESPONSE_TIMEOUT),
 	}, ps.Task[1].NodeEventFlags)
 
 	assert.Equal(t, true, ps.Task[2].RevertTask)
 	assert.Equal(t, 52, len(ps.Task[2].NodeSet))
 	assert.EqualValues(t, translate.EventFlags{
-		events.NodeDeletePodResponse:           any.MarshalOrDie(scenario.Response_TIMEOUT),
-		events.NodeDeletePodResponsePercentage: any.MarshalOrDie(42),
+		events.NodeDeletePodResponse: any.MarshalOrDie(scenario.Response_RESPONSE_TIMEOUT),
 	}, ps.Task[2].NodeEventFlags)
 
 	assert.Equal(t, 52, len(nodes))

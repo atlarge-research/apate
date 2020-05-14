@@ -62,13 +62,3 @@ var nodeEventFlags = []events.NodeEventFlag{
 	events.NodeGetPodsResponse,
 	events.NodePingResponse,
 }
-
-var nodeEventPercentageFlags = []events.NodeEventFlag{
-	events.NodeCreatePodResponsePercentage,
-	events.NodeUpdatePodResponsePercentage,
-	events.NodeDeletePodResponsePercentage,
-	events.NodeGetPodResponsePercentage,
-	events.NodeGetPodStatusResponsePercentage,
-	events.NodeGetPodsResponsePercentage,
-	events.NodePingResponsePercentage,
-}

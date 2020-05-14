@@ -65,51 +65,30 @@ func (cfp *customFlagParser) parseKey(key string, value gjson.Result) (ef events
 	case "node_create_pod_response":
 		ef = events.NodeCreatePodResponse
 		response, err = getResponse(value)
-	case "node_create_pod_response_percentage":
-		ef = events.NodeCreatePodResponsePercentage
-		response, err = getPercent(value)
 
 	case "node_update_pod_response":
 		ef = events.NodeUpdatePodResponse
 		response, err = getResponse(value)
-	case "node_update_pod_response_percentage":
-		ef = events.NodeUpdatePodResponsePercentage
-		response, err = getPercent(value)
 
 	case "node_delete_pod_response":
 		ef = events.NodeDeletePodResponse
 		response, err = getResponse(value)
-	case "node_delete_pod_response_percentage":
-		ef = events.NodeDeletePodResponsePercentage
-		response, err = getPercent(value)
 
 	case "node_get_pod_response":
 		ef = events.NodeGetPodResponse
 		response, err = getResponse(value)
-	case "node_get_pod_response_percentage":
-		ef = events.NodeGetPodResponsePercentage
-		response, err = getPercent(value)
 
 	case "node_get_pod_status_response":
 		ef = events.NodeGetPodStatusResponse
 		response, err = getResponse(value)
-	case "node_get_pod_status_response_percentage":
-		ef = events.NodeGetPodStatusResponsePercentage
-		response, err = getPercent(value)
 
 	case "node_get_pods_response":
 		ef = events.NodeGetPodsResponse
 		response, err = getResponse(value)
-	case "node_get_pods_response_percentage":
-		ef = events.NodeGetPodsResponsePercentage
-		response, err = getPercent(value)
 
 	case "node_ping_response":
 		ef = events.NodePingResponse
 		response, err = getResponse(value)
-	case "node_ping_response_percentage":
-		ef = events.NodePingResponsePercentage
-		response, err = getPercent(value)
 
 	case "node_added_latency_enabled":
 		return events.NodeAddedLatencyEnabled, value.Bool(), nil

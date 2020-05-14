@@ -1,49 +1,65 @@
-package run
+package crd
 
 import (
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-func createCRDInformer(config *kubeconfig.KubeConfig, st *store.Store) (*crd.Informer, error) {
+func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *chan error) *node.Informer {
 	restConfig, err := config.GetConfig()
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
-	podClient, err := crd.NewForConfig(restConfig, "default")
+	podClient, err := node.NewForConfig(restConfig, "default")
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
-	crdSt := podClient.WatchResources(func(obj interface{}) {
-		enqueueCRD(obj, st)
+	inf := podClient.WatchResources(func(obj interface{}) {
+		err := enqueueCRD(obj, st)
+		if err != nil {
+			*errch <- err
+		}
 	}, func(oldObj, newObj interface{}) {
-		enqueueCRD(newObj, st) // just replace all tasks with the <namespace>/<name>
+		err := enqueueCRD(newObj, st) // just replace all tasks with the <namespace>/<name>
+		if err != nil {
+			*errch <- err
+		}
 	}, func(obj interface{}) {
 		_, crdLabel := getCRDAndLabel(obj)
 		(*st).RemoveCRDTasks(crdLabel)
 	})
-	return crdSt, nil
+
+	return inf
 }
 
-func enqueueCRD(obj interface{}, st *store.Store) {
+func enqueueCRD(obj interface{}, st *store.Store) error {
 	newCRD, crdLabel := getCRDAndLabel(obj)
+
+	if err := SetPodFlags(st, &store.PodTask{
+		Label: crdLabel,
+		State: &newCRD.Spec.DirectState,
+	}); err != nil {
+		return err
+	}
 
 	var tasks []*store.Task
 	for _, task := range newCRD.Spec.Tasks {
 		tasks = append(tasks, &store.Task{
-			AbsoluteTimestamp: 0, // TODO
-			PodTask: store.PodTask{
+			RelativeTimestamp: task.Timestamp,
+			PodTask: &store.PodTask{
 				Label: crdLabel,
-				Task:  &task,
+				State: &task.State,
 			},
 		})
 	}
 
 	(*st).EnqueueCRDTasks(crdLabel, tasks)
+
+	return nil
 }
 
 func getCRDAndLabel(obj interface{}) (*v1.EmulatedPod, string) {

@@ -14,30 +14,30 @@ import (
 	reflect "reflect"
 )
 
-// MockHealth_HealthStreamClient is a mock of Health_HealthStreamClient interface
+// MockHealth_HealthStreamClient is a mock of Health_HealthStreamClient interface.
 type MockHealth_HealthStreamClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockHealth_HealthStreamClientMockRecorder
 }
 
-// MockHealth_HealthStreamClientMockRecorder is the mock recorder for MockHealth_HealthStreamClient
+// MockHealth_HealthStreamClientMockRecorder is the mock recorder for MockHealth_HealthStreamClient.
 type MockHealth_HealthStreamClientMockRecorder struct {
 	mock *MockHealth_HealthStreamClient
 }
 
-// NewMockHealth_HealthStreamClient creates a new mock instance
+// NewMockHealth_HealthStreamClient creates a new mock instance.
 func NewMockHealth_HealthStreamClient(ctrl *gomock.Controller) *MockHealth_HealthStreamClient {
 	mock := &MockHealth_HealthStreamClient{ctrl: ctrl}
 	mock.recorder = &MockHealth_HealthStreamClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockHealth_HealthStreamClient) EXPECT() *MockHealth_HealthStreamClientMockRecorder {
 	return m.recorder
 }
 
-// CloseSend mocks base method
+// CloseSend mocks base method.
 func (m *MockHealth_HealthStreamClient) CloseSend() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CloseSend")
@@ -45,13 +45,13 @@ func (m *MockHealth_HealthStreamClient) CloseSend() error {
 	return ret0
 }
 
-// CloseSend indicates an expected call of CloseSend
+// CloseSend indicates an expected call of CloseSend.
 func (mr *MockHealth_HealthStreamClientMockRecorder) CloseSend() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSend", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).CloseSend))
 }
 
-// Context mocks base method
+// Context mocks base method.
 func (m *MockHealth_HealthStreamClient) Context() context.Context {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Context")
@@ -59,13 +59,13 @@ func (m *MockHealth_HealthStreamClient) Context() context.Context {
 	return ret0
 }
 
-// Context indicates an expected call of Context
+// Context indicates an expected call of Context.
 func (mr *MockHealth_HealthStreamClientMockRecorder) Context() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).Context))
 }
 
-// Header mocks base method
+// Header mocks base method.
 func (m *MockHealth_HealthStreamClient) Header() (metadata.MD, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Header")
@@ -74,13 +74,13 @@ func (m *MockHealth_HealthStreamClient) Header() (metadata.MD, error) {
 	return ret0, ret1
 }
 
-// Header indicates an expected call of Header
+// Header indicates an expected call of Header.
 func (mr *MockHealth_HealthStreamClientMockRecorder) Header() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).Header))
 }
 
-// Recv mocks base method
+// Recv mocks base method.
 func (m *MockHealth_HealthStreamClient) Recv() (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Recv")
@@ -89,13 +89,13 @@ func (m *MockHealth_HealthStreamClient) Recv() (*emptypb.Empty, error) {
 	return ret0, ret1
 }
 
-// Recv indicates an expected call of Recv
+// Recv indicates an expected call of Recv.
 func (mr *MockHealth_HealthStreamClientMockRecorder) Recv() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).Recv))
 }
 
-// RecvMsg mocks base method
+// RecvMsg mocks base method.
 func (m *MockHealth_HealthStreamClient) RecvMsg(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecvMsg", arg0)
@@ -103,13 +103,13 @@ func (m *MockHealth_HealthStreamClient) RecvMsg(arg0 interface{}) error {
 	return ret0
 }
 
-// RecvMsg indicates an expected call of RecvMsg
+// RecvMsg indicates an expected call of RecvMsg.
 func (mr *MockHealth_HealthStreamClientMockRecorder) RecvMsg(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).RecvMsg), arg0)
 }
 
-// Send mocks base method
+// Send mocks base method.
 func (m *MockHealth_HealthStreamClient) Send(arg0 *health.NodeStatus) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", arg0)
@@ -117,13 +117,13 @@ func (m *MockHealth_HealthStreamClient) Send(arg0 *health.NodeStatus) error {
 	return ret0
 }
 
-// Send indicates an expected call of Send
+// Send indicates an expected call of Send.
 func (mr *MockHealth_HealthStreamClientMockRecorder) Send(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).Send), arg0)
 }
 
-// SendMsg mocks base method
+// SendMsg mocks base method.
 func (m *MockHealth_HealthStreamClient) SendMsg(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendMsg", arg0)
@@ -131,13 +131,13 @@ func (m *MockHealth_HealthStreamClient) SendMsg(arg0 interface{}) error {
 	return ret0
 }
 
-// SendMsg indicates an expected call of SendMsg
+// SendMsg indicates an expected call of SendMsg.
 func (mr *MockHealth_HealthStreamClientMockRecorder) SendMsg(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).SendMsg), arg0)
 }
 
-// Trailer mocks base method
+// Trailer mocks base method.
 func (m *MockHealth_HealthStreamClient) Trailer() metadata.MD {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Trailer")
@@ -145,36 +145,36 @@ func (m *MockHealth_HealthStreamClient) Trailer() metadata.MD {
 	return ret0
 }
 
-// Trailer indicates an expected call of Trailer
+// Trailer indicates an expected call of Trailer.
 func (mr *MockHealth_HealthStreamClientMockRecorder) Trailer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Trailer", reflect.TypeOf((*MockHealth_HealthStreamClient)(nil).Trailer))
 }
 
-// MockHealthClient is a mock of HealthClient interface
+// MockHealthClient is a mock of HealthClient interface.
 type MockHealthClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockHealthClientMockRecorder
 }
 
-// MockHealthClientMockRecorder is the mock recorder for MockHealthClient
+// MockHealthClientMockRecorder is the mock recorder for MockHealthClient.
 type MockHealthClientMockRecorder struct {
 	mock *MockHealthClient
 }
 
-// NewMockHealthClient creates a new mock instance
+// NewMockHealthClient creates a new mock instance.
 func NewMockHealthClient(ctrl *gomock.Controller) *MockHealthClient {
 	mock := &MockHealthClient{ctrl: ctrl}
 	mock.recorder = &MockHealthClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockHealthClient) EXPECT() *MockHealthClientMockRecorder {
 	return m.recorder
 }
 
-// HealthStream mocks base method
+// HealthStream mocks base method.
 func (m *MockHealthClient) HealthStream(arg0 context.Context, arg1 ...grpc.CallOption) (health.Health_HealthStreamClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -187,37 +187,37 @@ func (m *MockHealthClient) HealthStream(arg0 context.Context, arg1 ...grpc.CallO
 	return ret0, ret1
 }
 
-// HealthStream indicates an expected call of HealthStream
+// HealthStream indicates an expected call of HealthStream.
 func (mr *MockHealthClientMockRecorder) HealthStream(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthStream", reflect.TypeOf((*MockHealthClient)(nil).HealthStream), varargs...)
 }
 
-// MockHealth_HealthStreamServer is a mock of Health_HealthStreamServer interface
+// MockHealth_HealthStreamServer is a mock of Health_HealthStreamServer interface.
 type MockHealth_HealthStreamServer struct {
 	ctrl     *gomock.Controller
 	recorder *MockHealth_HealthStreamServerMockRecorder
 }
 
-// MockHealth_HealthStreamServerMockRecorder is the mock recorder for MockHealth_HealthStreamServer
+// MockHealth_HealthStreamServerMockRecorder is the mock recorder for MockHealth_HealthStreamServer.
 type MockHealth_HealthStreamServerMockRecorder struct {
 	mock *MockHealth_HealthStreamServer
 }
 
-// NewMockHealth_HealthStreamServer creates a new mock instance
+// NewMockHealth_HealthStreamServer creates a new mock instance.
 func NewMockHealth_HealthStreamServer(ctrl *gomock.Controller) *MockHealth_HealthStreamServer {
 	mock := &MockHealth_HealthStreamServer{ctrl: ctrl}
 	mock.recorder = &MockHealth_HealthStreamServerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockHealth_HealthStreamServer) EXPECT() *MockHealth_HealthStreamServerMockRecorder {
 	return m.recorder
 }
 
-// Context mocks base method
+// Context mocks base method.
 func (m *MockHealth_HealthStreamServer) Context() context.Context {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Context")
@@ -225,13 +225,13 @@ func (m *MockHealth_HealthStreamServer) Context() context.Context {
 	return ret0
 }
 
-// Context indicates an expected call of Context
+// Context indicates an expected call of Context.
 func (mr *MockHealth_HealthStreamServerMockRecorder) Context() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).Context))
 }
 
-// Recv mocks base method
+// Recv mocks base method.
 func (m *MockHealth_HealthStreamServer) Recv() (*health.NodeStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Recv")
@@ -240,13 +240,13 @@ func (m *MockHealth_HealthStreamServer) Recv() (*health.NodeStatus, error) {
 	return ret0, ret1
 }
 
-// Recv indicates an expected call of Recv
+// Recv indicates an expected call of Recv.
 func (mr *MockHealth_HealthStreamServerMockRecorder) Recv() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).Recv))
 }
 
-// RecvMsg mocks base method
+// RecvMsg mocks base method.
 func (m *MockHealth_HealthStreamServer) RecvMsg(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecvMsg", arg0)
@@ -254,13 +254,13 @@ func (m *MockHealth_HealthStreamServer) RecvMsg(arg0 interface{}) error {
 	return ret0
 }
 
-// RecvMsg indicates an expected call of RecvMsg
+// RecvMsg indicates an expected call of RecvMsg.
 func (mr *MockHealth_HealthStreamServerMockRecorder) RecvMsg(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).RecvMsg), arg0)
 }
 
-// Send mocks base method
+// Send mocks base method.
 func (m *MockHealth_HealthStreamServer) Send(arg0 *emptypb.Empty) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", arg0)
@@ -268,13 +268,13 @@ func (m *MockHealth_HealthStreamServer) Send(arg0 *emptypb.Empty) error {
 	return ret0
 }
 
-// Send indicates an expected call of Send
+// Send indicates an expected call of Send.
 func (mr *MockHealth_HealthStreamServerMockRecorder) Send(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).Send), arg0)
 }
 
-// SendHeader mocks base method
+// SendHeader mocks base method.
 func (m *MockHealth_HealthStreamServer) SendHeader(arg0 metadata.MD) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendHeader", arg0)
@@ -282,13 +282,13 @@ func (m *MockHealth_HealthStreamServer) SendHeader(arg0 metadata.MD) error {
 	return ret0
 }
 
-// SendHeader indicates an expected call of SendHeader
+// SendHeader indicates an expected call of SendHeader.
 func (mr *MockHealth_HealthStreamServerMockRecorder) SendHeader(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendHeader", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).SendHeader), arg0)
 }
 
-// SendMsg mocks base method
+// SendMsg mocks base method.
 func (m *MockHealth_HealthStreamServer) SendMsg(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendMsg", arg0)
@@ -296,13 +296,13 @@ func (m *MockHealth_HealthStreamServer) SendMsg(arg0 interface{}) error {
 	return ret0
 }
 
-// SendMsg indicates an expected call of SendMsg
+// SendMsg indicates an expected call of SendMsg.
 func (mr *MockHealth_HealthStreamServerMockRecorder) SendMsg(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).SendMsg), arg0)
 }
 
-// SetHeader mocks base method
+// SetHeader mocks base method.
 func (m *MockHealth_HealthStreamServer) SetHeader(arg0 metadata.MD) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetHeader", arg0)
@@ -310,19 +310,19 @@ func (m *MockHealth_HealthStreamServer) SetHeader(arg0 metadata.MD) error {
 	return ret0
 }
 
-// SetHeader indicates an expected call of SetHeader
+// SetHeader indicates an expected call of SetHeader.
 func (mr *MockHealth_HealthStreamServerMockRecorder) SetHeader(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeader", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).SetHeader), arg0)
 }
 
-// SetTrailer mocks base method
+// SetTrailer mocks base method.
 func (m *MockHealth_HealthStreamServer) SetTrailer(arg0 metadata.MD) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTrailer", arg0)
 }
 
-// SetTrailer indicates an expected call of SetTrailer
+// SetTrailer indicates an expected call of SetTrailer.
 func (mr *MockHealth_HealthStreamServerMockRecorder) SetTrailer(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTrailer", reflect.TypeOf((*MockHealth_HealthStreamServer)(nil).SetTrailer), arg0)

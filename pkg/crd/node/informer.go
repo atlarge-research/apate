@@ -1,8 +1,9 @@
-package crd
+package node
 
 import (
 	"errors"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 
 	"k8s.io/client-go/tools/cache"
 )

@@ -63,25 +63,25 @@ func TestMarshalUnmarshalBool(t *testing.T) {
 }
 
 func TestMarshalUnmarshalResponse(t *testing.T) {
-	any, err := Marshal(scenario.Response_ERROR)
+	any, err := Marshal(scenario.Response_RESPONSE_ERROR)
 	assert.NoError(t, err)
 	assert.Equal(t, responseURL, any.TypeUrl)
 
 	val, err := Unmarshal(any)
 	assert.NoError(t, err)
 
-	assert.Equal(t, scenario.Response_ERROR, val)
+	assert.Equal(t, scenario.Response_RESPONSE_ERROR, val)
 }
 
 func TestMarshalUnmarshalPodStatus(t *testing.T) {
-	any, err := Marshal(scenario.PodStatus_POD_SUCCEEDED)
+	any, err := Marshal(scenario.PodStatus_POD_STATUS_SUCCEEDED)
 	assert.NoError(t, err)
 	assert.Equal(t, podStatusURL, any.TypeUrl)
 
 	val, err := Unmarshal(any)
 	assert.NoError(t, err)
 
-	assert.Equal(t, scenario.PodStatus_POD_SUCCEEDED, val)
+	assert.Equal(t, scenario.PodStatus_POD_STATUS_SUCCEEDED, val)
 }
 
 func TestMarshalUnmarshalString(t *testing.T) {
