@@ -1,41 +1,12 @@
 package services
 
 import (
-	"testing"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )
-
-func TestConvertToAbsolute(t *testing.T) {
-	fiveS := time.Second * time.Duration(5)
-	minusFiveM := time.Minute * time.Duration(-5)
-	fifteenS := time.Second * time.Duration(15)
-
-	input := &apatelet.ApateletScenario{Task: []*apatelet.Task{
-		{
-			RelativeTimestamp: fiveS.Nanoseconds(),
-		},
-		{
-			RelativeTimestamp: minusFiveM.Nanoseconds(),
-		},
-		{
-			RelativeTimestamp: fifteenS.Nanoseconds(),
-		},
-	}}
-
-	assert.Equal(t, fiveS.Nanoseconds(), input.Task[0].RelativeTimestamp)
-	assert.Equal(t, int64(0), input.Task[0].RelativeTimestamp)
-
-	assert.Equal(t, minusFiveM.Nanoseconds(), input.Task[1].RelativeTimestamp)
-	assert.Equal(t, int64(0), input.Task[1].RelativeTimestamp)
-
-	assert.Equal(t, fifteenS.Nanoseconds(), input.Task[2].RelativeTimestamp)
-	assert.Equal(t, int64(0), input.Task[2].RelativeTimestamp)
-}
 
 func TestFilter(t *testing.T) {
 	uuid1 := uuid.New().String()

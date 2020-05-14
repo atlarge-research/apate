@@ -82,7 +82,7 @@ func TestNodeResponseStateCreatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
  type: CREATE_POD
- response: ERROR
+ response: RESPONSE_ERROR
  percentage: 42
 `)
 	assert.EqualValues(t, EventFlags{
@@ -94,7 +94,7 @@ func TestNodeResponseStateUpdatePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
  type: UPDATE_POD
- response: TIMEOUT
+ response: RESPONSE_TIMEOUT
  percentage: 15
 `)
 	assert.EqualValues(t, EventFlags{
@@ -106,7 +106,7 @@ func TestNodeResponseStateDeletePod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
  type: DELETE_POD
- response: ERROR
+ response: RESPONSE_ERROR
  percentage: 100
 `)
 	assert.EqualValues(t, EventFlags{
@@ -118,7 +118,7 @@ func TestNodeResponseStateGetPod(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
  type: GET_POD
- response: ERROR
+ response: RESPONSE_ERROR
  percentage: 14
 `)
 	assert.EqualValues(t, EventFlags{
@@ -129,7 +129,7 @@ func TestNodeResponseStateGetPodStatus(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
  type: GET_POD_STATUS
- response: TIMEOUT
+ response: RESPONSE_TIMEOUT
  percentage: 42
 `)
 	assert.EqualValues(t, EventFlags{
@@ -141,7 +141,7 @@ func TestNodeResponseStateGetPods(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
  type: GET_PODS
- response: TIMEOUT
+ response: RESPONSE_TIMEOUT
  percentage: 65
 `)
 	assert.EqualValues(t, EventFlags{
@@ -153,7 +153,7 @@ func TestNodeResponseStatePing(t *testing.T) {
 	newTask := getApateletTask(t, `
 node_response_state:
  type: PING
- response: ERROR
+ response: RESPONSE_ERROR
  percentage: 50
 `)
 	assert.EqualValues(t, EventFlags{
@@ -165,7 +165,7 @@ func TestNodeResponseStateLessThan0(t *testing.T) {
 	getApateletErroredTask(t, `
 node_response_state:
  type: PING
- response: ERROR
+ response: RESPONSE_ERROR
  percentage: -50
 `, "percentage should be between 0 and 100")
 }
@@ -174,49 +174,9 @@ func TestNodeResponseStateMoreThan100(t *testing.T) {
 	getApateletErroredTask(t, `
 node_response_state:
  type: PING
- response: ERROR
+ response: RESPONSE_ERROR
  percentage: 420
 `, "percentage should be between 0 and 100")
-}
-
-func TestResourcePressureCpuBelow0(t *testing.T) {
-	getApateletErroredTask(t, `
-resource_pressure:
- cpu_usage: -42
- memory_usage: 21G
- storage_usage: 84M
- ephemeral_storage_usage: 105K
-`, "CPU usage should be at least 0")
-}
-
-func TestResourcePressureMemoryBelow0(t *testing.T) {
-	getApateletErroredTask(t, `
-resource_pressure:
- cpu_usage: 42
- memory_usage: -21G
- storage_usage: 84M
- ephemeral_storage_usage: 105K
-`, "memoy usage should be at least 0")
-}
-
-func TestResourcePressureStorageBelow0(t *testing.T) {
-	getApateletErroredTask(t, `
-resource_pressure:
- cpu_usage: 42
- memory_usage: 21G
- storage_usage: -84M
- ephemeral_storage_usage: 105K
-`, "storage usage should be at least 0")
-}
-
-func TestResourcePressureEphemeralStorageBelow0(t *testing.T) {
-	getApateletErroredTask(t, `
-resource_pressure:
- cpu_usage: 42
- memory_usage: 21G
- storage_usage: 84M
- ephemeral_storage_usage: -105K
-`, "ephemeral storage usage should be at least 0")
 }
 
 // Utils

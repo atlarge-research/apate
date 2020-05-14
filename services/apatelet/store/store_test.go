@@ -38,7 +38,12 @@ func TestGetSingleTask(t *testing.T) {
 	// Retrieve single task and verify it was the original one
 	retrieved, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task, retrieved)
+	assert.Equal(t, &Task{
+		RelativeTimestamp: 0,
+		IsPod:             false,
+		PodTask:           nil,
+		NodeTask:          task,
+	}, retrieved)
 
 	// Also verify it was removed
 	assert.Equal(t, 0, st.LenTasks())
@@ -92,11 +97,15 @@ func TestMultipleTasks(t *testing.T) {
 	// Retrieve first two tasks
 	firstTask, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2, firstTask)
+	assert.Equal(t, &Task{
+		4242, false, nil, task2,
+	}, firstTask)
 
 	secondTask, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task1, secondTask)
+	assert.Equal(t, &Task{
+		213123, false, nil, task1,
+	}, secondTask)
 
 	// Verify there is still one task left
 	lastTaskTime, err := st.PeekTask()
@@ -129,7 +138,9 @@ func TestArrayWithNil(t *testing.T) {
 	// Retrieve first task, and confirm it's task 2
 	firstTask, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2, firstTask)
+	assert.Equal(t, &Task{
+		4242, false, nil, task2,
+	}, firstTask)
 
 	// Ensure task 1 is still in the queue
 	assert.Equal(t, 1, st.LenTasks())

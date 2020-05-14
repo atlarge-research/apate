@@ -95,11 +95,16 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return nil, err
 	}
 
+	label, err := p.getPodLabelByName(namespace, name)
+	if err != nil {
+		return nil, throw.NewException(err, "error while retrieving pod label")
+	}
+
 	pod, err := podAndNodeResponse(
 		responseArgs{ctx, p, func() (interface{}, error) {
-			return p.pods.GetPodByName(namespace, name), nil
+			return p.pods.GetPodByName(namespace, name)
 		}},
-		p.getPodLabelByName(namespace, name),
+		label,
 		events.PodGetPodResponse,
 		events.NodeGetPodResponse,
 	)
@@ -134,8 +139,13 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		return nil, err
 	}
 
+	label, err := p.getPodLabelByName(ns, name)
+	if err != nil {
+		return nil, throw.NewException(err, "error while retrieving pod label")
+	}
+
 	pod, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
-		status, err := (*p.store).GetPodFlag(name, events.PodStatus)
+		status, err := (*p.store).GetPodFlag(label, events.PodStatus)
 		if err != nil {
 			return nil, throw.NewException(err, "GetPodStatus failed on getting pod flag")
 		}
@@ -154,7 +164,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 			},
 		}, nil
 	}},
-		p.getPodLabelByName(ns, name),
+		label,
 		events.PodGetPodStatusResponse,
 		events.NodeGetPodStatusResponse,
 	)
@@ -246,9 +256,12 @@ func (p *Provider) runLatency(ctx context.Context) error {
 	return nil
 }
 
-func (p *Provider) getPodLabelByName(ns string, name string) string {
-	pod := p.pods.GetPodByName(ns, name)
-	return p.getPodLabelByPod(pod)
+func (p *Provider) getPodLabelByName(ns string, name string) (string, error) {
+	pod, err := p.pods.GetPodByName(ns, name)
+	if err != nil {
+		return "", err
+	}
+	return p.getPodLabelByPod(pod), nil
 }
 
 func (p *Provider) getPodLabelByPod(pod *corev1.Pod) string {

@@ -17,7 +17,7 @@ import (
 
 const tStr = "test"
 
-func TestNodeNormal100(t *testing.T) {
+func TestNodeNormal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -47,100 +47,6 @@ func TestNodeNormal100(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestNodeNormal0(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
-	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
-
-	var s store.Store = ms
-
-	// Run code under test
-	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
-		}},
-		PCPRF,
-	)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, tStr, out)
-
-	ctrl.Finish()
-}
-
-func TestNodeNormal50A(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
-	rand.Seed(69)
-
-	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
-
-	var s store.Store = ms
-
-	// Run code under test
-	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
-		}},
-		PCPRF,
-	)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, tStr, out)
-
-	ctrl.Finish()
-}
-
-func TestNodeNormal50B(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
-	rand.Seed(42)
-
-	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
-
-	var s store.Store = ms
-
-	// Run code under test
-	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
-		}},
-		PCPRF,
-	)
-
-	// Assert
-	assert.NotNil(t, err)
-	assert.Error(t, err)
-	assert.Nil(t, out)
-
-	ctrl.Finish()
-}
 
 func TestNodeStoreError1(t *testing.T) {
 	ctrl := gomock.NewController(t)
