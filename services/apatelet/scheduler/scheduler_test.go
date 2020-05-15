@@ -6,6 +6,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -20,7 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func TestTaskHandlerSimple(t *testing.T) {
+func TestTaskHandlerSimpleNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -49,6 +50,42 @@ func TestTaskHandlerSimple(t *testing.T) {
 		PodTask:           nil,
 		NodeTask:          &task,
 	})
+
+	select {
+	case <-ech:
+		t.Fail()
+	default:
+	}
+}
+
+func TestTaskHandlerSimplePod(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	ms := mock_store.NewMockStore(ctrl)
+
+	// Test task:
+	task := &store.Task{
+		RelativeTimestamp: 42,
+		IsPod:             true,
+		PodTask: &store.PodTask{
+			Label: "la_clappe",
+			State: &v1.EmulatedPodState{
+				PodStatus: v1.PodStatusFailed,
+			},
+		},
+		NodeTask: nil,
+	}
+
+	// Set up expectations
+	ms.EXPECT().SetPodFlag("la_clappe", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
+
+	var s store.Store = ms
+	sched := Scheduler{&s}
+
+	// Run code under test
+	ech := make(chan error)
+
+	sched.taskHandler(ech, task)
 
 	select {
 	case <-ech:

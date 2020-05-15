@@ -25,7 +25,7 @@ sast:
   needs: [build]
 
 variables:
-  DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
+  DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
   VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet"
   CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane"
   DS_EXCLUDED_PATHS: "/go" # Exclude the caching dir from scans
