@@ -11,31 +11,28 @@ import (
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/translate"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-const negativeResourceError = throw.ConstException("you can't have negative resources")
-
 // SetPodFlags sets all flags for a pod.
 func SetPodFlags(st *store.Store, pt *store.PodTask) error {
-	if pt.State.CreatePodResponse != v1.ResponseUnset {
+	if !isResponseUnset(pt.State.CreatePodResponse) {
 		(*st).SetPodFlag(pt.Label, events.PodCreatePodResponse, translateResponse(pt.State.CreatePodResponse))
 	}
 
-	if pt.State.UpdatePodResponse != v1.ResponseUnset {
+	if !isResponseUnset(pt.State.UpdatePodResponse) {
 		(*st).SetPodFlag(pt.Label, events.PodUpdatePodResponse, translateResponse(pt.State.UpdatePodResponse))
 	}
 
-	if pt.State.DeletePodResponse != v1.ResponseUnset {
+	if !isResponseUnset(pt.State.DeletePodResponse) {
 		(*st).SetPodFlag(pt.Label, events.PodDeletePodResponse, translateResponse(pt.State.DeletePodResponse))
 	}
 
-	if pt.State.GetPodResponse != v1.ResponseUnset {
+	if !isResponseUnset(pt.State.GetPodResponse) {
 		(*st).SetPodFlag(pt.Label, events.PodGetPodResponse, translateResponse(pt.State.GetPodResponse))
 	}
 
-	if pt.State.GetPodStatusResponse != v1.ResponseUnset {
+	if !isResponseUnset(pt.State.GetPodStatusResponse) {
 		(*st).SetPodFlag(pt.Label, events.PodGetPodStatusResponse, translateResponse(pt.State.GetPodStatusResponse))
 	}
 
@@ -47,11 +44,19 @@ func SetPodFlags(st *store.Store, pt *store.PodTask) error {
 		(*st).SetPodFlag(pt.Label, events.PodResources, resources)
 	}
 
-	if pt.State.PodStatus != v1.PodStatusUnset {
+	if !isPodStatusUnset(pt.State.PodStatus) {
 		(*st).SetPodFlag(pt.Label, events.PodStatus, translatePodStatus(pt.State.PodStatus))
 	}
 
 	return nil
+}
+
+func isResponseUnset(response v1.EmulatedPodResponse) bool {
+	return response != v1.ResponseError && response != v1.ResponseNormal && response != v1.ResponseTimeout
+}
+
+func isPodStatusUnset(status v1.EmulatedPodStatus) bool {
+	return status != v1.PodStatusFailed && status != v1.PodStatusPending && status != v1.PodStatusRunning && status != v1.PodStatusSucceeded && status != v1.PodStatusUnknown
 }
 
 func translateResponse(input v1.EmulatedPodResponse) scenario.Response {
@@ -93,26 +98,17 @@ func translatePodResources(input *v1.EmulatedPodResourceUsage) (*stats.PodStats,
 	if err != nil {
 		return nil, err
 	}
-	if memory < 0 {
-		return nil, negativeResourceError
-	}
 	memoryUint := uint64(memory)
 
 	storage, err := translate.GetInBytes(input.Storage, "storage")
 	if err != nil {
 		return nil, err
 	}
-	if storage < 0 {
-		return nil, negativeResourceError
-	}
 	storageUint := uint64(storage)
 
 	ephemeralStorage, err := translate.GetInBytes(input.EphemeralStorage, "ephemeral storage")
 	if err != nil {
 		return nil, err
-	}
-	if ephemeralStorage < 0 {
-		return nil, negativeResourceError
 	}
 	ephemeralStorageUint := uint64(ephemeralStorage)
 

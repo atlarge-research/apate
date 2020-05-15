@@ -2,6 +2,10 @@ package crd
 
 import (
 	"testing"
+	"time"
+
+	"github.com/docker/go-units"
+	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -34,12 +38,26 @@ func TestEnqueueCRD(t *testing.T) {
 
 	var s store.Store = ms
 
-	et := store.Task{
+	et1 := store.Task{
 		RelativeTimestamp: 1,
 		IsPod:             true,
 		PodTask: &store.PodTask{
 			Label: "TestNamespace/TestName",
-			State: &v1.EmulatedPodState{},
+			State: &v1.EmulatedPodState{
+				PodStatus: v1.PodStatusFailed,
+			},
+		},
+		NodeTask: nil,
+	}
+
+	et2 := store.Task{
+		RelativeTimestamp: 42,
+		IsPod:             true,
+		PodTask: &store.PodTask{
+			Label: "TestNamespace/TestName",
+			State: &v1.EmulatedPodState{
+				PodStatus: v1.PodStatusPending,
+			},
 		},
 		NodeTask: nil,
 	}
@@ -53,7 +71,15 @@ func TestEnqueueCRD(t *testing.T) {
 			Tasks: []v1.EmulatedPodTask{
 				{
 					Timestamp: 1,
-					State:     v1.EmulatedPodState{},
+					State: v1.EmulatedPodState{
+						PodStatus: v1.PodStatusFailed,
+					},
+				},
+				{
+					Timestamp: 42,
+					State: v1.EmulatedPodState{
+						PodStatus: v1.PodStatusPending,
+					},
 				},
 			},
 		},
@@ -63,8 +89,9 @@ func TestEnqueueCRD(t *testing.T) {
 		"TestNamespace/TestName",
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
-		assert.Equal(t, 1, len(arr))
-		assert.EqualValues(t, arr[0], &et)
+		assert.Equal(t, 2, len(arr))
+		assert.EqualValues(t, arr[0], &et1)
+		assert.EqualValues(t, arr[1], &et2)
 	})
 
 	err := enqueueCRD(&ep, &s)
@@ -90,12 +117,22 @@ func TestEnqueueCRDDirect(t *testing.T) {
 				DeletePodResponse:    v1.ResponseNormal,
 				GetPodResponse:       v1.ResponseNormal,
 				GetPodStatusResponse: v1.ResponseNormal,
-				PodResources:         nil,
-				PodStatus:            v1.PodStatusRunning,
+				PodResources: &v1.EmulatedPodResourceUsage{
+					Memory:           "10T",
+					CPU:              1000,
+					Storage:          "5K",
+					EphemeralStorage: "100M",
+				},
+				PodStatus: v1.PodStatusRunning,
 			},
 			Tasks: []v1.EmulatedPodTask{},
 		},
 	}
+
+	cores := uint64(1000)
+	memory := uint64(10 * units.TiB)
+	storage := uint64(5 * units.KiB)
+	ephStorage := uint64(100 * units.MiB)
 
 	gomock.InOrder(
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodCreatePodResponse, translateResponse(v1.ResponseNormal)),
@@ -103,6 +140,22 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodDeletePodResponse, translateResponse(v1.ResponseNormal)),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodResponse, translateResponse(v1.ResponseNormal)),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodStatusResponse, translateResponse(v1.ResponseNormal)),
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodResources, gomock.Any()).Do(func(f interface{}) {
+			stat := f.(*stats.PodStats)
+			assert.EqualValues(t, &stats.CPUStats{
+				Time:           metav1.Time{},
+				UsageNanoCores: &cores,
+			}, stat.CPU)
+
+			assert.EqualValues(t, memory, stat.Memory.UsageBytes)
+			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
+
+			assert.EqualValues(t, storage, stat.VolumeStats[0].UsedBytes)
+			assert.WithinDuration(t, time.Now(), stat.VolumeStats[0].Time.Time, 1*time.Minute)
+
+			assert.EqualValues(t, ephStorage, stat.EphemeralStorage.UsedBytes)
+			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
+		}),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(v1.PodStatusRunning)),
 	)
 

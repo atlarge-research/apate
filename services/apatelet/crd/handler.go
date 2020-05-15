@@ -52,12 +52,13 @@ func enqueueCRD(obj interface{}, st *store.Store) error {
 
 	var tasks []*store.Task
 	for _, task := range newCRD.Spec.Tasks {
+		state := task.State
 		tasks = append(tasks, &store.Task{
 			RelativeTimestamp: task.Timestamp,
 			IsPod:             true,
 			PodTask: &store.PodTask{
 				Label: crdLabel,
-				State: &task.State,
+				State: &state,
 			},
 		})
 	}

@@ -74,7 +74,9 @@ func TestMultipleTasks(t *testing.T) {
 	task1 := &apatelet.Task{RelativeTimestamp: 213123}
 	task2 := &apatelet.Task{RelativeTimestamp: 4242}
 	task3 := &apatelet.Task{RelativeTimestamp: 83481234}
+
 	st := NewStore()
+	st.SetStartTime(100)
 
 	// Enqueue tasks
 	st.EnqueueTasks([]*Task{
@@ -92,7 +94,7 @@ func TestMultipleTasks(t *testing.T) {
 	// Poll first task, which should be task 2
 	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2.RelativeTimestamp, firstTaskTime)
+	assert.Equal(t, task2.RelativeTimestamp+100, firstTaskTime)
 
 	// Retrieve first two tasks
 	firstTask, err := st.PopTask()
@@ -100,6 +102,10 @@ func TestMultipleTasks(t *testing.T) {
 	assert.Equal(t, &Task{
 		4242, false, nil, task2,
 	}, firstTask)
+
+	secondTaskTime, err := st.PeekTask()
+	assert.NoError(t, err)
+	assert.Equal(t, task1.RelativeTimestamp+100, secondTaskTime)
 
 	secondTask, err := st.PopTask()
 	assert.NoError(t, err)
@@ -111,7 +117,7 @@ func TestMultipleTasks(t *testing.T) {
 	lastTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, st.LenTasks())
-	assert.Equal(t, task3.RelativeTimestamp, lastTaskTime)
+	assert.Equal(t, task3.RelativeTimestamp+100, lastTaskTime)
 }
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
@@ -175,6 +181,12 @@ func TestSetNodeFlag(t *testing.T) {
 	_, err = st.GetNodeFlag(44)
 	assert.Error(t, err, "flag not set")
 }
+
+//func TestEnqueueCRDTasks(t *testing.T) {
+//	//st := NewStore()
+//
+//	//st.EnqueueTasks()
+//}
 
 // pods
 
