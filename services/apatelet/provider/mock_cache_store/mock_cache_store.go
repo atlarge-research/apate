@@ -9,30 +9,30 @@ import (
 	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface.
+// MockStore is a mock of Store interface
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore.
+// MockStoreMockRecorder is the mock recorder for MockStore
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance.
+// NewMockStore creates a new mock instance
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// Add mocks base method.
+// Add mocks base method
 func (m *MockStore) Add(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", arg0)
@@ -40,13 +40,13 @@ func (m *MockStore) Add(arg0 interface{}) error {
 	return ret0
 }
 
-// Add indicates an expected call of Add.
+// Add indicates an expected call of Add
 func (mr *MockStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStore)(nil).Add), arg0)
 }
 
-// Delete mocks base method.
+// Delete mocks base method
 func (m *MockStore) Delete(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0)
@@ -54,13 +54,13 @@ func (m *MockStore) Delete(arg0 interface{}) error {
 	return ret0
 }
 
-// Delete indicates an expected call of Delete.
+// Delete indicates an expected call of Delete
 func (mr *MockStoreMockRecorder) Delete(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), arg0)
 }
 
-// Get mocks base method.
+// Get mocks base method
 func (m *MockStore) Get(arg0 interface{}) (interface{}, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
@@ -70,13 +70,13 @@ func (m *MockStore) Get(arg0 interface{}) (interface{}, bool, error) {
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get.
+// Get indicates an expected call of Get
 func (mr *MockStoreMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), arg0)
 }
 
-// GetByKey mocks base method.
+// GetByKey mocks base method
 func (m *MockStore) GetByKey(arg0 string) (interface{}, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByKey", arg0)
@@ -86,13 +86,13 @@ func (m *MockStore) GetByKey(arg0 string) (interface{}, bool, error) {
 	return ret0, ret1, ret2
 }
 
-// GetByKey indicates an expected call of GetByKey.
+// GetByKey indicates an expected call of GetByKey
 func (mr *MockStoreMockRecorder) GetByKey(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByKey", reflect.TypeOf((*MockStore)(nil).GetByKey), arg0)
 }
 
-// List mocks base method.
+// List mocks base method
 func (m *MockStore) List() []interface{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List")
@@ -100,13 +100,13 @@ func (m *MockStore) List() []interface{} {
 	return ret0
 }
 
-// List indicates an expected call of List.
+// List indicates an expected call of List
 func (mr *MockStoreMockRecorder) List() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockStore)(nil).List))
 }
 
-// ListKeys mocks base method.
+// ListKeys mocks base method
 func (m *MockStore) ListKeys() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListKeys")
@@ -114,13 +114,13 @@ func (m *MockStore) ListKeys() []string {
 	return ret0
 }
 
-// ListKeys indicates an expected call of ListKeys.
+// ListKeys indicates an expected call of ListKeys
 func (mr *MockStoreMockRecorder) ListKeys() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListKeys", reflect.TypeOf((*MockStore)(nil).ListKeys))
 }
 
-// Replace mocks base method.
+// Replace mocks base method
 func (m *MockStore) Replace(arg0 []interface{}, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Replace", arg0, arg1)
@@ -128,13 +128,13 @@ func (m *MockStore) Replace(arg0 []interface{}, arg1 string) error {
 	return ret0
 }
 
-// Replace indicates an expected call of Replace.
+// Replace indicates an expected call of Replace
 func (mr *MockStoreMockRecorder) Replace(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Replace", reflect.TypeOf((*MockStore)(nil).Replace), arg0, arg1)
 }
 
-// Resync mocks base method.
+// Resync mocks base method
 func (m *MockStore) Resync() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Resync")
@@ -142,13 +142,13 @@ func (m *MockStore) Resync() error {
 	return ret0
 }
 
-// Resync indicates an expected call of Resync.
+// Resync indicates an expected call of Resync
 func (mr *MockStoreMockRecorder) Resync() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resync", reflect.TypeOf((*MockStore)(nil).Resync))
 }
 
-// Update mocks base method.
+// Update mocks base method
 func (m *MockStore) Update(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0)
@@ -156,7 +156,7 @@ func (m *MockStore) Update(arg0 interface{}) error {
 	return ret0
 }
 
-// Update indicates an expected call of Update.
+// Update indicates an expected call of Update
 func (mr *MockStoreMockRecorder) Update(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockStore)(nil).Update), arg0)

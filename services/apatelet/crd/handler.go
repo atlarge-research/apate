@@ -40,17 +40,21 @@ func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *ch
 func enqueueCRD(obj interface{}, st *store.Store) error {
 	newCRD, crdLabel := getCRDAndLabel(obj)
 
-	if err := SetPodFlags(st, &store.PodTask{
-		Label: crdLabel,
-		State: &newCRD.Spec.DirectState,
-	}); err != nil {
-		return err
+	empty := v1.EmulatedPodState{}
+	if newCRD.Spec.DirectState != empty {
+		if err := SetPodFlags(st, &store.PodTask{
+			Label: crdLabel,
+			State: &newCRD.Spec.DirectState,
+		}); err != nil {
+			return err
+		}
 	}
 
 	var tasks []*store.Task
 	for _, task := range newCRD.Spec.Tasks {
 		tasks = append(tasks, &store.Task{
 			RelativeTimestamp: task.Timestamp,
+			IsPod:             true,
 			PodTask: &store.PodTask{
 				Label: crdLabel,
 				State: &task.State,
