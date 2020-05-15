@@ -59,7 +59,7 @@ run_cp: docker_build_cp
 
 .PHONY: protobuf
 protobuf:
-	protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find . -type f -name "*.proto" -print`
+	protoc -I ./api -I $(GOPATH)/src --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find ./api/ -type f -name "*.proto" -print`
 
 # Generates the various mocks
 mock_gen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go ./services/apatelet/store/mock_store/store_mock.go ./services/apatelet/provider/mock_cache_store/mock_cache_store.go

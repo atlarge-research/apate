@@ -44,7 +44,7 @@ func SetPodFlags(st *store.Store, pt *store.PodTask) error {
 		if err != nil {
 			return err
 		}
-		(*st).SetPodFlag(pt.Label, events.PodStatus, resources)
+		(*st).SetPodFlag(pt.Label, events.PodResources, resources)
 	}
 
 	if pt.State.PodStatus != v1.PodStatusUnset {
