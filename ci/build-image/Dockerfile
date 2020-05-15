@@ -19,5 +19,6 @@ RUN go get -v -u sigs.k8s.io/controller-tools/cmd/controller-gen
 # Mockgen
 RUN GO111MODULE=on go get -v -u github.com/golang/mock/mockgen@latest
 
-# Protobuf
-RUN GO111MODULE=on go get github.com/golang/protobuf@v1.4.0
+# Proto
+RUN GO111MODULE=on go get google.golang.org/grpc@v1.28.1
+RUN GO111MODULE=on go get github.com/golang/protobuf/protoc-gen-go

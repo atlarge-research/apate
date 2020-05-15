@@ -29,7 +29,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 
 	_, err := podAndNodeResponse(
 		responseArgs{ctx, p, updateMap(p, pod)},
-		p.getPodLabelByPod(pod),
+		getPodLabelByPod(pod),
 		events.PodCreatePodResponse,
 		events.NodeCreatePodResponse,
 	)
@@ -50,7 +50,7 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 
 	_, err := podAndNodeResponse(
 		responseArgs{ctx, p, updateMap(p, pod)},
-		p.getPodLabelByPod(pod),
+		getPodLabelByPod(pod),
 		events.PodUpdatePodResponse,
 		events.NodeUpdatePodResponse,
 	)
@@ -81,7 +81,7 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 			p.pods.DeletePod(pod)
 			return nil, nil
 		}},
-		p.getPodLabelByPod(pod),
+		getPodLabelByPod(pod),
 		events.PodDeletePodResponse,
 		events.NodeDeletePodResponse,
 	)
@@ -216,15 +216,13 @@ func (p *Provider) RunInContainer(context.Context, string, string, string, []str
 }
 
 func (p *Provider) findCRD(pod *corev1.Pod) (*v1.EmulatedPod, error) {
-	find, exists, err := p.crdInformer.Find(pod.Namespace + "/" + pod.Labels["apate"])
+	find, ok, err := p.crdInformer.Find(pod.Namespace + "/" + pod.Labels["apate"])
 	if err != nil {
 		return nil, throw.NewException(err, "Error retrieving the CRDs in CreatePod")
 	}
 
-	if exists {
-		log.Printf("Found CRD %v", find)
-	} else {
-		log.Printf("No CRD found")
+	if !ok {
+		return nil, nil
 	}
 
 	return find, nil
@@ -269,9 +267,9 @@ func (p *Provider) getPodLabelByName(ns string, name string) string {
 	if !ok {
 		return ""
 	}
-	return p.getPodLabelByPod(pod)
+	return getPodLabelByPod(pod)
 }
 
-func (p *Provider) getPodLabelByPod(pod *corev1.Pod) string {
+func getPodLabelByPod(pod *corev1.Pod) string {
 	return pod.Namespace + "/" + pod.Labels["apate"]
 }
