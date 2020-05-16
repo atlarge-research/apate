@@ -113,6 +113,9 @@ const (
 	// PodGetPodStatusResponsePercentage determines what percentage of GetPodStatus requests have the above mentioned response
 	PodGetPodStatusResponsePercentage
 
+	// PodResources are resources for the pod. See stats.PodStats
+	PodResources
+
 	// PodUpdatePodStatus updates the status of a certain percentage of pods in the current configuration
 	// Can be left empty to keep the status unchanged
 	// If left empty, the pod_status_percentage will be ignored
