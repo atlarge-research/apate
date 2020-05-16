@@ -1,3 +1,6 @@
+// TODO remove this when moving node to CRD
+// TODO also make a replacement somewhere else as this is used everywhere :)
+
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario";
@@ -6,9 +9,10 @@ package apate.scenario;
 // The status of the pods
 // See corev1.PodPhase
 enum PodStatus {
-    POD_PENDING = 0;
-    POD_RUNNING = 1;
-    POD_SUCCEEDED = 2;
-    POD_FAILED = 3;
-    POD_UNKNOWN = 4;
+    POD_STATUS_UNSET = 0;
+    POD_STATUS_PENDING = 1;
+    POD_STATUS_RUNNING = 2;
+    POD_STATUS_SUCCEEDED = 3;
+    POD_STATUS_FAILED = 4;
+    POD_STATUS_UNKNOWN = 5;
 }

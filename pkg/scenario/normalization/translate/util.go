@@ -1,5 +1,7 @@
 package translate
 
+// TODO remove this when moving node to CRD
+
 import (
 	"fmt"
 	"time"
@@ -61,14 +63,4 @@ var nodeEventFlags = []events.NodeEventFlag{
 	events.NodeGetPodStatusResponse,
 	events.NodeGetPodsResponse,
 	events.NodePingResponse,
-}
-
-var nodeEventPercentageFlags = []events.NodeEventFlag{
-	events.NodeCreatePodResponsePercentage,
-	events.NodeUpdatePodResponsePercentage,
-	events.NodeDeletePodResponsePercentage,
-	events.NodeGetPodResponsePercentage,
-	events.NodeGetPodStatusResponsePercentage,
-	events.NodeGetPodsResponsePercentage,
-	events.NodePingResponsePercentage,
 }

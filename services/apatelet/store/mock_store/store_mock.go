@@ -5,7 +5,7 @@
 package mock_store
 
 import (
-	apatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,8 +33,22 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// EnqueuePodTasks mocks base method
+func (m *MockStore) EnqueuePodTasks(arg0 string, arg1 []*store.Task) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueuePodTasks", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueuePodTasks indicates an expected call of EnqueuePodTasks
+func (mr *MockStoreMockRecorder) EnqueuePodTasks(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueuePodTasks", reflect.TypeOf((*MockStore)(nil).EnqueuePodTasks), arg0, arg1)
+}
+
 // EnqueueTasks mocks base method
-func (m *MockStore) EnqueueTasks(arg0 []*apatelet.Task) {
+func (m *MockStore) EnqueueTasks(arg0 []*store.Task) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "EnqueueTasks", arg0)
 }
@@ -105,10 +119,10 @@ func (mr *MockStoreMockRecorder) PeekTask() *gomock.Call {
 }
 
 // PopTask mocks base method
-func (m *MockStore) PopTask() (*apatelet.Task, error) {
+func (m *MockStore) PopTask() (*store.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PopTask")
-	ret0, _ := ret[0].(*apatelet.Task)
+	ret0, _ := ret[0].(*store.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -117,6 +131,20 @@ func (m *MockStore) PopTask() (*apatelet.Task, error) {
 func (mr *MockStoreMockRecorder) PopTask() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopTask", reflect.TypeOf((*MockStore)(nil).PopTask))
+}
+
+// RemovePodTasks mocks base method
+func (m *MockStore) RemovePodTasks(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemovePodTasks", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemovePodTasks indicates an expected call of RemovePodTasks
+func (mr *MockStoreMockRecorder) RemovePodTasks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePodTasks", reflect.TypeOf((*MockStore)(nil).RemovePodTasks), arg0)
 }
 
 // SetNodeFlag mocks base method
@@ -141,4 +169,16 @@ func (m *MockStore) SetPodFlag(arg0 string, arg1 int32, arg2 interface{}) {
 func (mr *MockStoreMockRecorder) SetPodFlag(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodFlag", reflect.TypeOf((*MockStore)(nil).SetPodFlag), arg0, arg1, arg2)
+}
+
+// SetStartTime mocks base method
+func (m *MockStore) SetStartTime(arg0 int64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetStartTime", arg0)
+}
+
+// SetStartTime indicates an expected call of SetStartTime
+func (mr *MockStoreMockRecorder) SetStartTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStartTime", reflect.TypeOf((*MockStore)(nil).SetStartTime), arg0)
 }

@@ -22,29 +22,23 @@ func TestMagicPodAndNodePod(t *testing.T) {
 	tStr := "test"
 	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// SOT
 	var s store.Store = ms
 
-	out, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{
-			ctx:      context.TODO(),
-			provider: &Provider{store: &s},
-			action: func() (i interface{}, err error) {
-				return tStr, nil
-			},
-		},
-		podResponseArgs: podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		},
-	})
+	out, err := podAndNodeResponse(responseArgs{
+		ctx:      context.TODO(),
+		provider: &Provider{store: &s},
+		action: func() (i interface{}, err error) {
+			return tStr, nil
+		}},
+		podName,
+		PCPRF,
+		events.NodeCreatePodResponse,
+	)
 
 	// Assert
 	assert.NoError(t, err)
@@ -60,39 +54,28 @@ func TestMagicPodAndNodeNode(t *testing.T) {
 	tStr := "test"
 	podName := "madjik"
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 
 	NCPRF := events.PodCreatePodResponse
-	NCPRPF := events.PodCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(0), nil)
-
-	ms.EXPECT().GetNodeFlag(NCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetNodeFlag(NCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetNodeFlag(NCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	// SOT
 	var s store.Store = ms
 
-	out, err := podAndNodeResponse(podNodeResponse{
-		responseArgs: responseArgs{
+	out, err := podAndNodeResponse(
+		responseArgs{
 			ctx:      context.TODO(),
 			provider: &Provider{store: &s},
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			},
 		},
-		podResponseArgs: podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		},
-		nodeResponseArgs: nodeResponseArgs{
-			nodeResponseFlag:   NCPRF,
-			nodePercentageFlag: NCPRPF,
-		},
-	})
+		podName,
+		PCPRF,
+		NCPRF,
+	)
 
 	// Assert
 	assert.NoError(t, err)

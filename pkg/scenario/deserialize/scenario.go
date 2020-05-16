@@ -1,5 +1,6 @@
 // Package deserialize provides methods and types to deserialize various kinds of
 // configuration file formats to a public Scenario.
+// TODO remove this when moving node to CRD
 package deserialize
 
 import (

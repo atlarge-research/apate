@@ -1,10 +1,27 @@
+// TODO remove when moving node to CRD
+
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane/events";
-package apate.controlplane.events;
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
+package apate.controlplane;
 
 import "google/protobuf/any.proto";
 import "scenario/events.proto";
+
+// This node fails, so every request times out
+message NodeFailure {}
+
+// Apply latency to every request
+message NetworkLatency {
+    // The amount of applied latency
+    int32 latency_msec = 1;
+}
+
+// We apply timeout to every request from k8s besides the ping / heartbeat
+message TimeoutKeepHeartbeat {}
+
+// We only apply timeout to ping / heartbeat
+message NoTimeoutNoHeartbeat {}
 
 // A percentage of lifecycle requests will error
 message ResponseState {

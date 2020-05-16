@@ -1,3 +1,5 @@
+// TODO only keep startScenario when moving node to CRD
+
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
@@ -5,9 +7,7 @@ package apate.controlplane;
 
 import "google/protobuf/empty.proto";
 
-import "controlplane/events/node_events.proto";
-import "controlplane/events/shared_events.proto";
-import "controlplane/events/pod_events.proto";
+import "controlplane/node_events.proto";
 
 service Scenario {
     rpc loadScenario (PublicScenario) returns (google.protobuf.Empty) {}
@@ -55,36 +55,17 @@ message Task {
 
     // The node event to be executed
     // This field will be ignored when revert is true
-    oneof node_event {
-        events.NodeFailure node_failure = 5;
+    oneof event {
+        NodeFailure node_failure = 5;
 
-        events.NetworkLatency network_latency = 6;
+        NetworkLatency network_latency = 6;
 
-        events.TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
-        events.NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
+        TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
+        NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
 
-        events.ResponseState node_response_state = 9;
+        ResponseState node_response_state = 9;
 
-        events.ResourcePressure resource_pressure = 10;
-
-        events.CustomFlags custom_flags = 11;
-    }
-
-    // The pod events to be executed
-    // This field will be ignored when revert is true
-    repeated PodConfig pod_configs = 12;
-}
-
-message PodConfig {
-    // The metadata.name from a configuration
-    string metadata_name = 1;
-
-    oneof pod_event {
-        events.ResponseState pod_response_state = 2;
-
-        events.PodStatusUpdate pod_status_update = 3;
-
-        events.CustomFlags custom_flags = 4;
+        CustomFlags custom_flags = 10;
     }
 }
 

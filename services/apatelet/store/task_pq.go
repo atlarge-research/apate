@@ -3,19 +3,17 @@ package store
 import (
 	"reflect"
 	"sync"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )
 
 // taskQueue is a thread-safe priority queue based on a min-heap for tasks in the private scenario
 type taskQueue struct {
-	tasks []*apatelet.Task
+	tasks []*Task
 	lock  sync.RWMutex
 }
 
 func newTaskQueue() *taskQueue {
 	return &taskQueue{
-		tasks: make([]*apatelet.Task, 0),
+		tasks: make([]*Task, 0),
 	}
 }
 
@@ -32,7 +30,7 @@ func (q *taskQueue) Less(i, j int) bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
-	return q.tasks[i].AbsoluteTimestamp < q.tasks[j].AbsoluteTimestamp
+	return q.tasks[i].RelativeTimestamp < q.tasks[j].RelativeTimestamp
 }
 
 // Swap swaps the elements with indexes i and j
@@ -53,7 +51,7 @@ func (q *taskQueue) Push(x interface{}) {
 		return
 	}
 
-	if task, ok := x.(*apatelet.Task); ok {
+	if task, ok := x.(*Task); ok {
 		q.tasks = append(q.tasks, task)
 	}
 }

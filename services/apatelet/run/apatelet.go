@@ -8,6 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	cli "github.com/virtual-kubelet/node-cli"
@@ -47,22 +51,24 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		KubeConfigWriter(config.Bytes)
 	}
 
+	// Create store
+	st := store.NewStore()
+
+	// Create virtual kubelet
+	errch := make(chan error)
+
+	crdSt := crdPod.CreateCRDInformer(config, &st, &errch)
+
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	hc.StartStreamWithRetry(ctx, 3)
 
-	// Create store
-	st := store.NewStore()
-
 	// Start the Apatelet
-	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st)
+	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st, crdSt)
 	if err != nil {
 		return err
 	}
-
-	// Create virtual kubelet
-	errch := make(chan error)
 
 	log.Println("Joining kubernetes cluster")
 	go func() {
@@ -103,6 +109,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Stop the server on signal or error
 	select {
 	case err := <-errch:
+		log.Printf("Apatelet stopped because of an error %v\n", err)
 		return err
 	case <-stopped:
 		log.Println("Apatelet stopped")
@@ -154,9 +161,9 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
+func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *pod.Informer) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
+	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store, crdInformer)
 	return cmd, cancel, err
 }
 
