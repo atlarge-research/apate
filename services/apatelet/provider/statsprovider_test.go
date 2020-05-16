@@ -26,13 +26,13 @@ const (
 	event = events.PodResources
 )
 
-func createProvider(t *testing.T, cpu, mem int64) (provider.PodMetricsProvider, *gomock.Controller, *mock_store.MockStore, podmanager.PodManager) {
+func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvider, *gomock.Controller, *mock_store.MockStore, podmanager.PodManager) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 	pm := podmanager.New() // TODO mock?
 	var s store.Store = ms
 
-	res := normalization.NodeResources{CPU: cpu, Memory: mem}
+	res := normalization.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
 	info := cluster.NewNodeInfo("", "", name, "", port)
 	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
 
@@ -41,7 +41,7 @@ func createProvider(t *testing.T, cpu, mem int64) (provider.PodMetricsProvider, 
 
 func TestEmpty(t *testing.T) {
 	mem := int64(34)
-	prov, ctrl, _, _ := createProvider(t, 12, mem)
+	prov, ctrl, _, _ := createProvider(t, 12, mem, 0)
 
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
@@ -65,7 +65,7 @@ func TestSinglePod(t *testing.T) {
 	mem := int64(52562)
 	memUsage := uint64(15)
 	cpuUsage := uint64(16)
-	prov, ctrl, ms, pm := createProvider(t, cpu, mem)
+	prov, ctrl, ms, pm := createProvider(t, cpu, mem, 0)
 
 	// Create pod
 	lbl := make(map[string]string)
@@ -113,9 +113,11 @@ func TestSinglePod(t *testing.T) {
 func TestUnspecifiedPods(t *testing.T) {
 	cpu := int64(2)
 	mem := int64(2)
+	fs := int64(15)
 	memUsage := uint64(1)
 	cpuUsage := uint64(1)
-	prov, ctrl, ms, pm := createProvider(t, cpu, mem)
+	fsUsage := uint64(12)
+	prov, ctrl, ms, pm := createProvider(t, cpu, mem, fs)
 
 	// Create pods
 	lbl := make(map[string]string)
@@ -175,7 +177,7 @@ func TestUnspecifiedPods(t *testing.T) {
 		Memory:           &stats.MemoryStats{},
 		Network:          nil,
 		VolumeStats:      nil,
-		EphemeralStorage: nil,
+		EphemeralStorage: &stats.FsStats{UsedBytes: &fsUsage},
 	}
 
 	statistics3 := stats.PodStats{
@@ -215,11 +217,15 @@ func TestUnspecifiedPods(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify node
-	left := uint64(mem) - memUsage
+	memLeft := uint64(mem) - memUsage
+	fsLeft := uint64(fs) - fsUsage
 	assert.Equal(t, name, result.Node.NodeName)
 	assert.Equal(t, cpuUsage, *result.Node.CPU.UsageNanoCores)
 	assert.Equal(t, memUsage, *result.Node.Memory.UsageBytes)
-	assert.Equal(t, left, *result.Node.Memory.AvailableBytes)
+	assert.Equal(t, memLeft, *result.Node.Memory.AvailableBytes)
+	assert.Equal(t, fsUsage, *result.Node.Fs.UsedBytes)
+	assert.Equal(t, fsLeft, *result.Node.Fs.AvailableBytes)
+	assert.Equal(t, uint64(fs), *result.Node.Fs.CapacityBytes)
 
 	// Verify pod
 	for _, podStat := range result.Pods {
