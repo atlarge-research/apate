@@ -1,3 +1,6 @@
+// TODO remove this when moving node to CRD
+// TODO also make a replacement somewhere else as this is used everywhere :)
+
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario";
@@ -5,12 +8,14 @@ package apate.scenario;
 
 // How to respond to a request
 enum Response {
+    RESPONSE_UNSET = 0;
+
     // Just respond normally, as fast as possible
-    NORMAL = 0;
+    RESPONSE_NORMAL = 1;
 
     // Don't respond at all
-    TIMEOUT = 1;
+    RESPONSE_TIMEOUT = 2;
 
     // Respond with an error
-    ERROR = 2;
+    RESPONSE_ERROR = 3;
 }

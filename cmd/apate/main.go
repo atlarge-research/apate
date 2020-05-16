@@ -227,6 +227,7 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 }
 
 func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int, configFileLocation string) error {
+	// TODO remove scenario related code when moving node to CRD
 	var scenarioDeserializer deserialize.Deserializer
 	var err error
 

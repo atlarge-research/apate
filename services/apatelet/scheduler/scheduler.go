@@ -5,7 +5,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
@@ -13,6 +14,7 @@ import (
 // Scheduler is struct on which all scheduler functionality is implemented.
 type Scheduler struct {
 	store *store.Store
+	prevT int64
 }
 
 // StartScheduler starts running the scheduler
@@ -50,30 +52,35 @@ func (s *Scheduler) runner(ech chan error) {
 			return
 		}
 
-		go s.taskHandler(ech, task)
+		if nextT >= s.prevT {
+			s.prevT = nextT
+			go s.taskHandler(ech, task)
+		}
 	}
 }
 
-func (s Scheduler) taskHandler(ech chan error, t *apatelet.Task) {
-	for k, mv := range t.NodeEventFlags {
-		v, err := any.Unmarshal(mv)
-		if err != nil {
-			ech <- err
-			continue
-		}
-
-		(*s.store).SetNodeFlag(k, v)
+func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
+	isPod, err := t.IsPod()
+	if err != nil {
+		ech <- err
+		return
 	}
 
-	for _, conf := range t.PodConfigs {
-		for k, mv := range conf.EventFlags {
+	if isPod {
+		err := pod.SetPodFlags(s.store, t.PodTask.Label, t.PodTask.State)
+		if err != nil {
+			ech <- err
+		}
+	} else {
+		// TODO change this when moving node to CRD
+		for k, mv := range t.NodeTask.NodeEventFlags {
 			v, err := any.Unmarshal(mv)
 			if err != nil {
 				ech <- err
 				continue
 			}
 
-			(*s.store).SetPodFlag(conf.MetadataName, k, v)
+			(*s.store).SetNodeFlag(k, v)
 		}
 	}
 }

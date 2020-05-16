@@ -1,4 +1,5 @@
 // Package any contains utilities for the any protobuf construct
+// TODO remove this when moving node to CRD
 package any
 
 import (

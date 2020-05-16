@@ -1,0 +1,237 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (unknown)
+  creationTimestamp: null
+  name: podconfigurations.apate.opendc.org
+spec:
+  group: apate.opendc.org
+  names:
+    kind: PodConfiguration
+    listKind: PodConfigurationList
+    plural: podconfigurations
+    shortNames:
+    - pc
+    singular: podconfiguration
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: PodConfiguration is a definition of PodConfiguration resource.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PodConfigurationSpec is the spec which belongs to the PodConfiguration
+              CRD
+            properties:
+              inline:
+                description: A direct way to update state, this will circumvent the
+                  timestamps / scenario
+                properties:
+                  create_pod_response:
+                    default: UNSET
+                    description: CreatePodResponse determines how to respond to the
+                      CreatePod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  delete_pod_response:
+                    default: UNSET
+                    description: DeletePodResponse determines how to respond to the
+                      DeletePod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  get_pod_response:
+                    default: UNSET
+                    description: PodGetPodResponse determines how to respond to the
+                      GetPod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  get_pod_status_response:
+                    default: UNSET
+                    description: GetPodStatusResponse determines how to respond to
+                      the GetPodStatus request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  pod_resources:
+                    description: PodResources sets the amount of resources the related
+                      pods are using
+                    properties:
+                      cpu:
+                        default: 0
+                        format: int64
+                        type: integer
+                      ephemeral_storage:
+                        default: 0B
+                        type: string
+                      memory:
+                        default: 0B
+                        type: string
+                      storage:
+                        default: 0B
+                        type: string
+                    type: object
+                  pod_status:
+                    default: UNSET
+                    description: PodStatus updates the current pod status
+                    enum:
+                    - PENDING
+                    - RUNNING
+                    - SUCCEEDED
+                    - FAILED
+                    - UNKNOWN
+                    - UNSET
+                    type: string
+                  update_pod_response:
+                    default: UNSET
+                    description: UpdatePodResponse determines how to respond to the
+                      UpdatePod request
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                type: object
+              tasks:
+                description: The tasks to be executed
+                items:
+                  description: PodConfigurationTask is a single task which updates
+                    a pod state and is executed at a timestamp
+                  properties:
+                    state:
+                      description: The state to be set
+                      properties:
+                        create_pod_response:
+                          default: UNSET
+                          description: CreatePodResponse determines how to respond
+                            to the CreatePod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        delete_pod_response:
+                          default: UNSET
+                          description: DeletePodResponse determines how to respond
+                            to the DeletePod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        get_pod_response:
+                          default: UNSET
+                          description: PodGetPodResponse determines how to respond
+                            to the GetPod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        get_pod_status_response:
+                          default: UNSET
+                          description: GetPodStatusResponse determines how to respond
+                            to the GetPodStatus request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        pod_resources:
+                          description: PodResources sets the amount of resources the
+                            related pods are using
+                          properties:
+                            cpu:
+                              default: 0
+                              format: int64
+                              type: integer
+                            ephemeral_storage:
+                              default: 0B
+                              type: string
+                            memory:
+                              default: 0B
+                              type: string
+                            storage:
+                              default: 0B
+                              type: string
+                          type: object
+                        pod_status:
+                          default: UNSET
+                          description: PodStatus updates the current pod status
+                          enum:
+                          - PENDING
+                          - RUNNING
+                          - SUCCEEDED
+                          - FAILED
+                          - UNKNOWN
+                          - UNSET
+                          type: string
+                        update_pod_response:
+                          default: UNSET
+                          description: UpdatePodResponse determines how to respond
+                            to the UpdatePod request
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                      type: object
+                    timestamp:
+                      description: The timestamp at which the task is executed
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  required:
+                  - state
+                  - timestamp
+                  type: object
+                type: array
+            type: object
+        required:
+        - metadata
+        - spec
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -6,15 +6,28 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 )
 
 // Store represents the state of the apatelet
 type Store interface {
+	// SetStartTime sets the value of the starttime in the store. All other tiing is based in this
+	SetStartTime(int64)
+
+	// TODO remove this when moving node to CRD
 	// EnqueueTasks creates a priority queue based on these tasks
-	EnqueueTasks([]*apatelet.Task)
+	EnqueueTasks([]*Task)
+
+	// TODO add node equivalent when node to CRD
+	// EnqueuePodTasks adds or updates pod CRD tasks to the queue based on their label (<namespace>/<name>)
+	EnqueuePodTasks(string, []*Task) error
+
+	// TODO add node equivalent when node to CRD
+	// RemovePodTasks removes pod CRD tasks from the queue based on their label (<namespace>/<name>)
+	RemovePodTasks(string) error
 
 	// LenTasks returns the amount of tasks left to be picked up
 	LenTasks() int
@@ -23,7 +36,7 @@ type Store interface {
 	PeekTask() (int64, error)
 
 	// PopTask returns the first task to be executed and removes it from the queue
-	PopTask() (*apatelet.Task, error)
+	PopTask() (*Task, error)
 
 	// GetNodeFlag returns the value of the given node flag
 	GetNodeFlag(events.NodeEventFlag) (interface{}, error)
@@ -38,13 +51,14 @@ type Store interface {
 	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
-// FlagNotSetError is raised whenever a flag is not set
-const FlagNotSetError = throw.ConstException("flag not set")
+// FlagNotFoundError is raised whenever a flag is not set
+const FlagNotFoundError = throw.ConstException("flag not found")
 
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
 
 type store struct {
+	startTime    int64
 	queue        *taskQueue
 	nodeFlags    flags
 	nodeFlagLock sync.RWMutex
@@ -61,12 +75,60 @@ func NewStore() Store {
 	}
 }
 
-func (s *store) EnqueueTasks(tasks []*apatelet.Task) {
+func (s *store) SetStartTime(time int64) {
+	s.startTime = time
+}
+
+// TODO remove this when moving node to CRD
+func (s *store) EnqueueTasks(tasks []*Task) {
 	for _, task := range tasks {
 		s.queue.Push(task)
 	}
 
 	heap.Init(s.queue)
+}
+
+func (s *store) EnqueuePodTasks(label string, newTasks []*Task) error {
+	for i, task := range s.queue.tasks {
+		isPod, err := task.IsPod()
+		if err != nil {
+			return err
+		}
+
+		if isPod && task.PodTask.Label == label {
+			if len(newTasks) == 0 {
+				heap.Remove(s.queue, i)
+			} else {
+				s.queue.tasks[i] = newTasks[0]
+				// Replacing and then fixing instead of deleting all and pushing because it's slightly faster, see comments on heap.Fix
+				heap.Fix(s.queue, i)
+				newTasks = newTasks[1:]
+			}
+		}
+	}
+
+	for _, remainingTask := range newTasks {
+		heap.Push(s.queue, remainingTask)
+	}
+
+	return nil
+}
+
+func (s *store) RemovePodTasks(label string) error {
+	for i := len(s.queue.tasks) - 1; i >= 0; i-- {
+		task := s.queue.tasks[i]
+
+		isPod, err := task.IsPod()
+		if err != nil {
+			return err
+		}
+
+		if isPod && task.PodTask.Label == label {
+			heap.Remove(s.queue, i)
+		}
+	}
+
+	return nil
 }
 
 func (s *store) LenTasks() int {
@@ -79,20 +141,20 @@ func (s *store) PeekTask() (int64, error) {
 	}
 
 	// Make sure the array in the pq didn't magically change to a different type
-	if task, ok := s.queue.First().(*apatelet.Task); ok {
-		return task.AbsoluteTimestamp, nil
+	if task, ok := s.queue.First().(*Task); ok {
+		return task.RelativeTimestamp + s.startTime, nil
 	}
 
 	return -1, errors.New("array in pq magically changed to a different type")
 }
 
-func (s *store) PopTask() (*apatelet.Task, error) {
+func (s *store) PopTask() (*Task, error) {
 	if s.queue.Len() == 0 {
 		return nil, errors.New("no tasks left")
 	}
 
 	// Make sure the array in the pq didn't magically change to a different type
-	if task, ok := heap.Pop(s.queue).(*apatelet.Task); ok {
+	if task, ok := heap.Pop(s.queue).(*Task); ok {
 		return task, nil
 	}
 
@@ -107,7 +169,11 @@ func (s *store) GetNodeFlag(id events.NodeEventFlag) (interface{}, error) {
 		return val, nil
 	}
 
-	return nil, FlagNotSetError
+	if dv, ok := defaultNodeValues[id]; ok {
+		return dv, nil
+	}
+
+	return nil, FlagNotFoundError
 }
 
 func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
@@ -117,25 +183,54 @@ func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
 	s.nodeFlags[id] = val
 }
 
-func (s *store) GetPodFlag(configuration string, flag events.PodEventFlag) (interface{}, error) {
+func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{}, error) {
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
-	if val, ok := s.podFlags[configuration][flag]; ok {
+	if val, ok := s.podFlags[label][flag]; ok {
 		return val, nil
 	}
 
-	return nil, FlagNotSetError
+	if dv, ok := defaultPodValues[flag]; ok {
+		return dv, nil
+	}
+
+	return nil, FlagNotFoundError
 }
 
-func (s *store) SetPodFlag(configuration string, flag events.PodEventFlag, val interface{}) {
+func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface{}) {
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
-	if conf, ok := s.podFlags[configuration]; ok {
+	if conf, ok := s.podFlags[label]; ok {
 		conf[flag] = val
 	} else {
-		s.podFlags[configuration] = make(flags)
-		s.podFlags[configuration][flag] = val
+		s.podFlags[label] = make(flags)
+		s.podFlags[label][flag] = val
 	}
+}
+
+var defaultNodeValues = map[events.EventFlag]interface{}{
+	events.NodeCreatePodResponse:    scenario.Response_RESPONSE_NORMAL,
+	events.NodeUpdatePodResponse:    scenario.Response_RESPONSE_NORMAL,
+	events.NodeDeletePodResponse:    scenario.Response_RESPONSE_NORMAL,
+	events.NodeGetPodResponse:       scenario.Response_RESPONSE_NORMAL,
+	events.NodeGetPodStatusResponse: scenario.Response_RESPONSE_NORMAL,
+	events.NodeGetPodsResponse:      scenario.Response_RESPONSE_NORMAL,
+	events.NodePingResponse:         scenario.Response_RESPONSE_NORMAL,
+
+	events.NodeAddedLatencyEnabled: false,
+	events.NodeAddedLatencyMsec:    int64(0),
+}
+
+var defaultPodValues = map[events.PodEventFlag]interface{}{
+	events.PodCreatePodResponse:    scenario.Response_RESPONSE_UNSET,
+	events.PodUpdatePodResponse:    scenario.Response_RESPONSE_UNSET,
+	events.PodDeletePodResponse:    scenario.Response_RESPONSE_UNSET,
+	events.PodGetPodResponse:       scenario.Response_RESPONSE_UNSET,
+	events.PodGetPodStatusResponse: scenario.Response_RESPONSE_UNSET,
+
+	events.PodResources: nil,
+
+	events.PodStatus: scenario.PodStatus_POD_STATUS_UNSET,
 }

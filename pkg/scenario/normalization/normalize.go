@@ -1,4 +1,5 @@
 // Package normalization provides functions to normalize and decode public scenarios.
+// TODO remove this when moving node to CRD
 package normalization
 
 import (
@@ -141,7 +142,6 @@ func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask
 
 	newTask.NodeSet = savedTask.NodeSet
 	newTask.NodeEventFlags = savedTask.NodeEventFlags
-	newTask.PodConfigs = savedTask.PodConfigs
 
 	// Delete from the map so we can't revert it again
 	delete(c.taskNameParsed, task.Name)

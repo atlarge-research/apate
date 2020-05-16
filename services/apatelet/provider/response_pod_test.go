@@ -15,152 +15,34 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
-func TestPodNormal100(t *testing.T) {
+func TestPodNormal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
+		}},
+		podName,
+		PCPRF,
+	)
 
 	// Assert
 	assert.NoError(t, err)
+	assert.True(t, changed)
 	assert.Equal(t, tStr, out)
-
-	ctrl.Finish()
-}
-
-func TestPodNormal0(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
-
-	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(0), nil)
-
-	var s store.Store = ms
-
-	// Run code under test
-	out, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
-
-	// Assert
-	assert.NotNil(t, err)
-	assert.EqualError(t, flagNotSetError, err.Error())
-	assert.Nil(t, out)
-
-	ctrl.Finish()
-}
-
-func TestPodNormal50A(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
-
-	rand.Seed(69)
-
-	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(50), nil)
-
-	var s store.Store = ms
-
-	// Run code under test
-	out, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, tStr, out)
-
-	ctrl.Finish()
-}
-
-func TestPodNormal50B(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
-
-	rand.Seed(42)
-
-	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(50), nil)
-
-	var s store.Store = ms
-
-	// Run code under test
-	out, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
-
-	// Assert
-	assert.NotNil(t, err)
-	assert.Error(t, err)
-	assert.Nil(t, out)
 
 	ctrl.Finish()
 }
@@ -171,7 +53,6 @@ func TestPodStoreError1(t *testing.T) {
 
 	// vars
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 	genericError := errors.New("some error")
 
 	// Expectations
@@ -180,22 +61,19 @@ func TestPodStoreError1(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
+		}},
+		podName,
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
 	assert.Error(t, err)
+	assert.False(t, changed)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -207,68 +85,57 @@ func TestPodStoreError2(t *testing.T) {
 
 	// vars
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
-	genericError := errors.New("some error")
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(nil, genericError)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
+		}},
+		podName,
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
-	assert.EqualError(t, genericError, err.Error())
+	assert.Error(t, err)
+	assert.True(t, changed)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
 }
 
-func TestPodInvalidPercentage(t *testing.T) {
+func TestPodUnset(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_ERROR, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(nil, nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_UNSET, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
+		}},
+		podName,
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
-	assert.Error(t, err)
+	assert.NoError(t, err)
+	assert.False(t, changed)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -280,7 +147,6 @@ func TestPodInvalidResponseType(t *testing.T) {
 
 	// vars
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 
 	// Expectations
 	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(42, nil)
@@ -288,22 +154,19 @@ func TestPodInvalidResponseType(t *testing.T) {
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
+		}},
+		podName,
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
 	assert.Error(t, err)
+	assert.False(t, changed)
 	assert.Nil(t, out)
 
 	ctrl.Finish()
@@ -315,32 +178,27 @@ func TestPodInvalidResponse(t *testing.T) {
 
 	// vars
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
 
 	rand.Seed(42)
 
 	// Expectations
 	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response(42), nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
-		},
-	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
+		}},
+		podName,
+		PCPRF,
+	)
 
 	// Assert
-	assert.NotNil(t, err)
+	assert.False(t, changed)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 
@@ -355,31 +213,26 @@ func TestPodTimeOut(t *testing.T) {
 
 	// vars
 	PCPRF := events.PodCreatePodResponse
-	PCPRPF := events.PodCreatePodResponsePercentage
-
-	rand.Seed(42)
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_TIMEOUT, nil)
-	ms.EXPECT().GetPodFlag(podName, PCPRPF).Return(int32(100), nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_TIMEOUT, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
-	out, err := podResponse(responseArgs{
+	out, changed, err := podResponse(responseArgs{
 		ctx:      ctx,
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
 	},
-		podResponseArgs{
-			name:              podName,
-			podResponseFlag:   PCPRF,
-			podPercentageFlag: PCPRPF,
-		})
+		podName,
+		PCPRF,
+	)
 
 	// Assert
+	assert.True(t, changed)
 	assert.Nil(t, err)
 	assert.Nil(t, out)
 

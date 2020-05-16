@@ -25,12 +25,15 @@ sast:
   needs: [build]
 
 variables:
-  DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image"
+  DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
   VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet"
   CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
   CP_K8S_CONFIG: "$CI_PROJECT_DIR/pkg/cluster/kind/kind"
+  # Taken from the following minus kubesec (because SCAN_KUBERNETES_MANIFESTS was somehow always set to true)
+  # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml#L15
+  SAST_DEFAULT_ANALYZERS: "bandit, brakeman, gosec, flawfinder, security-code-scan, secrets, sobelow"
 
 default:
   image: $DIND_GO_IMAGE
@@ -63,6 +66,15 @@ build:
     - go mod download
   script:
     - go install ./...
+
+gen:
+  stage: build
+  before_script:
+    - go mod download
+  script:
+    - make crd_gen mock_gen
+    # Had to add -I /go/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ in order to make it work
+    - protoc -I ./api -I $GOPATH/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find ./api/ -type f -name "*.proto" -print`
 
 static-analysis:
   stage: verify

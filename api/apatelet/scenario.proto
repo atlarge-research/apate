@@ -14,10 +14,14 @@ service Scenario {
     rpc startScenario (ApateletScenario) returns (google.protobuf.Empty) {}
 }
 
+// TODO only include start_time when moving node to CRD
 // The top level object which defines how the different Apatelet will emulate certain deployments
 message ApateletScenario {
     // A scenario consists of multiple tasks that will be scheduled on a Apatelet
     repeated Task task = 1;
+
+    // The absolute timestamp at which the scenario will start
+    int64 start_time = 2;
 }
 
 message Task {
@@ -26,29 +30,12 @@ message Task {
 
     // The timestamp on which this task will be executed
     // Is in nanoseconds since the scenario has started
-    // Note that this field should not be used by the apatelet!
     int64 relative_timestamp = 2;
-
-    // The timestamp on which this task will be executed
-    // Is a nanosecond unix timestamp
-    // This is the timestamp field that should be used by the apatelet!
-    int64 absolute_timestamp = 3;
 
     // The UUID of the nodes on which this task will be executed
     // Should not be used by the apatelet as every task it receives is target towards that apatelet
-    map<string, bool> node_set = 4;
+    map<string, bool> node_set = 3;
 
     // The node event flags belonging to this task
-    map<int32, google.protobuf.Any> node_event_flags = 5;
-
-    // The pod configurations belonging to this task
-    repeated PodConfig pod_configs = 6;
-}
-
-message PodConfig {
-    // The metadata.name from a configuration
-    string metadata_name = 1;
-
-    // The flags to be set for this specific configuration
-    map<int32, google.protobuf.Any> event_flags = 2;
+    map<int32, google.protobuf.Any> node_event_flags = 4;
 }

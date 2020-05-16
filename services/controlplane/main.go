@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 
+	podconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
@@ -46,6 +48,10 @@ func main() {
 
 	// Save the kubeconfig in the store
 	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
+		log.Fatal(err)
+	}
+
+	if err = podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
 	}
 
