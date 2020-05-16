@@ -14,26 +14,6 @@ import (
 
 const testLabel = "testlabel"
 
-func TestList(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	csm := mockcache.NewMockStore(ctrl)
-	var cm cache.Store = csm
-
-	ep := v1.PodConfiguration{}
-
-	csm.EXPECT().List().Return([]interface{}{
-		ep,
-	})
-
-	informer := NewInformer(&cm)
-
-	res := informer.List()
-	assert.Equal(t, 1, len(res))
-	assert.Equal(t, []v1.PodConfiguration{ep}, res)
-}
-
 func TestFindExists(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

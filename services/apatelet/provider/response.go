@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -22,7 +23,7 @@ func podResponse(args responseArgs, label string, responseFlag events.PodEventFl
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, false, errors.New("podResponse couldn't cast flag to response")
+		return nil, false, fmt.Errorf("couldn't cast %v to response", flag)
 	}
 
 	switch flag {
@@ -50,7 +51,7 @@ func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interfa
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, errors.New("nodeResponse couldn't cast flag to response")
+		return nil, fmt.Errorf("couldn't cast %v to response", flag)
 	}
 
 	switch flag {

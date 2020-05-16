@@ -115,8 +115,7 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return nil, err
 	}
 
-	c := pod.(*corev1.Pod)
-	return c, nil
+	return pod.(*corev1.Pod), nil
 }
 
 func podStatusToPhase(status interface{}) corev1.PodPhase {
