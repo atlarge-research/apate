@@ -55,7 +55,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	}
 
 	st := store.NewStore()
-	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, cluster.NodeInfo{}, &st)
 
 	fakeNode := corev1.Node{}
 
