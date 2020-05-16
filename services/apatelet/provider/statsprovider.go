@@ -12,6 +12,10 @@ import (
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 )
 
+const (
+	apateLabel = "apate" // TODO: Change to constant somewhere else
+)
+
 // Stats is a simple wrapper for statistics fields
 type Stats struct {
 	startTime metav1.Time
@@ -44,12 +48,7 @@ func (p *Provider) getNodeStats(pods *[]stats.PodStats) stats.NodeStats {
 		StartTime:        p.stats.startTime,
 		CPU:              p.cpuStats(pods),
 		Memory:           p.memoryStats(pods),
-
-		// TODO: Do we want these? They have 0 added value afaik
-		Network: nil,
-		Fs:      nil,
-		Runtime: nil,
-		Rlimit:  nil,
+		Fs:               p.filesystemStats(pods),
 	}
 }
 
@@ -93,37 +92,60 @@ func (p *Provider) memoryStats(pods *[]stats.PodStats) *stats.MemoryStats {
 	}
 }
 
+func (p *Provider) filesystemStats(pods *[]stats.PodStats) *stats.FsStats {
+	zero := uint64(0)
+	capacity := uint64(p.resources.EphemeralStorage)
+	usage := uint64(0)
+
+	for _, pod := range *pods {
+		if pod.EphemeralStorage != nil && pod.EphemeralStorage.UsedBytes != nil {
+			usage += *pod.EphemeralStorage.UsedBytes
+		}
+	}
+
+	free := capacity - usage
+	return &stats.FsStats{
+		Time:           p.now(),
+		AvailableBytes: &free,
+		CapacityBytes:  &capacity,
+		UsedBytes:      &usage,
+		InodesFree:     &zero,
+		Inodes:         &zero,
+		InodesUsed:     &zero,
+	}
+}
+
 func (p *Provider) getAggregatePodStats() []stats.PodStats {
 	var statistics []stats.PodStats
 
 	for _, pod := range p.pods.GetAllPods() {
-		statistics = append(statistics, p.getPodStats(pod))
+		statistics = append(statistics, *p.getPodStats(pod))
 	}
 
 	return statistics
 }
 
-func (p *Provider) getPodStats(pod *v1.Pod) stats.PodStats {
+func (p *Provider) getPodStats(pod *v1.Pod) *stats.PodStats {
 	for k, label := range pod.Labels {
-		if k == "apate" { //TODO: Const or something
-			event := events.PodResources
-
-			unconvertedStats, err := (*p.store).GetPodFlag(label, event)
-			statistics := unconvertedStats.(stats.PodStats)
-
+		if k == apateLabel {
+			unconvertedStats, err := (*p.store).GetPodFlag(label, events.PodResources)
 			if err != nil {
-				return stats.PodStats{PodRef: stats.PodReference{Name: pod.Name, Namespace: pod.Namespace, UID: string(pod.UID)}}
+				return addPodSpecificStats(pod, &stats.PodStats{})
 			}
 
-			addPodSpecificStats(pod, &statistics)
-			return statistics
+			statistics, ok := unconvertedStats.(stats.PodStats)
+			if !ok {
+				return addPodSpecificStats(pod, &stats.PodStats{})
+			}
+
+			return addPodSpecificStats(pod, &statistics)
 		}
 	}
 
-	return stats.PodStats{PodRef: stats.PodReference{Name: pod.Name, Namespace: pod.Namespace, UID: string(pod.UID)}}
+	return addPodSpecificStats(pod, &stats.PodStats{})
 }
 
-func addPodSpecificStats(pod *v1.Pod, statistics *stats.PodStats) {
+func addPodSpecificStats(pod *v1.Pod, statistics *stats.PodStats) *stats.PodStats {
 	statistics.PodRef = stats.PodReference{
 		Name:      pod.Name,
 		Namespace: pod.Namespace,
@@ -133,4 +155,6 @@ func addPodSpecificStats(pod *v1.Pod, statistics *stats.PodStats) {
 	if pod.Status.StartTime != nil {
 		statistics.StartTime = *pod.Status.StartTime
 	}
+
+	return statistics
 }
