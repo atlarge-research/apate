@@ -7,13 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/cache"
-	"sigs.k8s.io/kind/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
-	mock_cache "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/mock_cache_store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager/mock_podmanager"
 )
@@ -91,62 +86,6 @@ func TestGetPodLabelByNameFail(t *testing.T) {
 	res := prov.getPodLabelByName(namespace, name)
 
 	assert.Equal(t, "", res)
-}
-
-func TestFindCrdErr(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cs := mock_cache.NewMockStore(ctrl)
-	var c cache.Store = cs
-
-	prov := Provider{
-		crdInformer: pod.NewInformer(&c),
-	}
-
-	cs.EXPECT().GetByKey("TestNamespace/TestLabel").Return(nil, false, errors.New("TestError"))
-
-	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "TestNamespace",
-			Labels: map[string]string{
-				"apate": "TestLabel",
-			},
-		},
-	}
-
-	_, err := prov.findCRD(&pod)
-	assert.Error(t, err)
-}
-
-func TestFindCrd(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cs := mock_cache.NewMockStore(ctrl)
-	var c cache.Store = cs
-
-	prov := Provider{
-		crdInformer: pod.NewInformer(&c),
-	}
-
-	p := v1.EmulatedPod{}
-
-	cs.EXPECT().GetByKey("TestNamespace/TestLabel").
-		Return(&p, true, nil)
-
-	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "TestNamespace",
-			Labels: map[string]string{
-				"apate": "TestLabel",
-			},
-		},
-	}
-
-	res, err := prov.findCRD(&pod)
-	assert.NoError(t, err)
-	assert.Equal(t, res, &p)
 }
 
 func TestPodStatusToPhase(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 )
 
 // Task is a task in the PQ
@@ -23,7 +23,7 @@ type NodeTask *apatelet.Task // TODO change when moving node to CRD
 type PodTask struct {
 	// The label of the CRD, should be <namespace>/<name>
 	Label string
-	State *v1.EmulatedPodState
+	State *v1.PodConfigurationState
 }
 
 // IsPod returns whether we are dealing with a pod (then PodTask should be non-nil) or a node (then NodeTask should be non-nil)
@@ -44,7 +44,7 @@ func NewNodeTask(relativeTime int64, task NodeTask) *Task {
 }
 
 // NewPodTask creates a new task for a pod event
-func NewPodTask(relativeTime int64, label string, state *v1.EmulatedPodState) *Task {
+func NewPodTask(relativeTime int64, label string, state *v1.PodConfigurationState) *Task {
 	return &Task{
 		RelativeTimestamp: relativeTime,
 		PodTask: &PodTask{

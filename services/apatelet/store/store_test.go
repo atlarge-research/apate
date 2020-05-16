@@ -3,7 +3,7 @@ package store
 import (
 	"testing"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/stretchr/testify/assert"
 
@@ -171,8 +171,8 @@ func TestEnqueueCRDUpdate(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding less means old CRDs are removed
 	err := st.EnqueuePodTasks("la/clappe", []*Task{
-		NewPodTask(10, "la/clappe", &v1.EmulatedPodState{}),
-		NewPodTask(20, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(10, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(20, "la/clappe", &v1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -188,10 +188,10 @@ func TestEnqueueCRDUpdateMore(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding more means new CRDs are added
 	err := st.EnqueuePodTasks("la/clappe", []*Task{
-		NewPodTask(10, "la/clappe", &v1.EmulatedPodState{}),
-		NewPodTask(20, "la/clappe", &v1.EmulatedPodState{}),
-		NewPodTask(220, "la/clappe", &v1.EmulatedPodState{}),
-		NewPodTask(120, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(10, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(20, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(220, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(120, "la/clappe", &v1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -209,7 +209,7 @@ func TestEnqueueCRDNewLabel(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding more means new CRDs are added
 	err := st.EnqueuePodTasks("high/tech", []*Task{
-		NewPodTask(44, "high/tech", &v1.EmulatedPodState{}),
+		NewPodTask(44, "high/tech", &v1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -226,7 +226,7 @@ func TestRemoveCRD(t *testing.T) {
 
 	// Testing whether removig CRDs works, even when there are multiple
 	err := st.EnqueuePodTasks("high/tech", []*Task{
-		NewPodTask(44, "high/tech", &v1.EmulatedPodState{}),
+		NewPodTask(44, "high/tech", &v1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -248,9 +248,9 @@ func insertBaselineCRD(t *testing.T) Store {
 
 	// Testing whether adding new CRDs works
 	err := st.EnqueuePodTasks("la/clappe", []*Task{
-		NewPodTask(100, "la/clappe", &v1.EmulatedPodState{}),
-		NewPodTask(42, "la/clappe", &v1.EmulatedPodState{}),
-		NewPodTask(140, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(100, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(42, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(140, "la/clappe", &v1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 

@@ -17,6 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o controlpl
 FROM docker
 COPY --from=build /build/controlplane /controlplane
 COPY --from=build /build/config/kind /tmp/apate/manager
+COPY --from=build /build/config/crd /config/crd
 
 RUN apk add curl --no-cache && \
     curl -L -o /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl && \

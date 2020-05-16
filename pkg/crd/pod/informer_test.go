@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/cache"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	mockcache "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/mock_cache_store"
 )
 
@@ -21,7 +21,7 @@ func TestList(t *testing.T) {
 	csm := mockcache.NewMockStore(ctrl)
 	var cm cache.Store = csm
 
-	ep := v1.EmulatedPod{}
+	ep := v1.PodConfiguration{}
 
 	csm.EXPECT().List().Return([]interface{}{
 		ep,
@@ -31,7 +31,7 @@ func TestList(t *testing.T) {
 
 	res := informer.List()
 	assert.Equal(t, 1, len(res))
-	assert.Equal(t, []v1.EmulatedPod{ep}, res)
+	assert.Equal(t, []v1.PodConfiguration{ep}, res)
 }
 
 func TestFindExists(t *testing.T) {
@@ -43,7 +43,7 @@ func TestFindExists(t *testing.T) {
 
 	label := testLabel
 
-	ep := v1.EmulatedPod{}
+	ep := v1.PodConfiguration{}
 
 	csm.EXPECT().GetByKey(label).Return(&ep, true, nil)
 

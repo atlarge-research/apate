@@ -1,4 +1,4 @@
-// Package pod provides functions and types to deal with the EmulatedPod CRD
+// Package pod provides functions and types to deal with the PodConfiguration CRD
 // TODO move parts of old normalize to node equivalent when moving node to CRD
 package pod
 
@@ -9,14 +9,14 @@ import (
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/translate"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 // SetPodFlags sets all flags for a pod.
-func SetPodFlags(st *store.Store, label string, pt *v1.EmulatedPodState) error {
+func SetPodFlags(st *store.Store, label string, pt *v1.PodConfigurationState) error {
 	if !isResponseUnset(pt.CreatePodResponse) {
 		(*st).SetPodFlag(label, events.PodCreatePodResponse, translateResponse(pt.CreatePodResponse))
 	}
@@ -52,15 +52,15 @@ func SetPodFlags(st *store.Store, label string, pt *v1.EmulatedPodState) error {
 	return nil
 }
 
-func isResponseUnset(response v1.EmulatedPodResponse) bool {
+func isResponseUnset(response v1.PodResponse) bool {
 	return response != v1.ResponseError && response != v1.ResponseNormal && response != v1.ResponseTimeout
 }
 
-func isPodStatusUnset(status v1.EmulatedPodStatus) bool {
+func isPodStatusUnset(status v1.PodStatus) bool {
 	return status != v1.PodStatusFailed && status != v1.PodStatusPending && status != v1.PodStatusRunning && status != v1.PodStatusSucceeded && status != v1.PodStatusUnknown
 }
 
-func translateResponse(input v1.EmulatedPodResponse) scenario.Response {
+func translateResponse(input v1.PodResponse) scenario.Response {
 	switch input {
 	case v1.ResponseNormal:
 		return scenario.Response_RESPONSE_NORMAL
@@ -75,7 +75,7 @@ func translateResponse(input v1.EmulatedPodResponse) scenario.Response {
 	}
 }
 
-func translatePodStatus(input v1.EmulatedPodStatus) scenario.PodStatus {
+func translatePodStatus(input v1.PodStatus) scenario.PodStatus {
 	switch input {
 	case v1.PodStatusPending:
 		return scenario.PodStatus_POD_STATUS_PENDING
@@ -94,7 +94,7 @@ func translatePodStatus(input v1.EmulatedPodStatus) scenario.PodStatus {
 	}
 }
 
-func translatePodResources(input *v1.EmulatedPodResourceUsage) (*stats.PodStats, error) {
+func translatePodResources(input *v1.PodResources) (*stats.PodStats, error) {
 	memory, err := translate.GetInBytes(input.Memory, "memory")
 	if err != nil {
 		return nil, err

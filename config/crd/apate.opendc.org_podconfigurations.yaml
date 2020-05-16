@@ -6,22 +6,22 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (unknown)
   creationTimestamp: null
-  name: emulatedpods.apate.opendc.org
+  name: podconfigurations.apate.opendc.org
 spec:
   group: apate.opendc.org
   names:
-    kind: EmulatedPod
-    listKind: EmulatedPodList
-    plural: emulatedpods
+    kind: PodConfiguration
+    listKind: PodConfigurationList
+    plural: podconfigurations
     shortNames:
-    - ep
-    singular: emulatedpod
+    - pc
+    singular: podconfiguration
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: EmulatedPod is a definition of EmulatedPod resource.
+        description: PodConfiguration is a definition of PodConfiguration resource.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -36,10 +36,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: EmulatedPodSpec is the spec which belongs to the EmulatedPod
+            description: PodConfigurationSpec is the spec which belongs to the PodConfiguration
               CRD
             properties:
-              direct_task:
+              inline:
                 description: A direct way to update state, this will circumvent the
                   timestamps / scenario
                 properties:
@@ -126,8 +126,8 @@ spec:
               tasks:
                 description: The tasks to be executed
                 items:
-                  description: EmulatedPodTask is a single task which updates a pod
-                    state and is executed at a timestamp
+                  description: PodConfigurationTask is a single task which updates
+                    a pod state and is executed at a timestamp
                   properties:
                     state:
                       description: The state to be set
@@ -233,5 +233,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: null
-  storedVersions: null
+  conditions: []
+  storedVersions: []

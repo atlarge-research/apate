@@ -14,6 +14,7 @@ import (
 // Scheduler is struct on which all scheduler functionality is implemented.
 type Scheduler struct {
 	store *store.Store
+	prevT int64
 }
 
 // StartScheduler starts running the scheduler
@@ -51,7 +52,10 @@ func (s *Scheduler) runner(ech chan error) {
 			return
 		}
 
-		go s.taskHandler(ech, task)
+		if nextT >= s.prevT {
+			s.prevT = nextT
+			go s.taskHandler(ech, task)
+		}
 	}
 }
 
