@@ -1,4 +1,5 @@
 // Package translate contains utilities to translate events of tasks between public API and internal API formats
+// TODO remove this when moving node to CRD
 package translate
 
 import (

@@ -1,4 +1,5 @@
 // Package pod provides functions and types to deal with the EmulatedPod CRD
+// TODO move parts of old normalize to node equivalent when moving node to CRD
 package pod
 
 import (

@@ -1,5 +1,7 @@
 package translate
 
+// TODO remove this when moving node to CRD
+
 import (
 	"fmt"
 	"time"

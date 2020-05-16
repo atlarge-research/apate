@@ -1,3 +1,6 @@
+// TODO only keep startScenario when moving node to CRD
+// TODO this does not need to retain resource_config, we can do that through kubectl
+
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
