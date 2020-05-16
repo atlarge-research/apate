@@ -1,4 +1,4 @@
-package crd
+package pod
 
 import (
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
@@ -31,7 +31,10 @@ func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *ch
 		}
 	}, func(obj interface{}) {
 		_, crdLabel := getCRDAndLabel(obj)
-		(*st).RemoveCRDTasks(crdLabel)
+		err := (*st).RemovePodTasks(crdLabel)
+		if err != nil {
+			*errch <- err
+		}
 	})
 
 	return inf
@@ -42,10 +45,7 @@ func enqueueCRD(obj interface{}, st *store.Store) error {
 
 	empty := v1.EmulatedPodState{}
 	if newCRD.Spec.DirectState != empty {
-		if err := SetPodFlags(st, &store.PodTask{
-			Label: crdLabel,
-			State: &newCRD.Spec.DirectState,
-		}); err != nil {
+		if err := SetPodFlags(st, crdLabel, &newCRD.Spec.DirectState); err != nil {
 			return err
 		}
 	}
@@ -53,19 +53,10 @@ func enqueueCRD(obj interface{}, st *store.Store) error {
 	var tasks []*store.Task
 	for _, task := range newCRD.Spec.Tasks {
 		state := task.State
-		tasks = append(tasks, &store.Task{
-			RelativeTimestamp: task.Timestamp,
-			IsPod:             true,
-			PodTask: &store.PodTask{
-				Label: crdLabel,
-				State: &state,
-			},
-		})
+		tasks = append(tasks, store.NewPodTask(task.Timestamp, crdLabel, &state))
 	}
 
-	(*st).EnqueueCRDTasks(crdLabel, tasks)
-
-	return nil
+	return (*st).EnqueuePodTasks(crdLabel, tasks)
 }
 
 func getCRDAndLabel(obj interface{}) (*v1.EmulatedPod, string) {

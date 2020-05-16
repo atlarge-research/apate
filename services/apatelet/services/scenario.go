@@ -33,10 +33,7 @@ func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *apat
 	// TODO remove when moving node to CRD
 	var tasks []*store.Task
 	for _, task := range scenario.Task {
-		tasks = append(tasks, &store.Task{
-			RelativeTimestamp: task.RelativeTimestamp,
-			NodeTask:          task,
-		})
+		tasks = append(tasks, store.NewNodeTask(task.RelativeTimestamp, task))
 	}
 	(*s.store).EnqueueTasks(tasks)
 

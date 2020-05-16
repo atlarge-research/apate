@@ -44,12 +44,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	// Run code under test
 	ech := make(chan error)
 
-	sched.taskHandler(ech, &store.Task{
-		RelativeTimestamp: 0,
-		IsPod:             false,
-		PodTask:           nil,
-		NodeTask:          &task,
-	})
+	sched.taskHandler(ech, store.NewNodeTask(0, &task))
 
 	select {
 	case <-ech:
@@ -64,20 +59,12 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := &store.Task{
-		RelativeTimestamp: 42,
-		IsPod:             true,
-		PodTask: &store.PodTask{
-			Label: "la_clappe",
-			State: &v1.EmulatedPodState{
-				PodStatus: v1.PodStatusFailed,
-			},
-		},
-		NodeTask: nil,
-	}
+	task := store.NewPodTask(42, "la/clappe", &v1.EmulatedPodState{
+		PodStatus: v1.PodStatusFailed,
+	})
 
 	// Set up expectations
-	ms.EXPECT().SetPodFlag("la_clappe", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
+	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
 
 	var s store.Store = ms
 	sched := Scheduler{&s}
@@ -126,12 +113,7 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	// Run code under test
 	ech := make(chan error)
 
-	sched.taskHandler(ech, &store.Task{
-		RelativeTimestamp: 0,
-		IsPod:             false,
-		PodTask:           nil,
-		NodeTask:          &task,
-	})
+	sched.taskHandler(ech, store.NewNodeTask(0, &task))
 
 	select {
 	case <-ech:
@@ -164,12 +146,7 @@ func TestTaskHandlerNodeError(t *testing.T) {
 	// Run code under test
 	ech := make(chan error, 1)
 
-	sched.taskHandler(ech, &store.Task{
-		RelativeTimestamp: 0,
-		IsPod:             false,
-		PodTask:           nil,
-		NodeTask:          &task,
-	})
+	sched.taskHandler(ech, store.NewNodeTask(0, &task))
 
 	select {
 	case err := <-ech:
@@ -195,12 +172,7 @@ func TestRunner(t *testing.T) {
 
 	// Expectations
 	ms.EXPECT().PeekTask().Return(int64(0), nil)
-	ms.EXPECT().PopTask().Return(&store.Task{
-		RelativeTimestamp: 0,
-		IsPod:             false,
-		PodTask:           nil,
-		NodeTask:          &task,
-	}, nil)
+	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
 
 	var s store.Store = ms
@@ -287,12 +259,7 @@ func TestStartScheduler(t *testing.T) {
 
 	// Expectations
 	ms.EXPECT().PeekTask().Return(int64(0), nil)
-	ms.EXPECT().PopTask().Return(&store.Task{
-		RelativeTimestamp: 0,
-		IsPod:             false,
-		PodTask:           nil,
-		NodeTask:          &task,
-	}, nil)
+	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
 
 	// any further peeks are well into the future

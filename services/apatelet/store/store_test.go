@@ -3,6 +3,8 @@ package store
 import (
 	"testing"
 
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
@@ -28,22 +30,12 @@ func TestGetSingleTask(t *testing.T) {
 	st := NewStore()
 
 	// Enqueue single task
-	st.EnqueueTasks([]*Task{{
-		RelativeTimestamp: 0,
-		IsPod:             false,
-		PodTask:           nil,
-		NodeTask:          task,
-	}})
+	st.EnqueueTasks([]*Task{NewNodeTask(0, task)})
 
 	// Retrieve single task and verify it was the original one
 	retrieved, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, &Task{
-		RelativeTimestamp: 0,
-		IsPod:             false,
-		PodTask:           nil,
-		NodeTask:          task,
-	}, retrieved)
+	assert.Equal(t, NewNodeTask(0, task), retrieved)
 
 	// Also verify it was removed
 	assert.Equal(t, 0, st.LenTasks())
@@ -55,10 +47,7 @@ func TestPollSingleTask(t *testing.T) {
 	st := NewStore()
 
 	// Enqueue single task
-	st.EnqueueTasks([]*Task{{
-		424242,
-		false, nil, task,
-	}})
+	st.EnqueueTasks([]*Task{NewNodeTask(424242, task)})
 
 	// Poll single task and verify the timestamp is correct
 	retrieved, err := st.PeekTask()
@@ -80,15 +69,9 @@ func TestMultipleTasks(t *testing.T) {
 
 	// Enqueue tasks
 	st.EnqueueTasks([]*Task{
-		{
-			213123, false, nil, task1,
-		},
-		{
-			4242, false, nil, task2,
-		},
-		{
-			83481234, false, nil, task3,
-		},
+		NewNodeTask(213123, task1),
+		NewNodeTask(4242, task2),
+		NewNodeTask(83481234, task3),
 	})
 
 	// Poll first task, which should be task 2
@@ -99,9 +82,7 @@ func TestMultipleTasks(t *testing.T) {
 	// Retrieve first two tasks
 	firstTask, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, &Task{
-		4242, false, nil, task2,
-	}, firstTask)
+	assert.Equal(t, NewNodeTask(4242, task2), firstTask)
 
 	secondTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
@@ -109,9 +90,7 @@ func TestMultipleTasks(t *testing.T) {
 
 	secondTask, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, &Task{
-		213123, false, nil, task1,
-	}, secondTask)
+	assert.Equal(t, NewNodeTask(213123, task1), secondTask)
 
 	// Verify there is still one task left
 	lastTaskTime, err := st.PeekTask()
@@ -127,11 +106,7 @@ func TestArrayWithNil(t *testing.T) {
 	st := NewStore()
 
 	// Enqueue tasks
-	st.EnqueueTasks([]*Task{nil, {
-		213123, false, nil, task1,
-	}, nil, {
-		4242, false, nil, task2,
-	}, nil, nil})
+	st.EnqueueTasks([]*Task{nil, NewNodeTask(213123, task1), NewNodeTask(4242, task2), nil, nil})
 
 	// Ensure there are two tasks
 	assert.Equal(t, 2, st.LenTasks())
@@ -144,9 +119,7 @@ func TestArrayWithNil(t *testing.T) {
 	// Retrieve first task, and confirm it's task 2
 	firstTask, err := st.PopTask()
 	assert.NoError(t, err)
-	assert.Equal(t, &Task{
-		4242, false, nil, task2,
-	}, firstTask)
+	assert.Equal(t, NewNodeTask(4242, task2), firstTask)
 
 	// Ensure task 1 is still in the queue
 	assert.Equal(t, 1, st.LenTasks())
@@ -182,11 +155,121 @@ func TestSetNodeFlag(t *testing.T) {
 	assert.Error(t, err, "flag not set")
 }
 
-//func TestEnqueueCRDTasks(t *testing.T) {
-//	//st := NewStore()
-//
-//	//st.EnqueueTasks()
-//}
+func TestEnqueueCRDBasic(t *testing.T) {
+	st := insertBaselineCRD(t)
+
+	testPeekAndPop(t, &st, 42, true)
+	testPeekAndPop(t, &st, 80, false)
+	testPeekAndPop(t, &st, 100, true)
+	testPeekAndPop(t, &st, 140, true)
+	testPeekAndPop(t, &st, 200, false)
+}
+
+func TestEnqueueCRDUpdate(t *testing.T) {
+	st := insertBaselineCRD(t)
+
+	// Testing whether updating CRDs works
+	// And if adding less means old CRDs are removed
+	err := st.EnqueuePodTasks("la/clappe", []*Task{
+		NewPodTask(10, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(20, "la/clappe", &v1.EmulatedPodState{}),
+	})
+	assert.NoError(t, err)
+
+	testPeekAndPop(t, &st, 10, true)
+	testPeekAndPop(t, &st, 20, true)
+	testPeekAndPop(t, &st, 80, false)
+	testPeekAndPop(t, &st, 200, false)
+}
+
+func TestEnqueueCRDUpdateMore(t *testing.T) {
+	st := insertBaselineCRD(t)
+
+	// Testing whether updating CRDs works
+	// And if adding more means new CRDs are added
+	err := st.EnqueuePodTasks("la/clappe", []*Task{
+		NewPodTask(10, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(20, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(220, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(120, "la/clappe", &v1.EmulatedPodState{}),
+	})
+	assert.NoError(t, err)
+
+	testPeekAndPop(t, &st, 10, true)
+	testPeekAndPop(t, &st, 20, true)
+	testPeekAndPop(t, &st, 80, false)
+	testPeekAndPop(t, &st, 120, true)
+	testPeekAndPop(t, &st, 200, false)
+	testPeekAndPop(t, &st, 220, true)
+}
+
+func TestEnqueueCRDNewLabel(t *testing.T) {
+	st := insertBaselineCRD(t)
+
+	// Testing whether updating CRDs works
+	// And if adding more means new CRDs are added
+	err := st.EnqueuePodTasks("high/tech", []*Task{
+		NewPodTask(44, "high/tech", &v1.EmulatedPodState{}),
+	})
+	assert.NoError(t, err)
+
+	testPeekAndPop(t, &st, 42, true)
+	testPeekAndPop(t, &st, 44, true)
+	testPeekAndPop(t, &st, 80, false)
+	testPeekAndPop(t, &st, 100, true)
+	testPeekAndPop(t, &st, 140, true)
+	testPeekAndPop(t, &st, 200, false)
+}
+
+func TestRemoveCRD(t *testing.T) {
+	st := insertBaselineCRD(t)
+
+	// Testing whether removig CRDs works, even when there are multiple
+	err := st.EnqueuePodTasks("high/tech", []*Task{
+		NewPodTask(44, "high/tech", &v1.EmulatedPodState{}),
+	})
+	assert.NoError(t, err)
+
+	err = st.RemovePodTasks("la/clappe")
+	assert.NoError(t, err)
+
+	testPeekAndPop(t, &st, 44, true)
+	testPeekAndPop(t, &st, 80, false)
+	testPeekAndPop(t, &st, 200, false)
+}
+
+func insertBaselineCRD(t *testing.T) Store {
+	st := NewStore()
+
+	st.EnqueueTasks([]*Task{
+		NewNodeTask(80, &apatelet.Task{}),
+		NewNodeTask(200, &apatelet.Task{}),
+	})
+
+	// Testing whether adding new CRDs works
+	err := st.EnqueuePodTasks("la/clappe", []*Task{
+		NewPodTask(100, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(42, "la/clappe", &v1.EmulatedPodState{}),
+		NewPodTask(140, "la/clappe", &v1.EmulatedPodState{}),
+	})
+	assert.NoError(t, err)
+
+	return st
+}
+
+func testPeekAndPop(t *testing.T, st *Store, relTime int64, shouldBePod bool) {
+	taskTime, err := (*st).PeekTask()
+	assert.NoError(t, err)
+	assert.Equal(t, relTime, taskTime)
+
+	task, err := (*st).PopTask()
+	assert.NoError(t, err)
+	assert.Equal(t, relTime, task.RelativeTimestamp)
+
+	isPod, err := task.IsPod()
+	assert.NoError(t, err)
+	assert.Equal(t, shouldBePod, isPod)
+}
 
 // pods
 

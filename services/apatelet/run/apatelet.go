@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
+	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
@@ -57,7 +57,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Create virtual kubelet
 	errch := make(chan error)
 
-	crdSt := crd.CreateCRDInformer(config, &st, &errch)
+	crdSt := crdPod.CreateCRDInformer(config, &st, &errch)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())

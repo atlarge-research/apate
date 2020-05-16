@@ -1,4 +1,4 @@
-package crd
+package pod
 
 import (
 	"testing"
@@ -38,29 +38,17 @@ func TestEnqueueCRD(t *testing.T) {
 
 	var s store.Store = ms
 
-	et1 := store.Task{
-		RelativeTimestamp: 1,
-		IsPod:             true,
-		PodTask: &store.PodTask{
-			Label: "TestNamespace/TestName",
-			State: &v1.EmulatedPodState{
-				PodStatus: v1.PodStatusFailed,
-			},
-		},
-		NodeTask: nil,
-	}
+	et1 := store.NewPodTask(
+		1,
+		"TestNamespace/TestName", &v1.EmulatedPodState{
+			PodStatus: v1.PodStatusFailed,
+		})
 
-	et2 := store.Task{
-		RelativeTimestamp: 42,
-		IsPod:             true,
-		PodTask: &store.PodTask{
-			Label: "TestNamespace/TestName",
-			State: &v1.EmulatedPodState{
-				PodStatus: v1.PodStatusPending,
-			},
-		},
-		NodeTask: nil,
-	}
+	et2 := store.NewPodTask(
+		42,
+		"TestNamespace/TestName", &v1.EmulatedPodState{
+			PodStatus: v1.PodStatusPending,
+		})
 
 	ep := v1.EmulatedPod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,13 +73,13 @@ func TestEnqueueCRD(t *testing.T) {
 		},
 	}
 
-	ms.EXPECT().EnqueueCRDTasks(
+	ms.EXPECT().EnqueuePodTasks(
 		"TestNamespace/TestName",
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
 		assert.Equal(t, 2, len(arr))
-		assert.EqualValues(t, arr[0], &et1)
-		assert.EqualValues(t, arr[1], &et2)
+		assert.EqualValues(t, arr[0], et1)
+		assert.EqualValues(t, arr[1], et2)
 	})
 
 	err := enqueueCRD(&ep, &s)
@@ -140,26 +128,25 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodDeletePodResponse, translateResponse(v1.ResponseNormal)),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodResponse, translateResponse(v1.ResponseNormal)),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodStatusResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodResources, gomock.Any()).Do(func(f interface{}) {
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodResources, gomock.Any()).Do(func(label string, flag events.EventFlag, f interface{}) {
 			stat := f.(*stats.PodStats)
-			assert.EqualValues(t, &stats.CPUStats{
-				Time:           metav1.Time{},
-				UsageNanoCores: &cores,
-			}, stat.CPU)
 
-			assert.EqualValues(t, memory, stat.Memory.UsageBytes)
+			assert.EqualValues(t, cores, *stat.CPU.UsageNanoCores)
+			assert.WithinDuration(t, time.Now(), stat.CPU.Time.Time, 1*time.Minute)
+
+			assert.EqualValues(t, memory, *stat.Memory.UsageBytes)
 			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
 
-			assert.EqualValues(t, storage, stat.VolumeStats[0].UsedBytes)
+			assert.EqualValues(t, storage, *stat.VolumeStats[0].UsedBytes)
 			assert.WithinDuration(t, time.Now(), stat.VolumeStats[0].Time.Time, 1*time.Minute)
 
-			assert.EqualValues(t, ephStorage, stat.EphemeralStorage.UsedBytes)
+			assert.EqualValues(t, ephStorage, *stat.EphemeralStorage.UsedBytes)
 			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
 		}),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(v1.PodStatusRunning)),
 	)
 
-	ms.EXPECT().EnqueueCRDTasks(
+	ms.EXPECT().EnqueuePodTasks(
 		"TestNamespace/TestName",
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
