@@ -32,6 +32,7 @@ type Provider struct {
 	nodeInfo    cluster.NodeInfo
 	store       *store.Store
 	crdInformer *pod.Informer
+	stats       *Stats
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
@@ -48,12 +49,12 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo := cluster.NewNode("virtual-kubelet", "agent", name, k8sVersion)
+	nodeInfo := cluster.NewNodeInfo("apatelet", "agent", name, k8sVersion, metricsPort)
 
 	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
 			cfg.DaemonPort = int32(k8sPort)
-			return NewProvider(res, cfg, nodeInfo, store, crdInformer), nil
+			return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store, crdInformer), nil
 		}),
 		cli.WithBaseOpts(op),
 	)
@@ -62,13 +63,14 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store, crdInformer *pod.Informer) provider.Provider {
+func NewProvider(pods podmanager.PodManager, stats *Stats, resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store, crdInformer *pod.Informer) provider.Provider {
 	return &Provider{
-		pods:        podmanager.New(),
+		pods:        pods,
 		resources:   resources,
 		cfg:         cfg,
 		nodeInfo:    nodeInfo,
 		store:       store,
 		crdInformer: crdInformer,
+		stats:       stats,
 	}
 }
