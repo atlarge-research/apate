@@ -69,7 +69,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 
 	inf := crdPod.NewInformer(&crdSt)
 
-	prov := NewProvider(&resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, inf)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, inf)
 
 	fakeNode := corev1.Node{}
 

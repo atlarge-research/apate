@@ -87,7 +87,8 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
-	log.Printf("Now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
+	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
+	log.Printf("now listening on :%d for kube api and :%d for metrics", kubernetesPort, metricsPort)
 
 	// Handle signals
 	signals := make(chan os.Signal, 1)
