@@ -1,5 +1,7 @@
 package deserialize
 
+// TODO remove this when moving node to CRD
+
 import (
 	"io/ioutil"
 	"path/filepath"

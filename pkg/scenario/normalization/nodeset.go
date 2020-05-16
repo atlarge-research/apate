@@ -1,5 +1,7 @@
 package normalization
 
+// TODO remove this when moving node to CRD
+
 import (
 	"fmt"
 	"strings"

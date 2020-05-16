@@ -1,4 +1,5 @@
 // Package normalization provides functions to normalize and decode public scenarios.
+// TODO remove this when moving node to CRD
 package normalization
 
 import (

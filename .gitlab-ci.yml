@@ -28,7 +28,7 @@ variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
   VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet"
   CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane"
-  DS_EXCLUDED_PATHS: "/go" # Exclude the caching dir from scans
+  DS_EXCLUDED_PATHS: ".go,/go" # Exclude the caching dir from scans
   CP_K8S_CONFIG: "$CI_PROJECT_DIR/pkg/cluster/kind/kind"
   # Taken from the following minus kubesec (because SCAN_KUBERNETES_MANIFESTS was somehow always set to true)
   # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml#L15

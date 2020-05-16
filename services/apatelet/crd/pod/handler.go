@@ -1,5 +1,7 @@
 package pod
 
+// TODO make node equivalent when moving node to CRD
+
 import (
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"

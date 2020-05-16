@@ -1,4 +1,5 @@
 // Package pod defines utilities for the EmulatedPod CRD
+// TODO make node CRD equivalent
 package pod
 
 import (
