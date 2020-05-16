@@ -33,7 +33,7 @@ variables:
   CP_K8S_CONFIG: "$CI_PROJECT_DIR/pkg/cluster/kind/kind"
   # Taken from the following minus kubesec (because SCAN_KUBERNETES_MANIFESTS was somehow always set to true)
   # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml#L15
-  SAST_DEFAULT_ANALYZERS: "bandit, brakeman, gosec, spotbugs, flawfinder, phpcs-security-audit, security-code-scan, nodejs-scan, eslint, tslint, secrets, sobelow, pmd-apex"
+  SAST_DEFAULT_ANALYZERS: "bandit, brakeman, gosec, flawfinder, security-code-scan, secrets, sobelow"
 
 default:
   image: $DIND_GO_IMAGE
