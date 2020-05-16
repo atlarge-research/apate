@@ -9,7 +9,7 @@ import (
 	"strings"
 	"syscall"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	podconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 
@@ -51,7 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = v1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+	if err = podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		log.Fatal(err)
 	}
 

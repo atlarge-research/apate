@@ -1,11 +1,11 @@
-// Package pod defines utilities for the EmulatedPod CRD
+// Package pod defines utilities for the PodConfiguration CRD
 // TODO make node CRD equivalent
 package pod
 
 import (
 	"time"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,16 +17,16 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const resource = "emulatedpods"
+const resource = "podconfigurations"
 
-// EmulatedPodClient is the client for the EmulatedPod CRD
-type EmulatedPodClient struct {
+// ConfigurationClient is the client for the PodConfiguration CRD
+type ConfigurationClient struct {
 	restClient rest.Interface
 	nameSpace  string
 }
 
-// NewForConfig creates a new EmulatedPodClient based on the given restConfig and namespace
-func NewForConfig(c *rest.Config, namespace string) (*EmulatedPodClient, error) {
+// NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
+func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
 	if err := v1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
@@ -42,19 +42,19 @@ func NewForConfig(c *rest.Config, namespace string) (*EmulatedPodClient, error) 
 		return nil, err
 	}
 
-	return &EmulatedPodClient{restClient: client, nameSpace: namespace}, nil
+	return &ConfigurationClient{restClient: client, nameSpace: namespace}, nil
 }
 
-// WatchResources creates an informer which watches for new or updated EmulatedPods and updates the returned store accordingly
-func (e *EmulatedPodClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{})) *Informer {
-	emulatedPodStore, emulatedPodController := cache.NewInformer(
+// WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
+func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{})) *Informer {
+	podConfigurationStore, podConfigurationController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
 				return e.list(lo)
 			},
 			WatchFunc: e.watch,
 		},
-		&v1.EmulatedPod{},
+		&v1.PodConfiguration{},
 		1*time.Minute,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    addFunc,
@@ -63,12 +63,12 @@ func (e *EmulatedPodClient) WatchResources(addFunc func(obj interface{}), update
 		},
 	)
 
-	go emulatedPodController.Run(wait.NeverStop)
-	return NewInformer(&emulatedPodStore)
+	go podConfigurationController.Run(wait.NeverStop)
+	return NewInformer(&podConfigurationStore)
 }
 
-func (e *EmulatedPodClient) list(opts metav1.ListOptions) (*v1.EmulatedPodList, error) {
-	result := v1.EmulatedPodList{}
+func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.PodConfigurationList, error) {
+	result := v1.PodConfigurationList{}
 
 	err := e.restClient.Get().
 		Namespace(e.nameSpace).
@@ -77,16 +77,26 @@ func (e *EmulatedPodClient) list(opts metav1.ListOptions) (*v1.EmulatedPodList, 
 		Do().
 		Into(&result)
 
-	return &result, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
-func (e *EmulatedPodClient) watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 
-	return e.restClient.
+	wi, err := e.restClient.
 		Get().
 		Namespace(e.nameSpace).
 		Resource(resource).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return wi, nil
 }

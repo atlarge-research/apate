@@ -50,7 +50,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 
 	nodeInfo := cluster.NewNode("virtual-kubelet", "agent", name, k8sVersion)
 
-	vkNode, err := cli.New(ctx,
+	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
 			cfg.DaemonPort = int32(k8sPort)
 			return NewProvider(res, cfg, nodeInfo, store, crdInformer), nil
@@ -58,7 +58,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 		cli.WithBaseOpts(op),
 	)
 
-	return vkNode, err
+	return node, err
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.

@@ -9,8 +9,6 @@ import (
 	"log"
 	"time"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
-
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -213,19 +211,6 @@ func (p *Provider) GetContainerLogs(context.Context, string, string, string, api
 func (p *Provider) RunInContainer(context.Context, string, string, string, []string, api.AttachIO) error {
 	// There is no actual process running in the containers, so we can't do anything.
 	return nil
-}
-
-func (p *Provider) findCRD(pod *corev1.Pod) (*v1.EmulatedPod, error) {
-	find, ok, err := p.crdInformer.Find(pod.Namespace + "/" + pod.Labels["apate"])
-	if err != nil {
-		return nil, throw.NewException(err, "Error retrieving the CRDs in CreatePod")
-	}
-
-	if !ok {
-		return nil, nil
-	}
-
-	return find, nil
 }
 
 func (p *Provider) runLatency(ctx context.Context) error {

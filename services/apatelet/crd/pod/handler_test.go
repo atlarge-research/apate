@@ -11,14 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
 func TestGetCRDAndLabel(t *testing.T) {
-	ep := v1.EmulatedPod{
+	ep := v1.PodConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
@@ -40,32 +40,32 @@ func TestEnqueueCRD(t *testing.T) {
 
 	et1 := store.NewPodTask(
 		1,
-		"TestNamespace/TestName", &v1.EmulatedPodState{
+		"TestNamespace/TestName", &v1.PodConfigurationState{
 			PodStatus: v1.PodStatusFailed,
 		})
 
 	et2 := store.NewPodTask(
 		42,
-		"TestNamespace/TestName", &v1.EmulatedPodState{
+		"TestNamespace/TestName", &v1.PodConfigurationState{
 			PodStatus: v1.PodStatusPending,
 		})
 
-	ep := v1.EmulatedPod{
+	ep := v1.PodConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
 		},
-		Spec: v1.EmulatedPodSpec{
-			Tasks: []v1.EmulatedPodTask{
+		Spec: v1.PodConfigurationSpec{
+			Tasks: []v1.PodConfigurationTask{
 				{
 					Timestamp: 1,
-					State: v1.EmulatedPodState{
+					State: v1.PodConfigurationState{
 						PodStatus: v1.PodStatusFailed,
 					},
 				},
 				{
 					Timestamp: 42,
-					State: v1.EmulatedPodState{
+					State: v1.PodConfigurationState{
 						PodStatus: v1.PodStatusPending,
 					},
 				},
@@ -93,19 +93,19 @@ func TestEnqueueCRDDirect(t *testing.T) {
 
 	var s store.Store = ms
 
-	ep := v1.EmulatedPod{
+	ep := v1.PodConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
 		},
-		Spec: v1.EmulatedPodSpec{
-			DirectState: v1.EmulatedPodState{
+		Spec: v1.PodConfigurationSpec{
+			PodConfigurationState: v1.PodConfigurationState{
 				CreatePodResponse:    v1.ResponseNormal,
 				UpdatePodResponse:    v1.ResponseNormal,
 				DeletePodResponse:    v1.ResponseNormal,
 				GetPodResponse:       v1.ResponseNormal,
 				GetPodStatusResponse: v1.ResponseNormal,
-				PodResources: &v1.EmulatedPodResourceUsage{
+				PodResources: &v1.PodResources{
 					Memory:           "10T",
 					CPU:              1000,
 					Storage:          "5K",
@@ -113,7 +113,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 				},
 				PodStatus: v1.PodStatusRunning,
 			},
-			Tasks: []v1.EmulatedPodTask{},
+			Tasks: []v1.PodConfigurationTask{},
 		},
 	}
 

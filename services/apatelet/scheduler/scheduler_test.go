@@ -6,7 +6,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -39,7 +39,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_RESPONSE_ERROR)
 
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
 
 	// Run code under test
 	ech := make(chan error)
@@ -59,7 +59,7 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := store.NewPodTask(42, "la/clappe", &v1.EmulatedPodState{
+	task := store.NewPodTask(42, "la/clappe", &v1.PodConfigurationState{
 		PodStatus: v1.PodStatusFailed,
 	})
 
@@ -67,7 +67,7 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
 
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
 
 	// Run code under test
 	ech := make(chan error)
@@ -108,7 +108,7 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	ms.EXPECT().SetPodFlag("b", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
 
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
 
 	// Run code under test
 	ech := make(chan error)
@@ -141,7 +141,7 @@ func TestTaskHandlerNodeError(t *testing.T) {
 
 	// Set up expectations
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
 
 	// Run code under test
 	ech := make(chan error, 1)
@@ -176,7 +176,33 @@ func TestRunner(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
 
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
+
+	// Run code under test
+	ech := make(chan error, 1)
+
+	sched.runner(ech)
+
+	select {
+	case <-ech:
+		t.Fail()
+	default:
+	}
+}
+
+func TestRunnerDontHandleOldTask(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	ms := mock_store.NewMockStore(ctrl)
+
+	// Expectations
+	ms.EXPECT().PeekTask().Return(int64(10), nil)
+	ms.EXPECT().PopTask().Return(store.NewPodTask(10, "la/clappe", &v1.PodConfigurationState{
+		PodStatus: v1.PodStatusUnknown,
+	}), nil)
+
+	var s store.Store = ms
+	sched := Scheduler{&s, 40}
 
 	// Run code under test
 	ech := make(chan error, 1)
@@ -200,7 +226,7 @@ func TestRunnerEarlyFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
 
 	// Test
 	ech := make(chan error, 1)
@@ -226,7 +252,7 @@ func TestRunnerPopFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
 
 	// Test
 	ech := make(chan error, 1)
@@ -266,7 +292,7 @@ func TestStartScheduler(t *testing.T) {
 	ms.EXPECT().PeekTask().Return(time.Now().Add(time.Hour*12).UnixNano(), nil).AnyTimes()
 
 	var s store.Store = ms
-	sched := Scheduler{&s}
+	sched := Scheduler{&s, 0}
 
 	// Run code under test
 	ech := sched.StartScheduler(ctx)

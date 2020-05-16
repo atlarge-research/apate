@@ -31,6 +31,7 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
+// TODO only include start_time when moving node to CRD
 // The top level object which defines how the different Apatelet will emulate certain deployments
 type ApateletScenario struct {
 	state         protoimpl.MessageState

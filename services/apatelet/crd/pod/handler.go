@@ -3,7 +3,7 @@ package pod
 // TODO make node equivalent when moving node to CRD
 
 import (
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/emulatedpod/v1"
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -13,11 +13,13 @@ import (
 func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *chan error) *pod.Informer {
 	restConfig, err := config.GetConfig()
 	if err != nil {
+		*errch <- err
 		return nil
 	}
 
 	podClient, err := pod.NewForConfig(restConfig, "default")
 	if err != nil {
+		*errch <- err
 		return nil
 	}
 
@@ -45,9 +47,9 @@ func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *ch
 func enqueueCRD(obj interface{}, st *store.Store) error {
 	newCRD, crdLabel := getCRDAndLabel(obj)
 
-	empty := v1.EmulatedPodState{}
-	if newCRD.Spec.DirectState != empty {
-		if err := SetPodFlags(st, crdLabel, &newCRD.Spec.DirectState); err != nil {
+	empty := v1.PodConfigurationState{}
+	if newCRD.Spec.PodConfigurationState != empty {
+		if err := SetPodFlags(st, crdLabel, &newCRD.Spec.PodConfigurationState); err != nil {
 			return err
 		}
 	}
@@ -61,8 +63,8 @@ func enqueueCRD(obj interface{}, st *store.Store) error {
 	return (*st).EnqueuePodTasks(crdLabel, tasks)
 }
 
-func getCRDAndLabel(obj interface{}) (*v1.EmulatedPod, string) {
-	newCRD := obj.(*v1.EmulatedPod)
+func getCRDAndLabel(obj interface{}) (*v1.PodConfiguration, string) {
+	newCRD := obj.(*v1.PodConfiguration)
 	crdLabel := newCRD.Namespace + "/" + newCRD.Name
 	return newCRD, crdLabel
 }
