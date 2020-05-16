@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"log"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	apateLabel = "apate" // TODO: Change to constant somewhere else
+	podConfigurationLabel = "apate" // TODO: Change to constant somewhere else
 )
 
 // Stats is a simple wrapper for statistics fields
@@ -127,14 +128,16 @@ func (p *Provider) getAggregatePodStats() []stats.PodStats {
 
 func (p *Provider) getPodStats(pod *v1.Pod) *stats.PodStats {
 	for k, label := range pod.Labels {
-		if k == apateLabel {
+		if k == podConfigurationLabel {
 			unconvertedStats, err := (*p.store).GetPodFlag(label, events.PodResources)
 			if err != nil {
+				log.Printf("error while retrieving pod flag for resources: %v\n", err)
 				return addPodSpecificStats(pod, &stats.PodStats{})
 			}
 
 			statistics, ok := unconvertedStats.(stats.PodStats)
 			if !ok {
+				log.Printf("unable to convert '%v' to PodStats\n", unconvertedStats)
 				return addPodSpecificStats(pod, &stats.PodStats{})
 			}
 
