@@ -1,4 +1,4 @@
-package crd
+package pod
 
 import (
 	"testing"
@@ -85,17 +85,14 @@ func TestSetPodFlagsUnset(t *testing.T) {
 
 	var s store.Store = ms
 
-	err := SetPodFlags(&s, &store.PodTask{
-		Label: "test",
-		State: &v1.EmulatedPodState{
-			CreatePodResponse:    v1.ResponseUnset,
-			UpdatePodResponse:    v1.ResponseUnset,
-			DeletePodResponse:    v1.ResponseUnset,
-			GetPodResponse:       v1.ResponseUnset,
-			GetPodStatusResponse: v1.ResponseUnset,
-			PodResources:         nil,
-			PodStatus:            v1.PodStatusUnset,
-		},
+	err := SetPodFlags(&s, "test", &v1.EmulatedPodState{
+		CreatePodResponse:    v1.ResponseUnset,
+		UpdatePodResponse:    v1.ResponseUnset,
+		DeletePodResponse:    v1.ResponseUnset,
+		GetPodResponse:       v1.ResponseUnset,
+		GetPodStatusResponse: v1.ResponseUnset,
+		PodResources:         nil,
+		PodStatus:            v1.PodStatusUnset,
 	})
 
 	assert.NoError(t, err)
@@ -119,22 +116,19 @@ func TestSetPodFlags(t *testing.T) {
 		ms.EXPECT().SetPodFlag("test", events.PodStatus, translatePodStatus(v1.PodStatusRunning)),
 	)
 
-	err := SetPodFlags(&s, &store.PodTask{
-		Label: "test",
-		State: &v1.EmulatedPodState{
-			CreatePodResponse:    v1.ResponseNormal,
-			UpdatePodResponse:    v1.ResponseNormal,
-			DeletePodResponse:    v1.ResponseNormal,
-			GetPodResponse:       v1.ResponseNormal,
-			GetPodStatusResponse: v1.ResponseNormal,
-			PodResources: &v1.EmulatedPodResourceUsage{
-				Memory:           "1B",
-				CPU:              1,
-				Storage:          "1B",
-				EphemeralStorage: "1B",
-			},
-			PodStatus: v1.PodStatusRunning,
+	err := SetPodFlags(&s, "test", &v1.EmulatedPodState{
+		CreatePodResponse:    v1.ResponseNormal,
+		UpdatePodResponse:    v1.ResponseNormal,
+		DeletePodResponse:    v1.ResponseNormal,
+		GetPodResponse:       v1.ResponseNormal,
+		GetPodStatusResponse: v1.ResponseNormal,
+		PodResources: &v1.EmulatedPodResourceUsage{
+			Memory:           "1B",
+			CPU:              1,
+			Storage:          "1B",
+			EphemeralStorage: "1B",
 		},
+		PodStatus: v1.PodStatusRunning,
 	})
 
 	assert.NoError(t, err)
@@ -149,22 +143,19 @@ func TestSetPodFlagsErr(t *testing.T) {
 
 	ms.EXPECT().SetPodFlag(gomock.Any(), gomock.Any(), gomock.Any()).MinTimes(0)
 
-	err := SetPodFlags(&s, &store.PodTask{
-		Label: "test",
-		State: &v1.EmulatedPodState{
-			CreatePodResponse:    v1.ResponseNormal,
-			UpdatePodResponse:    v1.ResponseNormal,
-			DeletePodResponse:    v1.ResponseNormal,
-			GetPodResponse:       v1.ResponseNormal,
-			GetPodStatusResponse: v1.ResponseNormal,
-			PodResources: &v1.EmulatedPodResourceUsage{
-				Memory:           "-1B",
-				CPU:              1,
-				Storage:          "1B",
-				EphemeralStorage: "1B",
-			},
-			PodStatus: v1.PodStatusRunning,
+	err := SetPodFlags(&s, "test", &v1.EmulatedPodState{
+		CreatePodResponse:    v1.ResponseNormal,
+		UpdatePodResponse:    v1.ResponseNormal,
+		DeletePodResponse:    v1.ResponseNormal,
+		GetPodResponse:       v1.ResponseNormal,
+		GetPodStatusResponse: v1.ResponseNormal,
+		PodResources: &v1.EmulatedPodResourceUsage{
+			Memory:           "-1B",
+			CPU:              1,
+			Storage:          "1B",
+			EphemeralStorage: "1B",
 		},
+		PodStatus: v1.PodStatusRunning,
 	})
 
 	assert.Error(t, err)

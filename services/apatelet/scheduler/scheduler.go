@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -56,12 +56,19 @@ func (s *Scheduler) runner(ech chan error) {
 }
 
 func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
-	if t.IsPod {
-		err := crd.SetPodFlags(s.store, t.PodTask)
+	isPod, err := t.IsPod()
+	if err != nil {
+		ech <- err
+		return
+	}
+
+	if isPod {
+		err := pod.SetPodFlags(s.store, t.PodTask.Label, t.PodTask.State)
 		if err != nil {
 			ech <- err
 		}
 	} else {
+		// TODO change this when moving node to CRD
 		for k, mv := range t.NodeTask.NodeEventFlags {
 			v, err := any.Unmarshal(mv)
 			if err != nil {

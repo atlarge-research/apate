@@ -1,5 +1,5 @@
-// Package crd provides functions and types to control Apate through CRDs.
-package crd
+// Package pod provides functions and types to deal with the EmulatedPod CRD
+package pod
 
 import (
 	"time"
@@ -15,37 +15,37 @@ import (
 )
 
 // SetPodFlags sets all flags for a pod.
-func SetPodFlags(st *store.Store, pt *store.PodTask) error {
-	if !isResponseUnset(pt.State.CreatePodResponse) {
-		(*st).SetPodFlag(pt.Label, events.PodCreatePodResponse, translateResponse(pt.State.CreatePodResponse))
+func SetPodFlags(st *store.Store, label string, pt *v1.EmulatedPodState) error {
+	if !isResponseUnset(pt.CreatePodResponse) {
+		(*st).SetPodFlag(label, events.PodCreatePodResponse, translateResponse(pt.CreatePodResponse))
 	}
 
-	if !isResponseUnset(pt.State.UpdatePodResponse) {
-		(*st).SetPodFlag(pt.Label, events.PodUpdatePodResponse, translateResponse(pt.State.UpdatePodResponse))
+	if !isResponseUnset(pt.UpdatePodResponse) {
+		(*st).SetPodFlag(label, events.PodUpdatePodResponse, translateResponse(pt.UpdatePodResponse))
 	}
 
-	if !isResponseUnset(pt.State.DeletePodResponse) {
-		(*st).SetPodFlag(pt.Label, events.PodDeletePodResponse, translateResponse(pt.State.DeletePodResponse))
+	if !isResponseUnset(pt.DeletePodResponse) {
+		(*st).SetPodFlag(label, events.PodDeletePodResponse, translateResponse(pt.DeletePodResponse))
 	}
 
-	if !isResponseUnset(pt.State.GetPodResponse) {
-		(*st).SetPodFlag(pt.Label, events.PodGetPodResponse, translateResponse(pt.State.GetPodResponse))
+	if !isResponseUnset(pt.GetPodResponse) {
+		(*st).SetPodFlag(label, events.PodGetPodResponse, translateResponse(pt.GetPodResponse))
 	}
 
-	if !isResponseUnset(pt.State.GetPodStatusResponse) {
-		(*st).SetPodFlag(pt.Label, events.PodGetPodStatusResponse, translateResponse(pt.State.GetPodStatusResponse))
+	if !isResponseUnset(pt.GetPodStatusResponse) {
+		(*st).SetPodFlag(label, events.PodGetPodStatusResponse, translateResponse(pt.GetPodStatusResponse))
 	}
 
-	if pt.State.PodResources != nil {
-		resources, err := translatePodResources(pt.State.PodResources)
+	if pt.PodResources != nil {
+		resources, err := translatePodResources(pt.PodResources)
 		if err != nil {
 			return err
 		}
-		(*st).SetPodFlag(pt.Label, events.PodResources, resources)
+		(*st).SetPodFlag(label, events.PodResources, resources)
 	}
 
-	if !isPodStatusUnset(pt.State.PodStatus) {
-		(*st).SetPodFlag(pt.Label, events.PodStatus, translatePodStatus(pt.State.PodStatus))
+	if !isPodStatusUnset(pt.PodStatus) {
+		(*st).SetPodFlag(label, events.PodStatus, translatePodStatus(pt.PodStatus))
 	}
 
 	return nil

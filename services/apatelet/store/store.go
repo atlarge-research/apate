@@ -17,14 +17,17 @@ type Store interface {
 	// SetStartTime sets the value of the starttime in the store. All other tiing is based in this
 	SetStartTime(int64)
 
+	// TODO remove this when moving node to CRD
 	// EnqueueTasks creates a priority queue based on these tasks
 	EnqueueTasks([]*Task)
 
-	// EnqueueCRDTasks adds or updates CRD tasks to the queue based on their label (<namespace>/<name>)
-	EnqueueCRDTasks(string, []*Task)
+	// TODO add node equivalent when node to CRD
+	// EnqueuePodTasks adds or updates pod CRD tasks to the queue based on their label (<namespace>/<name>)
+	EnqueuePodTasks(string, []*Task) error
 
-	// RemoveCRDTasks removes CRD tasks from the queue based on their label (<namespace>/<name>)
-	RemoveCRDTasks(string)
+	// TODO add node equivalent when node to CRD
+	// RemovePodTasks removes pod CRD tasks from the queue based on their label (<namespace>/<name>)
+	RemovePodTasks(string) error
 
 	// LenTasks returns the amount of tasks left to be picked up
 	LenTasks() int
@@ -76,6 +79,7 @@ func (s *store) SetStartTime(time int64) {
 	s.startTime = time
 }
 
+// TODO remove this when moving node to CRD
 func (s *store) EnqueueTasks(tasks []*Task) {
 	for _, task := range tasks {
 		s.queue.Push(task)
@@ -84,30 +88,47 @@ func (s *store) EnqueueTasks(tasks []*Task) {
 	heap.Init(s.queue)
 }
 
-func (s *store) EnqueueCRDTasks(label string, newTasks []*Task) {
+func (s *store) EnqueuePodTasks(label string, newTasks []*Task) error {
 	for i, task := range s.queue.tasks {
-		if task.PodTask.Label == label {
+		isPod, err := task.IsPod()
+		if err != nil {
+			return err
+		}
+
+		if isPod && task.PodTask.Label == label {
 			if len(newTasks) == 0 {
 				heap.Remove(s.queue, i)
+			} else {
+				s.queue.tasks[i] = newTasks[0]
+				// Replacing and then fixing instead of deleting all and pushing because it's slightly faster, see comments on heap.Fix
+				heap.Fix(s.queue, i)
+				newTasks = newTasks[1:]
 			}
-
-			s.queue.tasks[i] = newTasks[0]
-			heap.Fix(s.queue, i) // Replacing and then fixing instead of deleting all and pushing because it's slightly faster, see comments on heap.Fix
-			newTasks = newTasks[1:]
 		}
 	}
 
 	for _, remainingTask := range newTasks {
 		heap.Push(s.queue, remainingTask)
 	}
+
+	return nil
 }
 
-func (s *store) RemoveCRDTasks(label string) {
-	for i, task := range s.queue.tasks {
-		if task.PodTask.Label == label {
+func (s *store) RemovePodTasks(label string) error {
+	for i := len(s.queue.tasks) - 1; i >= 0; i-- {
+		task := s.queue.tasks[i]
+
+		isPod, err := task.IsPod()
+		if err != nil {
+			return err
+		}
+
+		if isPod && task.PodTask.Label == label {
 			heap.Remove(s.queue, i)
 		}
 	}
+
+	return nil
 }
 
 func (s *store) LenTasks() int {

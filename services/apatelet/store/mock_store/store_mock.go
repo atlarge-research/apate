@@ -33,16 +33,18 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// EnqueueCRDTasks mocks base method
-func (m *MockStore) EnqueueCRDTasks(arg0 string, arg1 []*store.Task) {
+// EnqueuePodTasks mocks base method
+func (m *MockStore) EnqueuePodTasks(arg0 string, arg1 []*store.Task) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EnqueueCRDTasks", arg0, arg1)
+	ret := m.ctrl.Call(m, "EnqueuePodTasks", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// EnqueueCRDTasks indicates an expected call of EnqueueCRDTasks
-func (mr *MockStoreMockRecorder) EnqueueCRDTasks(arg0, arg1 interface{}) *gomock.Call {
+// EnqueuePodTasks indicates an expected call of EnqueuePodTasks
+func (mr *MockStoreMockRecorder) EnqueuePodTasks(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueCRDTasks", reflect.TypeOf((*MockStore)(nil).EnqueueCRDTasks), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueuePodTasks", reflect.TypeOf((*MockStore)(nil).EnqueuePodTasks), arg0, arg1)
 }
 
 // EnqueueTasks mocks base method
@@ -131,16 +133,18 @@ func (mr *MockStoreMockRecorder) PopTask() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopTask", reflect.TypeOf((*MockStore)(nil).PopTask))
 }
 
-// RemoveCRDTasks mocks base method
-func (m *MockStore) RemoveCRDTasks(arg0 string) {
+// RemovePodTasks mocks base method
+func (m *MockStore) RemovePodTasks(arg0 string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveCRDTasks", arg0)
+	ret := m.ctrl.Call(m, "RemovePodTasks", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// RemoveCRDTasks indicates an expected call of RemoveCRDTasks
-func (mr *MockStoreMockRecorder) RemoveCRDTasks(arg0 interface{}) *gomock.Call {
+// RemovePodTasks indicates an expected call of RemovePodTasks
+func (mr *MockStoreMockRecorder) RemovePodTasks(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCRDTasks", reflect.TypeOf((*MockStore)(nil).RemoveCRDTasks), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePodTasks", reflect.TypeOf((*MockStore)(nil).RemovePodTasks), arg0)
 }
 
 // SetNodeFlag mocks base method
