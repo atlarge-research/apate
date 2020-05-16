@@ -18,14 +18,6 @@ func NewInformer(store *cache.Store) *Informer {
 	return &Informer{store: store}
 }
 
-// List returns a list of emulated pods.
-func (i *Informer) List() (eps []v1.PodConfiguration) {
-	for _, ep := range (*i.store).List() {
-		eps = append(eps, ep.(v1.PodConfiguration))
-	}
-	return eps
-}
-
 // Find finds an emulated pod which can be identified by the given label
 // This label should have the format <namespace>/<name> of the emulated pod.
 func (i *Informer) Find(label string) (*v1.PodConfiguration, bool, error) {
@@ -40,7 +32,7 @@ func (i *Informer) Find(label string) (*v1.PodConfiguration, bool, error) {
 			return ep, true, nil
 		}
 
-		return nil, false, fmt.Errorf("couldn't cast %v to emulated pod", key)
+		return nil, false, fmt.Errorf("couldn't cast %v to podconfiguration", key)
 	}
 
 	return nil, false, nil
