@@ -10,8 +10,6 @@ import (
 
 	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	cli "github.com/virtual-kubelet/node-cli"
@@ -57,7 +55,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Create virtual kubelet
 	errch := make(chan error)
 
-	crdSt := crdPod.CreateCRDInformer(config, &st, &errch)
+	crdPod.CreateCRDInformer(config, &st, &errch)
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -65,7 +63,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	hc.StartStreamWithRetry(ctx, 3)
 
 	// Start the Apatelet
-	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st, crdSt)
+	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st)
 	if err != nil {
 		return err
 	}
@@ -161,9 +159,9 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *pod.Informer) (*cli.Command, context.CancelFunc, error) {
+func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store, crdInformer)
+	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
 	return cmd, cancel, err
 }
 

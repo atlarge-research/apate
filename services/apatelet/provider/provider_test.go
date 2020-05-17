@@ -4,12 +4,6 @@ import (
 	"context"
 	"testing"
 
-	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
-
-	"k8s.io/client-go/tools/cache"
-
-	mockcache "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/mock_cache_store"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
 	"github.com/golang/mock/gomock"
@@ -64,12 +58,8 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
-	mCrdSt := mockcache.NewMockStore(ctrl)
-	var crdSt cache.Store = mCrdSt
 
-	inf := crdPod.NewInformer(&crdSt)
-
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, cluster.NodeInfo{}, &st, inf)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, cluster.NodeInfo{}, &st)
 
 	fakeNode := corev1.Node{}
 
@@ -86,7 +76,6 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 func TestCreatePod(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
-	cs := mockcache.NewMockStore(ctrl)
 
 	/// vars
 	pod := corev1.Pod{}
@@ -104,12 +93,10 @@ func TestCreatePod(t *testing.T) {
 
 	// sot
 	var s store.Store = ms
-	var c cache.Store = cs
 
 	p := Provider{
-		store:       &s,
-		pods:        podmanager.New(),
-		crdInformer: crdPod.NewInformer(&c),
+		store: &s,
+		pods:  podmanager.New(),
 	}
 
 	err := p.CreatePod(context.TODO(), &pod)
