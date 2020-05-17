@@ -10,20 +10,20 @@ import (
 )
 
 // CreateCRDInformer creates a new crd informer.
-func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *chan error) *pod.Informer {
+func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *chan error) {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		*errch <- err
-		return nil
+		return
 	}
 
 	podClient, err := pod.NewForConfig(restConfig, "default")
 	if err != nil {
 		*errch <- err
-		return nil
+		return
 	}
 
-	inf := podClient.WatchResources(func(obj interface{}) {
+	podClient.WatchResources(func(obj interface{}) {
 		err := enqueueCRD(obj, st)
 		if err != nil {
 			*errch <- err
@@ -40,8 +40,6 @@ func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *ch
 			*errch <- err
 		}
 	})
-
-	return inf
 }
 
 func enqueueCRD(obj interface{}, st *store.Store) error {
