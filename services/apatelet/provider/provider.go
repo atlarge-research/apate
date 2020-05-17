@@ -6,8 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
 	cli "github.com/virtual-kubelet/node-cli"
@@ -26,17 +24,16 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	pods        podmanager.PodManager
-	resources   *normalization.NodeResources
-	cfg         provider.InitConfig
-	nodeInfo    cluster.NodeInfo
-	store       *store.Store
-	crdInformer *pod.Informer
-	stats       *Stats
+	pods      podmanager.PodManager
+	resources *normalization.NodeResources
+	cfg       provider.InitConfig
+	nodeInfo  cluster.NodeInfo
+	store     *store.Store
+	stats     *Stats
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store, crdInformer *pod.Informer) (*cli.Command, error) {
+func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, err
@@ -54,7 +51,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
 			cfg.DaemonPort = int32(k8sPort)
-			return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store, crdInformer), nil
+			return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store), nil
 		}),
 		cli.WithBaseOpts(op),
 	)
@@ -63,14 +60,13 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store, crdInformer *pod.Informer) provider.Provider {
+func NewProvider(pods podmanager.PodManager, stats *Stats, resources *normalization.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store) provider.Provider {
 	return &Provider{
-		pods:        pods,
-		resources:   resources,
-		cfg:         cfg,
-		nodeInfo:    nodeInfo,
-		store:       store,
-		crdInformer: crdInformer,
-		stats:       stats,
+		pods:      pods,
+		resources: resources,
+		cfg:       cfg,
+		nodeInfo:  nodeInfo,
+		store:     store,
+		stats:     stats,
 	}
 }

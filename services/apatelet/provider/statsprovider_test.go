@@ -4,11 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"k8s.io/client-go/tools/cache"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
-	mock_cache "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/mock_cache_store"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-kubelet/node-cli/provider"
@@ -36,14 +31,11 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 
-	mcs := mock_cache.NewMockStore(ctrl)
-	var cs cache.Store = mcs
-
 	pm := podmanager.New() // TODO mock?
 
 	res := normalization.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
 	info := cluster.NewNodeInfo("", "", name, "", port)
-	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s, pod.NewInformer(&cs))
+	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
 
 	return prov.(provider.PodMetricsProvider), ctrl, ms, pm
 }
