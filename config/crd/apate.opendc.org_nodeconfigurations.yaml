@@ -6,22 +6,22 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: podconfigurations.apate.opendc.org
+  name: nodeconfigurations.apate.opendc.org
 spec:
   group: apate.opendc.org
   names:
-    kind: PodConfiguration
-    listKind: PodConfigurationList
-    plural: podconfigurations
+    kind: NodeConfiguration
+    listKind: NodeConfigurationList
+    plural: nodeconfigurations
     shortNames:
-    - pc
-    singular: podconfiguration
+    - nc
+    singular: nodeconfiguration
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: PodConfiguration is a definition of PodConfiguration resource.
+        description: NodeConfiguration is a definition of a NodeConfiguration resource
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
@@ -32,10 +32,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: PodConfigurationSpec is the spec which belongs to the PodConfiguration CRD
+            description: NodeConfigurationSpec is the spec which belongs to NodeConfiguration
             properties:
               inline:
-                description: A direct way to update state, this will circumvent the timestamps / scenario
+                description: A way to directly update the node state
                 properties:
                   create_pod_response:
                     default: UNSET
@@ -73,32 +73,27 @@ spec:
                     - ERROR
                     - UNSET
                     type: string
-                  pod_resources:
-                    description: PodResources sets the amount of resources the related pods are using
-                    properties:
-                      cpu:
-                        default: 0
-                        format: int64
-                        type: integer
-                      ephemeral_storage:
-                        default: 0B
-                        type: string
-                      memory:
-                        default: 0B
-                        type: string
-                      storage:
-                        default: 0B
-                        type: string
-                    type: object
-                  pod_status:
+                  get_pods_response:
                     default: UNSET
-                    description: PodStatus updates the current pod status
+                    description: GetPodsResponse determines how to respond to the GetPods request
                     enum:
-                    - PENDING
-                    - RUNNING
-                    - SUCCEEDED
-                    - FAILED
-                    - UNKNOWN
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
+                    - UNSET
+                    type: string
+                  network_latency:
+                    default: 0
+                    description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
+                    format: int64
+                    type: integer
+                  node_ping_response:
+                    default: UNSET
+                    description: NodePingResponse determines how to respond to a heartbeat ping
+                    enum:
+                    - NORMAL
+                    - TIMEOUT
+                    - ERROR
                     - UNSET
                     type: string
                   update_pod_response:
@@ -112,12 +107,11 @@ spec:
                     type: string
                 type: object
               tasks:
-                description: The tasks to be executed
+                description: The tasks to be executed on this node
                 items:
-                  description: PodConfigurationTask is a single task which updates a pod state and is executed at a timestamp
                   properties:
-                    state:
-                      description: The state to be set
+                    custom_state:
+                      description: CustomState specifies a custom state
                       properties:
                         create_pod_response:
                           default: UNSET
@@ -155,32 +149,27 @@ spec:
                           - ERROR
                           - UNSET
                           type: string
-                        pod_resources:
-                          description: PodResources sets the amount of resources the related pods are using
-                          properties:
-                            cpu:
-                              default: 0
-                              format: int64
-                              type: integer
-                            ephemeral_storage:
-                              default: 0B
-                              type: string
-                            memory:
-                              default: 0B
-                              type: string
-                            storage:
-                              default: 0B
-                              type: string
-                          type: object
-                        pod_status:
+                        get_pods_response:
                           default: UNSET
-                          description: PodStatus updates the current pod status
+                          description: GetPodsResponse determines how to respond to the GetPods request
                           enum:
-                          - PENDING
-                          - RUNNING
-                          - SUCCEEDED
-                          - FAILED
-                          - UNKNOWN
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
+                          - UNSET
+                          type: string
+                        network_latency:
+                          default: 0
+                          description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
+                          format: int64
+                          type: integer
+                        node_ping_response:
+                          default: UNSET
+                          description: NodePingResponse determines how to respond to a heartbeat ping
+                          enum:
+                          - NORMAL
+                          - TIMEOUT
+                          - ERROR
                           - UNSET
                           type: string
                         update_pod_response:
@@ -193,13 +182,25 @@ spec:
                           - UNSET
                           type: string
                       type: object
+                    heartbeat_failed:
+                      default: false
+                      description: If set, HeartbeatFailed will result in the node no longer responding to pings
+                      type: boolean
+                    network_latency:
+                      default: 0
+                      description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
+                      format: int64
+                      type: integer
+                    node_failed:
+                      default: false
+                      description: If set, NodeFailed will result in timeouts for all requests by kubernetes effectively taking down the node
+                      type: boolean
                     timestamp:
                       description: The timestamp at which the task is executed
                       format: int64
                       minimum: 0
                       type: integer
                   required:
-                  - state
                   - timestamp
                   type: object
                 type: array
