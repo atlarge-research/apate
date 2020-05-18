@@ -6,8 +6,8 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:path=nodeconfigurations,shortName=nc,singular=nodeconfiguration
 type NodeConfiguration struct {
-	metav1.TypeMeta `json:",inline"`
-	Meta            metav1.ObjectMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
 
 	Spec NodeConfigurationSpec `json:"spec"`
 }
@@ -16,7 +16,7 @@ type NodeConfiguration struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type NodeConfigurationList struct {
 	metav1.TypeMeta `json:",inline"`
-	Meta            metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []NodeConfiguration `json:"items"`
 }
@@ -29,7 +29,7 @@ type NodeConfigurationSpec struct {
 
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Required
-	Replicas uint64 `json:"replicas"`
+	Replicas int64 `json:"replicas"`
 
 	// +kubebuilder:validation:Required
 	Resources NodeResources `json:"resources"`
@@ -45,7 +45,7 @@ type NodeResources struct {
 	Memory string `json:"memory,omitempty"`
 
 	// +kubebuilder:validation:Required
-	CPU uint64 `json:"cpu,omitempty"`
+	CPU int64 `json:"cpu,omitempty"`
 
 	// +kubebuilder:validation:Required
 	Storage string `json:"storage,omitempty"`
@@ -54,7 +54,7 @@ type NodeResources struct {
 	EphemeralStorage string `json:"ephemeral_storage,omitempty"`
 
 	// +kubebuilder:validation:Required
-	MaxPods uint64 `json:"max_pods,omitempty"`
+	MaxPods int64 `json:"max_pods,omitempty"`
 }
 
 // NodeConfigurationTask is a single task which modifies the node state on the given timestamp
@@ -82,7 +82,7 @@ type NodeConfigurationState struct {
 	// NetworkLatency determines how much added latency will be introduced to requests by kubernetes
 	// +kubebuilder:default=0
 	// +kubebuilder:validation:Optional
-	NetworkLatency uint64 `json:"network_latency,omitempty"`
+	NetworkLatency int64 `json:"network_latency,omitempty"`
 
 	// If set, HeartbeatFailed will result in the node no longer responding to pings
 	// +kubebuilder:default=false

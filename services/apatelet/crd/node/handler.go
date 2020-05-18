@@ -24,7 +24,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	client.WatchResources(func(obj interface{}) {
 		// Add function
 		nodeCfg := obj.(*v1.NodeConfiguration)
-		if nodeCfg.Meta.Name == selector {
+		if getSelector(nodeCfg) == selector {
 			err := enqueueNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
@@ -33,7 +33,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	}, func(_, obj interface{}) {
 		// Update function
 		nodeCfg := obj.(*v1.NodeConfiguration)
-		if nodeCfg.Meta.Name == selector {
+		if getSelector(nodeCfg) == selector {
 			err := enqueueNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
@@ -58,4 +58,8 @@ func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
 	}
 
 	return (*st).SetNodeTasks(tasks)
+}
+
+func getSelector(cfg *v1.NodeConfiguration) string {
+	return cfg.Namespace + "/" + cfg.Name
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"os"
@@ -8,7 +9,11 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
+
+	nodeconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
@@ -32,6 +37,8 @@ func init() {
 func main() {
 	log.Println("starting Apate control plane")
 
+	ctx := context.Background()
+
 	// Get external connection information
 	externalInformation, err := createExternalConnectionInformation()
 
@@ -51,7 +58,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Create CRDs
 	if err = podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+		log.Fatal(err)
+	}
+	if err = nodeconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+		log.Fatal(err)
+	}
+
+	// TODO: Remove later, seems to give k8s some breathing room for crd
+	time.Sleep(time.Second)
+
+	// Create node informer
+	if err = node.CreateNodeInformer(ctx, managedKubernetesCluster.KubeConfig, &createdStore, externalInformation); err != nil {
 		log.Fatal(err)
 	}
 

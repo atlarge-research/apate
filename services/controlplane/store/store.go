@@ -36,6 +36,9 @@ type Store interface {
 	// GetNodes returns an array containing all nodes in the Apate cluster
 	GetNodes() ([]Node, error)
 
+	// GetNodesBySelector returns an array containing all nodes in the Apate cluster with the given selector
+	GetNodesBySelector(string) ([]Node, error)
+
 	// ClearNodes removes all nodes from the Apate cluster
 	ClearNodes() error
 
@@ -59,8 +62,9 @@ type Store interface {
 }
 
 type store struct {
-	nodes    map[uuid.UUID]Node
-	nodeLock sync.RWMutex
+	nodes           map[uuid.UUID]Node
+	nodesBySelector map[string][]Node
+	nodeLock        sync.RWMutex
 
 	resourceQueue list.List
 	resourceLock  sync.Mutex
@@ -75,7 +79,8 @@ type store struct {
 // NewStore creates a new empty cluster
 func NewStore() Store {
 	return &store{
-		nodes: make(map[uuid.UUID]Node),
+		nodes:           make(map[uuid.UUID]Node),
+		nodesBySelector: make(map[string][]Node),
 	}
 }
 
@@ -88,7 +93,12 @@ func (s *store) AddNode(node *Node) error {
 		return fmt.Errorf("node with uuid '%s' already exists", node.UUID.String())
 	}
 
+	if len(node.Selector) == 0 {
+		return fmt.Errorf("node %s has no selector", node.UUID.String())
+	}
+
 	s.nodes[node.UUID] = *node
+	s.nodesBySelector[node.Selector] = append(s.nodesBySelector[node.Selector], *node)
 
 	return nil
 }
@@ -97,7 +107,22 @@ func (s *store) RemoveNode(node *Node) error {
 	s.nodeLock.Lock()
 	defer s.nodeLock.Unlock()
 
+	selector := node.Selector
+
+	if len(selector) == 0 {
+		return fmt.Errorf("node %s has no selector", node.UUID.String())
+	}
+
+	for i, cur := range s.nodesBySelector[selector] {
+		if cur.UUID == node.UUID {
+			le := len(s.nodesBySelector[selector])
+			s.nodesBySelector[selector][i] = s.nodesBySelector[selector][le-1]
+			s.nodesBySelector[selector] = s.nodesBySelector[selector][:le-1]
+		}
+	}
+
 	delete(s.nodes, node.UUID)
+
 	return nil
 }
 
@@ -136,6 +161,13 @@ func (s *store) GetNodes() ([]Node, error) {
 	}
 
 	return nodes, nil
+}
+
+func (s *store) GetNodesBySelector(selector string) ([]Node, error) {
+	s.nodeLock.RLock()
+	defer s.nodeLock.RUnlock()
+
+	return s.nodesBySelector[selector], nil
 }
 
 func (s *store) ClearNodes() error {

@@ -21,4 +21,7 @@ type NodeResources struct {
 
 	// The max amount of pods in Kubernetes
 	MaxPods int64
+
+	// Identifier for type of node
+	Selector string
 }

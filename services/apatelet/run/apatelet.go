@@ -59,7 +59,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	if err != nil {
 		return err
 	}
-	err = node.CreateNodeInformer(config, &st, "")
+	err = node.CreateNodeInformer(config, &st, res.Selector)
 	if err != nil {
 		return err
 	}
@@ -86,8 +86,11 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		}
 	}()
 
+	// Create stop channel
+	stop := make(chan os.Signal, 1)
+
 	// Start gRPC server
-	server, err := createGRPC(apateletEnv.ListenPort, &st, apateletEnv.ListenAddress)
+	server, err := createGRPC(apateletEnv.ListenPort, &st, apateletEnv.ListenAddress, &stop)
 	if err != nil {
 		return err
 	}
@@ -97,13 +100,12 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 	log.Printf("now listening on :%d for kube api and :%d for metrics", kubernetesPort, metricsPort)
 
-	// Handle signals
-	signals := make(chan os.Signal, 1)
+	// Handle stop
 	stopped := make(chan bool, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		<-signals
+		<-stop
 		shutdown(ctx, server, cancel, connectionInfo, res.UUID.String())
 		stopped <- true
 	}()
@@ -174,7 +176,7 @@ func createNodeController(ctx context.Context, res *normalization.NodeResources,
 	return cmd, cancel, err
 }
 
-func createGRPC(listenPort int, store *store.Store, listenAddress string) (*service.GRPCServer, error) {
+func createGRPC(listenPort int, store *store.Store, listenAddress string, _ *chan os.Signal) (*service.GRPCServer, error) {
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 

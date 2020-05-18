@@ -101,7 +101,7 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	// Set up expectations
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyEnabled, true).AnyTimes()
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_RESPONSE_ERROR)
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, uint64(42))
+	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
 
 	var s store.Store = ms
 	sched := Scheduler{&s, 0}

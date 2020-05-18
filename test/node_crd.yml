@@ -1,0 +1,12 @@
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: test-deployment1
+spec:
+    replicas: 5
+    resources:
+        memory: 5G
+        cpu: 1000
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
