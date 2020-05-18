@@ -6,8 +6,8 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:path=nodeconfigurations,shortName=nc,singular=nodeconfiguration
 type NodeConfiguration struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.TypeMeta `json:",inline"`
+	Meta            metav1.ObjectMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
 
 	Spec NodeConfigurationSpec `json:"spec"`
 }
@@ -16,7 +16,7 @@ type NodeConfiguration struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type NodeConfigurationList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	Meta            metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []NodeConfiguration `json:"items"`
 }
@@ -25,7 +25,14 @@ type NodeConfigurationList struct {
 type NodeConfigurationSpec struct {
 	// A way to directly update the node state
 	// +kubebuilder:validation:Optional
-	State NodeConfigurationState `json:"inline,omitempty"`
+	State *NodeConfigurationState `json:"inline,omitempty"`
+
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Required
+	Replicas uint64 `json:"replicas"`
+
+	// +kubebuilder:validation:Required
+	Resources NodeResources `json:"resources"`
 
 	// The tasks to be executed on this node
 	// +kubebuilder:validation:Optional
@@ -63,7 +70,8 @@ type NodeConfigurationTask struct {
 }
 
 // NodeConfigurationState is the state of the node, used for determining how to respond to request from kubernetes.
-// This state includes some built-in states, which Apate will translate to direct state for ease of use
+// This state includes some built-in states, which Apate will translate to direct state for ease of use.
+// Said built-in states take precedence over the custom state
 type NodeConfigurationState struct {
 	// If set, NodeFailed will result in timeouts for all requests by kubernetes
 	// effectively taking down the node
@@ -123,11 +131,6 @@ type NodeConfigurationDirectState struct {
 	// +kubebuilder:default=UNSET
 	// +kubebuilder:validation:Optional
 	NodePingResponse NodeResponse `json:"node_ping_response,omitempty"`
-
-	// NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-	// +kubebuilder:default=0
-	// +kubebuilder:validation:Optional
-	NetworkLatency uint64 `json:"network_latency,omitempty"`
 }
 
 // NodeResponse can be NORMAL, TIMEOUT, ERROR or UNSET, and describes how a node should respond to a pod related request

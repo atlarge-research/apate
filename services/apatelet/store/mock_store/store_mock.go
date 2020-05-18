@@ -33,30 +33,32 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// EnqueuePodTasks mocks base method
-func (m *MockStore) EnqueuePodTasks(arg0 string, arg1 []*store.Task) error {
+// SetNodeTasks mocks base method
+func (m *MockStore) SetNodeTasks(arg0 []*store.Task) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnqueuePodTasks", arg0, arg1)
+	ret := m.ctrl.Call(m, "SetNodeTasks", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// EnqueuePodTasks indicates an expected call of EnqueuePodTasks
+// SetNodeTasks indicates an expected call of SetNodeTasks
+func (mr *MockStoreMockRecorder) EnqueueNodeTasks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNodeTasks", reflect.TypeOf((*MockStore)(nil).SetNodeTasks), arg0)
+}
+
+// SetPodTasks mocks base method
+func (m *MockStore) SetPodTasks(arg0 string, arg1 []*store.Task) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPodTasks", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPodTasks indicates an expected call of SetPodTasks
 func (mr *MockStoreMockRecorder) EnqueuePodTasks(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueuePodTasks", reflect.TypeOf((*MockStore)(nil).EnqueuePodTasks), arg0, arg1)
-}
-
-// EnqueueTasks mocks base method
-func (m *MockStore) EnqueueTasks(arg0 []*store.Task) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EnqueueTasks", arg0)
-}
-
-// EnqueueTasks indicates an expected call of EnqueueTasks
-func (mr *MockStoreMockRecorder) EnqueueTasks(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueTasks", reflect.TypeOf((*MockStore)(nil).EnqueueTasks), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodTasks", reflect.TypeOf((*MockStore)(nil).SetPodTasks), arg0, arg1)
 }
 
 // GetNodeFlag mocks base method
