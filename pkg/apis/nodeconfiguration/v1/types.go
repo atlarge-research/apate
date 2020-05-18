@@ -57,6 +57,14 @@ type NodeConfigurationTask struct {
 	// +kubebuilder:validation:Required
 	Timestamp int64 `json:"timestamp"`
 
+	// The desired state of the node after this task
+	// +kubebuilder:validation:Required
+	State NodeConfigurationState `json:"state"`
+}
+
+// NodeConfigurationState is the state of the node, used for determining how to respond to request from kubernetes.
+// This state includes some built-in states, which Apate will translate to direct state for ease of use
+type NodeConfigurationState struct {
 	// If set, NodeFailed will result in timeouts for all requests by kubernetes
 	// effectively taking down the node
 	// +kubebuilder:default=false
@@ -75,11 +83,12 @@ type NodeConfigurationTask struct {
 
 	// CustomState specifies a custom state
 	// +kubebuilder:validation:Optional
-	CustomState *NodeConfigurationState `json:"custom_state,omitempty"`
+	CustomState *NodeConfigurationDirectState `json:"custom_state,omitempty"`
 }
 
-// NodeConfigurationState is the state of the node, used for determining how to respond to request from kubernetes
-type NodeConfigurationState struct {
+// NodeConfigurationDirectState is the state of the node, used for determining how to respond to request from kubernetes.
+// This state will not be translated or anything similar, as this is a direct mapping to the actual state of the apatelet
+type NodeConfigurationDirectState struct {
 	// CreatePodResponse determines how to respond to the CreatePod request
 	// +kubebuilder:default=UNSET
 	// +kubebuilder:validation:Optional
