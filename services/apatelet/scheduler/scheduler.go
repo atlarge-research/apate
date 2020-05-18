@@ -5,9 +5,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -72,15 +73,6 @@ func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
 			ech <- err
 		}
 	} else {
-		// TODO change this when moving node to CRD
-		for k, mv := range t.NodeTask.NodeEventFlags {
-			v, err := any.Unmarshal(mv)
-			if err != nil {
-				ech <- err
-				continue
-			}
-
-			(*s.store).SetNodeFlag(k, v)
-		}
+		node.SetNodeFlags(s.store, t.NodeTask.State)
 	}
 }

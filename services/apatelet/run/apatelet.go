@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
+
 	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -52,10 +54,15 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Create store
 	st := store.NewStore()
 
-	// Create virtual kubelet
-	errch := make(chan error)
-
-	crdPod.CreateCRDInformer(config, &st, &errch)
+	// Create crd informers
+	err = crdPod.CreatePodInformer(config, &st)
+	if err != nil {
+		return err
+	}
+	err = node.CreateNodeInformer(config, &st, "")
+	if err != nil {
+		return err
+	}
 
 	// Setup health status
 	hc := health.GetClient(connectionInfo, res.UUID.String())
@@ -68,7 +75,9 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		return err
 	}
 
+	// Create virtual kubelet
 	log.Println("Joining kubernetes cluster")
+	errch := make(chan error)
 	go func() {
 		// TODO: Notify master / proper logging
 		if err = nc.Run(ctx); err != nil {

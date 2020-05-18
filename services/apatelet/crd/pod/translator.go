@@ -1,5 +1,4 @@
 // Package pod provides functions and types to deal with the PodConfiguration CRD
-// TODO move parts of old normalize to node equivalent when moving node to CRD
 package pod
 
 import (
