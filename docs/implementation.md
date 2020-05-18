@@ -6,13 +6,6 @@ One of the biggest decisions to be made was how to emulate the Kubelets. It woul
 
 This is why we also used their `node-cli` project, even though it is not recommended to be used in production. We believe this is fine given that this system will only be used for testing purposes, and shouldn't serve any live applications.
 
-## CRD
-We use scenarios to define when, what and where different types of events should occur. These events can for example be node failure. In our initial implementation, we used our own format to define these and we made sure every node in the cluster had access to these scenarios so it knew what to do. The downside to this is that is non-standard and requires using non-standard tools.
-
-After comparing different options, we came to the conclusion that CRDs would be best suited to replace these scenarios. A few upsides are that Kubernetes manages the validation, deserialization and distribution of deployments of these custom resources. Besides that, it is also easier for the end user, given that there are clear definitions of the structure in Kubernetes and you can thus use tools built for Kubernetes to control the emulation. 
-
-A potential downside to this is that performance tests may not be completely fair, given that we also use the system under test. To remedy this, we recommend the usage of scenarios for performance tests, since they don't require updating the deployments in order to activate changes in the system. In fact, the deployments only need to be retrieved once before the performance test starts, and after that the Kubelets won't have to check for updated deployments anymore. This removes almost all overhead from CRDs with respect to our own solution, leading to fair tests.
-
 ## KinD
 Setting up an entire Kubernetes cluster can be time consuming, so we provide a cluster to test with. This cluster uses KinD, which is basically a Kubernetes cluster inside of a Docker container. Even though this brings a bit of overhead, we think this is the easiest solution, only requiring Docker to be installed and thus not relying on a certain type of virtualization software. 
 
@@ -22,6 +15,13 @@ Because of the overhead, performance tests shouldn't be done using this provided
 The API endpoints of both the controlplane and the Apatelets use gRPC an protobuf. There are a few reasons to choose gRPC/protobuf above a REST/JSON API. First of all, gRPC provides two-way communication using streams. This is a big advantage for things like health services. Second, protobuf provides a well-defined request structure, something that JSON doesn't provide out-of-the-box. This and the fact that there are clients that can deal with protobuf for many languages made it a good choice for us.
 
 The biggest downside of this approach is that the serialized version of protobuf messages are header to read and create than their JSON counterparts, making it harder to quickly test your API by for example using CURL to send a request.
+
+## Apatelet store
+Each Apatelet has a store which holds a number of flags. Each flag influences how the Apatelet behaves.
+
+For example: one flag might be to error on all `GetPod` requests sent by Kubernetes, or to add a certain amount of latency. We think flags are a good option here because you can combine multiple flags to form "tasks". An example task is node failure, which just times out on all requests sent to it. Doing this allows us to emulate real world scenarios such as node failure or network segregation, and allows us to see how Kubernetes reacts to this.
+
+These stores are fully thread safe, making sure that simultaneous updates to the store are handled properly. In order to actually update the store, we use a scheduler, which "executes" the tasks which have been added to it by the CRDs. You can also directly update these flags in order to update how the Apatelet responds to requests.
 
 ## Extendability
 In order to make it possible to easily change a few aspects of our application we have tried to abstract away a lot of functionality. There are two most notable locations in which we have done this.

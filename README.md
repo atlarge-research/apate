@@ -1,5 +1,5 @@
 # Emulating Kubernetes
-This project deals with emulating Kubernetes pods, making it possible to run thousands of pods on a single laptop to emulate how kubernetes will respond to that.
+This project deals with emulating Kubernetes pods, making it possible to run thousands of pods on a single laptop to emulate how Kubernetes will respond to that.
 
 ## Infrastructure
 The application has 3 main components, which will be discussed here.
@@ -23,6 +23,13 @@ This task has a relative timestamp at which it will be run, with respect to the 
 Besides this scenario, you can also directly control the cluster, so state changes are applied immediately. This can also be done by applying a configuration based on the [CRDs we provide](config/crd).
 
 Example CRDs can be found [here](examples).
+
+## Build process
+### Regenerating code
+To regenerate generated code, which you don't have to do unless you protobuf / structs which are mocked, you need a few dependencies, namely: `controller-gen`, `mockgen` and `protobuf`.
+
+### Building
+It is easy to build the project, using the commands defined in the Makefile. We have made a Dockerfile which bundles the application and all its dependencies, which can be called using `make docker_build`.
 
 ## Installation
 ### CLI
