@@ -1,4 +1,4 @@
-// Package node provides functions and types to deal with the NodeConfiguration
+// Package node provides functions and types to deal with the NodeConfiguration on the apatelet
 package node
 
 import (

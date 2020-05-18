@@ -12,7 +12,7 @@ import (
 func (in *NodeConfiguration) DeepCopyInto(out *NodeConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	in.Meta.DeepCopyInto(&out.Meta)
+	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	in.Spec.DeepCopyInto(&out.Spec)
 }
 
@@ -53,7 +53,7 @@ func (in *NodeConfigurationDirectState) DeepCopy() *NodeConfigurationDirectState
 func (in *NodeConfigurationList) DeepCopyInto(out *NodeConfigurationList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	in.Meta.DeepCopyInto(&out.Meta)
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]NodeConfiguration, len(*in))

@@ -85,11 +85,6 @@ spec:
                         - ERROR
                         - UNSET
                         type: string
-                      network_latency:
-                        default: 0
-                        description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-                        format: int64
-                        type: integer
                       node_ping_response:
                         default: UNSET
                         description: NodePingResponse determines how to respond to a heartbeat ping
@@ -122,6 +117,26 @@ spec:
                     default: false
                     description: If set, NodeFailed will result in timeouts for all requests by kubernetes effectively taking down the node
                     type: boolean
+                type: object
+              replicas:
+                format: int64
+                minimum: 0
+                type: integer
+              resources:
+                description: NodeResources specifies the resources the node has available
+                properties:
+                  cpu:
+                    format: int64
+                    type: integer
+                  ephemeral_storage:
+                    type: string
+                  max_pods:
+                    format: int64
+                    type: integer
+                  memory:
+                    type: string
+                  storage:
+                    type: string
                 type: object
               tasks:
                 description: The tasks to be executed on this node
@@ -179,11 +194,6 @@ spec:
                               - ERROR
                               - UNSET
                               type: string
-                            network_latency:
-                              default: 0
-                              description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-                              format: int64
-                              type: integer
                             node_ping_response:
                               default: UNSET
                               description: NodePingResponse determines how to respond to a heartbeat ping
@@ -227,6 +237,9 @@ spec:
                   - timestamp
                   type: object
                 type: array
+            required:
+            - replicas
+            - resources
             type: object
         required:
         - metadata

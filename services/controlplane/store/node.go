@@ -13,13 +13,15 @@ type Node struct {
 	ConnectionInfo service.ConnectionInfo
 	UUID           uuid.UUID
 	Status         health.Status
+	Selector       string
 }
 
 // NewNode creates a new Node based on the given connection information
-func NewNode(info service.ConnectionInfo, resources *normalization.NodeResources) *Node {
+func NewNode(info service.ConnectionInfo, resources *normalization.NodeResources, selector string) *Node {
 	return &Node{
 		ConnectionInfo: info,
 		UUID:           resources.UUID,
 		Status:         health.Status_UNKNOWN,
+		Selector:       selector,
 	}
 }

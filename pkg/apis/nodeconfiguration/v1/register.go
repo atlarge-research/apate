@@ -3,16 +3,22 @@ package v1
 import (
 	"io/ioutil"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: podconfiguration.GroupName, Version: "v1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: nodeconfiguration.GroupName, Version: "v1"}
+
+// HACK: this is to register the emulated pod types with the decoder
+var schemeGroupVersionInternal = schema.GroupVersion{Group: nodeconfiguration.GroupName, Version: runtime.APIVersionInternal}
 
 var (
 	// SchemeBuilder initialises a scheme builder
@@ -27,6 +33,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&NodeConfiguration{},
 		&NodeConfigurationList{},
 	)
+	scheme.AddKnownTypes(schemeGroupVersionInternal,
+		&NodeConfiguration{},
+		&NodeConfigurationList{},
+	)
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
 

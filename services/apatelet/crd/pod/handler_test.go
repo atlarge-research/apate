@@ -73,7 +73,7 @@ func TestEnqueueCRD(t *testing.T) {
 		},
 	}
 
-	ms.EXPECT().EnqueuePodTasks(
+	ms.EXPECT().SetPodTasks(
 		"TestNamespace/TestName",
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
@@ -146,7 +146,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(v1.PodStatusRunning)),
 	)
 
-	ms.EXPECT().EnqueuePodTasks(
+	ms.EXPECT().SetPodTasks(
 		"TestNamespace/TestName",
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {

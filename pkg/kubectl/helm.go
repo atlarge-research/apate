@@ -2,7 +2,6 @@ package kubectl
 
 import (
 	"log"
-	"os"
 	"os/exec"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -58,8 +57,6 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
 	return cmd.Run()
 }
 

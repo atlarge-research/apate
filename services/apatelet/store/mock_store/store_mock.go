@@ -33,34 +33,6 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// SetNodeTasks mocks base method
-func (m *MockStore) SetNodeTasks(arg0 []*store.Task) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetNodeTasks", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetNodeTasks indicates an expected call of SetNodeTasks
-func (mr *MockStoreMockRecorder) EnqueueNodeTasks(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNodeTasks", reflect.TypeOf((*MockStore)(nil).SetNodeTasks), arg0)
-}
-
-// SetPodTasks mocks base method
-func (m *MockStore) SetPodTasks(arg0 string, arg1 []*store.Task) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetPodTasks", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetPodTasks indicates an expected call of SetPodTasks
-func (mr *MockStoreMockRecorder) EnqueuePodTasks(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodTasks", reflect.TypeOf((*MockStore)(nil).SetPodTasks), arg0, arg1)
-}
-
 // GetNodeFlag mocks base method
 func (m *MockStore) GetNodeFlag(arg0 int32) (interface{}, error) {
 	m.ctrl.T.Helper()
@@ -161,6 +133,20 @@ func (mr *MockStoreMockRecorder) SetNodeFlag(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNodeFlag", reflect.TypeOf((*MockStore)(nil).SetNodeFlag), arg0, arg1)
 }
 
+// SetNodeTasks mocks base method
+func (m *MockStore) SetNodeTasks(arg0 []*store.Task) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetNodeTasks", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetNodeTasks indicates an expected call of SetNodeTasks
+func (mr *MockStoreMockRecorder) SetNodeTasks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNodeTasks", reflect.TypeOf((*MockStore)(nil).SetNodeTasks), arg0)
+}
+
 // SetPodFlag mocks base method
 func (m *MockStore) SetPodFlag(arg0 string, arg1 int32, arg2 interface{}) {
 	m.ctrl.T.Helper()
@@ -171,6 +157,20 @@ func (m *MockStore) SetPodFlag(arg0 string, arg1 int32, arg2 interface{}) {
 func (mr *MockStoreMockRecorder) SetPodFlag(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodFlag", reflect.TypeOf((*MockStore)(nil).SetPodFlag), arg0, arg1, arg2)
+}
+
+// SetPodTasks mocks base method
+func (m *MockStore) SetPodTasks(arg0 string, arg1 []*store.Task) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPodTasks", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPodTasks indicates an expected call of SetPodTasks
+func (mr *MockStoreMockRecorder) SetPodTasks(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodTasks", reflect.TypeOf((*MockStore)(nil).SetPodTasks), arg0, arg1)
 }
 
 // SetStartTime mocks base method

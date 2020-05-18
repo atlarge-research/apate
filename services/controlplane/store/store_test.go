@@ -82,7 +82,7 @@ func TestAddNodeGet(t *testing.T) {
 	// Add created node
 	id := uuid.New()
 	expected := *NewNode(*service.NewConnectionInfo("yeet", 42, false),
-		&normalization.NodeResources{UUID: id})
+		&normalization.NodeResources{UUID: id}, "6")
 	err := store.AddNode(&expected)
 	assert.NoError(t, err)
 
@@ -95,7 +95,7 @@ func TestAddNodeGet(t *testing.T) {
 // TestAddNodeList ensures an added node appears in the list of nodes
 func TestAddNodeList(t *testing.T) {
 	store := NewStore()
-	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{}, "5")
 
 	err := store.AddNode(&node)
 	assert.NoError(t, err)
@@ -119,7 +119,7 @@ func TestGetNodeWrongUuid(t *testing.T) {
 // TestAddNodeDuplicateUuid ensures that a node with a duplicate uuid will not be aded
 func TestAddNodeDuplicateUuid(t *testing.T) {
 	store := NewStore()
-	expected := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	expected := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{}, "4")
 
 	// Add first time
 	err := store.AddNode(expected)
@@ -133,7 +133,7 @@ func TestAddNodeDuplicateUuid(t *testing.T) {
 // TestRemoveNode ensures a removed node is no longer in the list and can no longer be retrieved
 func TestRemoveNode(t *testing.T) {
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{}, "4")
 
 	// Add node
 	err := store.AddNode(node)
@@ -157,14 +157,14 @@ func TestRemoveNode(t *testing.T) {
 // TestDeleteNoNode ensures removing a node that does not exist keeps the store intact
 func TestDeleteNoNode(t *testing.T) {
 	store := NewStore()
-	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{}, "3")
 
 	err := store.AddNode(&node)
 	assert.NoError(t, err)
 
 	// Remove random node
 	err = store.RemoveNode(NewNode(*service.NewConnectionInfo("yeet", 42, false),
-		&normalization.NodeResources{UUID: uuid.New()}))
+		&normalization.NodeResources{UUID: uuid.New()}, "2"))
 	assert.NoError(t, err)
 
 	// Check if the original node is still intact
@@ -177,7 +177,7 @@ func TestDeleteNoNode(t *testing.T) {
 // TestClearNodes ensures nodes are no longer in the list and can no longer be retrieved when the store is cleared
 func TestClearNodes(t *testing.T) {
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{}, "1")
 
 	// Add node
 	err := store.AddNode(node)

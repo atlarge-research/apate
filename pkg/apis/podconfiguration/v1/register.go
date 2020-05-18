@@ -16,7 +16,7 @@ import (
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: podconfiguration.GroupName, Version: "v1"}
 
-// this is a hack, to register the emulated pod types with the decoder
+// HACK: this is to register the emulated pod types with the decoder
 var schemeGroupVersionInternal = schema.GroupVersion{Group: podconfiguration.GroupName, Version: runtime.APIVersionInternal}
 
 var (
