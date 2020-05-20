@@ -2,9 +2,10 @@
 package network
 
 import (
-	"github.com/pkg/errors"
 	"net"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 )

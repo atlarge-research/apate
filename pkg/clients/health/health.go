@@ -3,11 +3,12 @@ package health
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"google.golang.org/grpc"
 

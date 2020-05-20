@@ -2,8 +2,9 @@ package container
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/docker/go-connections/nat"
 

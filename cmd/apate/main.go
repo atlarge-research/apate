@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -47,7 +49,7 @@ func main() {
 				Name:  "run",
 				Usage: "Runs a given scenario file on the Apate cluster",
 				Action: func(c *cli.Context) error {
-					return runScenario(ctx, scenarioFileLocation, controlPlaneAddress, controlPlanePort, k8sConfigurationFileLocation)
+					return errors.Wrap(runScenario(ctx, scenarioFileLocation, controlPlaneAddress, controlPlanePort, k8sConfigurationFileLocation), "failed to run scenario")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -84,7 +86,7 @@ func main() {
 				Name:  "create",
 				Usage: "Creates a local control plane",
 				Action: func(c *cli.Context) error {
-					return createControlPlane(ctx, cpEnv, controlPlaneTimeout, pullPolicy)
+					return errors.Wrap(createControlPlane(ctx, cpEnv, controlPlaneTimeout, pullPolicy), "failed to create control plane")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -156,7 +158,7 @@ func main() {
 				Name:  "kubeconfig",
 				Usage: "Retrieves a kube configuration file from the control plane",
 				Action: func(c *cli.Context) error {
-					return getKubeConfig(ctx, controlPlaneAddress, controlPlanePort)
+					return errors.Wrap(getKubeConfig(ctx, controlPlaneAddress, controlPlanePort), "failed to get Kubeconfig")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -181,7 +183,7 @@ func main() {
 	err := app.Run(os.Args)
 	if err != nil {
 		_, _ = color.New(color.FgRed).Printf("FAILED\nERROR: ")
-		fmt.Printf("%s\n", err.Error())
+		fmt.Printf("%+v\n", err)
 	}
 }
 
@@ -189,7 +191,7 @@ func getKubeConfig(ctx context.Context, address string, port int) error {
 	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false)).GetKubeConfig(ctx)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get Kubeconfig")
 	}
 
 	fmt.Println(string(cfg))
@@ -200,7 +202,7 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	fmt.Print("Creating control plane container ")
 	port, err := strconv.Atoi(cpEnv.Port)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to parse port to int (%v)", cpEnv.Port)
 	}
 
 	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, cpEnv)
@@ -218,7 +220,7 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	err = statusClient.WaitForControlPlane(ctx)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed waitin for the control plane")
 	}
 
 	color.Green("DONE\n")
@@ -239,7 +241,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 
 		bytes, err = ioutil.ReadAll(os.Stdin)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to read scenario from stdin")
 		}
 
 		scenarioDeserializer, err = deserialize.YamlScenario{}.FromBytes(bytes)
@@ -249,7 +251,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 	}
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to deserialize scenario")
 	}
 
 	fmt.Printf("\rReading scenario file ")
@@ -260,7 +262,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 		// Read the k8s configuration file #nosec
 		k8sConfig, err = ioutil.ReadFile(configFileLocation)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to read kubernetes config")
 		}
 	}
 
@@ -277,12 +279,12 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 
 	scenario, err := scenarioDeserializer.GetScenario()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get scenario")
 	}
 
 	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to load scenario")
 	}
 	color.Green("DONE\n")
 
@@ -294,7 +296,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 	})
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to wait for healthy Apatelets")
 	}
 
 	color.Green("DONE\n")
@@ -302,7 +304,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 
 	//Finally: actually start the scenario
 	if _, err := scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
-		return err
+		return errors.Wrap(err, "failed to start scenario")
 	}
 
 	color.Green("DONE\n")

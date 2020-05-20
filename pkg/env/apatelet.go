@@ -1,8 +1,9 @@
 package env
 
 import (
-	"github.com/pkg/errors"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // Apatelet environment variables

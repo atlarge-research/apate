@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/pkg/errors"
 
 	podconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
@@ -31,7 +32,7 @@ func init() {
 }
 
 func fatal(err error) {
-	log.Fatalf("An error occured while starting the controlplane: %+v\n", err)
+	log.Fatalf("An error occurred while starting the controlplane: %+v\n", err)
 }
 
 func main() {

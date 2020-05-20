@@ -2,10 +2,11 @@
 package kubeconfig
 
 import (
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 

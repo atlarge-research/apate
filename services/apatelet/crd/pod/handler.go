@@ -3,11 +3,12 @@ package pod
 // TODO make node equivalent when moving node to CRD
 
 import (
+	"github.com/pkg/errors"
+
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/pkg/errors"
 )
 
 // CreateCRDInformer creates a new crd informer.

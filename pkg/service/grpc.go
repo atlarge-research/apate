@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+
 	"sigs.k8s.io/kind/pkg/errors"
 
 	"google.golang.org/grpc"
@@ -50,8 +51,8 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 
 	// Enable TLS if needed
 	if info.TLS {
-		tls, err := getServerTLS()
-		if err != nil {
+		tls, err1 := getServerTLS()
+		if err1 != nil {
 			err = errors.Wrap(err, "failed to start TLS server")
 		}
 

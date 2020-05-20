@@ -3,9 +3,10 @@ package provider
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"os"
 	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
@@ -58,7 +59,7 @@ func CreateProvider(ctx context.Context, res *normalization.NodeResources, k8sPo
 	)
 
 	if err != nil {
-		errors.Wrap(err, "failed to create new virtual kubelet provider")
+		return nil, errors.Wrap(err, "failed to create new virtual kubelet provider")
 	}
 
 	return node, nil
