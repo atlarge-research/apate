@@ -2,12 +2,13 @@
 package kubectl
 
 import (
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 )
@@ -25,7 +26,7 @@ func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("kubectl", args...)
 
-	return errors.Wrapf(cmd.Run(), "failed to run kubectl %v", strings.Join(args[:], " "))
+	return errors.Wrapf(cmd.Run(), "failed to run kubectl %v", strings.Join(args, " "))
 }
 
 // CreateWithNameSpace calls `kubectl create` with the given resourceConfig in the given namespace
@@ -66,7 +67,7 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return errors.Wrapf(cmd.Run(), "failed to run kubectl %v", strings.Join(args[:], " "))
+		return errors.Wrapf(cmd.Run(), "failed to run kubectl %v", strings.Join(args, " "))
 	}
 
 	return nil

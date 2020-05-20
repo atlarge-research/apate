@@ -3,11 +3,12 @@ package provider
 import (
 	"bytes"
 	"context"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"

@@ -2,10 +2,11 @@ package services
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"log"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 

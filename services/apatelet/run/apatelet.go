@@ -3,11 +3,12 @@ package run
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/pkg/errors"
 
 	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 

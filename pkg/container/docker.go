@@ -4,6 +4,7 @@ package container
 import (
 	"context"
 	"fmt"
+
 	"github.com/pkg/errors"
 
 	"github.com/docker/docker/api/types"
@@ -49,7 +50,7 @@ func HandleSpawnContainers(ctx context.Context, cli *client.Client, info SpawnIn
 	// Remove old containers
 	err = removeOldContainers(ctx, cli, info.containerName)
 	if err != nil {
-		return  errors.Wrap(err, "failed to remove old containers")
+		return errors.Wrap(err, "failed to remove old containers")
 	}
 
 	// Create error group to handle async spawning
@@ -134,7 +135,7 @@ func pullIfNotLocal(ctx context.Context, cli *client.Client, imageName string) e
 	// If not, pull the image
 	if !localAvailable {
 		if err = pullImage(ctx, cli, imageName); err != nil {
-			errors.Wrap(err, "failed to pull image")
+			return errors.Wrap(err, "failed to pull image")
 		}
 	}
 

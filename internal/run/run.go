@@ -6,8 +6,9 @@ package run
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
+
+	"github.com/pkg/errors"
 
 	"github.com/phayes/freeport"
 
@@ -48,11 +49,11 @@ func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
-		const attemts = 3
-		ports, err := freeport.GetFreePorts(attemts)
+		const attempts = 3
+		ports, err := freeport.GetFreePorts(attempts)
 
 		if err != nil {
-			return errors.Wrapf(err, "failed to get a free port after %v attempts", attemts)
+			return errors.Wrapf(err, "failed to get a free port after %v attempts", attempts)
 		}
 
 		apateletEnv.ListenPort = ports[0]
