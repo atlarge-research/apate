@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -35,7 +36,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	}
 
 	// Set up expectations
-	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_RESPONSE_ERROR)
+	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyEnabled, false).AnyTimes()
 
 	var s store.Store = ms
@@ -65,7 +66,7 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	})
 
 	// Set up expectations
-	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
+	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatusFailed)
 
 	var s store.Store = ms
 	sched := Scheduler{&s, 0}
@@ -100,7 +101,7 @@ func TestTaskHandlerMultiple(t *testing.T) {
 
 	// Set up expectations
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyEnabled, true).AnyTimes()
-	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_RESPONSE_ERROR)
+	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
 
 	var s store.Store = ms

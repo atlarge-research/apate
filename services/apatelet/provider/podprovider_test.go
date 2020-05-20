@@ -3,12 +3,13 @@ package provider
 import (
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager/mock_podmanager"
 )
@@ -89,11 +90,10 @@ func TestGetPodLabelByNameFail(t *testing.T) {
 }
 
 func TestPodStatusToPhase(t *testing.T) {
-	assert.Equal(t, corev1.PodPending, podStatusToPhase(scenario.PodStatus_POD_STATUS_PENDING))
-	assert.Equal(t, corev1.PodRunning, podStatusToPhase(scenario.PodStatus_POD_STATUS_RUNNING))
-	assert.Equal(t, corev1.PodRunning, podStatusToPhase(scenario.PodStatus_POD_STATUS_UNSET))
-	assert.Equal(t, corev1.PodSucceeded, podStatusToPhase(scenario.PodStatus_POD_STATUS_SUCCEEDED))
-	assert.Equal(t, corev1.PodFailed, podStatusToPhase(scenario.PodStatus_POD_STATUS_FAILED))
-	assert.Equal(t, corev1.PodUnknown, podStatusToPhase(scenario.PodStatus_POD_STATUS_UNKNOWN))
+	assert.Equal(t, corev1.PodPending, podStatusToPhase(scenario.PodStatusPending))
+	assert.Equal(t, corev1.PodRunning, podStatusToPhase(scenario.PodStatusRunning))
+	assert.Equal(t, corev1.PodSucceeded, podStatusToPhase(scenario.PodStatusSucceeded))
+	assert.Equal(t, corev1.PodFailed, podStatusToPhase(scenario.PodStatusFailed))
+	assert.Equal(t, corev1.PodUnknown, podStatusToPhase(scenario.PodStatusUnknown))
 	assert.Equal(t, corev1.PodUnknown, podStatusToPhase(scenario.PodStatus(20)))
 }

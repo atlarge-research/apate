@@ -50,12 +50,12 @@ func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
 	}
 }
 
-// WaitForHealthy polls the server every second to retrieve the latest amount of healthy nodes and calls the
+// WaitForTrigger polls the server every second to retrieve the latest amount of healthy nodes and calls the
 // given update function after every poll
-func (c *StatusClient) WaitForHealthy(ctx context.Context, expectedApatelets int, update func(int)) error {
+// TODO: Add trigger to stop on
+func (c *StatusClient) WaitForTrigger(ctx context.Context, update func(int)) error {
 	for {
 		res, err := c.Client.Status(ctx, new(empty.Empty))
-
 		if err != nil {
 			return err
 		}
@@ -63,10 +63,6 @@ func (c *StatusClient) WaitForHealthy(ctx context.Context, expectedApatelets int
 		healthy := int(res.HealthyNodes)
 
 		update(healthy)
-
-		if healthy >= expectedApatelets {
-			return nil
-		}
 
 		// Sleep for a second before trying again
 		time.Sleep(time.Second)

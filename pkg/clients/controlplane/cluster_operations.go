@@ -4,13 +4,13 @@ package controlplane
 import (
 	"context"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/google/uuid"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
@@ -35,7 +35,7 @@ func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationCl
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the node resources
-func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources, error) {
+func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, error) {
 	res, err := c.Client.JoinCluster(ctx, &controlplane.ApateletInformation{Port: int32(listenPort)})
 
 	// Check for any grpc error
@@ -56,7 +56,7 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 	}
 
 	// Return final join information
-	return cfg, &normalization.NodeResources{
+	return cfg, &scenario.NodeResources{
 		UUID:             id,
 		Memory:           res.Hardware.Memory,
 		CPU:              res.Hardware.Cpu,

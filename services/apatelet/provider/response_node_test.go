@@ -6,10 +6,11 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -19,14 +20,13 @@ const tStr = "test"
 
 func TestNodeNormal(t *testing.T) {
 	ctrl := gomock.NewController(t)
-
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
 	PCPRF := events.NodeCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
 
 	var s store.Store = ms
 
@@ -78,7 +78,7 @@ func TestNodeStoreError1(t *testing.T) {
 	ctrl.Finish()
 }
 
-func TestNodeStoreError2(t *testing.T) {
+func TestNodeErrorAction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -86,7 +86,7 @@ func TestNodeStoreError2(t *testing.T) {
 	PCPRF := events.NodeCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
 
 	var s store.Store = ms
 
@@ -95,36 +95,7 @@ func TestNodeStoreError2(t *testing.T) {
 		ctx:      context.TODO(),
 		provider: &Provider{store: &s},
 		action: func() (i interface{}, err error) {
-			return tStr, nil
-		}},
-		PCPRF,
-	)
-
-	// Assert
-	assert.Error(t, err)
-	assert.Nil(t, out)
-
-	ctrl.Finish()
-}
-
-func TestNodeInvalidPercentage(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
-	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
-
-	var s store.Store = ms
-
-	// Run code under test
-	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
+			return nil, errors.New("some error")
 		}},
 		PCPRF,
 	)
@@ -209,7 +180,7 @@ func TestNodeTimeOut(t *testing.T) {
 	rand.Seed(42)
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_TIMEOUT, nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseTimeout, nil)
 
 	var s store.Store = ms
 

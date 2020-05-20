@@ -1,5 +1,4 @@
 // Package pod defines utilities for the PodConfiguration CRD
-// TODO make node CRD equivalent
 package pod
 
 import (

@@ -1,7 +1,5 @@
 package pod
 
-// TODO make node equivalent when moving node to CRD
-
 import (
 	"log"
 

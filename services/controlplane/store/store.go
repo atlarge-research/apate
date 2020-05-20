@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-
 	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )
 
 //TODO: Multi-master soon :tm:
@@ -43,10 +44,10 @@ type Store interface {
 	ClearNodes() error
 
 	// AddResourcesToQueue adds a node resource to the queue
-	AddResourcesToQueue([]normalization.NodeResources) error
+	AddResourcesToQueue([]scenario.NodeResources) error
 
 	// GetResourceFromQueue returns the first NodeResources struct in the list
-	GetResourceFromQueue() (*normalization.NodeResources, error)
+	GetResourceFromQueue() (*scenario.NodeResources, error)
 
 	// SetApateletScenario adds the ApateletScenario to the store
 	SetApateletScenario(*apatelet.ApateletScenario) error
@@ -178,7 +179,7 @@ func (s *store) ClearNodes() error {
 	return nil
 }
 
-func (s *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
+func (s *store) AddResourcesToQueue(resources []scenario.NodeResources) error {
 	s.resourceLock.Lock()
 	defer s.resourceLock.Unlock()
 
@@ -189,7 +190,7 @@ func (s *store) AddResourcesToQueue(resources []normalization.NodeResources) err
 	return nil
 }
 
-func (s *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
+func (s *store) GetResourceFromQueue() (*scenario.NodeResources, error) {
 	s.resourceLock.Lock()
 	defer s.resourceLock.Unlock()
 
@@ -200,7 +201,7 @@ func (s *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
 	res := s.resourceQueue.Front()
 	s.resourceQueue.Remove(res)
 
-	return res.Value.(*normalization.NodeResources), nil
+	return res.Value.(*scenario.NodeResources), nil
 }
 
 func (s *store) SetApateletScenario(scenario *apatelet.ApateletScenario) error {

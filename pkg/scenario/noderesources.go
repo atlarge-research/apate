@@ -1,4 +1,5 @@
-package normalization
+// Package scenario defines types and utils used in the scenario
+package scenario
 
 import "github.com/google/uuid"
 
