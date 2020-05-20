@@ -2,8 +2,8 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -18,7 +18,7 @@ type responseArgs struct {
 func podResponse(args responseArgs, label string, responseFlag events.PodEventFlag) (interface{}, bool, error) {
 	iflag, err := (*args.provider.store).GetPodFlag(label, responseFlag)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "failed to get pod flag")
 	}
 
 	flag, ok := iflag.(scenario.Response)
@@ -29,7 +29,7 @@ func podResponse(args responseArgs, label string, responseFlag events.PodEventFl
 	switch flag {
 	case scenario.Response_RESPONSE_NORMAL:
 		res, err := args.action()
-		return res, true, err
+		return res, true, errors.Wrap(err, "failed to execute pod response action")
 	case scenario.Response_RESPONSE_TIMEOUT:
 		<-args.ctx.Done()
 		return nil, true, nil
@@ -59,7 +59,7 @@ func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interfa
 		fallthrough // If unset, act as if it's normal
 	case scenario.Response_RESPONSE_NORMAL:
 		res, err := args.action()
-		return res, err
+		return res, errors.Wrap(err, "failed to execute node response action")
 	case scenario.Response_RESPONSE_TIMEOUT:
 		<-args.ctx.Done()
 		return nil, nil
@@ -75,7 +75,7 @@ func podAndNodeResponse(args responseArgs, podLabel string, podResponseFlag even
 	pod, performedAction, err := podResponse(args, podLabel, podResponseFlag)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed during pod response (not going to try node response)")
 	}
 
 	if performedAction {

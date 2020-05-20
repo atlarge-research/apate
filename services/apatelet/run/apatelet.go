@@ -66,7 +66,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Start the Apatelet
 	nc, cancel, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create node controller")
 	}
 
 	log.Println("Joining kubernetes cluster")
@@ -74,14 +74,14 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		// TODO: Notify master / proper logging
 		if err = nc.Run(ctx); err != nil {
 			hc.SetStatus(healthpb.Status_UNHEALTHY)
-			errch <- err
+			errch <- errors.Wrap(err, "failed to run node controller")
 		}
 	}()
 
 	// Start gRPC server
 	server, err := createGRPC(apateletEnv.ListenPort, &st, apateletEnv.ListenAddress)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to set up GRPC stream")
 	}
 
 	// Update status
@@ -108,8 +108,8 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Stop the server on signal or error
 	select {
 	case err := <-errch:
-		log.Printf("Apatelet stopped because of an error %v\n", err)
-		return err
+		log.Printf("Apatelet stopped because of an error %+v\n", err)
+		return errors.Wrap(err, "Apatelet stopped because of an error %+v")
 	case <-stopped:
 		log.Println("Apatelet stopped")
 		return nil
@@ -128,12 +128,12 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	defer func() {
 		err := client.Conn.Close()
 		if err != nil {
-			log.Printf("could not close connection: %v\n", err)
+			log.Printf("could not close connection: %+v\n", err)
 		}
 	}()
 
 	if err := client.LeaveCluster(ctx, uuid); err != nil {
-		log.Printf("An error occurred while leaving the clusters (apate & k8s): %s", err.Error())
+		log.Printf("An error occurred while leaving the clusters (apate & k8s): %+v\n", err)
 	}
 
 	log.Println("Stopping provider")
@@ -145,14 +145,14 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	defer func() {
 		err := client.Conn.Close()
 		if err != nil {
-			log.Printf("could not close connection: %v\n", err)
+			log.Printf("could not close connection: %+v\n", err)
 		}
 	}()
 
 	cfg, res, err := client.JoinCluster(ctx, listenPort)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to join cluster")
 	}
 
 	log.Printf("Joined apate cluster with resources: %v", res)
@@ -163,7 +163,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
-	return cmd, cancel, err
+	return cmd, cancel, errors.Wrap(err, "failed to create provider")
 }
 
 func createGRPC(listenPort int, store *store.Store, listenAddress string) (*service.GRPCServer, error) {
@@ -173,7 +173,7 @@ func createGRPC(listenPort int, store *store.Store, listenAddress string) (*serv
 	// Create gRPC server
 	server, err := service.NewGRPCServer(connectionInfo)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create new GRPC server")
 	}
 
 	// Add services

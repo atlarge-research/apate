@@ -3,6 +3,7 @@
 package pod
 
 import (
+	"github.com/pkg/errors"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +41,7 @@ func SetPodFlags(st *store.Store, label string, pt *v1.PodConfigurationState) er
 	if pt.PodResources != nil {
 		resources, err := translatePodResources(pt.PodResources)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to translate pod resources")
 		}
 		(*st).SetPodFlag(label, events.PodResources, resources)
 	}
@@ -97,19 +98,19 @@ func translatePodStatus(input v1.PodStatus) scenario.PodStatus {
 func translatePodResources(input *v1.PodResources) (*stats.PodStats, error) {
 	memory, err := translate.GetInBytes(input.Memory, "memory")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to translate memory bytes (was %v)", input.EphemeralStorage)
 	}
 	memoryUint := uint64(memory)
 
 	storage, err := translate.GetInBytes(input.Storage, "storage")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to translate storage bytes (was %v)", input.EphemeralStorage)
 	}
 	storageUint := uint64(storage)
 
 	ephemeralStorage, err := translate.GetInBytes(input.EphemeralStorage, "ephemeral storage")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to translate ephemeral storage bytes (was %v)", input.EphemeralStorage)
 	}
 	ephemeralStorageUint := uint64(ephemeralStorage)
 

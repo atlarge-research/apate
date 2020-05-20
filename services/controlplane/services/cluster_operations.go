@@ -3,6 +3,7 @@ package services
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"net"
@@ -45,7 +46,8 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 
 	// TODO: Maybe reinsert NodeResources depending on the type of error?
 	if err != nil {
-		log.Printf("Unable to allocate resources for node %v: %s", connectionInfo, err.Error())
+		err = errors.Wrap(err, "failed to get node resources from queue")
+		log.Printf("Unable to allocate resources for node %v: %+v", connectionInfo, err)
 		return nil, err
 	}
 
@@ -56,6 +58,8 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	err = st.AddNode(node)
 
 	if err != nil {
+		err = errors.Wrap(err, "failed to add node to queue")
+		log.Printf("failed to add node to queue %+v", err)
 		return nil, err
 	}
 
