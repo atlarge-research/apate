@@ -6,6 +6,10 @@ import (
 	"log"
 	"sync"
 
+	"github.com/golang/protobuf/ptypes/empty"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/google/uuid"
@@ -20,7 +24,7 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *store.Store, info *service.ConnectionInfo) error {
+func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *store.Store, info *service.ConnectionInfo, stopCh chan struct{}) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -45,27 +49,30 @@ func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *
 	var lock sync.Locker = &sync.Mutex{}
 
 	client.WatchResources(func(obj interface{}) {
-		go getDesiredApatelets(ctx, obj, st, &lock, info)
+		go getDesiredApatelets(ctx, obj.(*v1.NodeConfiguration), st, &lock, info)
 	}, func(_, obj interface{}) {
-		go getDesiredApatelets(ctx, obj, st, &lock, info)
+		go getDesiredApatelets(ctx, obj.(*v1.NodeConfiguration), st, &lock, info)
 	}, func(obj interface{}) {
-		go getDesiredApatelets(ctx, obj, st, &lock, info)
-	})
+		cfg := obj.(*v1.NodeConfiguration)
+		cfg.Spec.Replicas = 0
+
+		go getDesiredApatelets(ctx, cfg, st, &lock, info)
+	}, stopCh)
 
 	return nil
 }
 
-func getDesiredApatelets(ctx context.Context, obj interface{}, st *store.Store, lock *sync.Locker, info *service.ConnectionInfo) {
+func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *store.Store, lock *sync.Locker, info *service.ConnectionInfo) {
 	(*lock).Lock()
 	defer (*lock).Unlock()
 
-	cfg := obj.(*v1.NodeConfiguration)
 	res, err := getNodeResources(cfg)
 	if err != nil {
 		log.Printf("error while retrieving node resources from CRD: %v\n", err)
 	}
 
-	nodes, err := (*st).GetNodesBySelector(getSelector(cfg))
+	selector := getSelector(cfg)
+	nodes, err := (*st).GetNodesBySelector(selector)
 	if err != nil {
 		log.Printf("error while retrieving nodes with selector %s: %v\n", getSelector(cfg), err)
 	}
@@ -75,14 +82,14 @@ func getDesiredApatelets(ctx context.Context, obj interface{}, st *store.Store, 
 
 	if current < desired {
 		// Not enough apatelets, spawn extra
-		err := spawnApatelets(ctx, desired-current, st, res, info)
+		err := spawnApatelets(ctx, st, desired-current, res, info)
 		if err != nil {
 			log.Printf("error while spawning apatelets: %v\n", err)
 			// TODO: Stop, notify, idk?
 		}
 	} else if current > desired {
 		// Too many apatelets, stop a few
-		err := stopApatelets(ctx, current-desired, st)
+		err := stopApatelets(ctx, st, int(current-desired), selector)
 		if err != nil {
 			log.Printf("error while stopping apatelets: %v\n", err)
 			// TODO: Stop, notify, idk?
@@ -90,7 +97,7 @@ func getDesiredApatelets(ctx context.Context, obj interface{}, st *store.Store, 
 	}
 }
 
-func spawnApatelets(ctx context.Context, diff int64, st *store.Store, res scenario.NodeResources, info *service.ConnectionInfo) error {
+func spawnApatelets(ctx context.Context, st *store.Store, diff int64, res scenario.NodeResources, info *service.ConnectionInfo) error {
 	log.Printf("Creating %v apatelets", diff)
 	resources := createResources(int(diff), res)
 	if err := (*st).AddResourcesToQueue(resources); err != nil {
@@ -118,10 +125,30 @@ func spawnApatelets(ctx context.Context, diff int64, st *store.Store, res scenar
 	return nil
 }
 
-func stopApatelets(_ context.Context, diff int64, _ *store.Store) error {
+func stopApatelets(ctx context.Context, st *store.Store, diff int, selector string) error {
 	log.Printf("Stopping %v apatelets", diff)
 
-	// TODO: Stop apatelets
+	apatelets, err := (*st).GetNodesBySelector(selector)
+	if err != nil {
+		return err
+	}
+
+	for i, kubelet := range apatelets {
+		if i >= diff {
+			break
+		}
+
+		client := apatelet.GetApateletClient(&kubelet.ConnectionInfo)
+		_, err := client.Client.StopApatelet(ctx, new(empty.Empty))
+		if err != nil {
+			log.Printf("failed to stop apatelet %s: %v", kubelet.UUID, err)
+		}
+		err = client.Conn.Close()
+		if err != nil {
+			log.Printf("failed to stop apatelet %s: %v", kubelet.UUID, err)
+		}
+	}
+
 	return nil
 }
 

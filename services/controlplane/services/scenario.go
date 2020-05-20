@@ -13,7 +13,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
@@ -37,14 +36,12 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store, inf
 func (s *scenarioService) StartScenario(ctx context.Context, config *controlplane.StartScenarioConfig) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
-		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
 	}
 
 	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {
-		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
 	}
@@ -54,14 +51,12 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 
 	err = startOnNodes(ctx, nodes, apateletScenario)
 	if err != nil {
-		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
 	}
 
 	cfg, err := (*s.store).GetKubeConfig()
 	if err != nil {
-		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
 	}
@@ -69,7 +64,6 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	// TODO: This is probably very flaky
 	err = kubectl.Create(config.ResourceConfig, &cfg)
 	if err != nil {
-		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
 	}

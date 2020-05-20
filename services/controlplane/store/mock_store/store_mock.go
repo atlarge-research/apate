@@ -171,7 +171,7 @@ func (mr *MockStoreMockRecorder) GetResourceFromQueue() *gomock.Call {
 }
 
 // RemoveNode mocks base method
-func (m *MockStore) RemoveNode(arg0 *store.Node) error {
+func (m *MockStore) RemoveNode(arg0 uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveNode", arg0)
 	ret0, _ := ret[0].(error)

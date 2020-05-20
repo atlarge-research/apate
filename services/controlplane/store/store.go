@@ -25,8 +25,8 @@ type Store interface {
 	// AddNode adds the given Node to the Apate cluster
 	AddNode(*Node) error
 
-	// RemoveNode removes the given Node from the Apate cluster
-	RemoveNode(*Node) error
+	// RemoveNode removes the given Node from the Apate cluster by uuid
+	RemoveNode(uuid.UUID) error
 
 	// GetNode returns the node with the given uuid
 	GetNode(uuid.UUID) (Node, error)
@@ -104,9 +104,14 @@ func (s *store) AddNode(node *Node) error {
 	return nil
 }
 
-func (s *store) RemoveNode(node *Node) error {
+func (s *store) RemoveNode(uuid uuid.UUID) error {
 	s.nodeLock.Lock()
 	defer s.nodeLock.Unlock()
+
+	node := s.nodes[uuid]
+	if node == (Node{}) {
+		return nil
+	}
 
 	selector := node.Selector
 

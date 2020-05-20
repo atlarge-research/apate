@@ -52,9 +52,14 @@ func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
 
 // WaitForTrigger polls the server every second to retrieve the latest amount of healthy nodes and calls the
 // given update function after every poll
-// TODO: Add trigger to stop on
-func (c *StatusClient) WaitForTrigger(ctx context.Context, update func(int)) error {
+func (c *StatusClient) WaitForTrigger(ctx context.Context, trigger chan bool, update func(int)) error {
 	for {
+		select {
+		case <-trigger:
+			return nil
+		default:
+		}
+
 		res, err := c.Client.Status(ctx, new(empty.Empty))
 		if err != nil {
 			return err

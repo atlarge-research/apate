@@ -10,7 +10,7 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh chan struct{}) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	}, func(obj interface{}) {
 		// Delete function
 		// Do nothing here, as control plane will determine which, if any, apatelets should stop
-	})
+	}, stopCh)
 
 	return nil
 }
