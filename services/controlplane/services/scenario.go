@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"time"
 
@@ -41,20 +42,25 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store, inf
 func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlplane.PublicScenario) (*empty.Empty, error) {
 	log.Printf("Loading new scenario")
 
+	// TODO: Skipped error wrapping in normalize scenario because it will be removed
 	normalizedScenario, resources, err := normalization.NormalizeScenario(scenario)
 	if err != nil {
-		log.Print(err)
+		err = errors.Wrap(err, "failed to normalize scenario")
+		log.Printf("%+v", err)
 		return nil, err
 	}
 
 	log.Printf("Adding %v to the queue", len(resources))
 	if err = (*s.store).AddResourcesToQueue(resources); err != nil {
-		log.Print(err)
+		err = errors.Wrap(err, "failed to add resources to queue")
+		log.Printf("%+v", err)
+
 		return nil, err
 	}
 
 	if err = (*s.store).SetApateletScenario(normalizedScenario); err != nil {
-		log.Print(err)
+		err = errors.Wrap(err, "failed to set scenario on Apatelet")
+		log.Printf("%+v", err)
 		return nil, err
 	}
 
@@ -65,6 +71,8 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	// Create environment for apatelets
 	environment, err := env.DefaultApateletEnvironment()
 	if err != nil {
+		err = errors.Wrap(err, "failed to create Apatelet environment")
+		log.Printf("%+v", err)
 		return nil, err
 	}
 
@@ -72,7 +80,8 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 
 	// Start the apatelets
 	if err = run.StartApatelets(ctx, len(resources), environment); err != nil {
-		log.Print(err)
+		err = errors.Wrap(err, "failed to start Apatelets")
+		log.Printf("%+v", err)
 		return nil, err
 	}
 
@@ -82,6 +91,8 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 func (s *scenarioService) StartScenario(ctx context.Context, config *controlplane.StartScenarioConfig) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
+		err = errors.Wrap(err, "failed to get nodes")
+
 		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
@@ -89,6 +100,8 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 
 	apateletScenario, err := (*s.store).GetApateletScenario()
 	if err != nil {
+		err = errors.Wrap(err, "failed to get Apatelet scenario")
+
 		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
@@ -99,6 +112,8 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 
 	err = startOnNodes(ctx, nodes, apateletScenario)
 	if err != nil {
+		err = errors.Wrap(err, "failed to get start scenario on nodes")
+
 		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
@@ -106,6 +121,8 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 
 	cfg, err := (*s.store).GetKubeConfig()
 	if err != nil {
+		err = errors.Wrap(err, "failed to get get Kubeconfig")
+
 		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
@@ -114,6 +131,8 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	// TODO: This is probably very flaky
 	err = kubectl.Create(config.ResourceConfig, &cfg)
 	if err != nil {
+		err = errors.Wrap(err, "failed to create resource config")
+
 		scenario.Failed(err)
 		log.Println(err)
 		return nil, err
@@ -135,14 +154,14 @@ func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *api
 			_, err := scenarioClient.Client.StartScenario(ctx, nodeSc)
 
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to start scenario on client")
 			}
 
 			return scenarioClient.Conn.Close()
 		})
 	}
 
-	return errs.Wait()
+	return errors.Wrap(errs.Wait(), "failed to start scenario on nodes")
 }
 
 func filterTasksForNode(inputTasks []*apiApatelet.Task, uuid string) []*apiApatelet.Task {

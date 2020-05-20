@@ -1,6 +1,9 @@
 package env
 
-import "strconv"
+import (
+	"github.com/pkg/errors"
+	"strconv"
+)
 
 // Apatelet environment variables
 const (
@@ -38,7 +41,7 @@ type ApateletEnvironment struct {
 func DefaultApateletEnvironment() (ApateletEnvironment, error) {
 	defaultPort, err := strconv.Atoi(ApateletListenPortDefault)
 	if err != nil {
-		return ApateletEnvironment{}, err
+		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert Apatelet listening port (%v) to string", ApateletListenPortDefault)
 	}
 
 	return ApateletEnvironment{
@@ -51,15 +54,17 @@ func DefaultApateletEnvironment() (ApateletEnvironment, error) {
 func ApateletEnvironmentFromEnv() (ApateletEnvironment, error) {
 	controlPlaneAddress := RetrieveFromEnvironment(ControlPlaneAddress, ControlPlaneAddressDefault)
 
-	controlPlanePort, err := strconv.Atoi(RetrieveFromEnvironment(ControlPlanePort, ControlPlanePortDefault))
+	cpp := RetrieveFromEnvironment(ControlPlanePort, ControlPlanePortDefault)
+	controlPlanePort, err := strconv.Atoi(cpp)
 	if err != nil {
-		return ApateletEnvironment{}, err
+		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert contolplane port (%v) to string", cpp)
 	}
 
 	// Retrieve own port
-	listenPort, err := strconv.Atoi(RetrieveFromEnvironment(ApateletListenPort, ApateletListenPortDefault))
+	lp := RetrieveFromEnvironment(ApateletListenPort, ApateletListenPortDefault)
+	listenPort, err := strconv.Atoi(lp)
 	if err != nil {
-		return ApateletEnvironment{}, err
+		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert Apatelet listening port (%v) to string", lp)
 	}
 
 	// Retrieving connection information

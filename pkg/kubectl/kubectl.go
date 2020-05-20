@@ -2,10 +2,12 @@
 package kubectl
 
 import (
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 )
@@ -22,7 +24,8 @@ func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error 
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("kubectl", args...)
-	return cmd.Run()
+
+	return errors.Wrapf(cmd.Run(), "failed to run kubectl %v", strings.Join(args[:], " "))
 }
 
 // CreateWithNameSpace calls `kubectl create` with the given resourceConfig in the given namespace
@@ -31,17 +34,17 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 	if len(resourceConfig) > 0 {
 		cfgFile, err := ioutil.TempFile("", "apate-")
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create tempfile for Kubeconfig")
 		}
 		_, err = cfgFile.Write(resourceConfig)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to write Kubeconfig to tempfile")
 		}
 		defer func() {
 			err = os.Remove(cfgFile.Name())
 			if err != nil {
 				// Unable to remove temp file, doesn't matter that much but logging anyway
-				log.Printf("unable to delete temporary file: %v\n", err)
+				log.Printf("unable to delete temporary file: %+v\n", err)
 			}
 		}()
 
@@ -63,7 +66,7 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return cmd.Run()
+		return errors.Wrapf(cmd.Run(), "failed to run kubectl %v", strings.Join(args[:], " "))
 	}
 
 	return nil
@@ -72,5 +75,6 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 // Create calls `kubectl create` with the given resourceConfig
 // When this config is empty, it will not be called
 func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
-	return CreateWithNameSpace(resourceConfig, kubeConfig, "")
+	const namespace = ""
+	return errors.Wrapf(CreateWithNameSpace(resourceConfig, kubeConfig, namespace), "failed to create crd in namespace \"%v\"", namespace)
 }

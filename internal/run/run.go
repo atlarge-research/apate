@@ -6,6 +6,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"log"
 
 	"github.com/phayes/freeport"
@@ -21,9 +22,9 @@ func StartApatelets(ctx context.Context, amountOfNodes int, environment env.Apat
 
 	switch runType {
 	case env.Docker:
-		return useDocker(ctx, amountOfNodes, environment)
+		return errors.Wrap(useDocker(ctx, amountOfNodes, environment), "failed to use docker to start Apatelets")
 	case env.Routine:
-		return useRoutines(amountOfNodes, environment)
+		return errors.Wrap(useRoutines(amountOfNodes, environment), "failed to use goroutines to start Apatelets")
 	default:
 		return fmt.Errorf("unknown run type: %v", runType)
 	}
@@ -35,22 +36,23 @@ func useDocker(ctx context.Context, amountOfNodes int, environment env.ApateletE
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
 	// Spawn the apatelets
-	return container.SpawnApateletContainers(ctx, amountOfNodes, pullPolicy, environment)
+	return errors.Wrap(container.SpawnApateletContainers(ctx, amountOfNodes, pullPolicy, environment), "failed to spawn Apatelet docker containers")
 }
 
 func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 	if err := apateRun.SetCerts(); err != nil {
-		return err
+		return errors.Wrap(err, "failed to set certificates")
 	}
 
 	readyCh := make(chan bool)
 
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
-		ports, err := freeport.GetFreePorts(3)
+		const attemts = 3
+		ports, err := freeport.GetFreePorts(attemts)
 
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get a free port after %v attempts", attemts)
 		}
 
 		apateletEnv.ListenPort = ports[0]
@@ -59,12 +61,12 @@ func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 			// TODO: Add retry logic
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("Apatelet failed to start: %v\n", r)
+					log.Printf("Apatelet failed to start: %+v\n", r)
 				}
 			}()
 			err := apateRun.StartApatelet(apateletEnv, ports[1], ports[2], &readyCh)
 			if err != nil {
-				log.Printf("Apatelet failed to start: %v\n", err)
+				log.Printf("Apatelet failed to start: %+v\n", err)
 			}
 		}()
 

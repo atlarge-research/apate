@@ -3,6 +3,7 @@ package run
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"log"
 	"os"
 	"os/signal"
@@ -42,7 +43,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	log.Println("Joining apate cluster")
 	config, res, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to join apate cluster")
 	}
 
 	if KubeConfigWriter != nil {

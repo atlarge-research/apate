@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"strconv"
 
 	"github.com/docker/go-connections/nat"
@@ -18,14 +19,14 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create a new client")
 	}
 
 	// Get docker port for apatelet
 	port, err := nat.NewPort("tcp", strconv.Itoa(cpEnv.ListenPort))
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to retrieve docker port for Apatelet")
 	}
 
 	// Set spawn information
@@ -47,12 +48,12 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 		}, nil, nil, env.ApateletContainerPrefix+strconv.Itoa(i))
 
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to create container %v", env.ApateletContainerPrefix+strconv.Itoa(i))
 		}
 
 		return cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{})
 	})
 
 	// Spawn apatelets
-	return HandleSpawnContainers(ctx, cli, spawnInfo)
+	return errors.Wrap(HandleSpawnContainers(ctx, cli, spawnInfo), "failed to spawn containers")
 }
