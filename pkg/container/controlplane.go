@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
@@ -26,7 +27,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	port, err := nat.NewPort("tcp", cpEnv.Port)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get new port for control plane")
 	}
 
 	// Set spawn information
@@ -70,5 +71,5 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	})
 
 	// Spawn control plane
-	return HandleSpawnContainers(ctx, cli, spawnInfo)
+	return errors.Wrap(HandleSpawnContainers(ctx, cli, spawnInfo), "failed to spawn containers for control plane")
 }

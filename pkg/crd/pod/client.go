@@ -3,6 +3,7 @@
 package pod
 
 import (
+	"github.com/pkg/errors"
 	"time"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
@@ -28,7 +29,7 @@ type ConfigurationClient struct {
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
 	if err := v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to add crd scheme")
 	}
 
 	config := *c
@@ -39,7 +40,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 
 	client, err := rest.RESTClientFor(&config)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create new pod crd client for config")
 	}
 
 	return &ConfigurationClient{restClient: client, nameSpace: namespace}, nil
@@ -77,7 +78,7 @@ func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.PodConfiguratio
 		Into(&result)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to list pods")
 	}
 
 	return &result, nil
@@ -94,7 +95,7 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 		Watch()
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to watch")
 	}
 
 	return wi, nil

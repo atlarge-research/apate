@@ -3,6 +3,7 @@ package health
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -57,7 +58,7 @@ func (c *Client) StartStreamWithRetry(ctx context.Context, n int32) {
 func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 	stream, err := c.Client.HealthStream(ctx)
 	if err != nil {
-		errCallback(err)
+		errCallback(errors.Wrap(err, "failed to set up health stream"))
 	}
 
 	// Send health status
@@ -71,7 +72,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 			c.statusLock.RUnlock()
 
 			if err != nil {
-				errCallback(err)
+				errCallback(errors.Wrap(err, "failed to send health status message over stream"))
 			}
 
 			time.Sleep(sendInterval)
@@ -88,7 +89,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 				select {
 				case <-ctx.Done():
 					// timeout reached
-					errCallback(ctx.Err())
+					errCallback(errors.Wrap(ctx.Err(), "stream timed out"))
 				case <-c:
 					cancel()
 				}
@@ -98,7 +99,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 
 			// Stream dead
 			if err != nil {
-				errCallback(err)
+				errCallback(errors.Wrap(err, "stream died"))
 			}
 		}
 	}()

@@ -2,7 +2,7 @@ package controlplane
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -57,7 +57,7 @@ func (c *StatusClient) WaitForHealthy(ctx context.Context, expectedApatelets int
 		res, err := c.Client.Status(ctx, new(empty.Empty))
 
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to get client status")
 		}
 
 		healthy := int(res.HealthyNodes)

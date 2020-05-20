@@ -1,5 +1,7 @@
 package cluster
 
+import "github.com/pkg/errors"
+
 // A ManagedCluster inherits all it's methods from a
 // KubernetesCluster, but is managed. This means it can be deleted.
 // A ManagedCluster is guaranteed to be created by Apate, and can
@@ -12,5 +14,5 @@ type ManagedCluster struct {
 
 // Delete destroys a (managed) kubernetes cluster
 func (c ManagedCluster) Delete() error {
-	return c.manager.DeleteCluster(c.name)
+	return errors.Wrap(c.manager.DeleteCluster(c.name), "failed to delete cluster")
 }

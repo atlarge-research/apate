@@ -2,6 +2,7 @@
 package network
 
 import (
+	"github.com/pkg/errors"
 	"net"
 	"strings"
 
@@ -16,7 +17,7 @@ func GetExternalAddress() (string, error) {
 	addresses, err := net.InterfaceAddrs()
 
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to get interface address")
 	}
 
 	// Get first 172.17.0.0/16 address, if any
