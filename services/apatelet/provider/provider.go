@@ -6,6 +6,10 @@ import (
 	"os"
 	"strconv"
 
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/condition"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
@@ -31,6 +35,10 @@ type Provider struct {
 	nodeInfo  cluster.NodeInfo
 	store     *store.Store
 	stats     *Stats
+
+	updateStatus func(*corev1.Node)
+	node         *corev1.Node
+	conditions   nodeConditions
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
@@ -47,7 +55,7 @@ func CreateProvider(ctx context.Context, res *scenario.NodeResources, k8sPort in
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo := cluster.NewNodeInfo("apatelet", "agent", name, k8sVersion, metricsPort)
+	nodeInfo := cluster.NewNodeInfo("apatelet", "agent", name, res.Selector, k8sVersion, metricsPort)
 
 	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
@@ -69,5 +77,13 @@ func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.N
 		nodeInfo:  nodeInfo,
 		store:     store,
 		stats:     stats,
+		conditions: nodeConditions{
+			ready:              condition.New(true, corev1.NodeReady),
+			outOfDisk:          condition.New(false, corev1.NodeOutOfDisk),
+			memoryPressure:     condition.New(false, corev1.NodeMemoryPressure),
+			diskPressure:       condition.New(false, corev1.NodeDiskPressure),
+			networkUnavailable: condition.New(false, corev1.NodeNetworkUnavailable),
+			pidPressure:        condition.New(false, corev1.NodePIDPressure),
+		},
 	}
 }

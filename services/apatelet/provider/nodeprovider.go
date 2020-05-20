@@ -2,8 +2,14 @@ package provider
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"strconv"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/condition"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -12,14 +18,61 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
 )
 
-// Ping TODO
-func (p *Provider) Ping(ctx context.Context) error {
-	return ctx.Err()
+const (
+	memThresh  = 0.85
+	diskThresh = 0.85
+)
+
+type nodeConditions struct {
+	ready          condition.Condition
+	outOfDisk      condition.Condition
+	memoryPressure condition.Condition
+	diskPressure   condition.Condition
+
+	// Unused conditions, may be implement in a later version
+	networkUnavailable condition.Condition
+	pidPressure        condition.Condition
 }
 
-// NotifyNodeStatus TODO
-func (p *Provider) NotifyNodeStatus(_ context.Context, _ func(*corev1.Node)) {
-	// TODO
+func (p *Provider) getPingResponse() (scenario.Response, error) {
+	rawFlag, err := (*p.store).GetNodeFlag(events.NodePingResponse)
+	if err != nil {
+		return scenario.ResponseUnset, fmt.Errorf("unable to retrieve ping flag: %v", err)
+	}
+
+	flag, ok := rawFlag.(scenario.Response)
+	if !ok {
+		return scenario.ResponseUnset, fmt.Errorf("invalid ping flag: %v", rawFlag)
+	}
+
+	return flag, nil
+}
+
+// Ping will react to ping based on the given set flag
+func (p *Provider) Ping(ctx context.Context) error {
+	flag, err := p.getPingResponse()
+	if err != nil {
+		return err
+	}
+
+	switch flag {
+	case scenario.ResponseUnset:
+		fallthrough // If unset, act as if it's normal
+	case scenario.ResponseNormal:
+		return ctx.Err()
+	case scenario.ResponseTimeout:
+		<-ctx.Done()
+		return ctx.Err()
+	case scenario.ResponseError:
+		return errors.New("ping expected error")
+	default:
+		return fmt.Errorf("invalid response flag: %v", flag)
+	}
+}
+
+// NotifyNodeStatus sets the function we can use to update the status within kubernetes
+func (p *Provider) NotifyNodeStatus(_ context.Context, cb func(*corev1.Node)) {
+	p.updateStatus = cb
 }
 
 // ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
@@ -27,64 +80,53 @@ func (p *Provider) ConfigureNode(_ context.Context, node *corev1.Node) {
 	node.Spec = p.spec()
 	node.ObjectMeta = p.objectMeta()
 	node.Status = p.nodeStatus()
+	p.node = node.DeepCopy()
+}
+
+func (p *Provider) updateConditions(ctx context.Context) {
+	// First check if the conditions should be updated
+	flag, err := p.getPingResponse()
+	if err != nil {
+		log.Printf("unable to get ping response for updating conditions: %v", err)
+		return
+	}
+	if flag != scenario.ResponseUnset && flag != scenario.ResponseNormal {
+		return //TODO: Should we log this? Might result in some spam logging..
+	}
+
+	stats, err := p.GetStatsSummary(ctx)
+	if err != nil {
+		// TODO: What to do now?
+		log.Printf("failed to update node conditions: %v", err)
+		return
+	}
+
+	// Set bools
+	memPressure := float64(*stats.Node.Memory.UsageBytes) > float64(p.resources.Memory)*memThresh
+	diskPressure := float64(*stats.Node.Fs.UsedBytes) > float64(p.resources.Storage)*diskThresh
+	diskFull := float64(*stats.Node.Fs.UsedBytes) > float64(p.resources.Storage)*0.96
+
+	// Set conditions and update node
+	p.node.Status.Conditions = []corev1.NodeCondition{
+		p.conditions.ready.Update(!diskFull),
+		p.conditions.outOfDisk.Update(diskFull),
+		p.conditions.memoryPressure.Update(memPressure),
+		p.conditions.diskPressure.Update(diskPressure),
+		p.conditions.networkUnavailable.Update(false),
+		p.conditions.pidPressure.Update(false),
+	}
+	p.updateStatus(p.node)
 }
 
 func (p *Provider) nodeConditions() []corev1.NodeCondition {
-	lastHeartbeatTime := metav1.Now()
-	lastTransitionTime := metav1.Now()
-	lastTransitionReason := "Apatelet is ready"
-	lastTransitionMessage := "ok"
-
 	// Return static thumbs-up values for all conditions.
 	return []corev1.NodeCondition{
-		{
-			Type:               corev1.NodeReady,
-			Status:             corev1.ConditionTrue,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeOutOfDisk,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeMemoryPressure,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeDiskPressure,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               corev1.NodeNetworkUnavailable,
-			Status:             corev1.ConditionFalse,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
-		{
-			Type:               "KubeletConfigOk",
-			Status:             corev1.ConditionTrue,
-			LastHeartbeatTime:  lastHeartbeatTime,
-			LastTransitionTime: lastTransitionTime,
-			Reason:             lastTransitionReason,
-			Message:            lastTransitionMessage,
-		},
+		p.conditions.ready.Get(),
+		p.conditions.outOfDisk.Get(),
+		p.conditions.memoryPressure.Get(),
+		p.conditions.diskPressure.Get(),
+		p.conditions.networkUnavailable.Get(),
+		p.conditions.pidPressure.Get(),
 	}
 }
 
@@ -109,6 +151,7 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			"kubernetes.io/role":     p.nodeInfo.Role,
 			"kubernetes.io/hostname": p.nodeInfo.Name,
 			"metrics_port":           strconv.Itoa(p.nodeInfo.MetricsPort),
+			"apate":                  p.nodeInfo.Spec,
 		},
 	}
 }
