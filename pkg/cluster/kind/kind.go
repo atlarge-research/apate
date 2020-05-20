@@ -2,7 +2,9 @@
 package kind
 
 import (
+	"github.com/pkg/errors"
 	"os"
+	"strings"
 
 	"sigs.k8s.io/kind/cmd/kind/app"
 	"sigs.k8s.io/kind/pkg/cmd"
@@ -39,7 +41,7 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 	err := useInternalKubeConfig(name, kubeConfigLocation)
 
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to run kind", strings.Join(args[:], " "))
 	}
 
 	// Only gets here after the cluster is running
@@ -69,7 +71,7 @@ func useInternalKubeConfig(name string, kubeConfigLocation string) error {
 	})
 
 	c.SetArgs(args)
-	return c.Execute()
+	return errors.Wrapf(c.Execute(), "failed run kind %v", strings.Join(args[:], " "))
 }
 
 // DeleteCluster deletes a cluster with a given name.
@@ -89,5 +91,5 @@ func (*KinD) DeleteCluster(name string) error {
 	// Deletes the cluster
 	// As far as I could test this call never errors (it just doesn't do anything
 	// when the cluster doesn't exist) so I don't think the system used in CreateCluster is necessary.
-	return app.Run(logger, cmd.StandardIOStreams(), args)
+	return errors.Wrapf(app.Run(logger, cmd.StandardIOStreams(), args), "failed to run kind %v", strings.Join(args[:], " "))
 }

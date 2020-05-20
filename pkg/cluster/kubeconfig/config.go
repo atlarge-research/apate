@@ -2,6 +2,7 @@
 package kubeconfig
 
 import (
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,7 +24,7 @@ func FromBytes(bytes []byte) (*KubeConfig, error) {
 	path := os.TempDir() + "/apate/config-" + uuid.New().String()
 
 	if err := ioutil.WriteFile(path, bytes, 0o600); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to write Kubeconfig to file at %v", path)
 	}
 
 	return &KubeConfig{
@@ -36,7 +37,7 @@ func FromBytes(bytes []byte) (*KubeConfig, error) {
 func FromPath(path string) (*KubeConfig, error) {
 	bytes, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to read kubeconfig from file at %v", path)
 	}
 
 	return &KubeConfig{path, bytes}, nil
@@ -46,7 +47,7 @@ func FromPath(path string) (*KubeConfig, error) {
 func (k KubeConfig) GetConfig() (*rest.Config, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig(k.Bytes)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create rest config")
 	}
 
 	return config, nil

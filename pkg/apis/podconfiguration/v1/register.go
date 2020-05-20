@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/pkg/errors"
 	"io/ioutil"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,10 +44,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 
 // CreateInKubernetes registers the generated CRD YAML to Kubernetes
 func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
-	file, err := ioutil.ReadFile("config/crd/apate.opendc.org_podconfigurations.yaml")
+	const filename = "config/crd/apate.opendc.org_podconfigurations.yaml"
+	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to read crd file at %v", filename)
 	}
 
-	return kubectl.Create(file, config)
+	return errors.Wrap(kubectl.Create(file, config), "failed to create crd")
 }

@@ -3,6 +3,7 @@ package scenario
 
 import "log"
 
+// TODO
 // This file should be called something else and should be situated somewhere else
 // Right now there's no better place though.
 
