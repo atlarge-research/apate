@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/watchdog"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
 
 	nodeconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
@@ -31,7 +33,7 @@ import (
 func init() {
 	// Enable line numbers in logging
 	// Enables date time flags & file name + line
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 }
 
 func main() {
@@ -70,7 +72,8 @@ func main() {
 	time.Sleep(time.Second)
 
 	// Create node informer
-	if err = node.CreateNodeInformer(ctx, managedKubernetesCluster.KubeConfig, &createdStore, externalInformation); err != nil {
+	stopInformer := make(chan struct{})
+	if err = node.CreateNodeInformer(ctx, managedKubernetesCluster.KubeConfig, &createdStore, externalInformation, stopInformer); err != nil {
 		log.Fatal(err)
 	}
 
@@ -93,21 +96,19 @@ func main() {
 	}
 
 	// Handle signals
-	signals := make(chan os.Signal, 1)
-	stopped := make(chan bool, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-signals
-		shutdown(&createdStore, &managedKubernetesCluster, server)
-		stopped <- true
-	}()
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start serving request
 	go server.Serve()
 
+	// Start watchdog
+	watchdog.StartWatchDog(time.Second*30, &createdStore, &managedKubernetesCluster.KubernetesCluster)
+
 	// Stop the server on signal
-	<-stopped
+	<-stop
+	stopInformer <- struct{}{}
+	shutdown(&createdStore, &managedKubernetesCluster, server)
 	log.Printf("apate control plane stopped")
 }
 

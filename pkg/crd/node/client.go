@@ -2,14 +2,14 @@
 package node
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+
 	"time"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -46,7 +46,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 
 // WatchResources creates an informer which watches for new or updated NodeConfigurations and updates the store accordingly
 // This will also trigger the creation and removal of nodes when applicable
-func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{})) {
+func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh chan struct{}) {
 	_, nodeConfigurationController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -63,7 +63,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 		},
 	)
 
-	go nodeConfigurationController.Run(wait.NeverStop)
+	go nodeConfigurationController.Run(stopCh)
 }
 
 func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.NodeConfigurationList, error) {

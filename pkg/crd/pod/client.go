@@ -9,7 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -45,7 +44,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 }
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
-func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{})) {
+func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh chan struct{}) {
 	_, podConfigurationController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -62,7 +61,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 		},
 	)
 
-	go podConfigurationController.Run(wait.NeverStop)
+	go podConfigurationController.Run(stopCh)
 }
 
 func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.PodConfigurationList, error) {

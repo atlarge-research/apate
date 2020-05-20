@@ -7,6 +7,10 @@ import (
 	"log"
 	"net"
 
+	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/watchdog"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 
@@ -77,15 +81,18 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 // LeaveCluster removes the node from the store
 // This will maybe also remove it from k8s itself, TBD
 func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformation *controlplane.LeaveInformation) (*empty.Empty, error) {
-	// TODO: Maybe check if the remote address is still the same? idk
+	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
 
-	log.Printf("Received request to leave apate store from node %s\n", leaveInformation.NodeUuid)
-
-	if err := s.kubernetesCluster.RemoveNodeFromCluster("apatelet-" + leaveInformation.NodeUuid); err != nil {
+	id, err := uuid.Parse(leaveInformation.NodeUuid)
+	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
+	err = watchdog.RemoveNodeWithUUID(id, s.store, &s.kubernetesCluster)
+	if err != nil {
+		return nil, err
+	}
+
 	return &empty.Empty{}, nil
 }
 

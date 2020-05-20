@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -28,7 +29,6 @@ const (
 )
 
 func main() {
-	var scenarioFileLocation string
 	var k8sConfigurationFileLocation string
 	var controlPlaneAddress string
 	var controlPlanePort int
@@ -49,12 +49,6 @@ func main() {
 					return runScenario(ctx, controlPlaneAddress, k8sConfigurationFileLocation, controlPlanePort)
 				},
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:        "scenario",
-						Usage:       "Load the scenario from `FILE`",
-						Destination: &scenarioFileLocation,
-						Required:    true,
-					},
 					&cli.StringFlag{
 						Name:        "address",
 						Usage:       "The address of the control plane",
@@ -185,13 +179,19 @@ func main() {
 }
 
 func getKubeConfig(ctx context.Context, address string, port int) error {
-	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false)).GetKubeConfig(ctx)
+	client := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false))
+	cfg, err := client.GetKubeConfig(ctx)
 
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(string(cfg))
+
+	if err := client.Conn.Close(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -226,9 +226,6 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 }
 
 func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation string, controlPlanePort int) error {
-	fmt.Printf("\rReading scenario file ")
-	color.Green("DONE\n")
-
 	var k8sConfig []byte
 	if len(configFileLocation) > 0 {
 		// Read the k8s configuration file
@@ -251,26 +248,32 @@ func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation st
 	scenarioClient := controlplane.GetScenarioClient(info)
 
 	// Next: poll amount of healthy nodes
+	trigger := make(chan bool)
+
+	go func() {
+		_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+		trigger <- true
+	}()
+
 	statusClient := controlplane.GetStatusClient(info)
-	err := statusClient.WaitForTrigger(ctx, func(healthy int) {
+	err := statusClient.WaitForTrigger(ctx, trigger, func(healthy int) {
 		fmt.Printf("\rGot %d healthy apatelets - Press enter to start scenario...", healthy)
 	})
+	if err != nil {
+		return err
+	}
 
-	// TODO: Catch enter
+	fmt.Printf("Starting scenario ")
 
+	//Finally: actually start the scenario
+	if _, err = scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
+		return err
+	}
+	err = scenarioClient.Conn.Close()
 	if err != nil {
 		return err
 	}
 
 	color.Green("DONE\n")
-	fmt.Printf("Starting scenario ")
-
-	//Finally: actually start the scenario
-	if _, err := scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
-		return err
-	}
-
-	color.Green("DONE\n")
-
 	return nil
 }

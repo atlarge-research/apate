@@ -141,7 +141,7 @@ func TestRemoveNode(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Remove node
-	err = store.RemoveNode(node)
+	err = store.RemoveNode(node.UUID)
 	assert.NoError(t, err)
 
 	// Verify there are no nodes left
@@ -165,7 +165,7 @@ func TestDeleteNoNode(t *testing.T) {
 
 	// Remove random node
 	err = store.RemoveNode(NewNode(*service.NewConnectionInfo("yeet", 42, false),
-		&scenario.NodeResources{UUID: uuid.New()}, "2"))
+		&scenario.NodeResources{UUID: uuid.New()}, "awdaw2").UUID)
 	assert.NoError(t, err)
 
 	// Check if the original node is still intact

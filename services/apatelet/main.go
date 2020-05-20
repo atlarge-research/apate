@@ -12,7 +12,7 @@ import (
 func init() {
 	// Enable line numbers in logging
 	// Enables date time flags & file name + line
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 }
 
 // This function is only called when started separately (as Docker container for example)

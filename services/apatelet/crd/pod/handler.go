@@ -10,7 +10,7 @@ import (
 )
 
 // CreatePodInformer creates a new crd informer.
-func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store) error {
+func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch chan struct{}) error {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -37,7 +37,7 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store) error {
 		if err != nil {
 			log.Printf("error while removing pod tasks: %v\n", err)
 		}
-	})
+	}, stopch)
 
 	return nil
 }

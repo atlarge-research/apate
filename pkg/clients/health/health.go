@@ -3,9 +3,7 @@ package health
 
 import (
 	"context"
-	"log"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"google.golang.org/grpc"
@@ -41,18 +39,6 @@ func GetClient(info *service.ConnectionInfo, uuid string) *Client {
 	}
 }
 
-// StartStreamWithRetry calls StartStream but will retry n times to re-establish a connection
-func (c *Client) StartStreamWithRetry(ctx context.Context, n int32) {
-	c.StartStream(ctx, func(err error) {
-		if atomic.LoadInt32(&n) < 1 {
-			log.Fatal(err)
-			return
-		}
-		log.Println(err)
-		atomic.AddInt32(&n, -1)
-	})
-}
-
 // StartStream starts the bidirectional health stream, errCallback is called upon any error
 func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 	stream, err := c.Client.HealthStream(ctx)
@@ -74,31 +60,34 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 				errCallback(err)
 			}
 
-			time.Sleep(sendInterval)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(sendInterval):
+			}
 		}
 	}()
 
 	// Receive heartbeat from server
 	go func() {
 		for {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, recvTimeout)
-			c := make(chan bool)
-			go func() {
-				select {
-				case <-ctx.Done():
-					// timeout reached
-					errCallback(ctx.Err())
-				case <-c:
-					cancel()
-				}
-			}()
-			_, err := stream.Recv()
-			c <- true
+			r := make(chan bool)
 
-			// Stream dead
-			if err != nil {
-				errCallback(err)
+			go func() {
+				_, err := stream.Recv()
+				if err != nil {
+					errCallback(err)
+				}
+				r <- true
+			}()
+
+			select {
+			case <-ctx.Done():
+				// On context cancel stop
+				return
+			case <-time.After(time.Second * recvTimeout):
+				errCallback(ctx.Err())
+			case <-r:
 			}
 		}
 	}()
