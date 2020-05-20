@@ -13,7 +13,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	api "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -47,7 +46,7 @@ func main() {
 				Name:  "run",
 				Usage: "Runs a given scenario file on the Apate cluster",
 				Action: func(c *cli.Context) error {
-					return runScenario(ctx, scenarioFileLocation, controlPlaneAddress, controlPlanePort, k8sConfigurationFileLocation)
+					return runScenario(ctx, controlPlaneAddress, k8sConfigurationFileLocation, controlPlanePort)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -226,38 +225,15 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	return nil
 }
 
-func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int, configFileLocation string) error {
-	// TODO remove scenario related code when moving node to CRD
-	var scenarioDeserializer deserialize.Deserializer
-	var err error
-
-	fmt.Printf("Reading scenario file")
-
-	if scenarioFileLocation == "-" {
-		// Read the file given by stdin
-		var bytes []byte
-
-		bytes, err = ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			return err
-		}
-
-		scenarioDeserializer, err = deserialize.YamlScenario{}.FromBytes(bytes)
-	} else {
-		// Read the file given by the argument
-		scenarioDeserializer, err = deserialize.YamlScenario{}.FromFile(scenarioFileLocation)
-	}
-
-	if err != nil {
-		return err
-	}
-
+func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation string, controlPlanePort int) error {
 	fmt.Printf("\rReading scenario file ")
 	color.Green("DONE\n")
 
 	var k8sConfig []byte
 	if len(configFileLocation) > 0 {
-		// Read the k8s configuration file #nosec
+		// Read the k8s configuration file
+		var err error
+		// #nosec
 		k8sConfig, err = ioutil.ReadFile(configFileLocation)
 		if err != nil {
 			return err
@@ -271,27 +247,16 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 		TLS:     false,
 	}
 
-	fmt.Printf("Loading scenario ")
 	// Initial call: load the scenario
 	scenarioClient := controlplane.GetScenarioClient(info)
 
-	scenario, err := scenarioDeserializer.GetScenario()
-	if err != nil {
-		return err
-	}
-
-	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
-	if err != nil {
-		return err
-	}
-	color.Green("DONE\n")
-
-	// Next: keep polling until the control plane is happy
-	expectedApatelets := getAmountOfApatelets(scenario)
+	// Next: poll amount of healthy nodes
 	statusClient := controlplane.GetStatusClient(info)
-	err = statusClient.WaitForHealthy(ctx, expectedApatelets, func(healthy int) {
-		fmt.Printf("\rWaiting for healthy apatelets (%d/%d) ", healthy, expectedApatelets)
+	err := statusClient.WaitForTrigger(ctx, func(healthy int) {
+		fmt.Printf("\rGot %d healthy apatelets - Press enter to start scenario...", healthy)
 	})
+
+	// TODO: Catch enter
 
 	if err != nil {
 		return err
@@ -308,14 +273,4 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 	color.Green("DONE\n")
 
 	return nil
-}
-
-func getAmountOfApatelets(scenario *api.PublicScenario) int {
-	var cnt int32
-
-	for _, j := range scenario.NodeGroups {
-		cnt += j.Amount
-	}
-
-	return int(cnt)
 }

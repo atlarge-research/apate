@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
@@ -27,15 +28,15 @@ func podResponse(args responseArgs, label string, responseFlag events.PodEventFl
 	}
 
 	switch flag {
-	case scenario.Response_RESPONSE_NORMAL:
+	case scenario.ResponseNormal:
 		res, err := args.action()
 		return res, true, err
-	case scenario.Response_RESPONSE_TIMEOUT:
+	case scenario.ResponseTimeout:
 		<-args.ctx.Done()
 		return nil, true, nil
-	case scenario.Response_RESPONSE_ERROR:
+	case scenario.ResponseError:
 		return nil, true, errors.New("podResponse expected error")
-	case scenario.Response_RESPONSE_UNSET:
+	case scenario.ResponseUnset:
 		return nil, false, nil
 	default:
 		return nil, false, errors.New("podResponse invalid scenario")
@@ -55,15 +56,15 @@ func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interfa
 	}
 
 	switch flag {
-	case scenario.Response_RESPONSE_UNSET:
+	case scenario.ResponseUnset:
 		fallthrough // If unset, act as if it's normal
-	case scenario.Response_RESPONSE_NORMAL:
+	case scenario.ResponseNormal:
 		res, err := args.action()
 		return res, err
-	case scenario.Response_RESPONSE_TIMEOUT:
+	case scenario.ResponseTimeout:
 		<-args.ctx.Done()
 		return nil, nil
-	case scenario.Response_RESPONSE_ERROR:
+	case scenario.ResponseError:
 		return nil, errors.New("nodeResponse expected error")
 	default:
 		return nil, errors.New("nodeResponse invalid scenario")

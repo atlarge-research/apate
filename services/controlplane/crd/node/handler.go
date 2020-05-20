@@ -6,6 +6,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/google/uuid"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/run"
@@ -13,8 +15,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization/translate"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
@@ -90,7 +90,7 @@ func getDesiredApatelets(ctx context.Context, obj interface{}, st *store.Store, 
 	}
 }
 
-func spawnApatelets(ctx context.Context, diff int64, st *store.Store, res normalization.NodeResources, info *service.ConnectionInfo) error {
+func spawnApatelets(ctx context.Context, diff int64, st *store.Store, res scenario.NodeResources, info *service.ConnectionInfo) error {
 	log.Printf("Creating %v apatelets", diff)
 	resources := createResources(int(diff), res)
 	if err := (*st).AddResourcesToQueue(resources); err != nil {
@@ -125,8 +125,8 @@ func stopApatelets(_ context.Context, diff int64, _ *store.Store) error {
 	return nil
 }
 
-func createResources(needed int, base normalization.NodeResources) []normalization.NodeResources {
-	var resources []normalization.NodeResources
+func createResources(needed int, base scenario.NodeResources) []scenario.NodeResources {
+	var resources []scenario.NodeResources
 
 	for i := 0; i < needed; i++ {
 		res := base
@@ -138,24 +138,24 @@ func createResources(needed int, base normalization.NodeResources) []normalizati
 	return resources
 }
 
-func getNodeResources(nodeCfg *v1.NodeConfiguration) (normalization.NodeResources, error) {
+func getNodeResources(nodeCfg *v1.NodeConfiguration) (scenario.NodeResources, error) {
 	res := nodeCfg.Spec.Resources
-	mem, err := translate.GetInBytes(res.Memory, "memory")
+	mem, err := scenario.GetInBytes(res.Memory, "memory")
 	if err != nil {
-		return normalization.NodeResources{}, err
+		return scenario.NodeResources{}, err
 	}
 
-	storage, err := translate.GetInBytes(res.Storage, "storage")
+	storage, err := scenario.GetInBytes(res.Storage, "storage")
 	if err != nil {
-		return normalization.NodeResources{}, err
+		return scenario.NodeResources{}, err
 	}
 
-	ephemeralStorage, err := translate.GetInBytes(res.EphemeralStorage, "ephemeral storage")
+	ephemeralStorage, err := scenario.GetInBytes(res.EphemeralStorage, "ephemeral storage")
 	if err != nil {
-		return normalization.NodeResources{}, err
+		return scenario.NodeResources{}, err
 	}
 
-	return normalization.NodeResources{
+	return scenario.NodeResources{
 		Memory:           mem,
 		CPU:              res.CPU,
 		Storage:          storage,

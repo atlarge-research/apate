@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
 	"github.com/golang/mock/gomock"
@@ -13,10 +15,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
@@ -26,7 +26,7 @@ const podName = "pod"
 const podLabel = "label"
 
 func TestConfigureNode(t *testing.T) {
-	resources := normalization.NodeResources{
+	resources := scenario.NodeResources{
 		UUID:    uuid.New(),
 		Memory:  42,
 		CPU:     1337,
@@ -49,7 +49,7 @@ func TestConfigureNode(t *testing.T) {
 }
 
 func TestConfigureNodeWithCreate(t *testing.T) {
-	resources := normalization.NodeResources{
+	resources := scenario.NodeResources{
 		UUID:    uuid.New(),
 		Memory:  42,
 		CPU:     1337,
@@ -89,7 +89,7 @@ func TestCreatePod(t *testing.T) {
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
 	var s store.Store = ms
@@ -126,7 +126,7 @@ func TestUpdatePod(t *testing.T) {
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
 	var s store.Store = ms
@@ -162,7 +162,7 @@ func TestDeletePod(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
 	var s store.Store = ms
@@ -196,7 +196,7 @@ func TestGetPod(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
 	var s store.Store = ms
@@ -232,7 +232,7 @@ func TestGetPods(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
 
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
 	var s store.Store = ms
@@ -268,8 +268,8 @@ func TestGetPodStatus(t *testing.T) {
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatus_POD_STATUS_SUCCEEDED, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
 
 	// sot
 	var s store.Store = ms

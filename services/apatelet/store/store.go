@@ -6,7 +6,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
@@ -248,26 +248,28 @@ func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface
 }
 
 var defaultNodeValues = map[events.EventFlag]interface{}{
-	events.NodeCreatePodResponse:    scenario.Response_RESPONSE_NORMAL,
-	events.NodeUpdatePodResponse:    scenario.Response_RESPONSE_NORMAL,
-	events.NodeDeletePodResponse:    scenario.Response_RESPONSE_NORMAL,
-	events.NodeGetPodResponse:       scenario.Response_RESPONSE_NORMAL,
-	events.NodeGetPodStatusResponse: scenario.Response_RESPONSE_NORMAL,
-	events.NodeGetPodsResponse:      scenario.Response_RESPONSE_NORMAL,
-	events.NodePingResponse:         scenario.Response_RESPONSE_NORMAL,
+	events.NodeCreatePodResponse:    scenario.ResponseNormal,
+	events.NodeUpdatePodResponse:    scenario.ResponseNormal,
+	events.NodeDeletePodResponse:    scenario.ResponseNormal,
+	events.NodeGetPodResponse:       scenario.ResponseNormal,
+	events.NodeGetPodStatusResponse: scenario.ResponseNormal,
+	events.NodeGetPodsResponse:      scenario.ResponseNormal,
+	events.NodePingResponse:         scenario.ResponseNormal,
 
 	events.NodeAddedLatencyEnabled: false,
 	events.NodeAddedLatencyMsec:    uint64(0),
 }
 
 var defaultPodValues = map[events.PodEventFlag]interface{}{
-	events.PodCreatePodResponse:    scenario.Response_RESPONSE_UNSET,
-	events.PodUpdatePodResponse:    scenario.Response_RESPONSE_UNSET,
-	events.PodDeletePodResponse:    scenario.Response_RESPONSE_UNSET,
-	events.PodGetPodResponse:       scenario.Response_RESPONSE_UNSET,
-	events.PodGetPodStatusResponse: scenario.Response_RESPONSE_UNSET,
+	// Default is unset because then if no option is set we fall back to a node wide response
+
+	events.PodCreatePodResponse:    scenario.ResponseUnset,
+	events.PodUpdatePodResponse:    scenario.ResponseUnset,
+	events.PodDeletePodResponse:    scenario.ResponseUnset,
+	events.PodGetPodResponse:       scenario.ResponseUnset,
+	events.PodGetPodStatusResponse: scenario.ResponseUnset,
 
 	events.PodResources: nil,
 
-	events.PodStatus: scenario.PodStatus_POD_STATUS_UNSET,
+	events.PodStatus: scenario.ResponseUnset,
 }

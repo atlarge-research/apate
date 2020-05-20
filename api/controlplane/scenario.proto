@@ -1,5 +1,3 @@
-// TODO only keep startScenario when moving node to CRD
-
 syntax = "proto3";
 
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane";
@@ -7,10 +5,7 @@ package apate.controlplane;
 
 import "google/protobuf/empty.proto";
 
-import "controlplane/node_events.proto";
-
 service Scenario {
-    rpc loadScenario (PublicScenario) returns (google.protobuf.Empty) {}
     rpc startScenario (StartScenarioConfig) returns (google.protobuf.Empty) {}
 }
 
@@ -21,88 +16,3 @@ message StartScenarioConfig {
     // // https://kubectl.docs.kubernetes.io/pages/kubectl_book/resources_and_controllers.html
     bytes resource_config = 1;
 }
-
-// Scenario represents a full scenario as given in the scenario configuration file.
-// It can be easily constructed from yaml or json (pkg/scenario/deserialize) and has to be
-// converted to a private scenario (pkg/scenario/normalize).
-message PublicScenario {
-    // List of node types.
-    repeated Node nodes = 1;
-
-    // List of node groups.
-    repeated NodeGroup node_groups = 2;
-
-    // A scenario consists of an number of tasks.
-    repeated Task tasks = 3;
-}
-
-// A task is a part of a scenario describing what happens at a certain point in time.
-message Task {
-    /// The name of a task can be used to revert it.
-    string name = 1;
-
-    // Time offset after the start of the scenario
-    // Specify as string with unit like 10s, 2h, 20ms.
-    // If no unit is given, defaults to seconds.
-    string time = 2;
-
-    // Revert the task
-    bool revert = 3;
-
-    // Which nodes this task applies to
-    // This field will be ignored when revert is true
-    repeated string node_groups = 4;
-
-    // The node event to be executed
-    // This field will be ignored when revert is true
-    oneof event {
-        NodeFailure node_failure = 5;
-
-        NetworkLatency network_latency = 6;
-
-        TimeoutKeepHeartbeat timeout_keep_heartbeat = 7;
-        NoTimeoutNoHeartbeat no_timeout_no_heartbeat = 8;
-
-        ResponseState node_response_state = 9;
-
-        CustomFlags custom_flags = 10;
-    }
-}
-
-message Node {
-    // The type of the node. This can be referred to in nodegroups.
-    string node_type = 1;
-
-    // The amount of memory a node gets.
-    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
-    string memory = 2;
-
-    // The amount of milli CPUs allocated to the node
-    int64 cpu = 3;
-
-    // The amount of storage a node gets.
-    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
-    string storage = 4;
-
-    // The amount of ephemeral storage a node gets.
-    // Specify as string with unit like 12G, 42M, 200K, or in bytes (without unit)
-    string ephemeral_storage = 5;
-
-    // Maximum number of pods per node.
-    int64 max_pods = 6;
-}
-
-// A node group specifies a group of many nodes with the same properties.
-// A nodegroup refers to a node and how many times that type of node is needed.
-message NodeGroup {
-
-    // The name of the group. This can be referred to in scenarios.
-    string group_name = 1;
-
-    // The type of node in this group.
-    string node_type = 2;
-
-    // How many times you want this type of node.
-    int32 amount = 3;
-}
-

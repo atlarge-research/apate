@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
 
 	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
@@ -20,7 +22,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
@@ -150,7 +151,7 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 	cancel()
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources, error) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, error) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		err := client.Conn.Close()
@@ -170,7 +171,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, nil
 }
 
-func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
+func createNodeController(ctx context.Context, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
 	return cmd, cancel, err

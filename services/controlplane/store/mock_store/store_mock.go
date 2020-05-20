@@ -8,7 +8,7 @@ import (
 	apatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	health "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	kubeconfig "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	normalization "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	scenario "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
@@ -53,7 +53,7 @@ func (mr *MockStoreMockRecorder) AddNode(arg0 interface{}) *gomock.Call {
 }
 
 // AddResourcesToQueue mocks base method
-func (m *MockStore) AddResourcesToQueue(arg0 []normalization.NodeResources) error {
+func (m *MockStore) AddResourcesToQueue(arg0 []scenario.NodeResources) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddResourcesToQueue", arg0)
 	ret0, _ := ret[0].(error)
@@ -156,10 +156,10 @@ func (mr *MockStoreMockRecorder) GetNodesBySelector(arg0 interface{}) *gomock.Ca
 }
 
 // GetResourceFromQueue mocks base method
-func (m *MockStore) GetResourceFromQueue() (*normalization.NodeResources, error) {
+func (m *MockStore) GetResourceFromQueue() (*scenario.NodeResources, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetResourceFromQueue")
-	ret0, _ := ret[0].(*normalization.NodeResources)
+	ret0, _ := ret[0].(*scenario.NodeResources)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

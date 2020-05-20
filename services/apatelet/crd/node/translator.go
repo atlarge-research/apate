@@ -2,21 +2,20 @@
 package node
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 // SetNodeFlags sets the correct flags for the apatelet
-//
 func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 	// Set custom flags
 	setCustomFlags(st, state.CustomState)
 
 	// Check if the node should no longer respond to heartbeat
 	if state.HeartbeatFailed {
-		(*st).SetNodeFlag(events.NodePingResponse, scenario.Response_RESPONSE_TIMEOUT)
+		(*st).SetNodeFlag(events.NodePingResponse, scenario.ResponseTimeout)
 	}
 
 	// Check if there should be extra latency
@@ -29,13 +28,13 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 
 	// Check if the node should fail
 	if state.NodeFailed {
-		(*st).SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_RESPONSE_TIMEOUT)
-		(*st).SetNodeFlag(events.NodeUpdatePodResponse, scenario.Response_RESPONSE_TIMEOUT)
-		(*st).SetNodeFlag(events.NodeDeletePodResponse, scenario.Response_RESPONSE_TIMEOUT)
-		(*st).SetNodeFlag(events.NodeGetPodResponse, scenario.Response_RESPONSE_TIMEOUT)
-		(*st).SetNodeFlag(events.NodeGetPodStatusResponse, scenario.Response_RESPONSE_TIMEOUT)
-		(*st).SetNodeFlag(events.NodeGetPodsResponse, scenario.Response_RESPONSE_TIMEOUT)
-		(*st).SetNodeFlag(events.NodePingResponse, scenario.Response_RESPONSE_TIMEOUT)
+		(*st).SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseTimeout)
+		(*st).SetNodeFlag(events.NodeUpdatePodResponse, scenario.ResponseTimeout)
+		(*st).SetNodeFlag(events.NodeDeletePodResponse, scenario.ResponseTimeout)
+		(*st).SetNodeFlag(events.NodeGetPodResponse, scenario.ResponseTimeout)
+		(*st).SetNodeFlag(events.NodeGetPodStatusResponse, scenario.ResponseTimeout)
+		(*st).SetNodeFlag(events.NodeGetPodsResponse, scenario.ResponseTimeout)
+		(*st).SetNodeFlag(events.NodePingResponse, scenario.ResponseTimeout)
 		(*st).SetNodeFlag(events.NodeAddedLatencyEnabled, false)
 	}
 }
@@ -77,14 +76,14 @@ func isResponseUnset(response v1.NodeResponse) bool {
 func translateResponse(input v1.NodeResponse) scenario.Response {
 	switch input {
 	case v1.ResponseNormal:
-		return scenario.Response_RESPONSE_NORMAL
+		return scenario.ResponseNormal
 	case v1.ResponseError:
-		return scenario.Response_RESPONSE_ERROR
+		return scenario.ResponseError
 	case v1.ResponseTimeout:
-		return scenario.Response_RESPONSE_TIMEOUT
+		return scenario.ResponseTimeout
 	case v1.ResponseUnset:
 		fallthrough
 	default:
-		return scenario.Response_RESPONSE_UNSET
+		return scenario.ResponseUnset
 	}
 }

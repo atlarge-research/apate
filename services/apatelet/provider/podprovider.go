@@ -9,11 +9,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 )
@@ -120,18 +121,18 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 
 func podStatusToPhase(status interface{}) corev1.PodPhase {
 	switch status {
-	case scenario.PodStatus_POD_STATUS_PENDING:
+	case scenario.PodStatusPending:
 		return corev1.PodPending
-	case scenario.PodStatus_POD_STATUS_UNSET:
+	case scenario.ResponseUnset:
 		fallthrough // act as a normal pod
-	case scenario.PodStatus_POD_STATUS_RUNNING:
+	case scenario.PodStatusRunning:
 		return corev1.PodRunning
-	case scenario.PodStatus_POD_STATUS_SUCCEEDED:
+	case scenario.PodStatusSucceeded:
 		return corev1.PodSucceeded
-	case scenario.PodStatus_POD_STATUS_FAILED:
+	case scenario.PodStatusFailed:
 		return corev1.PodFailed
-	case scenario.PodStatus_POD_STATUS_UNKNOWN:
-		fallthrough
+	case scenario.PodStatusUnknown:
+		return corev1.PodUnknown
 	default:
 		return corev1.PodUnknown
 	}

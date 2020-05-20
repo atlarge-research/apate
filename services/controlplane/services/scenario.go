@@ -12,7 +12,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
@@ -33,48 +32,6 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store, inf
 		store: store,
 		info:  info,
 	})
-}
-
-// TODO: Remove
-func (s *scenarioService) LoadScenario(_ context.Context, scenario *controlplane.PublicScenario) (*empty.Empty, error) {
-	log.Printf("Loading new scenario")
-
-	normalizedScenario, _, err := normalization.NormalizeScenario(scenario)
-	if err != nil {
-		log.Print(err)
-		return nil, err
-	}
-
-	//log.Printf("Adding %v to the queue", len(resources))
-	//if err = (*s.store).AddResourcesToQueue(resources); err != nil {
-	//	log.Print(err)
-	//	return nil, err
-	//}
-
-	if err = (*s.store).SetApateletScenario(normalizedScenario); err != nil {
-		log.Print(err)
-		return nil, err
-	}
-
-	//// Retrieve pull policy
-	//pullPolicy := env.RetrieveFromEnvironment(env.ControlPlaneDockerPolicy, env.ControlPlaneDockerPolicyDefault)
-	//fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
-	//
-	//// Create environment for apatelets
-	//environment, err := env.DefaultApateletEnvironment()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//environment.AddConnectionInfo(s.info.Address, s.info.Port)
-	//
-	//// Start the apatelets
-	//if err = run.StartApatelets(ctx, len(resources), environment); err != nil {
-	//	log.Print(err)
-	//	return nil, err
-	//}
-
-	return new(empty.Empty), nil
 }
 
 func (s *scenarioService) StartScenario(ctx context.Context, config *controlplane.StartScenarioConfig) (*empty.Empty, error) {
@@ -126,11 +83,8 @@ func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *api
 	for i := range nodes {
 		node := nodes[i]
 		errs.Go(func() error {
-			ft := filterTasksForNode(apateletScenario.Task, node.UUID.String())
-			nodeSc := &apiApatelet.ApateletScenario{Task: ft}
-
 			scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
-			_, err := scenarioClient.Client.StartScenario(ctx, nodeSc)
+			_, err := scenarioClient.Client.StartScenario(ctx, apateletScenario)
 
 			if err != nil {
 				return err
@@ -141,14 +95,4 @@ func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *api
 	}
 
 	return errs.Wait()
-}
-
-func filterTasksForNode(inputTasks []*apiApatelet.Task, uuid string) []*apiApatelet.Task {
-	filteredTasks := make([]*apiApatelet.Task, 0)
-	for _, t := range inputTasks {
-		if t.NodeSet[uuid] {
-			filteredTasks = append(filteredTasks, t)
-		}
-	}
-	return filteredTasks
 }

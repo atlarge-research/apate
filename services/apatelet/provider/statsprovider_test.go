@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-kubelet/node-cli/provider"
@@ -13,7 +15,6 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -33,7 +34,7 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 
 	pm := podmanager.New() // TODO mock?
 
-	res := normalization.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
+	res := scenario.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
 	info := cluster.NewNodeInfo("", "", name, "", port)
 	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
 
