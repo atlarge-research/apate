@@ -1,6 +1,7 @@
 package controlplane
 
 import (
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -14,10 +15,14 @@ type ScenarioClient struct {
 }
 
 // GetScenarioClient returns client for the ScenarioService
-func GetScenarioClient(info *service.ConnectionInfo) *ScenarioClient {
-	conn := service.CreateClientConnection(info)
+func GetScenarioClient(info *service.ConnectionInfo) (*ScenarioClient, error) {
+	conn, err := service.CreateClientConnection(info)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create client connection")
+	}
+
 	return &ScenarioClient{
 		Conn:   conn,
 		Client: controlplane.NewScenarioClient(conn),
-	}
+	}, nil
 }

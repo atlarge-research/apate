@@ -5,14 +5,16 @@
 package mock_store
 
 import (
+	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
+
 	apatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	health "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	kubeconfig "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	normalization "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-	gomock "github.com/golang/mock/gomock"
-	uuid "github.com/google/uuid"
-	reflect "reflect"
 )
 
 // MockStore is a mock of Store interface

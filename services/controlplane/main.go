@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/pkg/errors"
+
 	podconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
@@ -29,6 +31,10 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
+func fatal(err error) {
+	log.Fatalf("An error occurred while starting the controlplane: %+v\n", err)
+}
+
 func main() {
 	log.Println("starting Apate control plane")
 
@@ -36,23 +42,26 @@ func main() {
 	externalInformation, err := createExternalConnectionInformation()
 
 	if err != nil {
-		log.Fatalf("error while starting control plane: %s", err.Error())
+		fatal(errors.Wrap(err, "failed to get external connection information"))
 	}
 
 	// Create kubernetes cluster
 	log.Println("starting kubernetes control plane")
-	managedKubernetesCluster := createCluster(env.RetrieveFromEnvironment(env.ManagedClusterConfig, env.ManagedClusterConfigDefault))
+	managedKubernetesCluster, err := createCluster(env.RetrieveFromEnvironment(env.ManagedClusterConfig, env.ManagedClusterConfigDefault))
+	if err != nil {
+		fatal(errors.Wrap(err, "failed to create cluster"))
+	}
 
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
 	// Save the kubeconfig in the store
 	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
-		log.Fatal(err)
+		fatal(errors.Wrap(err, "failed to set Kubeconfig"))
 	}
 
 	if err = podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
-		log.Fatal(err)
+		fatal(errors.Wrap(err, "failed to register pod CRD spec"))
 	}
 
 	// Create prometheus stack
@@ -64,13 +73,13 @@ func main() {
 	// Start gRPC server
 	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
 	if err != nil {
-		log.Fatalf("error while starting control plane: %s", err.Error())
+		fatal(errors.Wrap(err, "failed to start GRPC server"))
 	}
 
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig.Bytes, 0600); err != nil {
-		log.Fatalf("error while starting control plane: %s", err.Error())
+		fatal(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
 	}
 
 	// Handle signals
@@ -116,7 +125,12 @@ func getExternalAddress() (string, error) {
 		return override, nil
 	}
 
-	return network.GetExternalAddress()
+	res, err := network.GetExternalAddress()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to retrieve external ip address from the 'network' module")
+	}
+
+	return res, nil
 }
 
 func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
@@ -129,7 +143,7 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	// Create gRPC server
 	server, err := service.NewGRPCServer(connectionInfo)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to create new GRPC server with connection info %v", connectionInfo)
 	}
 
 	// Add services
@@ -141,21 +155,21 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	return server, nil
 }
 
-func createCluster(managedClusterConfigPath string) cluster.ManagedCluster {
+func createCluster(managedClusterConfigPath string) (cluster.ManagedCluster, error) {
 	cb := cluster.Default()
 	c, err := cb.WithName("Apate").WithManagerConfig(managedClusterConfigPath).ForceCreate()
 	if err != nil {
-		log.Fatalf("an error occurred: %s", err.Error())
+		return cluster.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
 	}
 
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
-		log.Fatalf("an error occurred: %s", err.Error())
+		return cluster.ManagedCluster{}, errors.Wrap(err, "failed to get number of pods from kubernetes")
 	}
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)
 
-	return c
+	return c, nil
 }
 
 func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
@@ -163,14 +177,15 @@ func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	externalIP, err := getExternalAddress()
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get external ip address")
 	}
 
 	// Get port
-	listenPort, err := strconv.Atoi(env.RetrieveFromEnvironment(env.ControlPlaneListenPort, env.ControlPlaneListenPortDefault))
+	portstring := env.RetrieveFromEnvironment(env.ControlPlaneListenPort, env.ControlPlaneListenPortDefault)
+	listenPort, err := strconv.Atoi(portstring)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to convert listening port to an integer (was %v)", portstring)
 	}
 
 	// Create external information

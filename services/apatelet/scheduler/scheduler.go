@@ -2,6 +2,8 @@
 package scheduler
 
 import (
+	"github.com/pkg/errors"
+
 	"context"
 	"time"
 
@@ -42,13 +44,13 @@ func (s *Scheduler) runner(ech chan error) {
 
 	nextT, err := (*s.store).PeekTask()
 	if err != nil {
-		ech <- err
+		ech <- errors.Wrap(err, "failed to peek at the next task in the store")
 		return
 	}
 	if now >= nextT {
 		task, err := (*s.store).PopTask()
 		if err != nil {
-			ech <- err
+			ech <- errors.Wrap(err, "failed to pop the next task from the store")
 			return
 		}
 
@@ -62,21 +64,21 @@ func (s *Scheduler) runner(ech chan error) {
 func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
 	isPod, err := t.IsPod()
 	if err != nil {
-		ech <- err
+		ech <- errors.Wrap(err, "failed to determine task type")
 		return
 	}
 
 	if isPod {
 		err := pod.SetPodFlags(s.store, t.PodTask.Label, t.PodTask.State)
 		if err != nil {
-			ech <- err
+			ech <- errors.Wrap(err, "failed to set pod flags")
 		}
 	} else {
 		// TODO change this when moving node to CRD
 		for k, mv := range t.NodeTask.NodeEventFlags {
 			v, err := any.Unmarshal(mv)
 			if err != nil {
-				ech <- err
+				ech <- errors.Wrap(err, "failed to unmarshall any")
 				continue
 			}
 

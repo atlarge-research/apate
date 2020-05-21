@@ -2,6 +2,7 @@
 package apatelet
 
 import (
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
@@ -16,10 +17,14 @@ type ScenarioClient struct {
 }
 
 // GetScenarioClient returns client for the ScenarioHandler
-func GetScenarioClient(info *service.ConnectionInfo) *ScenarioClient {
-	conn := service.CreateClientConnection(info)
+func GetScenarioClient(info *service.ConnectionInfo) (*ScenarioClient, error) {
+	conn, err := service.CreateClientConnection(info)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create scenario client connection")
+	}
+
 	return &ScenarioClient{
 		Conn:   conn,
 		Client: apatelet.NewScenarioClient(conn),
-	}
+	}, nil
 }

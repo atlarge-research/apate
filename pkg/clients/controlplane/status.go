@@ -2,8 +2,9 @@ package controlplane
 
 import (
 	"context"
-	"errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
@@ -19,12 +20,16 @@ type StatusClient struct {
 }
 
 // GetStatusClient returns client for the StatusService
-func GetStatusClient(info *service.ConnectionInfo) *StatusClient {
-	conn := service.CreateClientConnection(info)
+func GetStatusClient(info *service.ConnectionInfo) (*StatusClient, error) {
+	conn, err := service.CreateClientConnection(info)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create client connection")
+	}
+
 	return &StatusClient{
 		Conn:   conn,
 		Client: controlplane.NewStatusClient(conn),
-	}
+	}, nil
 }
 
 // WaitForControlPlane waits for the control plane to be up and running
@@ -57,7 +62,7 @@ func (c *StatusClient) WaitForHealthy(ctx context.Context, expectedApatelets int
 		res, err := c.Client.Status(ctx, new(empty.Empty))
 
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to get cluster status")
 		}
 
 		healthy := int(res.HealthyNodes)

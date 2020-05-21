@@ -5,9 +5,15 @@ import (
 	"log"
 	"os"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 )
+
+func fatal(err error) {
+	log.Fatalf("an error occurred while starting the Apatelet: %+v\n", err)
+}
 
 func init() {
 	// Enable line numbers in logging
@@ -20,23 +26,23 @@ func init() {
 func main() {
 	environment, err := env.ApateletEnvironmentFromEnv()
 	if err != nil {
-		log.Fatalf("Error while starting apatelet: %s", err.Error())
+		fatal(errors.Wrap(err, "error while starting apatelet"))
 	}
 
 	if err = run.SetCerts(); err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	run.KubeConfigWriter = func(config []byte) {
 		err = ioutil.WriteFile(os.TempDir()+"/apate/config", config, 0600)
 		if err != nil {
-			log.Fatal(err)
+			fatal(err)
 		}
 	}
 
 	ch := make(chan bool)
 	err = run.StartApatelet(environment, 10250, 10255, &ch)
 	if err != nil {
-		log.Fatalf("Error while running apatelet: %s", err.Error())
+		fatal(errors.Wrap(err, "error while running apatelet"))
 	}
 }
