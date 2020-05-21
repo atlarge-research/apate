@@ -3,7 +3,8 @@ package deserialize
 // TODO remove this when moving node to CRD
 
 import (
-	"errors"
+	"github.com/pkg/errors"
+
 	"io/ioutil"
 	"path/filepath"
 

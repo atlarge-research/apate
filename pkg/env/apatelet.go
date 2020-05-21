@@ -65,7 +65,7 @@ func ApateletEnvironmentFromEnv() (ApateletEnvironment, error) {
 	lp := RetrieveFromEnvironment(ApateletListenPort, ApateletListenPortDefault)
 	listenPort, err := strconv.Atoi(lp)
 	if err != nil {
-		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert Apatelet listening port (%v) to string", lp)
+		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert default Apatelet listening port (%v) to string", lp)
 	}
 
 	// Retrieving connection information

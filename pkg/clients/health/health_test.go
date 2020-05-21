@@ -4,11 +4,12 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health/mock_health"
 
+	"github.com/pkg/errors"
+
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"context"
-	"errors"
 	"testing"
 	"time"
 )

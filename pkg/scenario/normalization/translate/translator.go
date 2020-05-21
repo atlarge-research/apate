@@ -3,12 +3,12 @@
 package translate
 
 import (
-	"errors"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	ef "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
+	"github.com/pkg/errors"
 )
 
 const percentageRangeErrorMessage = "percentage should be between 0 and 100"

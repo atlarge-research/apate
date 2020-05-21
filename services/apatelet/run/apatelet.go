@@ -60,7 +60,10 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	crdPod.CreateCRDInformer(config, &st, &errch)
 
 	// Setup health status
-	hc := health.GetClient(connectionInfo, res.UUID.String())
+	hc, err := health.GetClient(connectionInfo, res.UUID.String())
+	if err != nil {
+		return errors.Wrap(err, "failed to get health client")
+	}
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	hc.StartStreamWithRetry(ctx, 3)
 
@@ -82,7 +85,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Start gRPC server
 	server, err := createGRPC(apateletEnv.ListenPort, &st, apateletEnv.ListenAddress)
 	if err != nil {
-		return errors.Wrap(err, "failed to set up GRPC stream")
+		return errors.Wrap(err, "failed to set up GRPC endpoints")
 	}
 
 	// Update status
@@ -97,7 +100,8 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 	go func() {
 		<-signals
-		shutdown(ctx, server, cancel, connectionInfo, res.UUID.String())
+		shutdownErr := shutdown(ctx, server, cancel, connectionInfo, res.UUID.String())
+		log.Println(shutdownErr)
 		stopped <- true
 	}()
 
@@ -109,15 +113,16 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Stop the server on signal or error
 	select {
 	case err := <-errch:
-		log.Printf("Apatelet stopped because of an error %+v\n", err)
-		return errors.Wrap(err, "Apatelet stopped because of an error %+v")
+		err = errors.Wrap(err, "Apatelet stopped because of an error")
+		log.Println(err)
+		return err
 	case <-stopped:
 		log.Println("Apatelet stopped")
 		return nil
 	}
 }
 
-func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) {
+func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.CancelFunc, connectionInfo *service.ConnectionInfo, uuid string) error {
 	log.Println("Stopping Apatelet")
 
 	log.Println("Stopping API")
@@ -125,28 +130,36 @@ func shutdown(ctx context.Context, server *service.GRPCServer, cancel context.Ca
 
 	log.Println("Leaving clusters (apate & k8s)")
 
-	client := controlplane.GetClusterOperationClient(connectionInfo)
+	client, err := controlplane.GetClusterOperationClient(connectionInfo)
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster operation client")
+	}
 	defer func() {
 		err := client.Conn.Close()
 		if err != nil {
-			log.Printf("could not close connection: %+v\n", err)
+			log.Printf("could not close connection: %v\n", err)
 		}
 	}()
 
 	if err := client.LeaveCluster(ctx, uuid); err != nil {
-		log.Printf("An error occurred while leaving the clusters (apate & k8s): %+v\n", err)
+		log.Printf("An error occurred while leaving the clusters (apate & k8s): %v\n", err)
 	}
 
 	log.Println("Stopping provider")
 	cancel()
+
+	return nil
 }
 
 func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources, error) {
-	client := controlplane.GetClusterOperationClient(connectionInfo)
+	client, err := controlplane.GetClusterOperationClient(connectionInfo)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get cluster operation client")
+	}
 	defer func() {
-		err := client.Conn.Close()
-		if err != nil {
-			log.Printf("could not close connection: %+v\n", err)
+		closeErr := client.Conn.Close()
+		if closeErr != nil {
+			log.Printf("could not close connection: %v\n", closeErr)
 		}
 	}()
 
@@ -164,7 +177,12 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 func createNodeController(ctx context.Context, res *normalization.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
-	return cmd, cancel, errors.Wrap(err, "failed to create provider")
+	if err != nil {
+		cancel()
+		return nil, nil, errors.Wrap(err, "failed to create provider")
+	}
+
+	return cmd, cancel, nil
 }
 
 func createGRPC(listenPort int, store *store.Store, listenAddress string) (*service.GRPCServer, error) {

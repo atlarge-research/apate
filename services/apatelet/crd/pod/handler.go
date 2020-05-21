@@ -21,7 +21,7 @@ func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *ch
 
 	podClient, err := pod.NewForConfig(restConfig, "default")
 	if err != nil {
-		*errch <- errors.Wrap(err, "failed to create new pod client")
+		*errch <- errors.Wrap(err, "failed to create new pod configuration CRD")
 		return
 	}
 

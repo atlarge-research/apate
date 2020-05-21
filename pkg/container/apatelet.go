@@ -20,14 +20,14 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return errors.Wrap(err, "failed to create a new client")
+		return errors.Wrap(err, "failed to create a new Docker client")
 	}
 
 	// Get docker port for apatelet
 	port, err := nat.NewPort("tcp", strconv.Itoa(cpEnv.ListenPort))
 
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve docker port for Apatelet")
+		return errors.Wrap(err, "failed to create docker port for Apatelet")
 	}
 
 	// Set spawn information
@@ -56,5 +56,5 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 	})
 
 	// Spawn apatelets
-	return errors.Wrap(HandleSpawnContainers(ctx, cli, spawnInfo), "failed to spawn containers")
+	return errors.Wrap(HandleSpawnContainers(ctx, cli, spawnInfo), "failed to spawn Apatelet containers")
 }

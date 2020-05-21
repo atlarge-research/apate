@@ -2,9 +2,10 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
