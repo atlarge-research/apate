@@ -10,13 +10,13 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh chan struct{}) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, cb func(), selector string, stopCh chan struct{}) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return err
 	}
 
-	client, err := node.NewForConfig(cfg, "default") //TODO: Change namespace
+	client, err := node.NewForConfig(cfg)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 		// Add function
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if getSelector(nodeCfg) == selector {
-			err := enqueueNodeTasks(nodeCfg, st)
+			err := enqueueNodeTasks(nodeCfg, st, cb)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
 			}
@@ -34,7 +34,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 		// Update function
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if getSelector(nodeCfg) == selector {
-			err := enqueueNodeTasks(nodeCfg, st)
+			err := enqueueNodeTasks(nodeCfg, st, cb)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
 			}
@@ -47,7 +47,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	return nil
 }
 
-func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
+func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store, cb func()) error {
 	if nodeCfg.Spec.State != nil {
 		SetNodeFlags(st, nodeCfg.Spec.State)
 	}
@@ -57,7 +57,13 @@ func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
 		tasks = append(tasks, store.NewNodeTask(task.Timestamp, &store.NodeTask{State: &task.State}))
 	}
 
-	return (*st).SetNodeTasks(tasks)
+	if err := (*st).SetNodeTasks(tasks); err != nil {
+		return err
+	}
+
+	// Notify of update
+	cb()
+	return nil
 }
 
 func getSelector(cfg *v1.NodeConfiguration) string {

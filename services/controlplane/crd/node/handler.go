@@ -30,7 +30,7 @@ func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *
 		return err
 	}
 
-	client, err := node.NewForConfig(cfg, "default") // TODO: Change namespace
+	client, err := node.NewForConfig(cfg)
 	if err != nil {
 		return err
 	}
@@ -63,9 +63,6 @@ func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *
 }
 
 func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *store.Store, lock *sync.Locker, info *service.ConnectionInfo) {
-	(*lock).Lock()
-	defer (*lock).Unlock()
-
 	res, err := getNodeResources(cfg)
 	if err != nil {
 		log.Printf("error while retrieving node resources from CRD: %v\n", err)
@@ -82,14 +79,14 @@ func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *sto
 
 	if current < desired {
 		// Not enough apatelets, spawn extra
-		err := spawnApatelets(ctx, st, desired-current, res, info)
+		err := spawnApatelets(ctx, st, desired, res, info, lock, selector)
 		if err != nil {
 			log.Printf("error while spawning apatelets: %v\n", err)
 			// TODO: Stop, notify, idk?
 		}
 	} else if current > desired {
 		// Too many apatelets, stop a few
-		err := stopApatelets(ctx, st, int(current-desired), selector)
+		err := stopApatelets(ctx, st, desired, selector, lock)
 		if err != nil {
 			log.Printf("error while stopping apatelets: %v\n", err)
 			// TODO: Stop, notify, idk?
@@ -97,10 +94,21 @@ func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *sto
 	}
 }
 
-func spawnApatelets(ctx context.Context, st *store.Store, diff int64, res scenario.NodeResources, info *service.ConnectionInfo) error {
+func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res scenario.NodeResources, info *service.ConnectionInfo, lock *sync.Locker, selector string) error {
+	(*lock).Lock()
+	defer (*lock).Unlock()
+
+	nodes, err := (*st).GetNodesBySelector(selector)
+	if err != nil {
+		log.Printf("error while retrieving nodes with selector %s: %v\n", selector, err)
+	}
+
+	current := int64(len(nodes))
+	diff := desired - current
+
 	log.Printf("Creating %v apatelets", diff)
 	resources := createResources(int(diff), res)
-	if err := (*st).AddResourcesToQueue(resources); err != nil {
+	if err = (*st).AddResourcesToQueue(resources); err != nil {
 		return err
 	}
 
@@ -125,7 +133,18 @@ func spawnApatelets(ctx context.Context, st *store.Store, diff int64, res scenar
 	return nil
 }
 
-func stopApatelets(ctx context.Context, st *store.Store, diff int, selector string) error {
+func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector string, lock *sync.Locker) error {
+	(*lock).Lock()
+	defer (*lock).Unlock()
+
+	nodes, err := (*st).GetNodesBySelector(selector)
+	if err != nil {
+		log.Printf("error while retrieving nodes with selector %s: %v\n", selector, err)
+	}
+
+	current := int64(len(nodes))
+	diff := int(current - desired)
+
 	log.Printf("Stopping %v apatelets", diff)
 
 	apatelets, err := (*st).GetNodesBySelector(selector)
@@ -133,22 +152,32 @@ func stopApatelets(ctx context.Context, st *store.Store, diff int, selector stri
 		return err
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(diff)
+
 	for i, kubelet := range apatelets {
 		if i >= diff {
 			break
 		}
 
-		client := apatelet.GetApateletClient(&kubelet.ConnectionInfo)
-		_, err := client.Client.StopApatelet(ctx, new(empty.Empty))
-		if err != nil {
-			log.Printf("failed to stop apatelet %s: %v", kubelet.UUID, err)
-		}
-		err = client.Conn.Close()
-		if err != nil {
-			log.Printf("failed to stop apatelet %s: %v", kubelet.UUID, err)
-		}
+		kubelet := kubelet
+		go func() {
+			defer wg.Done()
+			client := apatelet.GetApateletClient(&kubelet.ConnectionInfo)
+			_, err := client.Client.StopApatelet(ctx, new(empty.Empty))
+			if err != nil {
+				log.Printf("failed to stop apatelet %s: %v", kubelet.UUID, err)
+				return
+			}
+			err = client.Conn.Close()
+			if err != nil {
+				log.Printf("failed to stop apatelet %s: %v", kubelet.UUID, err)
+				return
+			}
+		}()
 	}
 
+	wg.Wait()
 	return nil
 }
 

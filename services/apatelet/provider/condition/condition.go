@@ -16,7 +16,9 @@ const (
 
 // Condition is used to maintain state over individual conditions
 type Condition struct {
-	val        bool
+	val    bool
+	negate bool
+
 	condition  corev1.NodeConditionType
 	transition metav1.Time
 }
@@ -24,7 +26,9 @@ type Condition struct {
 // New returns a new condition struct
 func New(initial bool, condition corev1.NodeConditionType) Condition {
 	return Condition{
-		val:        initial,
+		val:    initial,
+		negate: condition != corev1.NodeReady,
+
 		condition:  condition,
 		transition: metav1.Now(),
 	}
@@ -39,7 +43,7 @@ func (c *Condition) getStatus() corev1.ConditionStatus {
 }
 
 func (c *Condition) getMessage() string {
-	if c.val {
+	if c.val != c.negate {
 		return readyMessage
 	}
 
@@ -47,7 +51,7 @@ func (c *Condition) getMessage() string {
 }
 
 func (c *Condition) getReason() string {
-	if c.val {
+	if c.val != c.negate {
 		return resourceReason
 	}
 

@@ -40,6 +40,11 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 }
 
 func setCustomFlags(st *store.Store, state *v1.NodeConfigurationDirectState) {
+	// Check if there were no custom flags
+	if state == nil {
+		return
+	}
+
 	if !isResponseUnset(state.CreatePodResponse) {
 		(*st).SetNodeFlag(events.NodeCreatePodResponse, translateResponse(state.CreatePodResponse))
 	}

@@ -172,15 +172,3 @@ func (mr *MockStoreMockRecorder) SetPodTasks(arg0, arg1 interface{}) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodTasks", reflect.TypeOf((*MockStore)(nil).SetPodTasks), arg0, arg1)
 }
-
-// SetStartTime mocks base method
-func (m *MockStore) SetStartTime(arg0 int64) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetStartTime", arg0)
-}
-
-// SetStartTime indicates an expected call of SetStartTime
-func (mr *MockStoreMockRecorder) SetStartTime(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStartTime", reflect.TypeOf((*MockStore)(nil).SetStartTime), arg0)
-}

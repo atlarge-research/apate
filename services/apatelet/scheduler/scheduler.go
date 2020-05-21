@@ -3,6 +3,7 @@ package scheduler
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
@@ -15,49 +16,101 @@ import (
 // Scheduler is struct on which all scheduler functionality is implemented.
 type Scheduler struct {
 	store *store.Store
-	prevT int64
+	ctx   context.Context
+
+	readyCh chan struct{}
+	//updateCh chan struct{}
+
+	prevT     int64
+	startTime int64
 }
 
-// StartScheduler starts running the scheduler
-// this will poll the store queue for changes and write errors to a 3-buffered channel
-func (s *Scheduler) StartScheduler(ctx context.Context) chan error {
+// New returns a new scheduler
+func New(ctx context.Context, st *store.Store) Scheduler {
+	return Scheduler{
+		store:     st,
+		ctx:       ctx,
+		readyCh:   make(chan struct{}),
+		prevT:     0,
+		startTime: 0,
+	}
+}
+
+// EnableScheduler enables the scheduler
+// this will wait until StartScheduler() is called, after that it
+// will poll the store queue for changes and write errors to a 3-buffered channel
+func (s *Scheduler) EnableScheduler() chan error {
 	ech := make(chan error, 3)
 
 	go func() {
+		// Wait for start
+		<-s.readyCh
+
 		for {
 			select {
-			case <-ctx.Done():
+			case <-s.ctx.Done():
 				return
 			default:
 			}
 
-			s.runner(ech)
+			// Run iteration, if not done wait for context done or an update
+			if done := s.runner(ech); done {
+				log.Printf("scheduler done, waiting for update")
+				//select {
+				//case <-s.ctx.Done():
+				//	return
+				//case <-s.updateCh:
+				//}
+				log.Printf("scheduler update received")
+			}
 		}
 	}()
 
 	return ech
 }
 
-func (s *Scheduler) runner(ech chan error) {
+// StartScheduler sets the start time and starts the scheduler
+func (s *Scheduler) StartScheduler(startTime int64) {
+	s.startTime = startTime
+	s.readyCh <- struct{}{}
+}
+
+// WakeScheduler wakes up the scheduler in case it was done
+func (s *Scheduler) WakeScheduler() {
+	//select {
+	//case s.updateCh <- struct{}{}:
+	//default:
+	//}
+}
+
+func (s *Scheduler) runner(ech chan error) bool {
 	now := time.Now().UnixNano()
 
-	nextT, err := (*s.store).PeekTask()
+	relativeTime, err := (*s.store).PeekTask()
 	if err != nil {
+		// TODO: Check error type properly @jona, I know this is the bad
+		if err.Error() == "no tasks left" {
+			return true
+		}
+
 		ech <- err
-		return
+		return false
 	}
-	if now >= nextT {
+
+	if now >= relativeTime+s.startTime {
 		task, err := (*s.store).PopTask()
 		if err != nil {
 			ech <- err
-			return
+			return false
 		}
 
-		if nextT >= s.prevT {
-			s.prevT = nextT
+		if relativeTime >= s.prevT {
+			s.prevT = relativeTime
 			go s.taskHandler(ech, task)
 		}
 	}
+
+	return false
 }
 
 func (s Scheduler) taskHandler(ech chan error, t *store.Task) {

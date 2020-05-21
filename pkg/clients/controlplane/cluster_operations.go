@@ -35,24 +35,24 @@ func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationCl
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the node resources
-func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, error) {
+func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
 	res, err := c.Client.JoinCluster(ctx, &controlplane.ApateletInformation{Port: int32(listenPort)})
 
 	// Check for any grpc error
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, -1, err
 	}
 
 	// Parse the uuid and check for errors
 	id, err := uuid.Parse(res.NodeUuid)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, -1, err
 	}
 
 	cfg, err := kubeconfig.FromBytes(res.KubeConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, -1, err
 	}
 
 	// Return final join information
@@ -63,7 +63,8 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 		Storage:          res.Hardware.Storage,
 		EphemeralStorage: res.Hardware.EphemeralStorage,
 		MaxPods:          res.Hardware.MaxPods,
-	}, nil
+		Selector:         res.NodeSelector,
+	}, res.StartTime, nil
 }
 
 // LeaveCluster signals to the apate control panel that this node is leaving the cluster

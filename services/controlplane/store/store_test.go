@@ -8,36 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
-
-// TestNoScenario ensures the store returns an error if no scenario was set
-func TestNoScenario(t *testing.T) {
-	store := NewStore()
-
-	// Verify there is no scenario
-	actual, err := store.GetApateletScenario()
-	assert.Nil(t, actual)
-	assert.Error(t, err)
-}
-
-// TestScenario ensures a scenario is returned if set
-func TestScenario(t *testing.T) {
-	store := NewStore()
-	expected := &apatelet.ApateletScenario{
-		StartTime: 0,
-	}
-
-	// Set scenario
-	err := store.SetApateletScenario(expected)
-	assert.NoError(t, err)
-
-	// Verify it was set
-	actual, err := store.GetApateletScenario()
-	assert.Nil(t, err)
-	assert.Equal(t, expected, actual)
-}
 
 // TestEnqueue ensures adding a single node resources results in a single allocation
 func TestEnqueue(t *testing.T) {

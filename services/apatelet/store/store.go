@@ -14,9 +14,6 @@ import (
 
 // Store represents the state of the apatelet
 type Store interface {
-	// SetStartTime sets the value of the start time in the store. All other timing is based in this
-	SetStartTime(int64)
-
 	// SetNodeTasks adds or updates node tasks
 	// Existing node tasks will be removed if not in the list of tasks
 	SetNodeTasks([]*Task) error
@@ -57,7 +54,6 @@ type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
 
 type store struct {
-	startTime int64
 	queue     *taskQueue
 	queueLock sync.RWMutex
 
@@ -78,10 +74,6 @@ func NewStore() Store {
 		nodeFlags: make(flags),
 		podFlags:  make(podFlags),
 	}
-}
-
-func (s *store) SetStartTime(time int64) {
-	s.startTime = time
 }
 
 func (s *store) setTasksOfType(tasks []*Task, check TaskTypeCheck) error {
@@ -176,7 +168,7 @@ func (s *store) PeekTask() (int64, error) {
 
 	// Make sure the array in the pq didn't magically change to a different type
 	if task, ok := s.queue.First().(*Task); ok {
-		return task.RelativeTimestamp + s.startTime, nil
+		return task.RelativeTimestamp, nil
 	}
 
 	return -1, errors.New("array in pq magically changed to a different type")
