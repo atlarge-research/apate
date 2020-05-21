@@ -158,7 +158,7 @@ func main() {
 				Name:  "kubeconfig",
 				Usage: "Retrieves a kube configuration file from the control plane",
 				Action: func(c *cli.Context) error {
-					return errors.Wrap(getKubeConfig(ctx, controlPlaneAddress, controlPlanePort), "failed to get Kubeconfig")
+					return errors.Wrap(printKubeConfig(ctx, controlPlaneAddress, controlPlanePort), "failed to get Kubeconfig")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -187,14 +187,19 @@ func main() {
 	}
 }
 
-func getKubeConfig(ctx context.Context, address string, port int) error {
-	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false)).GetKubeConfig(ctx)
+func printKubeConfig(ctx context.Context, address string, port int) error {
+	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false))
 
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster operation client")
+	}
+
+	kcfg, err := cfg.GetKubeConfig(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to get Kubeconfig")
 	}
 
-	fmt.Println(string(cfg))
+	fmt.Println(string(kcfg))
 	return nil
 }
 
@@ -208,19 +213,22 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, cpEnv)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to spawn docker container for control plane")
 	}
 	color.Green("DONE\n")
 	fmt.Print("Waiting for control plane to be up ")
 
 	// Polling control plane until up
-	statusClient := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
+	statusClient, err := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
+	if err != nil {
+		return errors.Wrap(err, "failed to get status client")
+	}
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
 	defer cancel()
 	err = statusClient.WaitForControlPlane(ctx)
 
 	if err != nil {
-		return errors.Wrap(err, "failed waitin for the control plane")
+		return errors.Wrap(err, "failed waiting for the control plane to be up")
 	}
 
 	color.Green("DONE\n")
@@ -275,22 +283,28 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 
 	fmt.Printf("Loading scenario ")
 	// Initial call: load the scenario
-	scenarioClient := controlplane.GetScenarioClient(info)
+	scenarioClient, err := controlplane.GetScenarioClient(info)
+	if err != nil {
+		return errors.Wrap(err, "failed to get scenario client")
+	}
 
 	scenario, err := scenarioDeserializer.GetScenario()
 	if err != nil {
-		return errors.Wrap(err, "failed to get scenario")
+		return errors.Wrap(err, "failed to get scenario on control plane")
 	}
 
 	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
 	if err != nil {
-		return errors.Wrap(err, "failed to load scenario")
+		return errors.Wrap(err, "failed to load scenario on control plane")
 	}
 	color.Green("DONE\n")
 
 	// Next: keep polling until the control plane is happy
 	expectedApatelets := getAmountOfApatelets(scenario)
-	statusClient := controlplane.GetStatusClient(info)
+	statusClient, err := controlplane.GetStatusClient(info)
+	if err != nil {
+		return errors.Wrap(err, "failed to get status client")
+	}
 	err = statusClient.WaitForHealthy(ctx, expectedApatelets, func(healthy int) {
 		fmt.Printf("\rWaiting for healthy apatelets (%d/%d) ", healthy, expectedApatelets)
 	})
@@ -304,7 +318,7 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 
 	//Finally: actually start the scenario
 	if _, err := scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
-		return errors.Wrap(err, "failed to start scenario")
+		return errors.Wrap(err, "failed to start scenario on control plane")
 	}
 
 	color.Green("DONE\n")

@@ -3,9 +3,9 @@ package store
 
 import (
 	"container/list"
-	"errors"
-	"fmt"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
@@ -85,7 +85,7 @@ func (s *store) AddNode(node *Node) error {
 
 	// Check if node already exists (uuid collision)
 	if _, ok := s.nodes[node.UUID]; ok {
-		return fmt.Errorf("node with uuid '%s' already exists", node.UUID.String())
+		return errors.Errorf("node with uuid '%s' already exists", node.UUID.String())
 	}
 
 	s.nodes[node.UUID] = *node
@@ -109,7 +109,7 @@ func (s *store) GetNode(uuid uuid.UUID) (Node, error) {
 		return node, nil
 	}
 
-	return Node{}, fmt.Errorf("node with uuid '%s' not found", uuid.String())
+	return Node{}, errors.Errorf("node with uuid '%s' not found", uuid.String())
 }
 
 func (s *store) SetNodeStatus(uuid uuid.UUID, status health.Status) error {
@@ -122,7 +122,7 @@ func (s *store) SetNodeStatus(uuid uuid.UUID, status health.Status) error {
 		return nil
 	}
 
-	return fmt.Errorf("node with uuid '%s' not found", uuid.String())
+	return errors.Errorf("node with uuid '%s' not found", uuid.String())
 }
 
 func (s *store) GetNodes() ([]Node, error) {

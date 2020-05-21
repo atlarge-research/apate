@@ -3,8 +3,9 @@ package translate
 // TODO remove this when moving node to CRD
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
 
@@ -32,7 +33,7 @@ func GetInBytes(unit string, unitName string) (int64, error) {
 	if err != nil {
 		return 0, err
 	} else if unitInt < 0 {
-		return 0, fmt.Errorf("%s usage should be at least 0", unitName)
+		return 0, errors.Errorf("%s usage should be at least 0", unitName)
 	}
 	return unitInt, nil
 }

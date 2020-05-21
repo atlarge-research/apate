@@ -28,12 +28,15 @@ type ClusterOperationClient struct {
 }
 
 // GetClusterOperationClient returns client for the JoinClusterService
-func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationClient {
-	conn := service.CreateClientConnection(info)
+func GetClusterOperationClient(info *service.ConnectionInfo) (*ClusterOperationClient, error) {
+	conn, err := service.CreateClientConnection(info)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create client connection")
+	}
 	return &ClusterOperationClient{
 		Conn:   conn,
 		Client: controlplane.NewClusterOperationsClient(conn),
-	}
+	}, nil
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the node resources
@@ -79,7 +82,7 @@ func (c *ClusterOperationClient) GetKubeConfig(ctx context.Context) ([]byte, err
 	cfg, err := c.Client.GetKubeConfig(ctx, new(empty.Empty))
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubeconfig from client")
+		return nil, errors.Wrap(err, "failed to get kubeconfig")
 	}
 
 	return cfg.Config, nil

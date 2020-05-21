@@ -30,7 +30,7 @@ type ConfigurationClient struct {
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
 	if err := v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, errors.Wrap(err, "failed to add crd scheme")
+		return nil, errors.Wrap(err, "failed to add crd information to the scheme")
 	}
 
 	config := *c
@@ -79,7 +79,7 @@ func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.PodConfiguratio
 		Into(&result)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list pods")
+		return nil, errors.Wrap(err, "failed to list pod configurations")
 	}
 
 	return &result, nil
@@ -96,7 +96,7 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 		Watch()
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to watch")
+		return nil, errors.Wrap(err, "failed to watch pod configurations")
 	}
 
 	return wi, nil

@@ -20,8 +20,12 @@ import (
 
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
+	return p.createOrUpdate(ctx, pod, events.PodCreatePodResponse, events.NodeCreatePodResponse)
+}
+
+func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf events.PodEventFlag, nf events.NodeEventFlag) error {
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency")
+		err = errors.Wrap(err, "failed to run latency (Create or Update)")
 		log.Println(err)
 		return err
 	}
@@ -29,11 +33,15 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 	_, err := podAndNodeResponse(
 		responseArgs{ctx, p, updateMap(p, pod)},
 		getPodLabelByPod(pod),
-		events.PodCreatePodResponse,
-		events.NodeCreatePodResponse,
+		pf,
+		nf,
 	)
 
-	err = errors.Wrap(err, "failed to execute pod and node response (Create Pod)")
+	if IsExpected(err) {
+		return err
+	}
+
+	err = errors.Wrap(err, "failed to execute pod and node response (Create or Update)")
 	if err != nil {
 		log.Println(err)
 	}
@@ -43,25 +51,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
-	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency")
-		log.Println(err)
-		return err
-	}
-
-	_, err := podAndNodeResponse(
-		responseArgs{ctx, p, updateMap(p, pod)},
-		getPodLabelByPod(pod),
-		events.PodUpdatePodResponse,
-		events.NodeUpdatePodResponse,
-	)
-
-	err = errors.Wrap(err, "failed to execute pod and node response (Update Pod)")
-	if err != nil {
-		log.Println(err)
-	}
-
-	return err
+	return p.createOrUpdate(ctx, pod, events.PodUpdatePodResponse, events.NodeUpdatePodResponse)
 }
 
 func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
@@ -74,7 +64,7 @@ func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency")
+		err = errors.Wrap(err, "failed to run latency (Delete Pod)")
 		log.Println(err)
 		return err
 	}
@@ -89,6 +79,10 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 		events.NodeDeletePodResponse,
 	)
 
+	if IsExpected(err) {
+		return err
+	}
+
 	err = errors.Wrap(err, "failed to execute pod and node response (Delete Pod)")
 	if err != nil {
 		log.Println(err)
@@ -100,7 +94,7 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 // GetPod retrieves a pod by label.
 func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency")
+		err = errors.Wrap(err, "failed to run latency (Get Pod)")
 		log.Println(err)
 		return nil, err
 	}
@@ -116,6 +110,10 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		events.PodGetPodResponse,
 		events.NodeGetPodResponse,
 	)
+
+	if IsExpected(err) {
+		return nil, err
+	}
 
 	err = errors.Wrap(err, "failed to execute pod and node response (Get Pod)")
 	if err != nil {
@@ -148,7 +146,7 @@ func podStatusToPhase(status interface{}) corev1.PodPhase {
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency")
+		err = errors.Wrap(err, "failed to run latency (Get Pod Status)")
 		log.Println(err)
 		return nil, err
 	}
@@ -180,6 +178,10 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		events.NodeGetPodStatusResponse,
 	)
 
+	if IsExpected(err) {
+		return nil, err
+	}
+
 	err = errors.Wrap(err, "failed to execute pod and node response (Get Pod Status)")
 	if err != nil {
 		log.Println(err)
@@ -192,7 +194,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 // GetPods retrieves a list of all pods running.
 func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency")
+		err = errors.Wrap(err, "failed to run latency (Get Pods)")
 		log.Println(err)
 		return nil, err
 	}
@@ -202,6 +204,10 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 	}},
 		events.NodeGetPodsResponse,
 	)
+
+	if IsExpected(err) {
+		return nil, err
+	}
 
 	err = errors.Wrap(err, "failed to execute pod and node response (Get Pods)")
 	if err != nil {
@@ -250,7 +256,7 @@ func (p *Provider) runLatency(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		return errors.Wrap(ctx.Err(), "context failed while running latency")
+		return errors.Wrap(ctx.Err(), "context cancelled while running latency")
 	default:
 	}
 

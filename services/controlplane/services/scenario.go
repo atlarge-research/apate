@@ -47,21 +47,21 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	normalizedScenario, resources, err := normalization.NormalizeScenario(scenario)
 	if err != nil {
 		err = errors.Wrap(err, "failed to normalize scenario")
-		log.Printf("%+v", err)
+		log.Printf("%v", err)
 		return nil, err
 	}
 
 	log.Printf("Adding %v to the queue", len(resources))
 	if err = (*s.store).AddResourcesToQueue(resources); err != nil {
 		err = errors.Wrap(err, "failed to add resources to queue")
-		log.Printf("%+v", err)
+		log.Printf("%v", err)
 
 		return nil, err
 	}
 
 	if err = (*s.store).SetApateletScenario(normalizedScenario); err != nil {
 		err = errors.Wrap(err, "failed to set scenario on Apatelet")
-		log.Printf("%+v", err)
+		log.Printf("%v", err)
 		return nil, err
 	}
 
@@ -73,7 +73,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	environment, err := env.DefaultApateletEnvironment()
 	if err != nil {
 		err = errors.Wrap(err, "failed to create Apatelet environment")
-		log.Printf("%+v", err)
+		log.Printf("%v", err)
 		return nil, err
 	}
 
@@ -82,7 +82,7 @@ func (s *scenarioService) LoadScenario(ctx context.Context, scenario *controlpla
 	// Start the apatelets
 	if err = run.StartApatelets(ctx, len(resources), environment); err != nil {
 		err = errors.Wrap(err, "failed to start Apatelets")
-		log.Printf("%+v", err)
+		log.Printf("%v", err)
 		return nil, err
 	}
 
@@ -151,11 +151,14 @@ func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *api
 			ft := filterTasksForNode(apateletScenario.Task, node.UUID.String())
 			nodeSc := &apiApatelet.ApateletScenario{Task: ft}
 
-			scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
-			_, err := scenarioClient.Client.StartScenario(ctx, nodeSc)
+			scenarioClient, err := apatelet.GetScenarioClient(&node.ConnectionInfo)
+			if err != nil {
+				return errors.Wrap(err, "failed to get scenario client")
+			}
+			_, err = scenarioClient.Client.StartScenario(ctx, nodeSc)
 
 			if err != nil {
-				return errors.Wrap(err, "failed to start scenario on client")
+				return errors.Wrapf(err, "failed to start scenario on Apatelet with uuid %v", node.UUID.String())
 			}
 
 			return scenarioClient.Conn.Close()

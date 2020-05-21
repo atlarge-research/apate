@@ -60,7 +60,7 @@ func (b *Builder) WithCreator(creator Manager) *Builder {
 func (b *Builder) unmanaged() (KubernetesCluster, error) {
 	config, err := kubeconfig.FromPath(b.kubeConfigLocation)
 	if err != nil {
-		return KubernetesCluster{}, errors.Wrapf(err, "failed to load Kubeconfig from config location %v", b.kubeConfigLocation)
+		return KubernetesCluster{}, errors.Wrap(err, "failed to load Kubeconfig")
 	}
 
 	res, err := KubernetesClusterFromKubeConfig(config)
@@ -100,7 +100,7 @@ func (b *Builder) Create() (ManagedCluster, error) {
 	// 		 Currently it's always fine because we always start by creating a managed cluster, but that won't be true forever
 	if _, err := os.Stat(b.kubeConfigLocation); os.IsNotExist(err) {
 		if err := os.MkdirAll(path.Dir(b.kubeConfigLocation), os.ModePerm); err != nil {
-			return ManagedCluster{}, errors.Wrapf(err, "failed to create directory for kubeconfig (%v)", b.kubeConfigLocation)
+			return ManagedCluster{}, errors.Wrapf(err, "failed to create directory for kubeconfig (%v)", path.Dir(b.kubeConfigLocation))
 		}
 	}
 
@@ -110,15 +110,15 @@ func (b *Builder) Create() (ManagedCluster, error) {
 
 		// If something went wrong, there still could be a built cluster we can't interact with.
 		// delete the cluster to be safe for the next run, otherwise ForceCreate would be necessary
-		if err1 := b.manager.DeleteCluster(b.name); err1 != nil {
-			err = errors.Wrapf(err1, "failed to delete kind cluster to clean up earlier failure: (%+v)", err)
+		if deleteClusterError := b.manager.DeleteCluster(b.name); deleteClusterError != nil {
+			err = errors.Wrapf(deleteClusterError, "failed to delete kind cluster to clean up earlier failure: (%v)", err)
 		}
 		return ManagedCluster{}, err
 	}
 
 	kubernetesCluster, err := b.unmanaged()
 	if err != nil {
-		return ManagedCluster{}, errors.Wrap(err, "failed to create kubernetes cluster")
+		return ManagedCluster{}, errors.Wrap(err, "failed to create unmanaged Kubernetes cluster")
 	}
 
 	return ManagedCluster{

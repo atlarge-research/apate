@@ -3,7 +3,6 @@ package container
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -92,7 +91,7 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 		Filters: filters.NewArgs(filters.Arg("status", "exited"), filters.Arg("name", name))})
 
 	if err != nil {
-		return errors.Wrap(err, "failed to list containers")
+		return errors.Wrap(err, "failed to list exited containers")
 	}
 
 	// Remove old apatelet containers
@@ -100,7 +99,7 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 		err := cli.ContainerRemove(ctx, cnt.ID, types.ContainerRemoveOptions{Force: true, RemoveVolumes: true, RemoveLinks: false})
 
 		if err != nil {
-			return errors.Wrap(err, "failed to remove container")
+			return errors.Wrapf(err, "failed to remove old container %v", name)
 		}
 	}
 
@@ -116,12 +115,12 @@ func prepareImage(ctx context.Context, cli *client.Client, imageName string, pul
 	case env.AlwaysLocal:
 		return errors.Wrap(alwaysCache(ctx, cli, imageName), "failed to run alwaysCache to prepare image")
 	default:
-		return fmt.Errorf("unknown docker pull policy: %s", pullPolicy)
+		return errors.Errorf("unknown docker pull policy: %s", pullPolicy)
 	}
 }
 
 func alwaysPull(ctx context.Context, cli *client.Client, imageName string) error {
-	return errors.Wrap(pullImage(ctx, cli, imageName), "failed to pull image")
+	return errors.Wrapf(pullImage(ctx, cli, imageName), "failed to pull image %v", imageName)
 }
 
 func pullIfNotLocal(ctx context.Context, cli *client.Client, imageName string) error {
@@ -146,11 +145,11 @@ func alwaysCache(ctx context.Context, cli *client.Client, imageName string) erro
 	localAvailable, err := checkLocalImage(ctx, cli, imageName)
 
 	if err != nil {
-		return errors.Wrap(err, "failed to check local image")
+		return errors.Wrapf(err, "failed to check local image %v", imageName)
 	}
 
 	if !localAvailable {
-		return errors.New("image %s not available ")
+		return errors.Errorf("image %v not available ", imageName)
 	}
 
 	return nil
@@ -160,8 +159,8 @@ func pullImage(ctx context.Context, cli *client.Client, imageName string) error 
 	readCloser, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 
 	if err != nil {
-		return errors.Wrap(err, "failed to pull image")
+		return errors.Wrapf(err, "failed to pull image %v", imageName)
 	}
 
-	return errors.Wrap(readCloser.Close(), "failed to close reader")
+	return errors.Wrap(readCloser.Close(), "failed to close image pull reader")
 }

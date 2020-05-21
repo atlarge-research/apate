@@ -28,7 +28,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	port, err := nat.NewPort("tcp", cpEnv.Port)
 
 	if err != nil {
-		return errors.Wrap(err, "failed to get new port for control plane")
+		return errors.Wrap(err, "failed to create docker port for Control plane")
 	}
 
 	// Set spawn information
@@ -65,7 +65,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 		}, &network.NetworkingConfig{}, "apate-cp")
 
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create Docker container for control plane")
 		}
 
 		return cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{})

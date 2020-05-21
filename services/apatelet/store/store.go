@@ -89,7 +89,7 @@ func (s *store) EnqueuePodTasks(label string, newTasks []*Task) error {
 	for i, task := range s.queue.tasks {
 		isPod, err := task.IsPod()
 		if err != nil {
-			return errors.Wrap(err, "failed to read pod type")
+			return errors.Wrap(err, "failed to determine task type")
 		}
 
 		if isPod && task.PodTask.Label == label {
@@ -117,7 +117,7 @@ func (s *store) RemovePodTasks(label string) error {
 
 		isPod, err := task.IsPod()
 		if err != nil {
-			return errors.Wrap(err, "failed to read pod type")
+			return errors.Wrap(err, "failed to determine task type")
 		}
 
 		if isPod && task.PodTask.Label == label {

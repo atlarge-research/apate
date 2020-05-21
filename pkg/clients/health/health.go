@@ -32,15 +32,19 @@ const (
 )
 
 // GetClient creates a new health client
-func GetClient(info *service.ConnectionInfo, uuid string) *Client {
-	conn := service.CreateClientConnection(info)
+func GetClient(info *service.ConnectionInfo, uuid string) (*Client, error) {
+	conn, err := service.CreateClientConnection(info)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create GRPC health client")
+	}
 
 	return &Client{
 		Conn:   conn,
 		Client: health.NewHealthClient(conn),
 		uuid:   uuid,
 		status: health.Status_UNKNOWN,
-	}
+	}, nil
 }
 
 // StartStreamWithRetry calls StartStream but will retry n times to re-establish a connection
@@ -90,7 +94,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 				select {
 				case <-ctx.Done():
 					// timeout reached
-					errCallback(errors.Wrap(ctx.Err(), "stream timed out"))
+					errCallback(errors.Wrap(ctx.Err(), "health stream timed out"))
 				case <-c:
 					cancel()
 				}
@@ -100,7 +104,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 
 			// Stream dead
 			if err != nil {
-				errCallback(errors.Wrap(err, "stream died"))
+				errCallback(errors.Wrap(err, "health stream died"))
 			}
 		}
 	}()

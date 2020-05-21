@@ -1,6 +1,8 @@
 package run
 
 import (
+	"github.com/pkg/errors"
+
 	"io/ioutil"
 	"os"
 )
@@ -14,20 +16,20 @@ const (
 func SetCerts() error {
 	certFileName := os.TempDir() + "/apate/cert.pem"
 	if err := ioutil.WriteFile(certFileName, []byte(cert), 0600); err != nil {
-		return err
+		return errors.Wrapf(err, "failed to write certificate to file at %v", certFileName)
 	}
 
 	keyFileName := os.TempDir() + "/apate/key.pem"
 	if err := ioutil.WriteFile(keyFileName, []byte(key), 0600); err != nil {
-		return err
+		return errors.Wrapf(err, "failed to write key to file at %v", certFileName)
 	}
 
 	if err := os.Setenv("APISERVER_CERT_LOCATION", certFileName); err != nil {
-		return err
+		return errors.Wrap(err, "failed to set APISERVER_CERT_LOCATION environment variable")
 	}
 
 	if err := os.Setenv("APISERVER_KEY_LOCATION", keyFileName); err != nil {
-		return err
+		return errors.Wrap(err, "failed to set APISERVER_KEY_LOCATION environment variable")
 	}
 
 	return nil

@@ -35,14 +35,14 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 	c := kind.NewCommand(logger, cmd.StandardIOStreams())
 	c.SetArgs(args)
 	if err := c.Execute(); err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create kind cluster with kind %v", strings.Join(args, " "))
 	}
 
 	// Update kube config to use internal
 	err := useInternalKubeConfig(name, kubeConfigLocation)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to run kind %v", strings.Join(args, " "))
+		return errors.Wrapf(err, "failed to use internal Kubeconfig")
 	}
 
 	// Only gets here after the cluster is running
@@ -62,7 +62,7 @@ func useInternalKubeConfig(name string, kubeConfigLocation string) error {
 
 	cfg, err := os.Create(kubeConfigLocation)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create file for Kubeconfig at %v", kubeConfigLocation)
 	}
 
 	c := kind.NewCommand(logger, cmd.IOStreams{
@@ -72,7 +72,7 @@ func useInternalKubeConfig(name string, kubeConfigLocation string) error {
 	})
 
 	c.SetArgs(args)
-	return errors.Wrapf(c.Execute(), "failed run kind %v", strings.Join(args, " "))
+	return errors.Wrapf(c.Execute(), "failed run kind %v to retrieve internal Kubeconfig", strings.Join(args, " "))
 }
 
 // DeleteCluster deletes a cluster with a given name.
@@ -92,5 +92,5 @@ func (*KinD) DeleteCluster(name string) error {
 	// Deletes the cluster
 	// As far as I could test this call never errors (it just doesn't do anything
 	// when the cluster doesn't exist) so I don't think the system used in CreateCluster is necessary.
-	return errors.Wrapf(app.Run(logger, cmd.StandardIOStreams(), args), "failed to run kind %v", strings.Join(args, " "))
+	return errors.Wrapf(app.Run(logger, cmd.StandardIOStreams(), args), "failed to run kind %v to delete cluster", strings.Join(args, " "))
 }

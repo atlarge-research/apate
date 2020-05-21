@@ -27,7 +27,7 @@ func StartApatelets(ctx context.Context, amountOfNodes int, environment env.Apat
 	case env.Routine:
 		return errors.Wrap(useRoutines(amountOfNodes, environment), "failed to use goroutines to start Apatelets")
 	default:
-		return fmt.Errorf("unknown run type: %v", runType)
+		return errors.Errorf("unknown run type: %v", runType)
 	}
 }
 
@@ -49,11 +49,11 @@ func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
-		const attempts = 3
-		ports, err := freeport.GetFreePorts(attempts)
+		const numports = 3
+		ports, err := freeport.GetFreePorts(numports)
 
 		if err != nil {
-			return errors.Wrapf(err, "failed to get a free port after %v attempts", attempts)
+			return errors.Wrapf(err, "failed to get %v free ports", numports)
 		}
 
 		apateletEnv.ListenPort = ports[0]
@@ -62,12 +62,12 @@ func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 			// TODO: Add retry logic
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("Apatelet failed to start: %+v\n", r)
+					log.Printf("Apatelet failed to start: %v\n", r)
 				}
 			}()
 			err := apateRun.StartApatelet(apateletEnv, ports[1], ports[2], &readyCh)
 			if err != nil {
-				log.Printf("Apatelet failed to start: %+v\n", err)
+				log.Printf("Apatelet failed to start: %v\n", err)
 			}
 		}()
 
