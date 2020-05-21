@@ -3,11 +3,14 @@ package run
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"sync/atomic"
 	"syscall"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
@@ -49,7 +52,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	config, res, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
+	config, res, time, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
 	if err != nil {
 		return err
 	}
@@ -61,12 +64,27 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Create store
 	st := store.NewStore()
 
+	// Create scheduler
+	sch := scheduler.New(ctx, &st)
+	go func() {
+		ech := sch.EnableScheduler()
+
+		for {
+			select {
+			case <-stop:
+				return
+			case err = <-ech:
+				fmt.Printf("error while scheduling task occurred: %v\n", err)
+			}
+		}
+	}()
+
 	// Create crd informers
 	err = crdPod.CreatePodInformer(config, &st, stopInformer)
 	if err != nil {
 		return err
 	}
-	err = node.CreateNodeInformer(config, &st, res.Selector, stopInformer)
+	err = node.CreateNodeInformer(config, &st, sch.WakeScheduler, res.Selector, stopInformer)
 	if err != nil {
 		return err
 	}
@@ -102,7 +120,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	}()
 
 	// Start gRPC server
-	server, err := createGRPC(apateletEnv.ListenPort, &st, apateletEnv.ListenAddress, &stop)
+	server, err := createGRPC(apateletEnv.ListenPort, &st, &sch, apateletEnv.ListenAddress, &stop)
 	if err != nil {
 		return err
 	}
@@ -117,6 +135,11 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 	// Start serving request
 	go server.Serve()
+
+	// Start the scheduler if a scenario is already running
+	if time >= 0 {
+		sch.StartScheduler(time)
+	}
 
 	*readyCh <- true
 
@@ -155,7 +178,7 @@ func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *s
 	log.Println("Stopped Apatelet")
 }
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, error) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
 	client := controlplane.GetClusterOperationClient(connectionInfo)
 	defer func() {
 		err := client.Conn.Close()
@@ -164,15 +187,15 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 		}
 	}()
 
-	cfg, res, err := client.JoinCluster(ctx, listenPort)
+	cfg, res, time, err := client.JoinCluster(ctx, listenPort)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, -1, err
 	}
 
 	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return cfg, res, nil
+	return cfg, res, time, nil
 }
 
 func createNodeController(ctx context.Context, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
@@ -180,7 +203,7 @@ func createNodeController(ctx context.Context, res *scenario.NodeResources, k8sP
 	return cmd, err
 }
 
-func createGRPC(listenPort int, store *store.Store, listenAddress string, stopChannel *chan os.Signal) (*service.GRPCServer, error) {
+func createGRPC(listenPort int, store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel *chan os.Signal) (*service.GRPCServer, error) {
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 
@@ -191,7 +214,7 @@ func createGRPC(listenPort int, store *store.Store, listenAddress string, stopCh
 	}
 
 	// Add services
-	vkService.RegisterScenarioService(server, store)
+	vkService.RegisterScenarioService(server, store, sch)
 	vkService.RegisterApateletService(server, stopChannel)
 
 	return server, nil

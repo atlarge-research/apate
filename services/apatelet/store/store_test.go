@@ -69,7 +69,6 @@ func TestMultipleTasks(t *testing.T) {
 	task3 := &NodeTask{}
 
 	st := NewStore()
-	st.SetStartTime(100)
 
 	// Enqueue tasks
 	err := st.SetNodeTasks([]*Task{
@@ -82,7 +81,7 @@ func TestMultipleTasks(t *testing.T) {
 	// Poll first task, which should be task 2
 	firstTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task2Time+100, firstTaskTime)
+	assert.Equal(t, task2Time, firstTaskTime)
 
 	// Retrieve first two tasks
 	firstTask, err := st.PopTask()
@@ -91,7 +90,7 @@ func TestMultipleTasks(t *testing.T) {
 
 	secondTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, task1Time+100, secondTaskTime)
+	assert.Equal(t, task1Time, secondTaskTime)
 
 	secondTask, err := st.PopTask()
 	assert.NoError(t, err)
@@ -101,7 +100,7 @@ func TestMultipleTasks(t *testing.T) {
 	lastTaskTime, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, st.LenTasks())
-	assert.Equal(t, task3Time+100, lastTaskTime)
+	assert.Equal(t, task3Time, lastTaskTime)
 }
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq

@@ -65,9 +65,19 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 
 	log.Printf("Added node to apate store: %v\n", node)
 
+	// Check start time for scenario
+	time := int64(-1)
+	scenario, err := st.GetApateletScenario()
+	if err == nil {
+		time = scenario.StartTime
+	}
+
 	return &controlplane.JoinInformation{
-		KubeConfig: s.kubernetesCluster.KubeConfig.Bytes,
-		NodeUuid:   node.UUID.String(),
+		KubeConfig:   s.kubernetesCluster.KubeConfig.Bytes,
+		NodeUuid:     node.UUID.String(),
+		NodeSelector: nodeResources.Selector,
+		StartTime:    time,
+
 		Hardware: &controlplane.NodeHardware{
 			Memory:           nodeResources.Memory,
 			Cpu:              nodeResources.CPU,

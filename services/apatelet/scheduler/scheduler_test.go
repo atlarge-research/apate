@@ -40,7 +40,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyEnabled, false).AnyTimes()
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -69,7 +69,7 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatusFailed)
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -105,7 +105,7 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -140,7 +140,7 @@ func TestRunner(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Run code under test
 	ech := make(chan error, 1)
@@ -167,7 +167,13 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 	}), nil)
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 40}
+	sched := Scheduler{
+		store:     &s,
+		ctx:       context.Background(),
+		readyCh:   make(chan struct{}),
+		prevT:     40,
+		startTime: 0,
+	}
 
 	// Run code under test
 	ech := make(chan error, 1)
@@ -192,7 +198,7 @@ func TestRunnerEarlyFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -219,7 +225,7 @@ func TestRunnerPopFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -260,10 +266,11 @@ func TestStartScheduler(t *testing.T) {
 	ms.EXPECT().PeekTask().Return(time.Now().Add(time.Hour*12).UnixNano(), nil).AnyTimes()
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(ctx, &s)
 
 	// Run code under test
-	ech := sched.StartScheduler(ctx)
+	ech := sched.EnableScheduler()
+	sched.StartScheduler(0)
 
 	time.Sleep(time.Second)
 

@@ -18,7 +18,7 @@ import (
 
 // The amount of seconds to wait with starting the scenario
 // Should be large enough so that all apatelets have received the scenario and are ready
-const amountOfSecondsToWait = 15
+const amountOfSecondsToWait = 5
 
 type scenarioService struct {
 	store *store.Store
@@ -40,17 +40,16 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 		return nil, err
 	}
 
-	apateletScenario, err := (*s.store).GetApateletScenario()
-	if err != nil {
+	apateletScenario := &apiApatelet.ApateletScenario{
+		StartTime: time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano(),
+	}
+
+	if err = (*s.store).SetApateletScenario(apateletScenario); err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	startTime := time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano()
-	apateletScenario.StartTime = startTime
-
-	err = startOnNodes(ctx, nodes, apateletScenario)
-	if err != nil {
+	if err = startOnNodes(ctx, nodes, apateletScenario); err != nil {
 		log.Println(err)
 		return nil, err
 	}

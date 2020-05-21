@@ -21,11 +21,10 @@ const resource = "nodeconfigurations"
 // ConfigurationClient is the client for the NodeConfiguration CRD
 type ConfigurationClient struct {
 	restClient rest.Interface
-	nameSpace  string //TODO: Check if this can be dropped, or be a list or something
 }
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
-func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
+func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 	if err := v1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
@@ -41,7 +40,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 		return nil, err
 	}
 
-	return &ConfigurationClient{restClient: client, nameSpace: namespace}, nil
+	return &ConfigurationClient{restClient: client}, nil
 }
 
 // WatchResources creates an informer which watches for new or updated NodeConfigurations and updates the store accordingly
@@ -70,7 +69,6 @@ func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.NodeConfigurati
 	result := v1.NodeConfigurationList{}
 
 	err := e.restClient.Get().
-		Namespace(e.nameSpace). //TODO: Drop or add support for list or something
 		Resource(resource).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
@@ -88,7 +86,6 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 
 	wi, err := e.restClient.
 		Get().
-		Namespace(e.nameSpace). //TODO: Drop or add support for list or something
 		Resource(resource).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
