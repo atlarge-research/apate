@@ -5,6 +5,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 )
 
@@ -16,7 +18,7 @@ func GetExternalAddress() (string, error) {
 	addresses, err := net.InterfaceAddrs()
 
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to get interface addresses")
 	}
 
 	// Get first 172.17.0.0/16 address, if any

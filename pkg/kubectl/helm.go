@@ -4,6 +4,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 )
@@ -15,17 +18,19 @@ const (
 func prepareHelm() error {
 	// helm repo add google https://kubernetes-charts.storage.googleapis.com/
 	// helm repo update
+	const repo = "https://kubernetes-charts.storage.googleapis.com/"
+
 	args := []string{
 		"repo",
 		"add",
 		"google",
-		"https://kubernetes-charts.storage.googleapis.com/",
+		repo,
 	}
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
 	if err := cmd.Run(); err != nil {
-		return err
+		return errors.Wrapf(err, "failed to add repository %v with helm %v", repo, strings.Join(args, " "))
 	}
 
 	args = []string{
@@ -35,12 +40,13 @@ func prepareHelm() error {
 
 	// #nosec
 	cmd = exec.Command("helm", args...)
-	return cmd.Run()
+
+	return errors.Wrapf(cmd.Run(), "failed to update repositories with helm %v", strings.Join(args, " "))
 }
 
 func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 	if err := prepareHelm(); err != nil {
-		return err
+		return errors.Wrap(err, "failed to prepare Helm")
 	}
 
 	args := []string{
@@ -60,7 +66,8 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 	cmd := exec.Command("helm", args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
-	return cmd.Run()
+
+	return errors.Wrapf(cmd.Run(), "failed to install Prometheus with helm %v", strings.Join(args, " "))
 }
 
 // CreatePrometheusStack attempts to create the prometheus operator in the kubernetes cluster

@@ -4,6 +4,8 @@ package controlplane
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -26,12 +28,15 @@ type ClusterOperationClient struct {
 }
 
 // GetClusterOperationClient returns client for the JoinClusterService
-func GetClusterOperationClient(info *service.ConnectionInfo) *ClusterOperationClient {
-	conn := service.CreateClientConnection(info)
+func GetClusterOperationClient(info *service.ConnectionInfo) (*ClusterOperationClient, error) {
+	conn, err := service.CreateClientConnection(info)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create client connection")
+	}
 	return &ClusterOperationClient{
 		Conn:   conn,
 		Client: controlplane.NewClusterOperationsClient(conn),
-	}
+	}, nil
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the node resources
@@ -40,19 +45,19 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 
 	// Check for any grpc error
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to join cluster")
 	}
 
 	// Parse the uuid and check for errors
 	id, err := uuid.Parse(res.NodeUuid)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrapf(err, "failed to parse node uuid (%v)", res.NodeUuid)
 	}
 
 	cfg, err := kubeconfig.FromBytes(res.KubeConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to load kubeconfig")
 	}
 
 	// Return final join information
@@ -69,7 +74,7 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 // LeaveCluster signals to the apate control panel that this node is leaving the cluster
 func (c *ClusterOperationClient) LeaveCluster(ctx context.Context, uuid string) error {
 	_, err := c.Client.LeaveCluster(ctx, &controlplane.LeaveInformation{NodeUuid: uuid})
-	return err
+	return errors.Wrap(err, "failed to leave cluster")
 }
 
 // GetKubeConfig returns the kubeconfig file
@@ -77,7 +82,7 @@ func (c *ClusterOperationClient) GetKubeConfig(ctx context.Context) ([]byte, err
 	cfg, err := c.Client.GetKubeConfig(ctx, new(empty.Empty))
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get kubeconfig")
 	}
 
 	return cfg.Config, nil

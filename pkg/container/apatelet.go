@@ -4,6 +4,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/pkg/errors"
+
 	"github.com/docker/go-connections/nat"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -18,14 +20,14 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create a new Docker client")
 	}
 
 	// Get docker port for apatelet
 	port, err := nat.NewPort("tcp", strconv.Itoa(cpEnv.ListenPort))
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create docker port for Apatelet")
 	}
 
 	// Set spawn information
@@ -47,12 +49,12 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 		}, nil, nil, env.ApateletContainerPrefix+strconv.Itoa(i))
 
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to create container %v", env.ApateletContainerPrefix+strconv.Itoa(i))
 		}
 
 		return cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{})
 	})
 
 	// Spawn apatelets
-	return HandleSpawnContainers(ctx, cli, spawnInfo)
+	return errors.Wrap(HandleSpawnContainers(ctx, cli, spawnInfo), "failed to spawn Apatelet containers")
 }

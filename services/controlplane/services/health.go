@@ -2,10 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
 	"log"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/scenario"
 
@@ -76,7 +77,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 		}
 
 		if err = (*h.store).SetNodeStatus(id, req.Status); err != nil {
-			log.Println(err)
+			log.Printf("%v\n", err)
 		}
 
 		// TODO: Improves
@@ -85,7 +86,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 	// If the loop is broken -> node status unknown
 	if err := (*h.store).SetNodeStatus(id, health.Status_UNKNOWN); err != nil {
-		scenario.Failed(err)
+		scenario.Failed(errors.Wrap(err, "failed to set node status"))
 		return nil
 	}
 

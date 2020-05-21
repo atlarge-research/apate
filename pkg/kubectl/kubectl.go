@@ -6,6 +6,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 )
@@ -22,7 +25,8 @@ func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error 
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("kubectl", args...)
-	return cmd.Run()
+
+	return errors.Wrapf(cmd.Run(), "failed to create namespace with kubectl %v", strings.Join(args, " "))
 }
 
 // CreateWithNameSpace calls `kubectl create` with the given resourceConfig in the given namespace
@@ -31,11 +35,11 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 	if len(resourceConfig) > 0 {
 		cfgFile, err := ioutil.TempFile("", "apate-")
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create tempfile for Kubeconfig")
 		}
 		_, err = cfgFile.Write(resourceConfig)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to write Kubeconfig to tempfile")
 		}
 		defer func() {
 			err = os.Remove(cfgFile.Name())
@@ -63,7 +67,7 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return cmd.Run()
+		return errors.Wrapf(cmd.Run(), "failed to create resource %v in namespace %v with kubectl %v", cfgFile.Name(), namespace, strings.Join(args, " "))
 	}
 
 	return nil
@@ -72,5 +76,5 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 // Create calls `kubectl create` with the given resourceConfig
 // When this config is empty, it will not be called
 func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
-	return CreateWithNameSpace(resourceConfig, kubeConfig, "")
+	return errors.Wrapf(CreateWithNameSpace(resourceConfig, kubeConfig, ""), "failed to create resource in default namespace")
 }

@@ -7,6 +7,8 @@ import (
 	"log"
 	"net"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
 
@@ -45,7 +47,8 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 
 	// TODO: Maybe reinsert NodeResources depending on the type of error?
 	if err != nil {
-		log.Printf("Unable to allocate resources for node %v: %s", connectionInfo, err.Error())
+		err = errors.Wrap(err, "failed to get node resources from queue")
+		log.Println(err)
 		return nil, err
 	}
 
@@ -56,6 +59,8 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	err = st.AddNode(node)
 
 	if err != nil {
+		err = errors.Wrap(err, "failed to add node to queue")
+		log.Println(err)
 		return nil, err
 	}
 
@@ -82,7 +87,7 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 	log.Printf("Received request to leave apate store from node %s\n", leaveInformation.NodeUuid)
 
 	if err := s.kubernetesCluster.RemoveNodeFromCluster("apatelet-" + leaveInformation.NodeUuid); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to remove node from cluster")
 	}
 
 	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
@@ -93,7 +98,7 @@ func (s *clusterOperationService) GetKubeConfig(_ context.Context, _ *empty.Empt
 	cfg, err := ioutil.ReadFile("/tmp/apate/config-ext")
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read Kubeconfig from /tmp/apate/config-ext")
 	}
 
 	return &controlplane.KubeConfig{Config: cfg}, nil

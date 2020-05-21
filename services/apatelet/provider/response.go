@@ -2,12 +2,24 @@ package provider
 
 import (
 	"context"
-	"errors"
-	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
+
+// An emulation error is an error occurring because the system is emulating an error. This type of error is completely expected.
+// This error should never be wrapped
+type emulationError string
+
+func (e emulationError) Error() string {
+	return string(e)
+}
+
+func (e emulationError) Expected() bool {
+	return true
+}
 
 type responseArgs struct {
 	ctx      context.Context
@@ -18,23 +30,23 @@ type responseArgs struct {
 func podResponse(args responseArgs, label string, responseFlag events.PodEventFlag) (interface{}, bool, error) {
 	iflag, err := (*args.provider.store).GetPodFlag(label, responseFlag)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "failed to get pod flag")
 	}
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, false, fmt.Errorf("couldn't cast %v to response", flag)
+		return nil, false, errors.Errorf("couldn't cast %v to response", flag)
 	}
 
 	switch flag {
 	case scenario.Response_RESPONSE_NORMAL:
 		res, err := args.action()
-		return res, true, err
+		return res, true, errors.Wrap(err, "failed to execute pod response action")
 	case scenario.Response_RESPONSE_TIMEOUT:
 		<-args.ctx.Done()
 		return nil, true, nil
 	case scenario.Response_RESPONSE_ERROR:
-		return nil, true, errors.New("podResponse expected error")
+		return nil, true, emulationError("podResponse expected error")
 	case scenario.Response_RESPONSE_UNSET:
 		return nil, false, nil
 	default:
@@ -46,12 +58,12 @@ func podResponse(args responseArgs, label string, responseFlag events.PodEventFl
 func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interface{}, error) {
 	iflag, err := (*args.provider.store).GetNodeFlag(responseFlag)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get node flag")
 	}
 
 	flag, ok := iflag.(scenario.Response)
 	if !ok {
-		return nil, fmt.Errorf("couldn't cast %v to response", flag)
+		return nil, errors.Errorf("couldn't cast %v to response", flag)
 	}
 
 	switch flag {
@@ -59,12 +71,12 @@ func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interfa
 		fallthrough // If unset, act as if it's normal
 	case scenario.Response_RESPONSE_NORMAL:
 		res, err := args.action()
-		return res, err
+		return res, errors.Wrap(err, "failed to execute node response action")
 	case scenario.Response_RESPONSE_TIMEOUT:
 		<-args.ctx.Done()
 		return nil, nil
 	case scenario.Response_RESPONSE_ERROR:
-		return nil, errors.New("nodeResponse expected error")
+		return nil, emulationError("nodeResponse expected error")
 	default:
 		return nil, errors.New("nodeResponse invalid scenario")
 	}
@@ -75,12 +87,24 @@ func podAndNodeResponse(args responseArgs, podLabel string, podResponseFlag even
 	pod, performedAction, err := podResponse(args, podLabel, podResponseFlag)
 
 	if err != nil {
-		return nil, err
+		if IsExpected(err) {
+			return nil, err
+		}
+
+		return nil, errors.Wrap(err, "failed during pod response (not going to try node response)")
 	}
 
 	if performedAction {
 		return pod, nil
 	}
 
-	return nodeResponse(args, nodeResponseFlag)
+	node, err := nodeResponse(args, nodeResponseFlag)
+	if err != nil {
+		if IsExpected(err) {
+			return nil, err
+		}
+
+		return nil, errors.Wrap(err, "failed during pod response")
+	}
+	return node, nil
 }

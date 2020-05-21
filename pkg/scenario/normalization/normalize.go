@@ -3,8 +3,9 @@
 package normalization
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 
@@ -137,7 +138,7 @@ func createRevertEvent(c *normalizationContext, task *controlplane.Task, newTask
 
 	savedTask := c.taskNameParsed[task.Name]
 	if savedTask == nil {
-		return fmt.Errorf("you can't revert task with name '%s' as you have never used it before", task.Name)
+		return errors.Errorf("you can't revert task with name '%s' as you have never used it before", task.Name)
 	}
 
 	newTask.NodeSet = savedTask.NodeSet
