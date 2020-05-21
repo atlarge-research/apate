@@ -1,11 +1,11 @@
 # Emulating Kubernetes
-This project deals with emulating Kubernetes pods, making it possible to run thousands of pods on a single laptop to emulate how Kubernetes will respond to that.
+Apate deals with emulating Kubernetes pods, making it possible to run thousands of pods on a single laptop to emulate how Kubernetes will respond to that.
 
 ## Infrastructure
 The application has 3 main components, which will be discussed here.
 
 ### Apatelet
-The Apatelet is a "fake" Kubelet; it talks to Kubernetes as if it is a real Kubelet, but it doesn't end up actually running the pods, it will only tell Kubernetes it does. 
+An Apatelet is a "fake" Kubelet; it talks to Kubernetes as if it is a real Kubelet, but it doesn't end up actually running the pods, it will only tell Kubernetes it does. 
 How this Apatelet and the pods running on the Apalet act can be controlled using a [CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 This will be further discussed under [scenario](#scenario).
 

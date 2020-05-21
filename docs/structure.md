@@ -8,7 +8,7 @@ This article will discuss the structure and workflow of Apate and explain why we
 First, the CLI can be used to start the controlplane. Now the CLI will be waiting and polling the controlplane and ask for the amount of Apatelets that are healthy. The controlplane store will contain references to the Apatelets that have been started and their health state (e.g. healthy).
 
 ### Spawning Apatelets
-No Apatelets will are spawned until the user asks for them by creating a `NodeConfiguration`. When the user asks for new Apatelets by for example using `kubectl create -f node-configuration.yml`, Kubernetes will tell the informer running on the controlplane that this CRD has been applied. The controlplane will spawn Apatelets accordingly, either on Docker or as a goroutine.
+No Apatelets are spawned until the user asks for them by creating a `NodeConfiguration`. When the user asks for new Apatelets by for example using `kubectl create -f node-configuration.yml`, Kubernetes will tell the informer running on the controlplane that this CRD has been applied. The controlplane will spawn Apatelets accordingly, either on Docker or as a goroutine.
 
 ### Apatelet start
 When an Apatelet is spawned, it will ask the controlplane for the kubeconfig, which is required to join the Kubernetes cluster. It will also get its hardware specification, which will be sent to Kubernetes. With this information, it tries to join the Kubernetes cluster. When this is succesful, it will start its health service and it will tell the controlplane that it's healthy. Now the controlplane will update its store to mark the Apatelet as healthy (which will update the response from the status service).
