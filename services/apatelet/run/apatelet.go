@@ -194,7 +194,7 @@ func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *s
 func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
 	client, err := controlplane.GetClusterOperationClient(connectionInfo)
 	if err != nil {
-		return nil, nil,-1, errors.Wrap(err, "failed to get cluster operation client")
+		return nil, nil, -1, errors.Wrap(err, "failed to get cluster operation client")
 	}
 	defer func() {
 		closeErr := client.Conn.Close()
