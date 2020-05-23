@@ -84,7 +84,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	if err != nil {
 		return err
 	}
-	err = node.CreateNodeInformer(config, &st, sch.WakeScheduler, res.Selector, stopInformer)
+	err = node.CreateNodeInformer(config, &st, res.Selector, stopInformer)
 	if err != nil {
 		return err
 	}
