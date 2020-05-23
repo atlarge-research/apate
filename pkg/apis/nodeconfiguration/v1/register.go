@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/pkg/errors"
 	"io/ioutil"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,8 +15,6 @@ import (
 
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: nodeconfiguration.GroupName, Version: "v1"}
-
-// TODO: this is to register the emulated pod types with the decoder
 var schemeGroupVersionInternal = schema.GroupVersion{Group: nodeconfiguration.GroupName, Version: runtime.APIVersionInternal}
 
 var (
@@ -35,17 +34,18 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&NodeConfiguration{},
 		&NodeConfigurationList{},
 	)
+
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
-	//metav1.AddToGroupVersion(scheme, schemeGroupVersionInternal)
 
 	return nil
 }
 
 // CreateInKubernetes registers the generated CRD YAML to Kubernetes
 func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
-	file, err := ioutil.ReadFile("config/crd/apate.opendc.org_nodeconfigurations.yaml")
+	const filename = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
+	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "reading file: %v failed", filename)
 	}
 
 	return kubectl.Create(file, config)

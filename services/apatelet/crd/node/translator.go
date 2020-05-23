@@ -18,13 +18,8 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 		(*st).SetNodeFlag(events.NodePingResponse, scenario.ResponseTimeout)
 	}
 
-	// Check if there should be extra latency
-	if state.NetworkLatency > 0 {
-		(*st).SetNodeFlag(events.NodeAddedLatencyEnabled, true)
-		(*st).SetNodeFlag(events.NodeAddedLatencyMsec, state.NetworkLatency)
-	} else {
-		(*st).SetNodeFlag(events.NodeAddedLatencyEnabled, false)
-	}
+	// Set latency
+	(*st).SetNodeFlag(events.NodeAddedLatencyMsec, state.NetworkLatency)
 
 	// Check if the node should fail
 	if state.NodeFailed {
@@ -35,7 +30,6 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 		(*st).SetNodeFlag(events.NodeGetPodStatusResponse, scenario.ResponseTimeout)
 		(*st).SetNodeFlag(events.NodeGetPodsResponse, scenario.ResponseTimeout)
 		(*st).SetNodeFlag(events.NodePingResponse, scenario.ResponseTimeout)
-		(*st).SetNodeFlag(events.NodeAddedLatencyEnabled, false)
 	}
 }
 

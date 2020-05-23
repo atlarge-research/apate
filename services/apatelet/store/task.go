@@ -27,7 +27,7 @@ type NodeTask struct {
 // IsNode returns true if the task is a node task
 func (t *Task) IsNode() (bool, error) {
 	isPod, err := t.IsPod()
-	return !isPod, err
+	return !isPod, errors.Wrap(err, "isPod during IsNode failed")
 }
 
 // PodTask is a task that should be executed on a pod level

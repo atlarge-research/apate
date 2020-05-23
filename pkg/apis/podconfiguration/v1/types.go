@@ -40,6 +40,7 @@ type PodConfigurationSpec struct {
 type PodConfigurationTask struct {
 	// The timestamp at which the task is executed
 	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Required
 	Timestamp int64 `json:"timestamp"`
 
 	// The state to be set

@@ -74,7 +74,7 @@ func main() {
 		fatal(errors.Wrap(err, "failed to register pod CRD spec"))
 	}
 	if err = nodeconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
-		log.Fatal(err)
+		fatal(errors.Wrap(err, "failed to register node CRD spec"))
 	}
 
 	// TODO: Remove later, seems to give k8s some breathing room for crd
@@ -83,7 +83,7 @@ func main() {
 	// Create node informer
 	stopInformer := make(chan struct{})
 	if err = node.CreateNodeInformer(ctx, managedKubernetesCluster.KubeConfig, &createdStore, externalInformation, stopInformer); err != nil {
-		log.Fatal(err)
+		fatal(errors.Wrap(err, "failed to create node informer"))
 	}
 
 	// Create prometheus stack

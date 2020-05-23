@@ -18,7 +18,7 @@ type ApateClient struct {
 func GetApateletClient(info *service.ConnectionInfo) (*ApateClient, error) {
 	conn, err := service.CreateClientConnection(info)
 	if err != nil {
-		return nil, errors.Wrap(err, "Creating Client Connection Info Failed")
+		return nil, errors.Wrap(err, "creating client connection info failed")
 	}
 
 	return &ApateClient{

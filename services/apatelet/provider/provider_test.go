@@ -88,7 +88,7 @@ func TestCreatePod(t *testing.T) {
 	PCPRF := events.PodCreatePodResponse
 
 	// expect
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
@@ -125,7 +125,7 @@ func TestUpdatePod(t *testing.T) {
 	PCPRF := events.PodUpdatePodResponse
 
 	// expect
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
@@ -160,8 +160,7 @@ func TestDeletePod(t *testing.T) {
 	PCPRF := events.PodDeletePodResponse
 
 	// expect
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
@@ -194,8 +193,7 @@ func TestGetPod(t *testing.T) {
 	PCPRF := events.PodGetPodResponse
 
 	// expect
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
@@ -230,8 +228,6 @@ func TestGetPods(t *testing.T) {
 	PCPRF := events.NodeGetPodsResponse
 
 	// expect
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
-
 	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// sot
@@ -267,7 +263,7 @@ func TestGetPodStatus(t *testing.T) {
 	PCPRF := events.PodGetPodStatusResponse
 
 	// expect
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyEnabled).Return(false, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
 

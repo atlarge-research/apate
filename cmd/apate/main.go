@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -30,6 +31,10 @@ const (
 	defaultControlPlaneTimeout = 45
 )
 
+func fatal(err error) {
+	log.Fatalf("An error occurred while running the CLI: %+v\n", err)
+}
+
 func main() {
 	var k8sConfigurationFileLocation string
 	var controlPlaneAddress string
@@ -48,7 +53,7 @@ func main() {
 				Name:  "run",
 				Usage: "Runs a given scenario file on the Apate cluster",
 				Action: func(c *cli.Context) error {
-					return runScenario(ctx, controlPlaneAddress, k8sConfigurationFileLocation, controlPlanePort)
+					return errors.Wrap(runScenario(ctx, controlPlaneAddress, k8sConfigurationFileLocation, controlPlanePort), "failed to run scenario")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -79,7 +84,7 @@ func main() {
 				Name:  "create",
 				Usage: "Creates a local control plane",
 				Action: func(c *cli.Context) error {
-					return createControlPlane(ctx, cpEnv, controlPlaneTimeout, pullPolicy)
+					return errors.Wrap(createControlPlane(ctx, cpEnv, controlPlaneTimeout, pullPolicy), "failed to create control plane")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -151,7 +156,7 @@ func main() {
 				Name:  "kubeconfig",
 				Usage: "Retrieves a kube configuration file from the control plane",
 				Action: func(c *cli.Context) error {
-					return getKubeConfig(ctx, controlPlaneAddress, controlPlanePort)
+					return errors.Wrap(printKubeConfig(ctx, controlPlaneAddress, controlPlanePort), "failed to get Kubeconfig")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -176,26 +181,25 @@ func main() {
 	err := app.Run(os.Args)
 	if err != nil {
 		_, _ = color.New(color.FgRed).Printf("FAILED\nERROR: ")
-		fmt.Printf("%s\n", err.Error())
+		fmt.Printf("%+v\n", err)
 	}
 }
 
-func getKubeConfig(ctx context.Context, address string, port int) error {
+func printKubeConfig(ctx context.Context, address string, port int) error {
 	client, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't get cluster operation client for kube config")
 	}
 
 	cfg, err := client.GetKubeConfig(ctx)
-
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't get kube config from control plane")
 	}
 
 	fmt.Println(string(cfg))
 
 	if err := client.Conn.Close(); err != nil {
-		return err
+		return errors.Wrap(err, "error closing connection to cluster operation client")
 	}
 
 	return nil
@@ -205,14 +209,14 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	fmt.Print("Creating control plane container ")
 	port, err := strconv.Atoi(cpEnv.Port)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "converting control plane port to integer failed")
 	}
 
 	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, cpEnv)
-
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't spawn control plane container")
 	}
+
 	color.Green("DONE\n")
 	fmt.Print("Waiting for control plane to be up ")
 
@@ -221,9 +225,8 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
 	defer cancel()
 	err = statusClient.WaitForControlPlane(ctx)
-
 	if err != nil {
-		return err
+		return errors.Wrap(err, "waiting for control plane on the client failed")
 	}
 
 	color.Green("DONE\n")
@@ -232,16 +235,17 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 }
 
 func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation string, controlPlanePort int) error {
-	var k8sConfig []byte
-	if len(configFileLocation) > 0 {
-		// Read the k8s configuration file
-		var err error
-		// #nosec
-		k8sConfig, err = ioutil.ReadFile(configFileLocation)
-		if err != nil {
-			return err
+	k8sConfig, err := func() ([]byte, error) {
+		if len(configFileLocation) > 0 {
+			// #nosec
+			k8sConfig, err := ioutil.ReadFile(configFileLocation)
+			if err != nil {
+				return nil, errors.Wrap(err, "reading k8sconfig failed")
+			}
+			return k8sConfig, nil
 		}
-	}
+		return []byte{}, nil
+	}()
 
 	// The connectionInfo that will be used to connect to the control plane
 	info := &service.ConnectionInfo{
@@ -253,37 +257,40 @@ func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation st
 	// Initial call: load the scenario
 	scenarioClient, err := controlplane.GetScenarioClient(info)
 	if err != nil {
-		return errors.Wrap(err, "Failed to get scenario client")
+		return errors.Wrap(err, "failed to get scenario client")
 	}
 
 	// Next: poll amount of healthy nodes
 	trigger := make(chan bool)
 
 	go func() {
-		_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
+		_, err = bufio.NewReader(os.Stdin).ReadBytes('\n')
+		if err != nil {
+			fatal(err)
+		}
 		trigger <- true
 	}()
 
 	statusClient, err := controlplane.GetStatusClient(info)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting status client for runScenario failed")
 	}
 	err = statusClient.WaitForTrigger(ctx, trigger, func(healthy int) {
 		fmt.Printf("\rGot %d healthy apatelets - Press enter to start scenario...", healthy)
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "waiting for healthy Apatelets failed")
 	}
 
 	fmt.Printf("Starting scenario ")
 
 	//Finally: actually start the scenario
 	if _, err = scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
-		return err
+		return errors.Wrap(err, "couldn't start scenario")
 	}
 	err = scenarioClient.Conn.Close()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't close connection to scenario client")
 	}
 
 	color.Green("DONE\n")

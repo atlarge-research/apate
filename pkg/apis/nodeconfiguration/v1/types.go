@@ -25,7 +25,7 @@ type NodeConfigurationList struct {
 type NodeConfigurationSpec struct {
 	// A way to directly update the node state
 	// +kubebuilder:validation:Optional
-	State *NodeConfigurationState `json:"inline,omitempty"`
+	NodeConfigurationState `json:"inline,omitempty"`
 
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Required

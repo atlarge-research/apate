@@ -5,9 +5,8 @@
 package mock_cache
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockStore is a mock of Store interface

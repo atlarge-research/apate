@@ -82,7 +82,7 @@ func CreateClientConnection(info *ConnectionInfo) (*grpc.ClientConn, error) {
 	if info.TLS {
 		tls, err := getClientTLS()
 		if err != nil {
-			return nil, errors.Wrap(err, "Unable to create TLS client")
+			return nil, errors.Wrap(err, "unable to create TLS client")
 		}
 
 		options = []grpc.DialOption{tls}
@@ -90,7 +90,7 @@ func CreateClientConnection(info *ConnectionInfo) (*grpc.ClientConn, error) {
 
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", info.Address, info.Port), options...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to connect to %s:%d", info.Address, info.Port)
+		return nil, errors.Wrapf(err, "unable to connect to %s:%d", info.Address, info.Port)
 	}
 
 	return conn, nil
@@ -100,7 +100,7 @@ func getClientTLS() (grpc.DialOption, error) {
 	creds, err := credentials.NewClientTLSFromFile(testdata.Path("ca.pem"), "x.test.youtube.com")
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to create TLS client")
+		return nil, errors.Wrap(err, "failed to create TLS client")
 	}
 
 	return grpc.WithTransportCredentials(creds), nil

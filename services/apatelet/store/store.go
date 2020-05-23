@@ -73,7 +73,7 @@ func NewStore() Store {
 	}
 }
 
-func (s *store) setTasksOfType(tasks []*Task, check TaskTypeCheck) error {
+func (s *store) setTasksOfType(newTasks []*Task, check TaskTypeCheck) error {
 	s.queueLock.Lock()
 	defer s.queueLock.Unlock()
 
@@ -84,20 +84,20 @@ func (s *store) setTasksOfType(tasks []*Task, check TaskTypeCheck) error {
 		}
 
 		if typeCheck {
-			if len(tasks) == 0 {
+			if len(newTasks) == 0 {
 				heap.Remove(s.queue, i)
 			} else {
-				if tasks[0] != nil {
-					s.queue.tasks[i] = tasks[0]
+				if newTasks[0] != nil {
+					s.queue.tasks[i] = newTasks[0]
 					// Replacing and then fixing instead of deleting all and pushing because it's slightly faster, see comments on heap.Fix
 					heap.Fix(s.queue, i)
 				}
-				tasks = tasks[1:]
+				newTasks = newTasks[1:]
 			}
 		}
 	}
 
-	for _, remainingTask := range tasks {
+	for _, remainingTask := range newTasks {
 		if remainingTask != nil {
 			heap.Push(s.queue, remainingTask)
 		}
@@ -160,7 +160,7 @@ func (s *store) PeekTask() (int64, error) {
 	defer s.queueLock.RUnlock()
 
 	if s.queue.Len() == 0 {
-		return -1, errors.New("no tasks left")
+		return -1, nil
 	}
 
 	// Make sure the array in the pq didn't magically change to a different type
@@ -245,7 +245,6 @@ var defaultNodeValues = map[events.EventFlag]interface{}{
 	events.NodeGetPodsResponse:      scenario.ResponseNormal,
 	events.NodePingResponse:         scenario.ResponseNormal,
 
-	events.NodeAddedLatencyEnabled: false,
 	events.NodeAddedLatencyMsec:    uint64(0),
 }
 

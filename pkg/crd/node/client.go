@@ -2,6 +2,7 @@
 package node
 
 import (
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
@@ -26,7 +27,7 @@ type ConfigurationClient struct {
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 	if err := v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "adding global node scheme failed")
 	}
 
 	config := *c
@@ -95,4 +96,9 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 	}
 
 	return wi, nil
+}
+
+// GetSelector concatenates the namespace and name to create a unique selector
+func GetSelector(cfg *v1.NodeConfiguration) string {
+	return cfg.Namespace + "/" + cfg.Name
 }
