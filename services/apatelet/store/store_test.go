@@ -18,7 +18,7 @@ func TestEmptyQueue(t *testing.T) {
 	// Make sure both poll and get return an error
 	_, pollErr := st.PeekTask()
 	_, getErr := st.PopTask()
-	assert.Error(t, pollErr)
+	assert.NoError(t, pollErr)
 	assert.Error(t, getErr)
 }
 

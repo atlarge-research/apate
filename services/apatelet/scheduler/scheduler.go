@@ -8,9 +8,7 @@ import (
 	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -72,10 +70,7 @@ func (s *Scheduler) runner(ech chan error) {
 
 	relativeTime, err := (*s.store).PeekTask()
 	if err != nil {
-		// TODO: Check error type properly @jona, I know this is the bad
-		if err.Error() != "no tasks left" {
-			ech <- errors.Wrap(err, "failed to peek at the next task in the store")
-		}
+		ech <- errors.Wrap(err, "failed to peek at the next task in the store")
 		return
 	}
 

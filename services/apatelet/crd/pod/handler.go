@@ -1,6 +1,7 @@
 package pod
 
 import (
+	"github.com/pkg/errors"
 	"log"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
@@ -13,12 +14,12 @@ import (
 func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch chan struct{}) error {
 	restConfig, err := config.GetConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get restconfig from kubeconfig for the pod informer")
 	}
 
 	podClient, err := pod.NewForConfig(restConfig, "default")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get podclient from rest config for pod informer")
 	}
 
 	podClient.WatchResources(func(obj interface{}) {
@@ -48,7 +49,7 @@ func enqueueCRD(obj interface{}, st *store.Store) error {
 	empty := v1.PodConfigurationState{}
 	if newCRD.Spec.PodConfigurationState != empty {
 		if err := SetPodFlags(st, crdLabel, &newCRD.Spec.PodConfigurationState); err != nil {
-			return err
+			return errors.Wrap(err, "failed to set pod flags during enqueueing of crd")
 		}
 	}
 
@@ -58,7 +59,7 @@ func enqueueCRD(obj interface{}, st *store.Store) error {
 		tasks = append(tasks, store.NewPodTask(task.Timestamp, crdLabel, &state))
 	}
 
-	return (*st).SetPodTasks(crdLabel, tasks)
+	return errors.Wrap((*st).SetPodTasks(crdLabel, tasks), "failed to set pod tasks")
 }
 
 func getCRDAndLabel(obj interface{}) (*v1.PodConfiguration, string) {

@@ -1,6 +1,7 @@
 package node
 
 import (
+	"github.com/pkg/errors"
 	"log"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
@@ -13,18 +14,18 @@ import (
 func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh chan struct{}) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't get kubeconfig")
 	}
 
 	client, err := node.NewForConfig(cfg)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "couldn't create client from config for node informer")
 	}
 
 	client.WatchResources(func(obj interface{}) {
 		// Add function
 		nodeCfg := obj.(*v1.NodeConfiguration)
-		if getSelector(nodeCfg) == selector {
+		if node.GetSelector(nodeCfg) == selector {
 			err := enqueueNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
@@ -33,7 +34,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	}, func(_, obj interface{}) {
 		// Update function
 		nodeCfg := obj.(*v1.NodeConfiguration)
-		if getSelector(nodeCfg) == selector {
+		if node.GetSelector(nodeCfg) == selector {
 			err := enqueueNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
@@ -48,8 +49,8 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 }
 
 func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
-	if nodeCfg.Spec.State != nil {
-		SetNodeFlags(st, nodeCfg.Spec.State)
+	if nodeCfg.Spec.NodeConfigurationState != (v1.NodeConfigurationState{}) {
+		SetNodeFlags(st, &nodeCfg.Spec.NodeConfigurationState)
 	}
 
 	var tasks []*store.Task
@@ -58,12 +59,8 @@ func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
 	}
 
 	if err := (*st).SetNodeTasks(tasks); err != nil {
-		return err
+		return errors.Wrap(err, "setting node tasks failed")
 	}
 
 	return nil
-}
-
-func getSelector(cfg *v1.NodeConfiguration) string {
-	return cfg.Namespace + "/" + cfg.Name
 }

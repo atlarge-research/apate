@@ -3,6 +3,7 @@
 package watchdog
 
 import (
+	"github.com/pkg/errors"
 	"log"
 	"time"
 
@@ -18,11 +19,11 @@ func RemoveNodeWithUUID(uuid uuid.UUID, st *store.Store, cl *cluster.KubernetesC
 	log.Printf("Removing %s from the cluster", uuid)
 
 	if err := cl.RemoveNodeFromCluster("apatelet-" + uuid.String()); err != nil {
-		return err
+		return errors.Wrapf(err, "removing node with uuid from cluster: %v failed", uuid)
 	}
 
 	if err := (*st).RemoveNode(uuid); err != nil {
-		return err
+		return errors.Wrapf(err, "removing node with uuid: %v failed", uuid)
 	}
 
 	return nil
@@ -44,6 +45,8 @@ func StartWatchDog(delay time.Duration, st *store.Store, cl *cluster.KubernetesC
 					err := RemoveNodeWithUUID(kubelet.UUID, st, cl)
 					if err != nil {
 						log.Printf("error while removing apatelet from cluster: %v", err)
+					} else {
+						log.Printf("removed apatelet: %v from cluster", kubelet.UUID)
 					}
 				}
 			}

@@ -4,6 +4,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 	"os"
 	"os/signal"
@@ -84,29 +85,19 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Create crd informers
 	err = crdPod.CreatePodInformer(config, &st, stopInformer)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed creating crd pod informer")
 	}
+
 	err = node.CreateNodeInformer(config, &st, res.Selector, stopInformer)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed creating crd node informer")
 	}
 
 	// Setup health status
-	hc, err := health.GetClient(connectionInfo, res.UUID.String())
+	hc, err := startHealth(ctx, connectionInfo, res.UUID, stop)
 	if err != nil {
-		return errors.Wrap(err, "failed to get health client")
+		return errors.Wrap(err, "failed starting healthclient")
 	}
-	hc.SetStatus(healthpb.Status_UNKNOWN)
-	var retries int32 = 3
-	hc.StartStream(ctx, func(err error) {
-		if atomic.LoadInt32(&retries) < 1 {
-			// Stop after retries amount of errors
-			stop <- syscall.SIGTERM
-			return
-		}
-		log.Println(err)
-		atomic.AddInt32(&retries, -1)
-	})
 
 	// Start the Apatelet
 	nc, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st)
@@ -139,7 +130,11 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start serving request
-	go server.Serve()
+	go func() {
+		if err := server.Serve(); err != nil {
+			errch <- errors.Wrap(err, "apatelet server failed")
+		}
+	}()
 
 	// Start the scheduler if a scenario is already running
 	if time >= 0 {
@@ -151,7 +146,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Stop the server on signal or error
 	select {
 	case err := <-errch:
-		err = errors.Wrap(err, "Apatelet stopped because of an error")
+		err = errors.Wrap(err, "apatelet stopped because of an error")
 		log.Println(err)
 		return err
 	case <-stop:
@@ -189,6 +184,25 @@ func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *s
 	log.Println("Stopped Apatelet")
 
 	return nil
+}
+
+func startHealth(ctx context.Context, connectionInfo *service.ConnectionInfo, uuid uuid.UUID, stop chan os.Signal) (*health.Client, error) {
+	hc, err := health.GetClient(connectionInfo, uuid.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get health client")
+	}
+	hc.SetStatus(healthpb.Status_UNKNOWN)
+	var retries int32 = 3
+	hc.StartStream(ctx, func(err error) {
+		if atomic.LoadInt32(&retries) < 1 {
+			// Stop after retries amount of errors
+			stop <- syscall.SIGTERM
+			return
+		}
+		log.Println(err)
+		atomic.AddInt32(&retries, -1)
+	})
+	return hc, nil
 }
 
 func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {

@@ -38,7 +38,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 
 	// Set up expectations
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyEnabled, false).AnyTimes()
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil).AnyTimes()
 
 	var s store.Store = ms
 	sched := New(context.Background(), &s)
@@ -101,7 +101,7 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	}
 
 	// Set up expectations
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyEnabled, true).AnyTimes()
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil).AnyTimes()
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
 

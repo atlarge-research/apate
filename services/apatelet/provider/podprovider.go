@@ -3,7 +3,6 @@ package provider
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,13 +19,19 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
-// CreatePod takes a Kubernetes Pod and deploys it within the provider.
-func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
-	// TODO: Is this the proper way to check ctx?
+func checkContext(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
+		return nil
+	}
+}
+
+// CreatePod takes a Kubernetes Pod and deploys it within the provider.
+func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := checkContext(ctx); err != nil {
+		return err
 	}
 
 	return p.createOrUpdate(ctx, pod, events.PodCreatePodResponse, events.NodeCreatePodResponse)
@@ -72,11 +77,8 @@ func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
-	// TODO: Is this the proper way to check ctx?
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := checkContext(ctx); err != nil {
+		return err
 	}
 
 	if err := p.runLatency(ctx); err != nil {
@@ -109,11 +111,8 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 // GetPod retrieves a pod by label.
 func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
-	// TODO: Is this the proper way to check ctx?
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+	if err := checkContext(ctx); err != nil {
+		return nil, err
 	}
 
 	if err := p.runLatency(ctx); err != nil {
@@ -148,14 +147,14 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return p, nil
 	}
 
-	return nil, fmt.Errorf("invalid pod: %v", pod)
+	return nil, errors.Errorf("invalid pod: %v", pod)
 }
 
 func podStatusToPhase(status interface{}) corev1.PodPhase {
 	switch status {
 	case scenario.PodStatusPending:
 		return corev1.PodPending
-	case scenario.ResponseUnset:
+	case scenario.PodStatusUnset:
 		fallthrough // act as a normal pod
 	case scenario.PodStatusRunning:
 		return corev1.PodRunning
@@ -172,11 +171,8 @@ func podStatusToPhase(status interface{}) corev1.PodPhase {
 
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
-	// TODO: Is this the proper way to check ctx?
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+	if err := checkContext(ctx); err != nil {
+		return nil, err
 	}
 
 	if err := p.runLatency(ctx); err != nil {
@@ -226,16 +222,13 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		return status, nil
 	}
 
-	return nil, fmt.Errorf("invalid podstatus: %v", pod)
+	return nil, errors.Errorf("invalid podstatus: %v", pod)
 }
 
 // GetPods retrieves a list of all pods running.
 func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
-	// TODO: Is this the proper way to check ctx?
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+	if err := checkContext(ctx); err != nil {
+		return nil, err
 	}
 
 	if err := p.runLatency(ctx); err != nil {
@@ -264,7 +257,7 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 		return pods, nil
 	}
 
-	return nil, fmt.Errorf("invalid pods: %v", pod)
+	return nil, errors.Errorf("invalid pods: %v", pod)
 }
 
 // GetContainerLogs retrieves the log of a specific container.
@@ -280,19 +273,6 @@ func (p *Provider) RunInContainer(context.Context, string, string, string, []str
 }
 
 func (p *Provider) runLatency(ctx context.Context) error {
-	val, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyEnabled)
-	if err != nil {
-		return errors.Wrap(err, "failed to get node flag (enabled)")
-	}
-
-	y, ok := val.(bool)
-	if !ok {
-		return errors.New("NodeAddedLatencyEnabled is not a bool")
-	}
-	if !y {
-		return nil
-	}
-
 	ims, err := (*p.store).GetNodeFlag(events.NodeAddedLatencyMsec)
 	if err != nil {
 		return errors.Wrap(err, "failed to get node flag (msec)")

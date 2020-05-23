@@ -2,8 +2,7 @@ package provider
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"strconv"
 
@@ -21,28 +20,29 @@ import (
 const (
 	memThresh  = 0.85
 	diskThresh = 0.85
+	diskFullThresh = 0.96
 )
 
 type nodeConditions struct {
-	ready          condition.Condition
-	outOfDisk      condition.Condition
-	memoryPressure condition.Condition
-	diskPressure   condition.Condition
+	ready          condition.NodeCondition
+	outOfDisk      condition.NodeCondition
+	memoryPressure condition.NodeCondition
+	diskPressure   condition.NodeCondition
 
 	// Unused conditions, may be implement in a later version
-	networkUnavailable condition.Condition
-	pidPressure        condition.Condition
+	networkUnavailable condition.NodeCondition
+	pidPressure        condition.NodeCondition
 }
 
 func (p *Provider) getPingResponse() (scenario.Response, error) {
 	rawFlag, err := (*p.store).GetNodeFlag(events.NodePingResponse)
 	if err != nil {
-		return scenario.ResponseUnset, fmt.Errorf("unable to retrieve ping flag: %v", err)
+		return scenario.ResponseUnset, errors.Errorf("unable to retrieve ping flag: %v", err)
 	}
 
 	flag, ok := rawFlag.(scenario.Response)
 	if !ok {
-		return scenario.ResponseUnset, fmt.Errorf("invalid ping flag: %v", rawFlag)
+		return scenario.ResponseUnset, errors.Errorf("invalid ping flag: %v", rawFlag)
 	}
 
 	return flag, nil
@@ -52,7 +52,7 @@ func (p *Provider) getPingResponse() (scenario.Response, error) {
 func (p *Provider) Ping(ctx context.Context) error {
 	flag, err := p.getPingResponse()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting ping response failed")
 	}
 
 	switch flag {
@@ -64,9 +64,9 @@ func (p *Provider) Ping(ctx context.Context) error {
 		<-ctx.Done()
 		return ctx.Err()
 	case scenario.ResponseError:
-		return errors.New("ping expected error")
+		return errors.Errorf("ping expected error")
 	default:
-		return fmt.Errorf("invalid response flag: %v", flag)
+		return errors.Errorf("invalid response flag: %v", flag)
 	}
 }
 
@@ -104,7 +104,7 @@ func (p *Provider) updateConditions(ctx context.Context) {
 	// Set bools
 	memPressure := float64(*stats.Node.Memory.UsageBytes) > float64(p.resources.Memory)*memThresh
 	diskPressure := float64(*stats.Node.Fs.UsedBytes) > float64(p.resources.Storage)*diskThresh
-	diskFull := float64(*stats.Node.Fs.UsedBytes) > float64(p.resources.Storage)*0.96
+	diskFull := float64(*stats.Node.Fs.UsedBytes) > float64(p.resources.Storage)*diskFullThresh
 
 	// Set conditions and update node
 	p.node.Status.Conditions = []corev1.NodeCondition{
@@ -151,7 +151,7 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			"kubernetes.io/role":     p.nodeInfo.Role,
 			"kubernetes.io/hostname": p.nodeInfo.Name,
 			"metrics_port":           strconv.Itoa(p.nodeInfo.MetricsPort),
-			"apate":                  p.nodeInfo.Spec,
+			"apate":                  p.nodeInfo.Selector,
 		},
 	}
 }
