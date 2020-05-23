@@ -38,7 +38,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 
 	// Set up expectations
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil).AnyTimes()
+	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(0))
 
 	var s store.Store = ms
 	sched := New(context.Background(), &s)
