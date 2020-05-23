@@ -4,7 +4,6 @@ package scheduler
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -15,6 +14,9 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+
+	"github.com/pkg/errors"
+
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

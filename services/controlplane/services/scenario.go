@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/sync/errgroup"
 
@@ -45,17 +47,20 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	}
 
 	if err = (*s.store).SetApateletScenario(apateletScenario); err != nil {
+		err = errors.Wrap(err, "failed to get Apatelet scenario")
 		log.Println(err)
 		return nil, err
 	}
 
 	if err = startOnNodes(ctx, nodes, apateletScenario); err != nil {
+		err = errors.Wrap(err, "failed to get start scenario on nodes")
 		log.Println(err)
 		return nil, err
 	}
 
 	cfg, err := (*s.store).GetKubeConfig()
 	if err != nil {
+		err = errors.Wrap(err, "failed to get get Kubeconfig")
 		log.Println(err)
 		return nil, err
 	}
@@ -63,6 +68,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 	// TODO: This is probably very flaky
 	err = kubectl.Create(config.ResourceConfig, &cfg)
 	if err != nil {
+		err = errors.Wrap(err, "failed to create resource config")
 		log.Println(err)
 		return nil, err
 	}
@@ -76,16 +82,20 @@ func startOnNodes(ctx context.Context, nodes []store.Node, apateletScenario *api
 	for i := range nodes {
 		node := nodes[i]
 		errs.Go(func() error {
-			scenarioClient := apatelet.GetScenarioClient(&node.ConnectionInfo)
-			_, err := scenarioClient.Client.StartScenario(ctx, apateletScenario)
+			scenarioClient, err := apatelet.GetScenarioClient(&node.ConnectionInfo)
+			if err != nil {
+				return errors.Wrap(err, "failed to get scenario client")
+			}
+
+			_, err = scenarioClient.Client.StartScenario(ctx, apateletScenario)
 
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to start scenario on Apatelet with uuid %v", node.UUID.String())
 			}
 
 			return scenarioClient.Conn.Close()
 		})
 	}
 
-	return errs.Wait()
+	return errors.Wrap(errs.Wait(), "failed to start scenario on nodes")
 }

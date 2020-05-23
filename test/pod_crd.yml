@@ -1,8 +1,0 @@
-apiVersion: apate.opendc.org/v1
-kind: PodConfiguration
-metadata:
-    name: crd-deployment
-spec:
-    direct_task:
-        pod_resources:
-            cpu: 1000

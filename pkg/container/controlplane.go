@@ -3,6 +3,8 @@ package container
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/docker/docker/api/types/mount"
@@ -26,7 +28,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	port, err := nat.NewPort("tcp", cpEnv.Port)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create docker port for Control plane")
 	}
 
 	// Set spawn information
@@ -63,12 +65,12 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 		}, &network.NetworkingConfig{}, "apate-cp")
 
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create Docker container for control plane")
 		}
 
 		return cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{})
 	})
 
 	// Spawn control plane
-	return HandleSpawnContainers(ctx, cli, spawnInfo)
+	return errors.Wrap(HandleSpawnContainers(ctx, cli, spawnInfo), "failed to spawn containers for control plane")
 }

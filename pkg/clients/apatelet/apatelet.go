@@ -1,6 +1,7 @@
 package apatelet
 
 import (
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
@@ -14,10 +15,14 @@ type ApateClient struct {
 }
 
 // GetApateletClient returns a new apatelet handler
-func GetApateletClient(info *service.ConnectionInfo) *ApateClient {
-	conn := service.CreateClientConnection(info)
+func GetApateletClient(info *service.ConnectionInfo) (*ApateClient, error) {
+	conn, err := service.CreateClientConnection(info)
+	if err != nil {
+		return nil, errors.Wrap(err, "Creating Client Connection Info Failed")
+	}
+
 	return &ApateClient{
 		Conn:   conn,
 		Client: apatelet.NewApateletClient(conn),
-	}
+	}, nil
 }

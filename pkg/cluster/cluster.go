@@ -3,6 +3,7 @@
 package cluster
 
 import (
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -22,13 +23,13 @@ type KubernetesCluster struct {
 func KubernetesClusterFromKubeConfig(kubeConfig *kubeconfig.KubeConfig) (KubernetesCluster, error) {
 	restconfig, err := kubeConfig.GetConfig()
 	if err != nil {
-		return KubernetesCluster{}, err
+		return KubernetesCluster{}, errors.Wrap(err, "failed to get rest config from Kubeconfig")
 	}
 
 	clientSet, err := kubernetes.NewForConfig(restconfig)
 
 	if err != nil {
-		return KubernetesCluster{}, err
+		return KubernetesCluster{}, errors.Wrap(err, "failed to create kubernetes cluster from config")
 	}
 
 	return KubernetesCluster{
@@ -52,7 +53,7 @@ func (c KubernetesCluster) ManagedCluster(name string, manager Manager) ManagedC
 func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
 	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
 	}
 
 	return len(pods.Items), nil
@@ -60,14 +61,14 @@ func (c KubernetesCluster) GetNumberOfPods(namespace string) (int, error) {
 
 // RemoveNodeFromCluster removes a node with a given name from the cluster.
 func (c KubernetesCluster) RemoveNodeFromCluster(nodename string) error {
-	return c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{})
+	return errors.Wrap(c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{}), "failed to remove node from cluster")
 }
 
 // GetNumberOfPendingPods will return the number of pods in the pending state.
 func (c KubernetesCluster) GetNumberOfPendingPods(namespace string) (int, error) {
 	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
 	if err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
 	}
 
 	cnt := 0

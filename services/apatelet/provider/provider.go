@@ -12,6 +12,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
 	cli "github.com/virtual-kubelet/node-cli"
@@ -45,7 +47,7 @@ type Provider struct {
 func CreateProvider(ctx context.Context, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get options from env")
 	}
 
 	name := baseName + "-" + res.UUID.String()
@@ -65,7 +67,11 @@ func CreateProvider(ctx context.Context, res *scenario.NodeResources, k8sPort in
 		cli.WithBaseOpts(op),
 	)
 
-	return node, err
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create new virtual kubelet provider")
+	}
+
+	return node, nil
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.

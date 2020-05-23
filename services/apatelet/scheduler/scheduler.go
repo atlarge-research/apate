@@ -2,6 +2,8 @@
 package scheduler
 
 import (
+	"github.com/pkg/errors"
+
 	"context"
 	"time"
 
@@ -72,7 +74,7 @@ func (s *Scheduler) runner(ech chan error) {
 	if err != nil {
 		// TODO: Check error type properly @jona, I know this is the bad
 		if err.Error() != "no tasks left" {
-			ech <- err
+			ech <- errors.Wrap(err, "failed to peek at the next task in the store")
 		}
 		return
 	}
@@ -80,7 +82,7 @@ func (s *Scheduler) runner(ech chan error) {
 	if now >= relativeTime+s.startTime {
 		task, err := (*s.store).PopTask()
 		if err != nil {
-			ech <- err
+			ech <- errors.Wrap(err, "failed to pop the next task from the store")
 			return
 		}
 
@@ -94,14 +96,14 @@ func (s *Scheduler) runner(ech chan error) {
 func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
 	isPod, err := t.IsPod()
 	if err != nil {
-		ech <- err
+		ech <- errors.Wrap(err, "failed to determine task type")
 		return
 	}
 
 	if isPod {
 		err := pod.SetPodFlags(s.store, t.PodTask.Label, t.PodTask.State)
 		if err != nil {
-			ech <- err
+			ech <- errors.Wrap(err, "failed to set pod flags")
 		}
 	} else {
 		node.SetNodeFlags(s.store, t.NodeTask.State)
