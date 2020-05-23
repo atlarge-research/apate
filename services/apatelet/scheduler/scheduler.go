@@ -3,7 +3,6 @@ package scheduler
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
@@ -19,7 +18,6 @@ type Scheduler struct {
 	ctx   context.Context
 
 	readyCh chan struct{}
-	//updateCh chan struct{}
 
 	prevT     int64
 	startTime int64
@@ -39,7 +37,7 @@ func New(ctx context.Context, st *store.Store) Scheduler {
 // EnableScheduler enables the scheduler
 // this will wait until StartScheduler() is called, after that it
 // will poll the store queue for changes and write errors to a 3-buffered channel
-func (s *Scheduler) EnableScheduler() chan error {
+func (s *Scheduler) EnableScheduler() <-chan error {
 	ech := make(chan error, 3)
 
 	go func() {
@@ -53,16 +51,8 @@ func (s *Scheduler) EnableScheduler() chan error {
 			default:
 			}
 
-			// Run iteration, if not done wait for context done or an update
-			if done := s.runner(ech); done {
-				log.Printf("scheduler done, waiting for update")
-				//select {
-				//case <-s.ctx.Done():
-				//	return
-				//case <-s.updateCh:
-				//}
-				log.Printf("scheduler update received")
-			}
+			// Run iteration
+			s.runner(ech)
 		}
 	}()
 
@@ -75,33 +65,23 @@ func (s *Scheduler) StartScheduler(startTime int64) {
 	s.readyCh <- struct{}{}
 }
 
-// WakeScheduler wakes up the scheduler in case it was done
-func (s *Scheduler) WakeScheduler() {
-	//select {
-	//case s.updateCh <- struct{}{}:
-	//default:
-	//}
-}
-
-func (s *Scheduler) runner(ech chan error) bool {
+func (s *Scheduler) runner(ech chan error) {
 	now := time.Now().UnixNano()
 
 	relativeTime, err := (*s.store).PeekTask()
 	if err != nil {
 		// TODO: Check error type properly @jona, I know this is the bad
-		if err.Error() == "no tasks left" {
-			return true
+		if err.Error() != "no tasks left" {
+			ech <- err
 		}
-
-		ech <- err
-		return false
+		return
 	}
 
 	if now >= relativeTime+s.startTime {
 		task, err := (*s.store).PopTask()
 		if err != nil {
 			ech <- err
-			return false
+			return
 		}
 
 		if relativeTime >= s.prevT {
@@ -109,8 +89,6 @@ func (s *Scheduler) runner(ech chan error) bool {
 			go s.taskHandler(ech, task)
 		}
 	}
-
-	return false
 }
 
 func (s Scheduler) taskHandler(ech chan error, t *store.Task) {

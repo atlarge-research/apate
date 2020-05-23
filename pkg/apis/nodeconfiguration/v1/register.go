@@ -4,12 +4,10 @@ import (
 	"io/ioutil"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
 )
@@ -38,7 +36,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&NodeConfigurationList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
-	metav1.AddToGroupVersion(scheme, schemeGroupVersionInternal)
+	//metav1.AddToGroupVersion(scheme, schemeGroupVersionInternal)
+
 	return nil
 }
 

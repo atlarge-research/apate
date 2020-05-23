@@ -10,7 +10,7 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, cb func(), selector string, stopCh chan struct{}) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh chan struct{}) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -25,7 +25,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, cb func(
 		// Add function
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if getSelector(nodeCfg) == selector {
-			err := enqueueNodeTasks(nodeCfg, st, cb)
+			err := enqueueNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
 			}
@@ -34,7 +34,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, cb func(
 		// Update function
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if getSelector(nodeCfg) == selector {
-			err := enqueueNodeTasks(nodeCfg, st, cb)
+			err := enqueueNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
 			}
@@ -47,7 +47,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, cb func(
 	return nil
 }
 
-func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store, cb func()) error {
+func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
 	if nodeCfg.Spec.State != nil {
 		SetNodeFlags(st, nodeCfg.Spec.State)
 	}
@@ -61,8 +61,6 @@ func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store, cb func())
 		return err
 	}
 
-	// Notify of update
-	cb()
 	return nil
 }
 
