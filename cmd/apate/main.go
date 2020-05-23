@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
 
