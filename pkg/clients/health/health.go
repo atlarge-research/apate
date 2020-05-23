@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
@@ -28,22 +30,26 @@ const (
 )
 
 // GetClient creates a new health client
-func GetClient(info *service.ConnectionInfo, uuid string) *Client {
-	conn := service.CreateClientConnection(info)
+func GetClient(info *service.ConnectionInfo, uuid string) (*Client, error) {
+	conn, err := service.CreateClientConnection(info)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create GRPC health client")
+	}
 
 	return &Client{
 		Conn:   conn,
 		Client: health.NewHealthClient(conn),
 		uuid:   uuid,
 		status: health.Status_UNKNOWN,
-	}
+	}, nil
 }
 
 // StartStream starts the bidirectional health stream, errCallback is called upon any error
 func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 	stream, err := c.Client.HealthStream(ctx)
 	if err != nil {
-		errCallback(err)
+		errCallback(errors.Wrap(err, "failed to set up health stream"))
 	}
 
 	// Send health status
@@ -57,7 +63,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 			c.statusLock.RUnlock()
 
 			if err != nil {
-				errCallback(err)
+				errCallback(errors.Wrap(err, "failed to send health status message over stream"))
 			}
 
 			select {
@@ -76,7 +82,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 			go func() {
 				_, err := stream.Recv()
 				if err != nil {
-					errCallback(err)
+					errCallback(errors.Wrap(ctx.Err(), "health stream timed out"))
 				}
 				r <- true
 			}()
@@ -86,7 +92,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 				// On context cancel stop
 				return
 			case <-time.After(time.Second * recvTimeout):
-				errCallback(ctx.Err())
+				errCallback(errors.Errorf("health stream died"))
 			case <-r:
 			}
 		}

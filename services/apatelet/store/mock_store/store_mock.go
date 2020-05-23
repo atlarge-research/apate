@@ -5,9 +5,11 @@
 package mock_store
 
 import (
-	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+
+	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 // MockStore is a mock of Store interface

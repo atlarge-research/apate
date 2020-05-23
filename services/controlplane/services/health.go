@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
 
@@ -70,13 +72,13 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 		}
 
 		if err = (*h.store).SetNodeStatus(id, req.Status); err != nil {
-			log.Println(err)
+			log.Printf("%v\n", err)
 		}
 	}
 
 	// If the loop is broken -> node status unknown
 	if err := (*h.store).SetNodeStatus(id, health.Status_UNKNOWN); err != nil {
-		log.Println(err)
+		log.Println(errors.Wrap(err, "failed to set node status"))
 		return nil
 	}
 

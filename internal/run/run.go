@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/pkg/errors"
+
 	"github.com/phayes/freeport"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
@@ -21,11 +23,11 @@ func StartApatelets(ctx context.Context, amountOfNodes int, environment env.Apat
 
 	switch runType {
 	case env.Docker:
-		return useDocker(ctx, amountOfNodes, environment)
+		return errors.Wrap(useDocker(ctx, amountOfNodes, environment), "failed to use docker to start Apatelets")
 	case env.Routine:
-		return useRoutines(amountOfNodes, environment)
+		return errors.Wrap(useRoutines(amountOfNodes, environment), "failed to use goroutines to start Apatelets")
 	default:
-		return fmt.Errorf("unknown run type: %v", runType)
+		return errors.Errorf("unknown run type: %v", runType)
 	}
 }
 
@@ -35,22 +37,23 @@ func useDocker(ctx context.Context, amountOfNodes int, environment env.ApateletE
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)
 
 	// Spawn the apatelets
-	return container.SpawnApateletContainers(ctx, amountOfNodes, pullPolicy, environment)
+	return errors.Wrap(container.SpawnApateletContainers(ctx, amountOfNodes, pullPolicy, environment), "failed to spawn Apatelet docker containers")
 }
 
 func useRoutines(amountOfNodes int, environment env.ApateletEnvironment) error {
 	if err := apateRun.SetCerts(); err != nil {
-		return err
+		return errors.Wrap(err, "failed to set certificates")
 	}
 
 	readyCh := make(chan bool)
 
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
-		ports, err := freeport.GetFreePorts(3)
+		const numports = 3
+		ports, err := freeport.GetFreePorts(numports)
 
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get %v free ports", numports)
 		}
 
 		apateletEnv.ListenPort = ports[0]

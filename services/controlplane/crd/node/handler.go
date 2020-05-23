@@ -163,8 +163,13 @@ func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector
 		kubelet := kubelet
 		go func() {
 			defer wg.Done()
-			client := apatelet.GetApateletClient(&kubelet.ConnectionInfo)
-			_, err := client.Client.StopApatelet(ctx, new(empty.Empty))
+			client, err := apatelet.GetApateletClient(&kubelet.ConnectionInfo)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+
+			_, err = client.Client.StopApatelet(ctx, new(empty.Empty))
 			if err != nil {
 				log.Printf("failed to stop apatelet %s: %v", kubelet.UUID, err)
 				return

@@ -2,11 +2,12 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"testing"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
+	"github.com/pkg/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

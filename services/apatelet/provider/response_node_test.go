@@ -2,11 +2,12 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"testing"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
+	"github.com/pkg/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -71,8 +72,7 @@ func TestNodeStoreError1(t *testing.T) {
 	)
 
 	// Assert
-	assert.NotNil(t, err)
-	assert.EqualError(t, genericError, err.Error())
+	assert.Error(t, err)
 	assert.Nil(t, out)
 
 	ctrl.Finish()

@@ -3,13 +3,13 @@ package store
 
 import (
 	"container/heap"
-	"errors"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/throw"
 )
 
 // Store represents the state of the apatelet
@@ -47,9 +47,6 @@ type Store interface {
 	SetPodFlag(string, events.PodEventFlag, interface{})
 }
 
-// FlagNotFoundError is raised whenever a flag is not set
-const FlagNotFoundError = throw.ConstException("flag not found")
-
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
 
@@ -83,7 +80,7 @@ func (s *store) setTasksOfType(tasks []*Task, check TaskTypeCheck) error {
 	for i, task := range s.queue.tasks {
 		typeCheck, err := check(task)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to determine task type")
 		}
 
 		if typeCheck {
@@ -140,7 +137,7 @@ func (s *store) RemovePodTasks(label string) error {
 
 		isPod, err := task.IsPod()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to determine task type")
 		}
 
 		if isPod && task.PodTask.Label == label {
@@ -202,7 +199,7 @@ func (s *store) GetNodeFlag(id events.NodeEventFlag) (interface{}, error) {
 		return dv, nil
 	}
 
-	return nil, FlagNotFoundError
+	return nil, errors.New("flag not found in get node flag")
 }
 
 func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
@@ -224,7 +221,7 @@ func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{},
 		return dv, nil
 	}
 
-	return nil, FlagNotFoundError
+	return nil, errors.New("flag not found in get pod flag")
 }
 
 func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface{}) {

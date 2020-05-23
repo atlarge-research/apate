@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -24,7 +26,7 @@ func RegisterStatusService(server *service.GRPCServer, store *store.Store) {
 func (s *statusService) Status(_ context.Context, _ *empty.Empty) (*controlplane.ClusterStatus, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get nodes list")
 	}
 
 	// OPTIMISE

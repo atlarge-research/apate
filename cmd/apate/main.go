@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -179,7 +180,11 @@ func main() {
 }
 
 func getKubeConfig(ctx context.Context, address string, port int) error {
-	client := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false))
+	client, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false))
+	if err != nil {
+		return err
+	}
+
 	cfg, err := client.GetKubeConfig(ctx)
 
 	if err != nil {
@@ -211,7 +216,7 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	fmt.Print("Waiting for control plane to be up ")
 
 	// Polling control plane until up
-	statusClient := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
+	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
 	defer cancel()
 	err = statusClient.WaitForControlPlane(ctx)
@@ -245,7 +250,10 @@ func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation st
 	}
 
 	// Initial call: load the scenario
-	scenarioClient := controlplane.GetScenarioClient(info)
+	scenarioClient, err := controlplane.GetScenarioClient(info)
+	if err != nil {
+		return errors.Wrap(err, "Failed to get scenario client")
+	}
 
 	// Next: poll amount of healthy nodes
 	trigger := make(chan bool)
@@ -255,8 +263,11 @@ func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation st
 		trigger <- true
 	}()
 
-	statusClient := controlplane.GetStatusClient(info)
-	err := statusClient.WaitForTrigger(ctx, trigger, func(healthy int) {
+	statusClient, err := controlplane.GetStatusClient(info)
+	if err != nil {
+		return err
+	}
+	err = statusClient.WaitForTrigger(ctx, trigger, func(healthy int) {
 		fmt.Printf("\rGot %d healthy apatelets - Press enter to start scenario...", healthy)
 	})
 	if err != nil {

@@ -1,10 +1,10 @@
 package store
 
 import (
-	"errors"
-
 	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+
+	"github.com/pkg/errors"
 )
 
 // TaskTypeCheck is function which is able to determine if the given task is of a certain type
