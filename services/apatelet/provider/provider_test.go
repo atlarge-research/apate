@@ -17,7 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -38,7 +38,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
 
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, cluster.NodeInfo{}, &st)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, kubernetes.NodeInfo{}, &st)
 
 	fakeNode := corev1.Node{}
 
@@ -230,6 +230,7 @@ func TestGetPods(t *testing.T) {
 
 func TestGetPodStatus(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
@@ -260,7 +261,6 @@ func TestGetPodStatus(t *testing.T) {
 	// assert
 	assert.NoError(t, err)
 	assert.Equal(t, ps.Phase, corev1.PodSucceeded)
-	ctrl.Finish()
 }
 
 func TestNewProvider(t *testing.T) {
@@ -281,7 +281,7 @@ func TestNewProvider(t *testing.T) {
 	}
 
 	cfg := provider.InitConfig{}
-	ni := cluster.NewNodeInfo("a", "b", "c", "d", "e", 4242)
+	ni := kubernetes.NewNodeInfo("a", "b", "c", "d", "e", 4242)
 
 	var s store.Store = ms
 

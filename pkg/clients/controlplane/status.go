@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
 // StatusClient is the client for the StatusService containing the connection and gRPC client
@@ -56,8 +56,8 @@ func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
 }
 
 // WaitForTrigger polls the server every second to retrieve the latest amount of healthy nodes and calls the
-// given update function after every poll
-func (c *StatusClient) WaitForTrigger(ctx context.Context, trigger chan bool, update func(int)) error {
+// given update function after every poll until the trigger channel is written to
+func (c *StatusClient) WaitForTrigger(ctx context.Context, trigger <-chan struct{}, update func(int)) error {
 	for {
 		select {
 		case <-trigger:

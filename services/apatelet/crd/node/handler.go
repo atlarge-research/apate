@@ -6,14 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh chan struct{}, cb func()) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh <-chan struct{}, cb func()) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get kubeconfig")

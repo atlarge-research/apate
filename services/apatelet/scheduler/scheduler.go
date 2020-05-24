@@ -88,7 +88,7 @@ func (s *Scheduler) WakeScheduler() {
 	}
 }
 
-func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
+func (s *Scheduler) runner(ech chan<- error) (bool, time.Duration) {
 	now := time.Now()
 
 	relativeTime, taskFound, err := (*s.store).PeekTask()
@@ -136,7 +136,7 @@ func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
 	return false, 0
 }
 
-func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
+func (s Scheduler) taskHandler(ech chan<- error, t *store.Task) {
 	isPod, err := t.IsPod()
 	if err != nil {
 		ech <- errors.Wrap(err, "failed to determine task type")

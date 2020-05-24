@@ -7,7 +7,7 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
 // ScenarioClient is the client for the ScenarioHandler containing the connection and gRPC client

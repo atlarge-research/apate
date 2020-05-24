@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/condition"
@@ -81,7 +81,7 @@ func TestConfigureNode(t *testing.T) {
 	prov := Provider{
 		Pods:  pm,
 		Store: &st,
-		NodeInfo: cluster.NodeInfo{
+		NodeInfo: kubernetes.NodeInfo{
 			NodeType:    "apate",
 			Role:        "worker",
 			Name:        "apate-x",

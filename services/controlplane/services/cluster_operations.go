@@ -7,30 +7,30 @@ import (
 	"log"
 	"net"
 
-	"github.com/google/uuid"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/watchdog"
+	"github.com/google/uuid"
 
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 
 	"google.golang.org/grpc/peer"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
 type clusterOperationService struct {
 	store             *store.Store
-	kubernetesCluster cluster.KubernetesCluster
+	kubernetesCluster kubernetes.Cluster
 }
 
 // RegisterClusterOperationService registers a new clusterOperationService with the given gRPC server
-func RegisterClusterOperationService(server *service.GRPCServer, store *store.Store, kubernetesCluster cluster.KubernetesCluster) {
+func RegisterClusterOperationService(server *service.GRPCServer, store *store.Store, kubernetesCluster kubernetes.Cluster) {
 	controlplane.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
 		store:             store,
 		kubernetesCluster: kubernetesCluster,
@@ -103,7 +103,7 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 		return nil, errors.Wrap(err, "failed to remove node from cluster")
 	}
 
-	err = watchdog.RemoveNodeWithUUID(id, s.store, &s.kubernetesCluster)
+	err = cluster.RemoveNodeWithUUID(id, s.store, &s.kubernetesCluster)
 	if err != nil {
 		return nil, errors.Wrap(err, "removing node with uuid during leave cluster failed")
 	}
@@ -112,10 +112,10 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 }
 
 func (s *clusterOperationService) GetKubeConfig(_ context.Context, _ *empty.Empty) (*controlplane.KubeConfig, error) {
-	cfg, err := ioutil.ReadFile("/tmp/apate/config-ext")
+	cfg, err := ioutil.ReadFile("/tmp/apate/config")
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read Kubeconfig from /tmp/apate/config-ext")
+		return nil, errors.Wrap(err, "failed to read Kubeconfig from /tmp/apate/config")
 	}
 
 	return &controlplane.KubeConfig{Config: cfg}, nil

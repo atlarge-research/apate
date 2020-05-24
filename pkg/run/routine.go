@@ -1,0 +1,52 @@
+package run
+
+import (
+	"context"
+	"log"
+
+	"github.com/phayes/freeport"
+	"github.com/pkg/errors"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	apateRun "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
+)
+
+// RoutineRunner spawns apatelets using go routines
+type RoutineRunner struct{}
+
+// SpawnApatelets spawns apatelets using go routines
+func (d RoutineRunner) SpawnApatelets(_ context.Context, amountOfNodes int, environment env.ApateletEnvironment, _ ...interface{}) error {
+	if err := apateRun.SetCerts(); err != nil {
+		return errors.Wrap(err, "failed to set certificates")
+	}
+
+	readyCh := make(chan struct{})
+
+	for i := 0; i < amountOfNodes; i++ {
+		apateletEnv := environment
+		const numports = 3
+		ports, err := freeport.GetFreePorts(numports)
+
+		if err != nil {
+			return errors.Wrapf(err, "failed to get %v free ports", numports)
+		}
+
+		apateletEnv.ListenPort = ports[0]
+
+		go func() {
+			// TODO: Add retry logic
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("Apatelet failed to start: %v\n", r)
+				}
+			}()
+			err := apateRun.StartApatelet(apateletEnv, ports[1], ports[2], readyCh)
+			if err != nil {
+				log.Printf("Apatelet failed to start: %v\n", err)
+			}
+		}()
+
+		<-readyCh
+	}
+	return nil
+}

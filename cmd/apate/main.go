@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -21,8 +20,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
 
 const (
@@ -40,10 +39,16 @@ func main() {
 	var controlPlaneAddress string
 	var controlPlanePort int
 	var controlPlaneTimeout int
-	var pullPolicy env.PullPolicy
+
+	var apateletRunType string
+	var pullPolicyControlPlane string
+	var pullPolicyCreate string
 
 	ctx := context.Background()
-	cpEnv := env.DefaultControlPlaneEnvironment()
+	cpEnv, err := env.DefaultControlPlaneEnvironment()
+	if err != nil {
+		log.Fatal("error while creating default control plane environment", err)
+	}
 
 	app := &cli.App{
 		Name:  "apate-cli",
@@ -84,28 +89,28 @@ func main() {
 				Name:  "create",
 				Usage: "Creates a local control plane",
 				Action: func(c *cli.Context) error {
-					return errors.Wrap(createControlPlane(ctx, cpEnv, controlPlaneTimeout, pullPolicy), "failed to create control plane")
+					return errors.Wrap(createControlPlane(ctx, cpEnv, controlPlaneTimeout, pullPolicyCreate, apateletRunType, pullPolicyControlPlane), "failed to create control plane")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:        "address",
 						Usage:       "Listen address of control plane",
-						Destination: &cpEnv.Address,
-						Value:       cpEnv.Address,
+						Destination: &cpEnv.ListenAddress,
+						Value:       cpEnv.ListenAddress,
 						Required:    false,
 					},
-					&cli.StringFlag{
+					&cli.IntFlag{
 						Name:        "port",
 						Usage:       "The port of the control plane",
-						Destination: &cpEnv.Port,
-						Value:       cpEnv.Port,
+						Destination: &cpEnv.ListenPort,
+						Value:       cpEnv.ListenPort,
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "config",
 						Usage:       "Manager config of cluster manager",
-						Destination: &cpEnv.ManagerConfig,
-						Value:       cpEnv.ManagerConfig,
+						Destination: &cpEnv.ManagerConfigLocation,
+						Value:       cpEnv.ManagerConfigLocation,
 						Required:    false,
 					},
 					&cli.StringFlag{
@@ -118,15 +123,15 @@ func main() {
 					&cli.StringFlag{
 						Name:        "docker-policy-cp",
 						Usage:       "Docker pull policy for control plane",
-						Destination: &cpEnv.DockerPolicy,
-						Value:       cpEnv.DockerPolicy,
+						Destination: &pullPolicyControlPlane,
+						Value:       string(cpEnv.DockerPolicy),
 						Required:    false,
 					},
 					&cli.StringFlag{
 						Name:        "docker-policy",
 						Usage:       "Docker pull policy used for creating the control plane",
-						Destination: &pullPolicy,
-						Value:       env.DefaultPullPolicy,
+						Destination: &pullPolicyCreate,
+						Value:       string(env.DefaultPullPolicy),
 						Required:    false,
 					},
 					&cli.IntFlag{
@@ -139,11 +144,11 @@ func main() {
 					&cli.StringFlag{
 						Name:        "runtype",
 						Usage:       "How the control plane runs new apatelets. Can be DOCKER or ROUTINE.",
-						Destination: &cpEnv.ApateletRunType,
-						Value:       cpEnv.ApateletRunType,
+						Destination: &apateletRunType,
+						Value:       string(cpEnv.ApateletRunType),
 						Required:    false,
 					},
-					&cli.StringFlag{
+					&cli.BoolFlag{
 						Name:        "prometheus-enabled",
 						Usage:       "If the control plane start a Prometheus stack. Can be TRUE or FALSE.",
 						Destination: &cpEnv.PrometheusStackEnabled,
@@ -178,7 +183,7 @@ func main() {
 		},
 	}
 
-	err := app.Run(os.Args)
+	err = app.Run(os.Args)
 	if err != nil {
 		_, _ = color.New(color.FgRed).Printf("FAILED\nERROR: ")
 		fmt.Printf("%+v\n", err)
@@ -205,14 +210,22 @@ func printKubeConfig(ctx context.Context, address string, port int) error {
 	return nil
 }
 
-func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, timeout int, pullPolicy env.PullPolicy) error {
+func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, timeout int, pullPolicy, pullPolicyControlPlane, apateletRunType string) error {
 	fmt.Print("Creating control plane container ")
-	port, err := strconv.Atoi(cpEnv.Port)
-	if err != nil {
-		return errors.Wrap(err, "converting control plane port to integer failed")
+
+	pp := env.PullPolicy(pullPolicy)
+	if !pp.Valid() {
+		return errors.Errorf("invalid pull policy %v", cpEnv.DockerPolicy)
 	}
 
-	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, cpEnv)
+	cpEnv.DockerPolicy = env.PullPolicy(pullPolicyControlPlane)
+	if !cpEnv.DockerPolicy.Valid() {
+		return errors.Errorf("invalid pull policy for control plane %v", cpEnv.DockerPolicy)
+	}
+
+	cpEnv.ApateletRunType = env.RunType(apateletRunType)
+
+	err := container.SpawnControlPlaneContainer(ctx, pp, cpEnv)
 	if err != nil {
 		return errors.Wrap(err, "couldn't spawn control plane container")
 	}
@@ -221,7 +234,7 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	fmt.Print("Waiting for control plane to be up ")
 
 	// Polling control plane until up
-	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
+	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.ListenAddress, cpEnv.ListenPort, false))
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
 	defer cancel()
 	err = statusClient.WaitForControlPlane(ctx)
@@ -261,14 +274,14 @@ func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation st
 	}
 
 	// Next: poll amount of healthy nodes
-	trigger := make(chan bool)
+	trigger := make(chan struct{})
 
 	go func() {
 		_, err = bufio.NewReader(os.Stdin).ReadBytes('\n')
 		if err != nil {
 			fatal(err)
 		}
-		trigger <- true
+		trigger <- struct{}{}
 	}()
 
 	statusClient, err := controlplane.GetStatusClient(info)

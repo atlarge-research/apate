@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -35,7 +35,7 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	pm := podmanager.New() // TODO mock?
 
 	res := scenario.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
-	info := cluster.NewNodeInfo("", "", name, "", "", port)
+	info := kubernetes.NewNodeInfo("", "", name, "", "", port)
 	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
 
 	return prov.(provider.PodMetricsProvider), ctrl, ms, pm
@@ -48,14 +48,14 @@ func TestEmpty(t *testing.T) {
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
 
-	// Verify node
+	// Valid node
 	zero := uint64(0)
 	assert.Equal(t, name, result.Node.NodeName)
 	assert.Equal(t, zero, *result.Node.CPU.UsageNanoCores)
 	assert.Equal(t, zero, *result.Node.Memory.UsageBytes)
 	assert.Equal(t, uint64(mem), *result.Node.Memory.AvailableBytes)
 
-	// Verify pods
+	// Valid pods
 	var statistics []stats.PodStats
 	assert.EqualValues(t, statistics, result.Pods)
 
@@ -98,14 +98,14 @@ func TestSinglePod(t *testing.T) {
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
 
-	// Verify node
+	// Valid node
 	left := uint64(mem) - memUsage
 	assert.Equal(t, name, result.Node.NodeName)
 	assert.Equal(t, cpuUsage, *result.Node.CPU.UsageNanoCores)
 	assert.Equal(t, memUsage, *result.Node.Memory.UsageBytes)
 	assert.Equal(t, left, *result.Node.Memory.AvailableBytes)
 
-	// Verify pod
+	// Valid pod
 	podStats := []stats.PodStats{statistics}
 	assert.EqualValues(t, podStats, result.Pods)
 
@@ -218,7 +218,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
 
-	// Verify node
+	// Valid node
 	memLeft := uint64(mem) - memUsage
 	fsLeft := uint64(fs) - fsUsage
 	assert.Equal(t, name, result.Node.NodeName)
@@ -229,7 +229,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	assert.Equal(t, fsLeft, *result.Node.Fs.AvailableBytes)
 	assert.Equal(t, uint64(fs), *result.Node.Fs.CapacityBytes)
 
-	// Verify pod
+	// Valid pod
 	for _, podStat := range result.Pods {
 		assert.Equal(t, statMap[podStat.PodRef.UID], podStat)
 	}

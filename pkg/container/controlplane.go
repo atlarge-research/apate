@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/pkg/errors"
 
@@ -25,7 +26,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	}
 
 	// Get docker port for control plane
-	port, err := nat.NewPort("tcp", cpEnv.Port)
+	port, err := nat.NewPort("tcp", strconv.Itoa(cpEnv.ListenPort))
 
 	if err != nil {
 		return errors.Wrap(err, "failed to create docker port for Control plane")
@@ -36,12 +37,13 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 		c, err := cli.ContainerCreate(ctx, &container.Config{
 			Image: env.ControlPlaneImageName,
 			Env: []string{
-				env.ControlPlaneListenAddress + "=" + cpEnv.Address,
-				env.ControlPlaneListenPort + "=" + cpEnv.Port,
-				env.ManagedClusterConfig + "=" + cpEnv.ManagerConfig,
+				env.ControlPlaneListenAddress + "=" + cpEnv.ListenAddress,
+				env.ControlPlaneListenPort + "=" + strconv.Itoa(cpEnv.ListenPort),
+				env.ManagedClusterConfigLocation + "=" + cpEnv.ManagerConfigLocation,
+				env.KubeConfigLocation + "=" + cpEnv.KubeConfigLocation,
 				env.ControlPlaneExternalIP + "=" + cpEnv.ExternalIP,
-				env.ControlPlaneDockerPolicy + "=" + cpEnv.DockerPolicy,
-				env.PrometheusStackEnabled + "=" + cpEnv.PrometheusStackEnabled,
+				env.ControlPlaneDockerPolicy + "=" + string(cpEnv.DockerPolicy),
+				env.PrometheusStackEnabled + "=" + strconv.FormatBool(cpEnv.PrometheusStackEnabled),
 			},
 			ExposedPorts: nat.PortSet{
 				port: struct{}{},
@@ -51,7 +53,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 				port: []nat.PortBinding{
 					{
 						HostIP:   "0.0.0.0",
-						HostPort: cpEnv.Port,
+						HostPort: strconv.Itoa(cpEnv.ListenPort),
 					},
 				},
 			},

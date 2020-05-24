@@ -3,7 +3,6 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"os"
 
 	"github.com/pkg/errors"
 
@@ -24,25 +23,22 @@ func init() {
 // This function is only called when started separately (as Docker container for example)
 // When starting from a goroutine, `StartApatelet` is called.
 func main() {
-	environment, err := env.ApateletEnvironmentFromEnv()
-	if err != nil {
-		fatal(errors.Wrap(err, "error while starting apatelet"))
-	}
+	environment := env.ApateletEnv()
 
-	if err = run.SetCerts(); err != nil {
+	if err := run.SetCerts(); err != nil {
 		fatal(err)
 	}
 
 	run.KubeConfigWriter = func(config []byte) {
-		err = ioutil.WriteFile(os.TempDir()+"/apate/config", config, 0600)
+		kubeConfigLocation := env.ControlPlaneEnv().KubeConfigLocation
+		err := ioutil.WriteFile(kubeConfigLocation, config, 0600)
 		if err != nil {
 			fatal(err)
 		}
 	}
 
-	ch := make(chan bool)
-	err = run.StartApatelet(environment, 10250, 10255, &ch)
-	if err != nil {
+	ch := make(chan struct{})
+	if err := run.StartApatelet(environment, 10250, 10255, ch); err != nil {
 		fatal(errors.Wrap(err, "error while running apatelet"))
 	}
 }

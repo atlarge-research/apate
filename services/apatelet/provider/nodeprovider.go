@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/network"
 )
 
 const (

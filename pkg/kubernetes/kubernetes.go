@@ -1,4 +1,4 @@
-package cluster
+package kubernetes
 
 // NodeInfo contains all information used for creating an equivalent kubernetes node
 type NodeInfo struct {
