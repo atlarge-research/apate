@@ -4,6 +4,7 @@ package store
 import (
 	"container/heap"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -29,7 +30,7 @@ type Store interface {
 	LenTasks() int
 
 	// PeekTask returns the start time of the next task in the priority queue, without removing it from the queue
-	PeekTask() (int64, error)
+	PeekTask() (time.Duration, bool, error)
 
 	// PopTask returns the first task to be executed and removes it from the queue
 	PopTask() (*Task, error)
@@ -155,20 +156,20 @@ func (s *store) LenTasks() int {
 	return s.queue.Len()
 }
 
-func (s *store) PeekTask() (int64, error) {
+func (s *store) PeekTask() (time.Duration, bool, error) {
 	s.queueLock.RLock()
 	defer s.queueLock.RUnlock()
 
 	if s.queue.Len() == 0 {
-		return -1, nil
+		return -1, false, nil
 	}
 
 	// Make sure the array in the pq didn't magically change to a different type
 	if task, ok := s.queue.First().(*Task); ok {
-		return task.RelativeTimestamp, nil
+		return task.RelativeTimestamp, true, nil
 	}
 
-	return -1, errors.New("array in pq magically changed to a different type")
+	return -1, false, errors.New("array in pq magically changed to a different type")
 }
 
 func (s *store) PopTask() (*Task, error) {
@@ -245,7 +246,7 @@ var defaultNodeValues = map[events.EventFlag]interface{}{
 	events.NodeGetPodsResponse:      scenario.ResponseNormal,
 	events.NodePingResponse:         scenario.ResponseNormal,
 
-	events.NodeAddedLatencyMsec:    uint64(0),
+	events.NodeAddedLatencyMsec: int64(0),
 }
 
 var defaultPodValues = map[events.PodEventFlag]interface{}{

@@ -105,7 +105,7 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 
 	err = watchdog.RemoveNodeWithUUID(id, s.store, &s.kubernetesCluster)
 	if err != nil {
-		return nil, errors.Wrap(err,"removing node with uuid during leave cluster failed")
+		return nil, errors.Wrap(err, "removing node with uuid during leave cluster failed")
 	}
 
 	return &empty.Empty{}, nil

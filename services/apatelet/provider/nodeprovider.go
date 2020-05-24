@@ -2,9 +2,10 @@ package provider
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"log"
 	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -18,8 +19,8 @@ import (
 )
 
 const (
-	memThresh  = 0.85
-	diskThresh = 0.85
+	memThresh      = 0.85
+	diskThresh     = 0.85
 	diskFullThresh = 0.96
 )
 

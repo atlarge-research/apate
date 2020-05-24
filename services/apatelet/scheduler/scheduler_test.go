@@ -136,7 +136,7 @@ func TestRunner(t *testing.T) {
 	}
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(0), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -162,7 +162,7 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(10), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(10), true, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewPodTask(10, "la/clappe", &v1.PodConfigurationState{
 		PodStatus: v1.PodStatusUnknown,
 	}), nil)
@@ -195,7 +195,7 @@ func TestRunnerEarlyFail(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(-1), errors.New("some error"))
+	ms.EXPECT().PeekTask().Return(time.Duration(-1), true, errors.New("some error"))
 
 	// Setup
 	var s store.Store = ms
@@ -221,7 +221,7 @@ func TestRunnerPopFail(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(0), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
 	ms.EXPECT().PopTask().Return(nil, errors.New("new error"))
 
 	// Setup
@@ -259,12 +259,10 @@ func TestStartScheduler(t *testing.T) {
 	}
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(0), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), false, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
-
-	// any further peeks are well into the future
-	ms.EXPECT().PeekTask().Return(time.Now().Add(time.Hour*12).UnixNano(), nil).AnyTimes()
 
 	var s store.Store = ms
 	sched := New(ctx, &s)

@@ -1,6 +1,8 @@
 package store
 
 import (
+	"time"
+
 	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
@@ -13,7 +15,7 @@ type TaskTypeCheck func(*Task) (bool, error)
 // Task is a task in the PQ
 type Task struct {
 	// The timestamp on which this task should be executed, relative to the start of the scenario
-	RelativeTimestamp int64
+	RelativeTimestamp time.Duration
 
 	PodTask  *PodTask
 	NodeTask *NodeTask
@@ -49,7 +51,7 @@ func (t *Task) IsPod() (bool, error) {
 }
 
 // NewNodeTask creates a new task for a node event
-func NewNodeTask(relativeTime int64, task *NodeTask) *Task {
+func NewNodeTask(relativeTime time.Duration, task *NodeTask) *Task {
 	return &Task{
 		RelativeTimestamp: relativeTime,
 		PodTask:           nil,
@@ -58,7 +60,7 @@ func NewNodeTask(relativeTime int64, task *NodeTask) *Task {
 }
 
 // NewPodTask creates a new task for a pod event
-func NewPodTask(relativeTime int64, label string, state *podV1.PodConfigurationState) *Task {
+func NewPodTask(relativeTime time.Duration, label string, state *podV1.PodConfigurationState) *Task {
 	return &Task{
 		RelativeTimestamp: relativeTime,
 		PodTask: &PodTask{

@@ -1,8 +1,10 @@
 package node
 
 import (
-	"github.com/pkg/errors"
 	"log"
+	"time"
+
+	"github.com/pkg/errors"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -11,7 +13,7 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh chan struct{}) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh chan struct{}, cb func()) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get kubeconfig")
@@ -24,6 +26,8 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 
 	client.WatchResources(func(obj interface{}) {
 		// Add function
+		cb()
+
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if node.GetSelector(nodeCfg) == selector {
 			err := enqueueNodeTasks(nodeCfg, st)
@@ -33,6 +37,8 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 		}
 	}, func(_, obj interface{}) {
 		// Update function
+		cb()
+
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if node.GetSelector(nodeCfg) == selector {
 			err := enqueueNodeTasks(nodeCfg, st)
@@ -55,7 +61,7 @@ func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
 
 	var tasks []*store.Task
 	for _, task := range nodeCfg.Spec.Tasks {
-		tasks = append(tasks, store.NewNodeTask(task.Timestamp, &store.NodeTask{State: &task.State}))
+		tasks = append(tasks, store.NewNodeTask(time.Duration(task.Timestamp)*time.Millisecond, &store.NodeTask{State: &task.State}))
 	}
 
 	if err := (*st).SetNodeTasks(tasks); err != nil {

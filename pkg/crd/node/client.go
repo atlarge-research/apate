@@ -2,6 +2,8 @@
 package node
 
 import (
+	"sync"
+
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -24,11 +26,15 @@ type ConfigurationClient struct {
 	restClient rest.Interface
 }
 
+var once sync.Once
+
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
-	if err := v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, errors.Wrap(err, "adding global node scheme failed")
-	}
+	once.Do(func() {
+		if err := v1.AddToScheme(scheme.Scheme); err != nil {
+			panic(errors.Wrap(err, "adding global node scheme failed"))
+		}
+	})
 
 	config := *c
 	config.ContentConfig.GroupVersion = &v1.SchemeGroupVersion
