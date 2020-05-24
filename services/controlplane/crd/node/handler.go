@@ -6,10 +6,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 
@@ -37,16 +35,6 @@ func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *
 	if err != nil {
 		return errors.Wrap(err, "couldn't create node client from config")
 	}
-
-	// TODO: Decide if we want this. This is the easiest way to ensure the correct amount of apatelets
-	// Downside is that updates cannot cancel each other (eg. +200 and -200, will not result in 0 directly, but in
-	// two separate 'transactions' of +200 and -200 resp.).
-	// 1st (current) option: Lock and check current vs desired once. No cancellation, but easy and possibly fastest
-	// 2nd option: No lock and recheck current vs desired after every spawn/despawn. This will result in cancellation,
-	// but is possibly slower as it will have to recheck the amount of current nodes every time
-	// 3rd option: Don't care about sync and let the watcher stabilise the amount with resyncs (currently every 1 minute).
-	// This will result in easy cancellation, but in some cases it can take a few minutes before the desired amount of
-	// apatelets is reached.
 
 	// Create lock for stabilising creation
 	var lock sync.Locker = &sync.Mutex{}
@@ -146,7 +134,7 @@ func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector
 
 	log.Printf("Stopping %v apatelets", diff)
 
-	errs, ctx := errgroup.WithContext(ctx)
+	var wg sync.WaitGroup
 
 	for i, node := range nodes {
 		if i >= diff {
@@ -154,28 +142,30 @@ func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector
 		}
 
 		node := node
+		wg.Add(diff)
 
-		errs.Go(func() error {
+		go func() {
+			defer wg.Done()
+
 			client, err := apatelet.GetApateletClient(&node.ConnectionInfo)
 			if err != nil {
-				return errors.Wrap(err, "failed getting apatelet client")
+				log.Printf("%v", errors.Wrap(err, "failed getting apatelet client"))
 			}
 
 			_, err = client.Client.StopApatelet(ctx, new(empty.Empty))
 			if err != nil {
-				return errors.Wrap(err, "failed stopping apatelet")
+				log.Printf("%v", errors.Wrap(err, "failed stopping apatelet"))
 			}
 
 			err = client.Conn.Close()
 			if err != nil {
-				return errors.Wrap(err, "failed closing apatelet client connection")
+				log.Printf("%v", errors.Wrap(err, "failed closing apatelet client connection"))
 			}
-
-			return nil
-		})
+		}()
 	}
 
-	return errors.Wrap(errs.Wait(), "error in stopping apatelets")
+	wg.Wait()
+	return nil
 }
 
 func createResources(needed int, base scenario.NodeResources) []scenario.NodeResources {

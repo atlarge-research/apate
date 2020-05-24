@@ -52,7 +52,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	defer cancel()
 
 	// Create stop channel
-	stop := make(chan os.Signal)
+	stop := make(chan os.Signal, 1)
 	stopInformer := make(chan struct{})
 
 	// Join the apate cluster
@@ -98,7 +98,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Setup health status
 	hc, err := startHealth(ctx, connectionInfo, res.UUID, stop)
 	if err != nil {
-		return errors.Wrap(err, "failed starting healthclient")
+		return errors.Wrap(err, "failed to start health client")
 	}
 
 	// Start the Apatelet

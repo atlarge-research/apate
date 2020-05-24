@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -22,6 +23,7 @@ const (
 	memThresh      = 0.85
 	diskThresh     = 0.85
 	diskFullThresh = 0.96
+	updateInterval = 1 * time.Minute
 )
 
 type nodeConditions struct {
@@ -72,8 +74,17 @@ func (p *Provider) Ping(ctx context.Context) error {
 }
 
 // NotifyNodeStatus sets the function we can use to update the status within kubernetes
-func (p *Provider) NotifyNodeStatus(_ context.Context, cb func(*corev1.Node)) {
-	p.updateStatus = cb
+func (p *Provider) NotifyNodeStatus(ctx context.Context, cb func(*corev1.Node)) {
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(updateInterval):
+				p.updateConditions(ctx, cb)
+			}
+		}
+	}()
 }
 
 // ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
@@ -84,7 +95,7 @@ func (p *Provider) ConfigureNode(_ context.Context, node *corev1.Node) {
 	p.node = node.DeepCopy()
 }
 
-func (p *Provider) updateConditions(ctx context.Context) {
+func (p *Provider) updateConditions(ctx context.Context, cb func(*corev1.Node)) {
 	// First check if the conditions should be updated
 	flag, err := p.getPingResponse()
 	if err != nil {
@@ -92,12 +103,11 @@ func (p *Provider) updateConditions(ctx context.Context) {
 		return
 	}
 	if flag != scenario.ResponseUnset && flag != scenario.ResponseNormal {
-		return //TODO: Should we log this? Might result in some spam logging..
+		return
 	}
 
 	stats, err := p.GetStatsSummary(ctx)
 	if err != nil {
-		// TODO: What to do now?
 		log.Printf("failed to update node conditions: %v", err)
 		return
 	}
@@ -116,7 +126,7 @@ func (p *Provider) updateConditions(ctx context.Context) {
 		p.conditions.networkUnavailable.Update(false),
 		p.conditions.pidPressure.Update(false),
 	}
-	p.updateStatus(p.node)
+	cb(p.node)
 }
 
 func (p *Provider) nodeConditions() []corev1.NodeCondition {
