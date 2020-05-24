@@ -231,7 +231,6 @@ func TestGetPods(t *testing.T) {
 	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(0), nil)
 
-
 	// sot
 	var s store.Store = ms
 	prov := Provider{

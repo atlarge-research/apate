@@ -8,6 +8,7 @@ import (
 	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
 )
 
 // MockStore is a mock of Store interface
@@ -78,12 +79,13 @@ func (mr *MockStoreMockRecorder) LenTasks() *gomock.Call {
 }
 
 // PeekTask mocks base method
-func (m *MockStore) PeekTask() (int64, error) {
+func (m *MockStore) PeekTask() (time.Duration, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PeekTask")
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(time.Duration)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // PeekTask indicates an expected call of PeekTask

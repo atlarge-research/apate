@@ -1,8 +1,10 @@
 package pod
 
 import (
-	"github.com/pkg/errors"
 	"log"
+	"time"
+
+	"github.com/pkg/errors"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -11,7 +13,7 @@ import (
 )
 
 // CreatePodInformer creates a new crd informer.
-func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch chan struct{}) error {
+func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch chan struct{}, cb func()) error {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get restconfig from kubeconfig for the pod informer")
@@ -23,11 +25,15 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch ch
 	}
 
 	podClient.WatchResources(func(obj interface{}) {
+		cb()
+
 		err := enqueueCRD(obj, st)
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)
 		}
 	}, func(oldObj, newObj interface{}) {
+		cb()
+
 		err := enqueueCRD(newObj, st) // just replace all tasks with the <namespace>/<name>
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)
@@ -56,7 +62,7 @@ func enqueueCRD(obj interface{}, st *store.Store) error {
 	var tasks []*store.Task
 	for _, task := range newCRD.Spec.Tasks {
 		state := task.State
-		tasks = append(tasks, store.NewPodTask(task.Timestamp, crdLabel, &state))
+		tasks = append(tasks, store.NewPodTask(time.Duration(task.Timestamp), crdLabel, &state))
 	}
 
 	return errors.Wrap((*st).SetPodTasks(crdLabel, tasks), "failed to set pod tasks")

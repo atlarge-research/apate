@@ -3,9 +3,10 @@
 package watchdog
 
 import (
-	"github.com/pkg/errors"
 	"log"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 

@@ -4,12 +4,14 @@ package run
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"os"
 	"os/signal"
 	"sync/atomic"
 	"syscall"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
 
@@ -55,7 +57,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 	// Join the apate cluster
 	log.Println("Joining apate cluster")
-	config, res, time, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
+	config, res, startTime, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
 	if err != nil {
 		return errors.Wrap(err, "failed to join apate cluster")
 	}
@@ -74,7 +76,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 		for {
 			select {
-			case <-stop:
+			case <-ctx.Done():
 				return
 			case err = <-ech:
 				fmt.Printf("error while scheduling task occurred: %v\n", err)
@@ -83,12 +85,12 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	}()
 
 	// Create crd informers
-	err = crdPod.CreatePodInformer(config, &st, stopInformer)
+	err = crdPod.CreatePodInformer(config, &st, stopInformer, sch.WakeScheduler)
 	if err != nil {
 		return errors.Wrap(err, "failed creating crd pod informer")
 	}
 
-	err = node.CreateNodeInformer(config, &st, res.Selector, stopInformer)
+	err = node.CreateNodeInformer(config, &st, res.Selector, stopInformer, sch.WakeScheduler)
 	if err != nil {
 		return errors.Wrap(err, "failed creating crd node informer")
 	}
@@ -116,7 +118,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	}()
 
 	// Start gRPC server
-	server, err := createGRPC(apateletEnv.ListenPort, &st, &sch, apateletEnv.ListenAddress, &stop)
+	server, err := createGRPC(apateletEnv.ListenPort, &st, &sch, apateletEnv.ListenAddress, stop)
 	if err != nil {
 		return errors.Wrap(err, "failed to set up GRPC endpoints")
 	}
@@ -137,8 +139,8 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	}()
 
 	// Start the scheduler if a scenario is already running
-	if time >= 0 {
-		sch.StartScheduler(time)
+	if startTime >= 0 {
+		sch.StartScheduler(time.Duration(startTime))
 	}
 
 	*readyCh <- true
@@ -186,7 +188,7 @@ func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *s
 	return nil
 }
 
-func startHealth(ctx context.Context, connectionInfo *service.ConnectionInfo, uuid uuid.UUID, stop chan os.Signal) (*health.Client, error) {
+func startHealth(ctx context.Context, connectionInfo *service.ConnectionInfo, uuid uuid.UUID, stop chan<- os.Signal) (*health.Client, error) {
 	hc, err := health.GetClient(connectionInfo, uuid.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get health client")
@@ -217,7 +219,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 		}
 	}()
 
-	cfg, res, time, err := client.JoinCluster(ctx, listenPort)
+	cfg, res, startTime, err := client.JoinCluster(ctx, listenPort)
 
 	if err != nil {
 		return nil, nil, -1, errors.Wrap(err, "failed to join cluster")
@@ -225,7 +227,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 
 	log.Printf("Joined apate cluster with resources: %v", res)
 
-	return cfg, res, time, nil
+	return cfg, res, startTime, nil
 }
 
 func createNodeController(ctx context.Context, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
@@ -233,7 +235,7 @@ func createNodeController(ctx context.Context, res *scenario.NodeResources, k8sP
 	return cmd, errors.Wrap(err, "failed to create provider")
 }
 
-func createGRPC(listenPort int, store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel *chan os.Signal) (*service.GRPCServer, error) {
+func createGRPC(listenPort int, store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel chan<- os.Signal) (*service.GRPCServer, error) {
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
 

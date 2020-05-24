@@ -2,6 +2,7 @@
 package pod
 
 import (
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,6 +20,8 @@ import (
 
 const resource = "podconfigurations"
 
+var once sync.Once
+
 // ConfigurationClient is the client for the PodConfiguration CRD
 type ConfigurationClient struct {
 	restClient rest.Interface
@@ -27,9 +30,11 @@ type ConfigurationClient struct {
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
-	if err := v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, errors.Wrap(err, "failed to add crd information to the scheme")
-	}
+	once.Do(func() {
+		if err := v1.AddToScheme(scheme.Scheme); err != nil {
+			panic(errors.Wrap(err, "failed to add crd information to the scheme"))
+		}
+	})
 
 	config := *c
 	config.ContentConfig.GroupVersion = &v1.SchemeGroupVersion

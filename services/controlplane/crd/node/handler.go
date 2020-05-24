@@ -3,10 +3,11 @@ package node
 
 import (
 	"context"
-	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"sync"
+
+	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/golang/protobuf/ptypes/empty"
 

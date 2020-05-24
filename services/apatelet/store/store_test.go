@@ -2,6 +2,7 @@ package store
 
 import (
 	"testing"
+	"time"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
@@ -16,7 +17,7 @@ func TestEmptyQueue(t *testing.T) {
 	assert.Equal(t, 0, st.LenTasks())
 
 	// Make sure both poll and get return an error
-	_, pollErr := st.PeekTask()
+	_, _, pollErr := st.PeekTask()
 	_, getErr := st.PopTask()
 	assert.NoError(t, pollErr)
 	assert.Error(t, getErr)
@@ -42,7 +43,7 @@ func TestGetSingleTask(t *testing.T) {
 
 // TestGetSingleTask ensures a polled task is not deleted
 func TestPollSingleTask(t *testing.T) {
-	timestamp := int64(424242)
+	timestamp := time.Duration(424242)
 	task := &NodeTask{}
 	st := NewStore()
 
@@ -51,9 +52,10 @@ func TestPollSingleTask(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Poll single task and verify the timestamp is correct
-	retrieved, err := st.PeekTask()
+	retrieved, found, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, timestamp, retrieved)
+	assert.True(t, found)
 
 	// Also verify it was not removed
 	assert.Equal(t, 1, st.LenTasks())
@@ -61,9 +63,9 @@ func TestPollSingleTask(t *testing.T) {
 
 // TestMultipleTasks ensures the priority queue actually sorts the tasks properly (earliest task first)
 func TestMultipleTasks(t *testing.T) {
-	task1Time := int64(213123)
-	task2Time := int64(4242)
-	task3Time := int64(83481234)
+	task1Time := time.Duration(213123)
+	task2Time := time.Duration(4242)
+	task3Time := time.Duration(83481234)
 	task1 := &NodeTask{}
 	task2 := &NodeTask{}
 	task3 := &NodeTask{}
@@ -79,28 +81,31 @@ func TestMultipleTasks(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Poll first task, which should be task 2
-	firstTaskTime, err := st.PeekTask()
+	firstTaskTime, found, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task2Time, firstTaskTime)
+	assert.True(t, found)
 
 	// Retrieve first two tasks
 	firstTask, err := st.PopTask()
 	assert.NoError(t, err)
 	assert.Equal(t, NewNodeTask(4242, task2), firstTask)
 
-	secondTaskTime, err := st.PeekTask()
+	secondTaskTime, found, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task1Time, secondTaskTime)
+	assert.True(t, found)
 
 	secondTask, err := st.PopTask()
 	assert.NoError(t, err)
 	assert.Equal(t, NewNodeTask(213123, task1), secondTask)
 
 	// Verify there is still one task left
-	lastTaskTime, err := st.PeekTask()
+	lastTaskTime, found, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, st.LenTasks())
 	assert.Equal(t, task3Time, lastTaskTime)
+	assert.True(t, found)
 }
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
@@ -117,9 +122,10 @@ func TestArrayWithNil(t *testing.T) {
 	assert.Equal(t, 2, st.LenTasks())
 
 	// Peek first task, which should be task 2
-	firstTaskTime, err := st.PeekTask()
+	firstTaskTime, found, err := st.PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, task2.RelativeTimestamp, firstTaskTime)
+	assert.True(t, found)
 
 	// Retrieve first task, and confirm it's task 2
 	firstTask, err := st.PopTask()
@@ -263,10 +269,11 @@ func insertBaselineCRD(t *testing.T) Store {
 	return st
 }
 
-func testPeekAndPop(t *testing.T, st *Store, relTime int64, shouldBePod bool) {
-	taskTime, err := (*st).PeekTask()
+func testPeekAndPop(t *testing.T, st *Store, relTime time.Duration, shouldBePod bool) {
+	taskTime, found, err := (*st).PeekTask()
 	assert.NoError(t, err)
 	assert.Equal(t, relTime, taskTime)
+	assert.True(t, found)
 
 	task, err := (*st).PopTask()
 	assert.NoError(t, err)
