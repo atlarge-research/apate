@@ -29,7 +29,7 @@ type responseArgs struct {
 }
 
 func podResponse(args responseArgs, label string, responseFlag events.PodEventFlag) (interface{}, bool, error) {
-	iflag, err := (*args.provider.store).GetPodFlag(label, responseFlag)
+	iflag, err := (*args.provider.Store).GetPodFlag(label, responseFlag)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get pod flag")
 	}
@@ -57,7 +57,7 @@ func podResponse(args responseArgs, label string, responseFlag events.PodEventFl
 
 // nodeResponse checks the passed flags and calls the passed function on success
 func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interface{}, error) {
-	iflag, err := (*args.provider.store).GetNodeFlag(responseFlag)
+	iflag, err := (*args.provider.Store).GetNodeFlag(responseFlag)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get node flag")
 	}

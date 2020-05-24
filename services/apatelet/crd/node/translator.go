@@ -19,7 +19,9 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 	}
 
 	// Set latency
-	(*st).SetNodeFlag(events.NodeAddedLatencyMsec, state.NetworkLatency)
+	if state.NetworkLatency >= 0 {
+		(*st).SetNodeFlag(events.NodeAddedLatencyMsec, state.NetworkLatency)
+	}
 
 	// Check if the node should fail
 	if state.NodeFailed {
@@ -33,7 +35,7 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 	}
 }
 
-func setCustomFlags(st *store.Store, state *v1.NodeConfigurationDirectState) {
+func setCustomFlags(st *store.Store, state *v1.NodeConfigurationCustomState) {
 	// Check if there were no custom flags
 	if state == nil {
 		return

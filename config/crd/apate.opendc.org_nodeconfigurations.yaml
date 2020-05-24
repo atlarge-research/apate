@@ -109,7 +109,7 @@ spec:
                     description: If set, HeartbeatFailed will result in the node no longer responding to pings
                     type: boolean
                   network_latency:
-                    default: 0
+                    default: "-1"
                     description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
                     format: int64
                     type: integer
@@ -218,7 +218,7 @@ spec:
                           description: If set, HeartbeatFailed will result in the node no longer responding to pings
                           type: boolean
                         network_latency:
-                          default: 0
+                          default: "-1"
                           description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
                           format: int64
                           type: integer

@@ -27,14 +27,14 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch ch
 	podClient.WatchResources(func(obj interface{}) {
 		cb()
 
-		err := enqueueCRD(obj, st)
+		err := setPodTasks(obj, st)
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)
 		}
 	}, func(oldObj, newObj interface{}) {
 		cb()
 
-		err := enqueueCRD(newObj, st) // just replace all tasks with the <namespace>/<name>
+		err := setPodTasks(newObj, st) // just replace all tasks with the <namespace>/<name>
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)
 		}
@@ -49,7 +49,7 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch ch
 	return nil
 }
 
-func enqueueCRD(obj interface{}, st *store.Store) error {
+func setPodTasks(obj interface{}, st *store.Store) error {
 	newCRD, crdLabel := getCRDAndLabel(obj)
 
 	empty := v1.PodConfigurationState{}

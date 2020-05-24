@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"sync/atomic"
 	"syscall"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -140,7 +139,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 
 	// Start the scheduler if a scenario is already running
 	if startTime >= 0 {
-		sch.StartScheduler(time.Duration(startTime))
+		sch.StartScheduler(startTime)
 	}
 
 	*readyCh <- true

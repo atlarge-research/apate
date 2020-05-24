@@ -4,7 +4,11 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
+	podV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +29,7 @@ func TestEmptyQueue(t *testing.T) {
 
 // TestGetSingleTask ensures a retrieved task is also deleted
 func TestGetSingleTask(t *testing.T) {
-	task := &NodeTask{}
+	task := &nodeV1.NodeConfigurationState{}
 	st := NewStore()
 
 	// Enqueue single task
@@ -44,7 +48,7 @@ func TestGetSingleTask(t *testing.T) {
 // TestGetSingleTask ensures a polled task is not deleted
 func TestPollSingleTask(t *testing.T) {
 	timestamp := time.Duration(424242)
-	task := &NodeTask{}
+	task := &nodeV1.NodeConfigurationState{}
 	st := NewStore()
 
 	// Enqueue single task
@@ -66,9 +70,9 @@ func TestMultipleTasks(t *testing.T) {
 	task1Time := time.Duration(213123)
 	task2Time := time.Duration(4242)
 	task3Time := time.Duration(83481234)
-	task1 := &NodeTask{}
-	task2 := &NodeTask{}
-	task3 := &NodeTask{}
+	task1 := &nodeV1.NodeConfigurationState{}
+	task2 := &nodeV1.NodeConfigurationState{}
+	task3 := &nodeV1.NodeConfigurationState{}
 
 	st := NewStore()
 
@@ -110,8 +114,8 @@ func TestMultipleTasks(t *testing.T) {
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
 func TestArrayWithNil(t *testing.T) {
-	task1 := NewNodeTask(213123, &NodeTask{})
-	task2 := NewNodeTask(4242, &NodeTask{})
+	task1 := NewNodeTask(213123, &nodeV1.NodeConfigurationState{})
+	task2 := NewNodeTask(4242, &nodeV1.NodeConfigurationState{})
 	st := NewStore()
 
 	// Enqueue tasks
@@ -136,7 +140,91 @@ func TestArrayWithNil(t *testing.T) {
 	assert.Equal(t, 1, st.LenTasks())
 }
 
+// TestReplaceNodeTask tests tasks are indeed replaced
+func TestReplaceNodeTask(t *testing.T) {
+	task1 := NewNodeTask(213123, &nodeV1.NodeConfigurationState{})
+	task2 := NewNodeTask(4242, &nodeV1.NodeConfigurationState{})
+	task3 := NewNodeTask(53156, &nodeV1.NodeConfigurationState{})
+	st := NewStore()
+
+	// Enqueue tasks
+	err := st.SetNodeTasks([]*Task{nil, task1, task2, nil, nil})
+	assert.NoError(t, err)
+
+	// Ensure there are two tasks
+	assert.Equal(t, 2, st.LenTasks())
+
+	// Set new tasks
+	err = st.SetNodeTasks([]*Task{task3})
+	assert.NoError(t, err)
+
+	// Ensure there is one task
+	assert.Equal(t, 1, st.LenTasks())
+
+	// Peek first task, which should be task 3
+	firstTaskTime, found, err := st.PeekTask()
+	assert.NoError(t, err)
+	assert.Equal(t, task3.RelativeTimestamp, firstTaskTime)
+	assert.True(t, found)
+}
+
+// TestInvalidTaskSet
+func TestInvalidTaskSet(t *testing.T) {
+	task1 := &Task{
+		RelativeTimestamp: 1,
+		NodeTask: &NodeTask{
+			State: nil,
+		},
+	}
+	st := NewStore()
+
+	// Enqueue something
+	err := st.SetNodeTasks([]*Task{{}})
+	assert.NoError(t, err)
+
+	// Enqueue node tasks
+	err = st.SetNodeTasks([]*Task{task1})
+	assert.Error(t, err)
+
+	// Enqueue pod tasks
+	err = st.SetPodTasks("", []*Task{task1})
+	assert.Error(t, err)
+}
+
+// Task
+
+// TestInvalidTask ensures the task functionality works
+func TestInvalidTask(t *testing.T) {
+	task := Task{}
+
+	_, err := task.IsPod()
+	assert.Error(t, err)
+
+	task = Task{
+		RelativeTimestamp: 1,
+		PodTask: &PodTask{
+			Label: "awawd",
+		},
+		NodeTask: &NodeTask{
+			State: nil,
+		},
+	}
+
+	_, err = task.IsNode()
+	assert.Error(t, err)
+}
+
 // Nodes
+
+// TestDefaultNodeFlag ensure the default node flags are working properly
+func TestDefaultNodeFlag(t *testing.T) {
+	st := NewStore()
+
+	// Retrieve default value
+	val, err := st.GetNodeFlag(events.NodeCreatePodResponse)
+	assert.Equal(t, scenario.ResponseNormal, val)
+	assert.NoError(t, err)
+}
 
 // TestUnsetNodeFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
 func TestUnsetNodeFlag(t *testing.T) {
@@ -182,8 +270,8 @@ func TestEnqueueCRDUpdate(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding less means old CRDs are removed
 	err := st.SetPodTasks("la/clappe", []*Task{
-		NewPodTask(10, "la/clappe", &v1.PodConfigurationState{}),
-		NewPodTask(20, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(10, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(20, "la/clappe", &podV1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -199,10 +287,10 @@ func TestEnqueueCRDUpdateMore(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding more means new CRDs are added
 	err := st.SetPodTasks("la/clappe", []*Task{
-		NewPodTask(10, "la/clappe", &v1.PodConfigurationState{}),
-		NewPodTask(20, "la/clappe", &v1.PodConfigurationState{}),
-		NewPodTask(220, "la/clappe", &v1.PodConfigurationState{}),
-		NewPodTask(120, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(10, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(20, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(220, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(120, "la/clappe", &podV1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -220,7 +308,7 @@ func TestEnqueueCRDNewLabel(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding more means new CRDs are added
 	err := st.SetPodTasks("high/tech", []*Task{
-		NewPodTask(44, "high/tech", &v1.PodConfigurationState{}),
+		NewPodTask(44, "high/tech", &podV1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -237,7 +325,7 @@ func TestRemoveCRD(t *testing.T) {
 
 	// Testing whether removig CRDs works, even when there are multiple
 	err := st.SetPodTasks("high/tech", []*Task{
-		NewPodTask(44, "high/tech", &v1.PodConfigurationState{}),
+		NewPodTask(44, "high/tech", &podV1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -253,16 +341,16 @@ func insertBaselineCRD(t *testing.T) Store {
 	st := NewStore()
 
 	err := st.SetNodeTasks([]*Task{
-		NewNodeTask(80, &NodeTask{}),
-		NewNodeTask(200, &NodeTask{}),
+		NewNodeTask(80, &nodeV1.NodeConfigurationState{}),
+		NewNodeTask(200, &nodeV1.NodeConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
 	// Testing whether adding new CRDs works
 	err = st.SetPodTasks("la/clappe", []*Task{
-		NewPodTask(100, "la/clappe", &v1.PodConfigurationState{}),
-		NewPodTask(42, "la/clappe", &v1.PodConfigurationState{}),
-		NewPodTask(140, "la/clappe", &v1.PodConfigurationState{}),
+		NewPodTask(100, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(42, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(140, "la/clappe", &podV1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -285,6 +373,16 @@ func testPeekAndPop(t *testing.T, st *Store, relTime time.Duration, shouldBePod 
 }
 
 // pods
+
+// TestDefaultPodFlag ensure the default pod flags are working properly
+func TestDefaultPodFlag(t *testing.T) {
+	st := NewStore()
+
+	// Retrieve default value
+	val, err := st.GetPodFlag("", events.PodCreatePodResponse)
+	assert.Equal(t, scenario.ResponseUnset, val)
+	assert.NoError(t, err)
+}
 
 // TestUnsetPodFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
 func TestUnsetPodFlag(t *testing.T) {

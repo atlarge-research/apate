@@ -31,15 +31,15 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	pods      podmanager.PodManager
-	resources *scenario.NodeResources
-	cfg       provider.InitConfig
-	nodeInfo  cluster.NodeInfo
-	store     *store.Store
-	stats     *Stats
+	Pods      podmanager.PodManager
+	Resources *scenario.NodeResources
+	Cfg       provider.InitConfig
+	NodeInfo  cluster.NodeInfo
+	Store     *store.Store
+	Stats     *Stats
 
-	node       *corev1.Node
-	conditions nodeConditions
+	Node       *corev1.Node
+	Conditions nodeConditions
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
@@ -76,13 +76,13 @@ func CreateProvider(ctx context.Context, res *scenario.NodeResources, k8sPort in
 // NewProvider returns the provider but with the vk type instead of our own.
 func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store) provider.Provider {
 	return &Provider{
-		pods:      pods,
-		resources: resources,
-		cfg:       cfg,
-		nodeInfo:  nodeInfo,
-		store:     store,
-		stats:     stats,
-		conditions: nodeConditions{
+		Pods:      pods,
+		Resources: resources,
+		Cfg:       cfg,
+		NodeInfo:  nodeInfo,
+		Store:     store,
+		Stats:     stats,
+		Conditions: nodeConditions{
 			ready:              condition.New(true, corev1.NodeReady),
 			outOfDisk:          condition.New(false, corev1.NodeOutOfDisk),
 			memoryPressure:     condition.New(false, corev1.NodeMemoryPressure),

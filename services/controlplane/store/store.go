@@ -181,6 +181,7 @@ func (s *store) ClearNodes() error {
 	defer s.nodeLock.Unlock()
 
 	s.nodes = make(map[uuid.UUID]Node)
+	s.nodesBySelector = make(map[string][]Node)
 	return nil
 }
 

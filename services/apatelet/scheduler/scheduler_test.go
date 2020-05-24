@@ -28,11 +28,9 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := store.NodeTask{
-		State: &nodeV1.NodeConfigurationState{
-			CustomState: &nodeV1.NodeConfigurationDirectState{
-				CreatePodResponse: nodeV1.ResponseError,
-			},
+	task := &nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
@@ -46,7 +44,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	// Run code under test
 	ech := make(chan error)
 
-	sched.taskHandler(ech, store.NewNodeTask(0, &task))
+	sched.taskHandler(ech, store.NewNodeTask(0, task))
 
 	select {
 	case <-ech:
@@ -91,12 +89,10 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := store.NodeTask{
-		State: &nodeV1.NodeConfigurationState{
-			NetworkLatency: 42,
-			CustomState: &nodeV1.NodeConfigurationDirectState{
-				CreatePodResponse: nodeV1.ResponseError,
-			},
+	task := nodeV1.NodeConfigurationState{
+		NetworkLatency: 42,
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
@@ -127,11 +123,9 @@ func TestRunner(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := store.NodeTask{
-		State: &nodeV1.NodeConfigurationState{
-			CustomState: &nodeV1.NodeConfigurationDirectState{
-				CreatePodResponse: nodeV1.ResponseError,
-			},
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
@@ -142,12 +136,89 @@ func TestRunner(t *testing.T) {
 
 	var s store.Store = ms
 	sched := New(context.Background(), &s)
+	sched.WakeScheduler()
 
 	// Run code under test
 	ech := make(chan error, 1)
 
 	sched.runner(ech)
 
+	select {
+	case <-ech:
+		t.Fail()
+	default:
+	}
+}
+
+func TestRunnerDelay(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ms := mock_store.NewMockStore(ctrl)
+
+	// Test task:
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
+		},
+	}
+
+	secondDelay := time.Second * 5
+
+	// Expectations
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
+	ms.EXPECT().PeekTask().Return(secondDelay, true, nil)
+	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+
+	var s store.Store = ms
+	sched := New(context.Background(), &s)
+	sched.startTime = time.Now()
+
+	// Run code under test
+	ech := make(chan error, 1)
+
+	done, delay := sched.runner(ech)
+	assert.Equal(t, false, done)
+
+	maxDelay := sched.startTime.Add(secondDelay).Sub(sched.startTime)
+	assert.Less(t, delay.Nanoseconds(), maxDelay.Nanoseconds())
+
+	select {
+	case <-ech:
+		t.Fail()
+	default:
+	}
+}
+
+func TestRunnerSleep(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ms := mock_store.NewMockStore(ctrl)
+
+	// Test task:
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
+		},
+	}
+
+	// Expectations
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), false, nil).Times(3)
+	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+
+	var s store.Store = ms
+	sched := New(context.Background(), &s)
+	ech := sched.EnableScheduler()
+
+	sched.StartScheduler(0)
+	time.Sleep(time.Millisecond * 500)
+	sched.WakeScheduler()
+
+	time.Sleep(time.Second)
 	select {
 	case <-ech:
 		t.Fail()
@@ -172,8 +243,8 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 		store:     &s,
 		ctx:       context.Background(),
 		readyCh:   make(chan struct{}),
-		prevT:     40,
-		startTime: 0,
+		prevT:     time.Unix(0, 40),
+		startTime: time.Unix(0, 0),
 	}
 
 	// Run code under test
@@ -250,11 +321,9 @@ func TestStartScheduler(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := store.NodeTask{
-		State: &nodeV1.NodeConfigurationState{
-			CustomState: &nodeV1.NodeConfigurationDirectState{
-				CreatePodResponse: nodeV1.ResponseError,
-			},
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 

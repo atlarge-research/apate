@@ -30,7 +30,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if node.GetSelector(nodeCfg) == selector {
-			err := enqueueNodeTasks(nodeCfg, st)
+			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
 			}
@@ -41,7 +41,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if node.GetSelector(nodeCfg) == selector {
-			err := enqueueNodeTasks(nodeCfg, st)
+			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
 			}
@@ -54,14 +54,15 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	return nil
 }
 
-func enqueueNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
+func setNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
 	if nodeCfg.Spec.NodeConfigurationState != (v1.NodeConfigurationState{}) {
 		SetNodeFlags(st, &nodeCfg.Spec.NodeConfigurationState)
 	}
 
 	var tasks []*store.Task
 	for _, task := range nodeCfg.Spec.Tasks {
-		tasks = append(tasks, store.NewNodeTask(time.Duration(task.Timestamp)*time.Millisecond, &store.NodeTask{State: &task.State}))
+		state := task.State
+		tasks = append(tasks, store.NewNodeTask(time.Duration(task.Timestamp)*time.Millisecond, &state))
 	}
 
 	if err := (*st).SetNodeTasks(tasks); err != nil {
