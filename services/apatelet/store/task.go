@@ -51,11 +51,13 @@ func (t *Task) IsPod() (bool, error) {
 }
 
 // NewNodeTask creates a new task for a node event
-func NewNodeTask(relativeTime time.Duration, task *NodeTask) *Task {
+func NewNodeTask(relativeTime time.Duration, state *nodeV1.NodeConfigurationState) *Task {
 	return &Task{
 		RelativeTimestamp: relativeTime,
 		PodTask:           nil,
-		NodeTask:          task,
+		NodeTask: &NodeTask{
+			State: state,
+		},
 	}
 }
 

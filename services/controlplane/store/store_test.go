@@ -105,8 +105,9 @@ func TestAddNodeDuplicateUuid(t *testing.T) {
 
 // TestRemoveNode ensures a removed node is no longer in the list and can no longer be retrieved
 func TestRemoveNode(t *testing.T) {
+	selector := "1231415"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "4")
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
 
 	// Add node
 	err := store.AddNode(node)
@@ -125,6 +126,11 @@ func TestRemoveNode(t *testing.T) {
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
+
+	// Verify it's no longer in the selector
+	nodes, err := store.GetNodesBySelector(selector)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(nodes))
 }
 
 // TestDeleteNoNode ensures removing a node that does not exist keeps the store intact
@@ -149,8 +155,9 @@ func TestDeleteNoNode(t *testing.T) {
 
 // TestClearNodes ensures nodes are no longer in the list and can no longer be retrieved when the store is cleared
 func TestClearNodes(t *testing.T) {
+	selector := "1231145"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "1")
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
 
 	// Add node
 	err := store.AddNode(node)
@@ -169,4 +176,29 @@ func TestClearNodes(t *testing.T) {
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
+
+	// Verify it's no longer in the selector
+	nodes, err := store.GetNodesBySelector(selector)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(nodes))
+}
+
+// TestGetNodesBySelector ensures nodes can be retrieved based on their selector
+func TestGetNodesBySelector(t *testing.T) {
+	selector := "awidya8wdya9wd7iyh"
+	store := NewStore()
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{UUID: uuid.New()}, selector)
+	node2 := NewNode(*service.NewConnectionInfo("awdadaw", 124, false), &scenario.NodeResources{UUID: uuid.New()}, "123")
+
+	// Add nodes
+	err := store.AddNode(node)
+	assert.NoError(t, err)
+	err = store.AddNode(node2)
+	assert.NoError(t, err)
+
+	// Verify it gets returned based on its selector
+	nodes, err := store.GetNodesBySelector(selector)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(nodes))
+	assert.Equal(t, *node, nodes[0])
 }

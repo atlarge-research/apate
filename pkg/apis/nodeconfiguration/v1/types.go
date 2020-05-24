@@ -80,7 +80,7 @@ type NodeConfigurationState struct {
 	NodeFailed bool `json:"node_failed,omitempty"`
 
 	// NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-	// +kubebuilder:default=0
+	// +kubebuilder:default=-1
 	// +kubebuilder:validation:Optional
 	NetworkLatency int64 `json:"network_latency,omitempty"`
 
@@ -91,12 +91,12 @@ type NodeConfigurationState struct {
 
 	// CustomState specifies a custom state
 	// +kubebuilder:validation:Optional
-	CustomState *NodeConfigurationDirectState `json:"custom_state,omitempty"`
+	CustomState *NodeConfigurationCustomState `json:"custom_state,omitempty"`
 }
 
-// NodeConfigurationDirectState is the state of the node, used for determining how to respond to request from kubernetes.
+// NodeConfigurationCustomState is the state of the node, used for determining how to respond to request from kubernetes.
 // This state will not be translated or anything similar, as this is a direct mapping to the actual state of the apatelet
-type NodeConfigurationDirectState struct {
+type NodeConfigurationCustomState struct {
 	// CreatePodResponse determines how to respond to the CreatePod request
 	// +kubebuilder:default=UNSET
 	// +kubebuilder:validation:Optional

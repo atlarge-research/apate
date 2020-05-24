@@ -1,7 +1,14 @@
 package provider
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
@@ -48,7 +55,7 @@ func TestGetPodLabelByNameOk(t *testing.T) {
 	var pm podmanager.PodManager = pmm
 
 	prov := Provider{
-		pods: pm,
+		Pods: pm,
 	}
 	name := "Apate"
 	namespace := "TestNamespace"
@@ -77,7 +84,7 @@ func TestGetPodLabelByNameFail(t *testing.T) {
 	var pm podmanager.PodManager = pmm
 
 	prov := Provider{
-		pods: pm,
+		Pods: pm,
 	}
 	name := "Apate"
 	namespace := "TestNamespace"
@@ -96,4 +103,96 @@ func TestPodStatusToPhase(t *testing.T) {
 	assert.Equal(t, corev1.PodFailed, podStatusToPhase(scenario.PodStatusFailed))
 	assert.Equal(t, corev1.PodUnknown, podStatusToPhase(scenario.PodStatusUnknown))
 	assert.Equal(t, corev1.PodUnknown, podStatusToPhase(scenario.PodStatus(20)))
+}
+
+func TestRunLatencyError(t *testing.T) {
+	ctx := context.TODO()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ms := mock_store.NewMockStore(ctrl)
+
+	var s store.Store = ms
+
+	p := Provider{
+		Store: &s,
+	}
+
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, errors.New("test error")).Times(6)
+
+	assert.Error(t, p.UpdatePod(ctx, nil))
+	assert.Error(t, p.CreatePod(ctx, nil))
+	assert.Error(t, p.DeletePod(ctx, nil))
+	_, err := p.GetPod(ctx, "", "")
+	assert.Error(t, err)
+	_, err = p.GetPodStatus(ctx, "", "")
+	assert.Error(t, err)
+	_, err = p.GetPods(ctx)
+	assert.Error(t, err)
+}
+
+func TestCancelContextEarlyReturn(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	cancel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ms := mock_store.NewMockStore(ctrl)
+
+	var s store.Store = ms
+
+	p := Provider{
+		Store: &s,
+	}
+
+	assert.Equal(t, p.UpdatePod(ctx, nil), context.Canceled)
+	assert.Equal(t, p.CreatePod(ctx, nil), context.Canceled)
+	assert.Equal(t, p.DeletePod(ctx, nil), context.Canceled)
+	_, err := p.GetPod(ctx, "", "")
+	assert.Equal(t, err, context.Canceled)
+	_, err = p.GetPodStatus(ctx, "", "")
+	assert.Equal(t, err, context.Canceled)
+	_, err = p.GetPods(ctx)
+	assert.Equal(t, err, context.Canceled)
+}
+
+func TestCancelContextWhileRunningLatency(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ms := mock_store.NewMockStore(ctrl)
+
+	var s store.Store = ms
+
+	p := Provider{
+		Store: &s,
+	}
+
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(100000), nil).Times(6)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer cancel()
+	assert.Error(t, p.UpdatePod(ctx, nil))
+
+	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer cancel()
+	assert.Error(t, p.CreatePod(ctx, nil))
+
+	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer cancel()
+	assert.Error(t, p.DeletePod(ctx, nil))
+
+	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer cancel()
+	_, err := p.GetPod(ctx, "", "")
+	assert.Error(t, err)
+
+	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer cancel()
+	_, err = p.GetPodStatus(ctx, "", "")
+	assert.Error(t, err)
+
+	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer cancel()
+	_, err = p.GetPods(ctx)
+	assert.Error(t, err)
 }

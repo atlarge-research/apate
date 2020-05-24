@@ -4,7 +4,6 @@ package services
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
 
@@ -35,6 +34,6 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store, sch
 func (s *scenarioHandlerService) StartScenario(_ context.Context, scenario *apatelet.ApateletScenario) (*empty.Empty, error) {
 	log.Printf("Scenario starting at %v\n", scenario.StartTime)
 
-	s.sch.StartScheduler(time.Duration(scenario.StartTime))
+	s.sch.StartScheduler(scenario.StartTime)
 	return new(empty.Empty), nil
 }

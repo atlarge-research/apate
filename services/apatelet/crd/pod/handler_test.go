@@ -82,7 +82,7 @@ func TestEnqueueCRD(t *testing.T) {
 		assert.EqualValues(t, arr[1], et2)
 	})
 
-	err := enqueueCRD(&ep, &s)
+	err := setPodTasks(&ep, &s)
 	assert.NoError(t, err)
 }
 
@@ -154,6 +154,6 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		assert.Equal(t, 0, len(arr))
 	})
 
-	err := enqueueCRD(&ep, &s)
+	err := setPodTasks(&ep, &s)
 	assert.NoError(t, err)
 }

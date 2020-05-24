@@ -32,7 +32,7 @@ func TestMagicPodAndNodePod(t *testing.T) {
 
 	out, err := podAndNodeResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -68,7 +68,7 @@ func TestMagicPodAndNodeNode(t *testing.T) {
 	out, err := podAndNodeResponse(
 		responseArgs{
 			ctx:      context.TODO(),
-			provider: &Provider{store: &s},
+			provider: &Provider{Store: &s},
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			},

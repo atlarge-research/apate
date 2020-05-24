@@ -12,6 +12,11 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
+const (
+	// sleepMargin represents the amount of time the scheduler wakes up before a next task
+	sleepMargin = time.Second
+)
+
 // Scheduler is struct on which all scheduler functionality is implemented.
 type Scheduler struct {
 	store *store.Store
@@ -20,8 +25,8 @@ type Scheduler struct {
 	readyCh  chan struct{}
 	updateCh chan struct{}
 
-	prevT     time.Duration
-	startTime time.Duration
+	prevT     time.Time
+	startTime time.Time
 }
 
 // New returns a new scheduler
@@ -31,8 +36,8 @@ func New(ctx context.Context, st *store.Store) Scheduler {
 		ctx:       ctx,
 		readyCh:   make(chan struct{}),
 		updateCh:  make(chan struct{}),
-		prevT:     0,
-		startTime: 0,
+		prevT:     time.Unix(0, 0),
+		startTime: time.Unix(0, 0),
 	}
 }
 
@@ -54,13 +59,14 @@ func (s *Scheduler) EnableScheduler() <-chan error {
 			}
 
 			// Run iteration
-			if done, delay := s.runner(ech); done {
-				select {
-				case <-s.updateCh:
-					//
-				case <-time.After(delay):
-					//
-				}
+			done, delay := s.runner(ech)
+
+			if done {
+				<-s.updateCh
+			}
+
+			if delay > time.Millisecond {
+				<-time.After(delay)
 			}
 		}
 	}()
@@ -69,8 +75,8 @@ func (s *Scheduler) EnableScheduler() <-chan error {
 }
 
 // StartScheduler sets the start time and starts the scheduler
-func (s *Scheduler) StartScheduler(startTime time.Duration) {
-	s.startTime = startTime
+func (s *Scheduler) StartScheduler(startTime int64) {
+	s.startTime = time.Unix(0, startTime)
 	s.readyCh <- struct{}{}
 }
 
@@ -83,7 +89,7 @@ func (s *Scheduler) WakeScheduler() {
 }
 
 func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
-	now := time.Duration(time.Now().UnixNano())
+	now := time.Now()
 
 	relativeTime, taskFound, err := (*s.store).PeekTask()
 	if err != nil {
@@ -95,15 +101,17 @@ func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
 		return true, 0
 	}
 
-	if now >= relativeTime+s.startTime {
+	scheduledTime := s.startTime.Add(relativeTime)
+
+	if now.After(scheduledTime) {
 		task, err := (*s.store).PopTask()
 		if err != nil {
 			ech <- errors.Wrap(err, "failed to pop the next task from the store")
 			return false, 0
 		}
 
-		if relativeTime >= s.prevT {
-			s.prevT = relativeTime
+		if s.prevT.Before(scheduledTime) || s.prevT.Equal(scheduledTime) {
+			s.prevT = scheduledTime
 			go s.taskHandler(ech, task)
 		}
 
@@ -114,11 +122,12 @@ func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
 		}
 
 		if nextTaskFound {
-			nextTime := nextRelativeTime + s.startTime
+			nextTime := s.startTime.Add(nextRelativeTime)
 
-			delay := nextTime - now - time.Second
-			if delay < 0 {
-				return false, 0
+			delay := nextTime.Sub(now) - sleepMargin
+
+			if delay < time.Nanosecond {
+				return false, time.Nanosecond
 			}
 			return false, delay
 		}

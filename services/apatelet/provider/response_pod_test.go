@@ -33,7 +33,7 @@ func TestPodNormal(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -65,7 +65,7 @@ func TestPodStoreError1(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -96,7 +96,7 @@ func TestPodStoreError2(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -127,7 +127,7 @@ func TestPodUnset(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -158,7 +158,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -191,7 +191,7 @@ func TestPodInvalidResponse(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -224,7 +224,7 @@ func TestPodTimeOut(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      ctx,
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
