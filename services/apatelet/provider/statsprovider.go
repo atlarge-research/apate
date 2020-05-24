@@ -44,9 +44,9 @@ func (p *Provider) GetStatsSummary(context.Context) (*stats.Summary, error) {
 // Node statistics
 func (p *Provider) getNodeStats(pods *[]stats.PodStats) stats.NodeStats {
 	return stats.NodeStats{
-		NodeName:         p.nodeInfo.Name,
+		NodeName:         p.NodeInfo.Name,
 		SystemContainers: []stats.ContainerStats{},
-		StartTime:        p.stats.startTime,
+		StartTime:        p.Stats.startTime,
 		CPU:              p.cpuStats(pods),
 		Memory:           p.memoryStats(pods),
 		Fs:               p.filesystemStats(pods),
@@ -80,7 +80,7 @@ func (p *Provider) memoryStats(pods *[]stats.PodStats) *stats.MemoryStats {
 		}
 	}
 
-	available := uint64(p.resources.Memory) - usage
+	available := uint64(p.Resources.Memory) - usage
 
 	return &stats.MemoryStats{
 		Time:            p.now(),
@@ -95,7 +95,7 @@ func (p *Provider) memoryStats(pods *[]stats.PodStats) *stats.MemoryStats {
 
 func (p *Provider) filesystemStats(pods *[]stats.PodStats) *stats.FsStats {
 	zero := uint64(0)
-	capacity := uint64(p.resources.EphemeralStorage)
+	capacity := uint64(p.Resources.EphemeralStorage)
 	usage := uint64(0)
 
 	for _, pod := range *pods {
@@ -119,7 +119,7 @@ func (p *Provider) filesystemStats(pods *[]stats.PodStats) *stats.FsStats {
 func (p *Provider) getAggregatePodStats() []stats.PodStats {
 	var statistics []stats.PodStats
 
-	for _, pod := range p.pods.GetAllPods() {
+	for _, pod := range p.Pods.GetAllPods() {
 		statistics = append(statistics, *p.getPodStats(pod))
 	}
 
@@ -129,7 +129,7 @@ func (p *Provider) getAggregatePodStats() []stats.PodStats {
 func (p *Provider) getPodStats(pod *v1.Pod) *stats.PodStats {
 	for k, label := range pod.Labels {
 		if k == podConfigurationLabel {
-			unconvertedStats, err := (*p.store).GetPodFlag(label, events.PodResources)
+			unconvertedStats, err := (*p.Store).GetPodFlag(label, events.PodResources)
 			if err != nil {
 				log.Printf("error while retrieving pod flag for resources: %v\n", err)
 				return addPodSpecificStats(pod, &stats.PodStats{})

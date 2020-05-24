@@ -5,16 +5,17 @@ import (
 	"container/list"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
-
 	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )
 
 //TODO: Multi-master soon :tm:
@@ -24,8 +25,8 @@ type Store interface {
 	// AddNode adds the given Node to the Apate cluster
 	AddNode(*Node) error
 
-	// RemoveNode removes the given Node from the Apate cluster
-	RemoveNode(*Node) error
+	// RemoveNode removes the given Node from the Apate cluster by uuid
+	RemoveNode(uuid.UUID) error
 
 	// GetNode returns the node with the given uuid
 	GetNode(uuid.UUID) (Node, error)
@@ -36,14 +37,17 @@ type Store interface {
 	// GetNodes returns an array containing all nodes in the Apate cluster
 	GetNodes() ([]Node, error)
 
+	// GetNodesBySelector returns an array containing all nodes in the Apate cluster with the given selector
+	GetNodesBySelector(string) ([]Node, error)
+
 	// ClearNodes removes all nodes from the Apate cluster
 	ClearNodes() error
 
 	// AddResourcesToQueue adds a node resource to the queue
-	AddResourcesToQueue([]normalization.NodeResources) error
+	AddResourcesToQueue([]scenario.NodeResources) error
 
 	// GetResourceFromQueue returns the first NodeResources struct in the list
-	GetResourceFromQueue() (*normalization.NodeResources, error)
+	GetResourceFromQueue() (*scenario.NodeResources, error)
 
 	// SetApateletScenario adds the ApateletScenario to the store
 	SetApateletScenario(*apatelet.ApateletScenario) error
@@ -59,8 +63,9 @@ type Store interface {
 }
 
 type store struct {
-	nodes    map[uuid.UUID]Node
-	nodeLock sync.RWMutex
+	nodes           map[uuid.UUID]Node
+	nodesBySelector map[string][]Node
+	nodeLock        sync.RWMutex
 
 	resourceQueue list.List
 	resourceLock  sync.Mutex
@@ -75,7 +80,8 @@ type store struct {
 // NewStore creates a new empty cluster
 func NewStore() Store {
 	return &store{
-		nodes: make(map[uuid.UUID]Node),
+		nodes:           make(map[uuid.UUID]Node),
+		nodesBySelector: make(map[string][]Node),
 	}
 }
 
@@ -88,16 +94,41 @@ func (s *store) AddNode(node *Node) error {
 		return errors.Errorf("node with uuid '%s' already exists", node.UUID.String())
 	}
 
+	if len(node.Selector) == 0 {
+		return errors.Errorf("node %s has no selector", node.UUID.String())
+	}
+
 	s.nodes[node.UUID] = *node
+	s.nodesBySelector[node.Selector] = append(s.nodesBySelector[node.Selector], *node)
 
 	return nil
 }
 
-func (s *store) RemoveNode(node *Node) error {
+func (s *store) RemoveNode(uuid uuid.UUID) error {
 	s.nodeLock.Lock()
 	defer s.nodeLock.Unlock()
 
+	node := s.nodes[uuid]
+	if node == (Node{}) {
+		return nil
+	}
+
+	selector := node.Selector
+
+	if len(selector) == 0 {
+		return errors.Errorf("node %s has no selector", node.UUID.String())
+	}
+
+	for i, cur := range s.nodesBySelector[selector] {
+		if cur.UUID == node.UUID {
+			le := len(s.nodesBySelector[selector])
+			s.nodesBySelector[selector][i] = s.nodesBySelector[selector][le-1]
+			s.nodesBySelector[selector] = s.nodesBySelector[selector][:le-1]
+		}
+	}
+
 	delete(s.nodes, node.UUID)
+
 	return nil
 }
 
@@ -138,15 +169,23 @@ func (s *store) GetNodes() ([]Node, error) {
 	return nodes, nil
 }
 
+func (s *store) GetNodesBySelector(selector string) ([]Node, error) {
+	s.nodeLock.RLock()
+	defer s.nodeLock.RUnlock()
+
+	return s.nodesBySelector[selector], nil
+}
+
 func (s *store) ClearNodes() error {
 	s.nodeLock.Lock()
 	defer s.nodeLock.Unlock()
 
 	s.nodes = make(map[uuid.UUID]Node)
+	s.nodesBySelector = make(map[string][]Node)
 	return nil
 }
 
-func (s *store) AddResourcesToQueue(resources []normalization.NodeResources) error {
+func (s *store) AddResourcesToQueue(resources []scenario.NodeResources) error {
 	s.resourceLock.Lock()
 	defer s.resourceLock.Unlock()
 
@@ -157,7 +196,7 @@ func (s *store) AddResourcesToQueue(resources []normalization.NodeResources) err
 	return nil
 }
 
-func (s *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
+func (s *store) GetResourceFromQueue() (*scenario.NodeResources, error) {
 	s.resourceLock.Lock()
 	defer s.resourceLock.Unlock()
 
@@ -168,7 +207,7 @@ func (s *store) GetResourceFromQueue() (*normalization.NodeResources, error) {
 	res := s.resourceQueue.Front()
 	s.resourceQueue.Remove(res)
 
-	return res.Value.(*normalization.NodeResources), nil
+	return res.Value.(*scenario.NodeResources), nil
 }
 
 func (s *store) SetApateletScenario(scenario *apatelet.ApateletScenario) error {

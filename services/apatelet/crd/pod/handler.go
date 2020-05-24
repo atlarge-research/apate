@@ -1,8 +1,9 @@
 package pod
 
-// TODO make node equivalent when moving node to CRD
-
 import (
+	"log"
+	"time"
+
 	"github.com/pkg/errors"
 
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
@@ -11,56 +12,60 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-// CreateCRDInformer creates a new crd informer.
-func CreateCRDInformer(config *kubeconfig.KubeConfig, st *store.Store, errch *chan error) {
+// CreatePodInformer creates a new crd informer.
+func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch chan struct{}, cb func()) error {
 	restConfig, err := config.GetConfig()
 	if err != nil {
-		*errch <- errors.Wrap(err, "failed to get rest config from Kubeconfig")
-		return
+		return errors.Wrap(err, "failed to get restconfig from kubeconfig for the pod informer")
 	}
 
 	podClient, err := pod.NewForConfig(restConfig, "default")
 	if err != nil {
-		*errch <- errors.Wrap(err, "failed to create new pod configuration CRD")
-		return
+		return errors.Wrap(err, "failed to get podclient from rest config for pod informer")
 	}
 
 	podClient.WatchResources(func(obj interface{}) {
-		err := enqueueCRD(obj, st)
+		cb()
+
+		err := setPodTasks(obj, st)
 		if err != nil {
-			*errch <- errors.Wrap(err, "failed to enqueue crd (addfunc)")
+			log.Printf("error while adding pod tasks: %v\n", err)
 		}
 	}, func(oldObj, newObj interface{}) {
-		err := enqueueCRD(newObj, st) // just replace all tasks with the <namespace>/<name>
+		cb()
+
+		err := setPodTasks(newObj, st) // just replace all tasks with the <namespace>/<name>
 		if err != nil {
-			*errch <- errors.Wrap(err, "failed to enqueue crd (updatefunc)")
+			log.Printf("error while adding pod tasks: %v\n", err)
 		}
 	}, func(obj interface{}) {
 		_, crdLabel := getCRDAndLabel(obj)
 		err := (*st).RemovePodTasks(crdLabel)
 		if err != nil {
-			*errch <- errors.Wrap(err, "failed to delete pod tasks (deletefunc)")
+			log.Printf("error while removing pod tasks: %v\n", err)
 		}
-	})
+	}, stopch)
+
+	return nil
 }
 
-func enqueueCRD(obj interface{}, st *store.Store) error {
+func setPodTasks(obj interface{}, st *store.Store) error {
 	newCRD, crdLabel := getCRDAndLabel(obj)
 
 	empty := v1.PodConfigurationState{}
 	if newCRD.Spec.PodConfigurationState != empty {
 		if err := SetPodFlags(st, crdLabel, &newCRD.Spec.PodConfigurationState); err != nil {
-			return errors.Wrap(err, "failed to set pod flags")
+			return errors.Wrap(err, "failed to set pod flags during enqueueing of crd")
 		}
 	}
 
 	var tasks []*store.Task
 	for _, task := range newCRD.Spec.Tasks {
 		state := task.State
-		tasks = append(tasks, store.NewPodTask(task.Timestamp, crdLabel, &state))
+		tasks = append(tasks, store.NewPodTask(time.Duration(task.Timestamp), crdLabel, &state))
 	}
 
-	return errors.Wrap((*st).EnqueuePodTasks(crdLabel, tasks), "failed to enqueue new pod tasks")
+	return errors.Wrap((*st).SetPodTasks(crdLabel, tasks), "failed to set pod tasks")
 }
 
 func getCRDAndLabel(obj interface{}) (*v1.PodConfiguration, string) {

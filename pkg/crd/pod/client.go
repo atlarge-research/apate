@@ -1,8 +1,8 @@
 // Package pod defines utilities for the PodConfiguration CRD
-// TODO make node CRD equivalent
 package pod
 
 import (
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -20,6 +19,8 @@ import (
 )
 
 const resource = "podconfigurations"
+
+var once sync.Once
 
 // ConfigurationClient is the client for the PodConfiguration CRD
 type ConfigurationClient struct {
@@ -29,9 +30,11 @@ type ConfigurationClient struct {
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
-	if err := v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, errors.Wrap(err, "failed to add crd information to the scheme")
-	}
+	once.Do(func() {
+		if err := v1.AddToScheme(scheme.Scheme); err != nil {
+			panic(errors.Wrap(err, "failed to add crd information to the scheme"))
+		}
+	})
 
 	config := *c
 	config.ContentConfig.GroupVersion = &v1.SchemeGroupVersion
@@ -48,7 +51,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 }
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
-func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{})) {
+func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh chan struct{}) {
 	_, podConfigurationController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -65,7 +68,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 		},
 	)
 
-	go podConfigurationController.Run(wait.NeverStop)
+	go podConfigurationController.Run(stopCh)
 }
 
 func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.PodConfigurationList, error) {

@@ -73,7 +73,7 @@ func TestEnqueueCRD(t *testing.T) {
 		},
 	}
 
-	ms.EXPECT().EnqueuePodTasks(
+	ms.EXPECT().SetPodTasks(
 		"TestNamespace/TestName",
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
@@ -82,7 +82,7 @@ func TestEnqueueCRD(t *testing.T) {
 		assert.EqualValues(t, arr[1], et2)
 	})
 
-	err := enqueueCRD(&ep, &s)
+	err := setPodTasks(&ep, &s)
 	assert.NoError(t, err)
 }
 
@@ -146,7 +146,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(v1.PodStatusRunning)),
 	)
 
-	ms.EXPECT().EnqueuePodTasks(
+	ms.EXPECT().SetPodTasks(
 		"TestNamespace/TestName",
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
@@ -154,6 +154,6 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		assert.Equal(t, 0, len(arr))
 	})
 
-	err := enqueueCRD(&ep, &s)
+	err := setPodTasks(&ep, &s)
 	assert.NoError(t, err)
 }

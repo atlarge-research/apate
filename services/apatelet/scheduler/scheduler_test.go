@@ -3,9 +3,13 @@ package scheduler
 //go:generate sh -c "cd ../../../ && make mockgen"
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/any"
+	"context"
+	"testing"
+	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
+	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -13,39 +17,34 @@ import (
 
 	"github.com/pkg/errors"
 
-	"context"
-	"testing"
-	"time"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func TestTaskHandlerSimpleNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
-	a, _ := any.Marshal(scenario.Response_RESPONSE_ERROR)
-
 	// Test task:
-	task := apatelet.Task{
-		NodeEventFlags: map[int32]*anypb.Any{
-			events.NodeCreatePodResponse: a,
+	task := &nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
 	// Set up expectations
-	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_RESPONSE_ERROR)
+	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
+	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(0))
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Run code under test
 	ech := make(chan error)
 
-	sched.taskHandler(ech, store.NewNodeTask(0, &task))
+	sched.taskHandler(ech, store.NewNodeTask(0, task))
 
 	select {
 	case <-ech:
@@ -56,6 +55,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 
 func TestTaskHandlerSimplePod(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -65,10 +65,10 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	})
 
 	// Set up expectations
-	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
+	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatusFailed)
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -84,32 +84,25 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 
 func TestTaskHandlerMultiple(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
-	m1, err := any.Marshal(scenario.Response_RESPONSE_ERROR)
-	assert.NoError(t, err)
-
-	m2, err := any.Marshal(42)
-	assert.NoError(t, err)
-
 	// Test task:
-	task := apatelet.Task{
-		NodeEventFlags: map[int32]*anypb.Any{
-			events.NodeCreatePodResponse: m1,
-			events.NodeAddedLatencyMsec:  m2,
+	task := nodeV1.NodeConfigurationState{
+		NetworkLatency: 42,
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
 	// Set up expectations
-	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.Response_RESPONSE_ERROR)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil).AnyTimes()
+	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
 
-	ms.EXPECT().SetPodFlag("a", events.PodCreatePodResponse, scenario.Response_RESPONSE_ERROR)
-	ms.EXPECT().SetPodFlag("b", events.PodStatus, scenario.PodStatus_POD_STATUS_FAILED)
-
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -123,61 +116,27 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	}
 }
 
-func TestTaskHandlerNodeError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	a := anypb.Any{
-		TypeUrl: "invalid-any",
-		Value:   nil,
-	}
-
-	// Test task:
-	task := apatelet.Task{
-		NodeEventFlags: map[int32]*anypb.Any{
-			events.NodeCreatePodResponse: &a,
-		},
-	}
-
-	// Set up expectations
-	var s store.Store = ms
-	sched := Scheduler{&s, 0}
-
-	// Run code under test
-	ech := make(chan error, 1)
-
-	sched.taskHandler(ech, store.NewNodeTask(0, &task))
-
-	select {
-	case err := <-ech:
-		assert.Error(t, err)
-	default:
-		t.Fail()
-	}
-}
-
 func TestRunner(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
-	a, _ := any.Marshal(scenario.Response_RESPONSE_ERROR)
-
 	// Test task:
-	task := apatelet.Task{
-		NodeEventFlags: map[int32]*anypb.Any{
-			events.NodeCreatePodResponse: a,
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(0), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
-	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
+	sched.WakeScheduler()
 
 	// Run code under test
 	ech := make(chan error, 1)
@@ -191,19 +150,102 @@ func TestRunner(t *testing.T) {
 	}
 }
 
+func TestRunnerDelay(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ms := mock_store.NewMockStore(ctrl)
+
+	// Test task:
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
+		},
+	}
+
+	secondDelay := time.Second * 5
+
+	// Expectations
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
+	ms.EXPECT().PeekTask().Return(secondDelay, true, nil)
+	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+
+	var s store.Store = ms
+	sched := New(context.Background(), &s)
+	sched.startTime = time.Now()
+
+	// Run code under test
+	ech := make(chan error, 1)
+
+	done, delay := sched.runner(ech)
+	assert.Equal(t, false, done)
+
+	maxDelay := sched.startTime.Add(secondDelay).Sub(sched.startTime)
+	assert.Less(t, delay.Nanoseconds(), maxDelay.Nanoseconds())
+
+	select {
+	case <-ech:
+		t.Fail()
+	default:
+	}
+}
+
+func TestRunnerSleep(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ms := mock_store.NewMockStore(ctrl)
+
+	// Test task:
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
+		},
+	}
+
+	// Expectations
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), false, nil).Times(3)
+	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+
+	var s store.Store = ms
+	sched := New(context.Background(), &s)
+	ech := sched.EnableScheduler()
+
+	sched.StartScheduler(0)
+	time.Sleep(time.Millisecond * 500)
+	sched.WakeScheduler()
+
+	time.Sleep(time.Second)
+	select {
+	case <-ech:
+		t.Fail()
+	default:
+	}
+}
+
 func TestRunnerDontHandleOldTask(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(10), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(10), true, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewPodTask(10, "la/clappe", &v1.PodConfigurationState{
 		PodStatus: v1.PodStatusUnknown,
 	}), nil)
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 40}
+	sched := Scheduler{
+		store:     &s,
+		ctx:       context.Background(),
+		readyCh:   make(chan struct{}),
+		prevT:     time.Unix(0, 40),
+		startTime: time.Unix(0, 0),
+	}
 
 	// Run code under test
 	ech := make(chan error, 1)
@@ -219,15 +261,16 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 
 func TestRunnerEarlyFail(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(-1), errors.New("some error"))
+	ms.EXPECT().PeekTask().Return(time.Duration(-1), true, errors.New("some error"))
 
 	// Setup
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -244,16 +287,17 @@ func TestRunnerEarlyFail(t *testing.T) {
 
 func TestRunnerPopFail(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(0), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
 	ms.EXPECT().PopTask().Return(nil, errors.New("new error"))
 
 	// Setup
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(context.Background(), &s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -272,31 +316,29 @@ func TestStartScheduler(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctrl, ctx := gomock.WithContext(ctx, t)
+	defer ctrl.Finish()
 
 	ms := mock_store.NewMockStore(ctrl)
 
-	a, _ := any.Marshal(scenario.Response_RESPONSE_ERROR)
-
 	// Test task:
-	task := apatelet.Task{
-		NodeEventFlags: map[int32]*anypb.Any{
-			events.NodeCreatePodResponse: a,
+	task := nodeV1.NodeConfigurationState{
+		CustomState: &nodeV1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
 	// Expectations
-	ms.EXPECT().PeekTask().Return(int64(0), nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
+	ms.EXPECT().PeekTask().Return(time.Duration(0), false, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
-	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any())
-
-	// any further peeks are well into the future
-	ms.EXPECT().PeekTask().Return(time.Now().Add(time.Hour*12).UnixNano(), nil).AnyTimes()
+	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := Scheduler{&s, 0}
+	sched := New(ctx, &s)
 
 	// Run code under test
-	ech := sched.StartScheduler(ctx)
+	ech := sched.EnableScheduler()
+	sched.StartScheduler(0)
 
 	time.Sleep(time.Second)
 

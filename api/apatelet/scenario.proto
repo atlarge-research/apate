@@ -3,7 +3,6 @@ syntax = "proto3";
 option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet";
 package apate.apatelet;
 
-import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 
 // This service will run on the Apatelets
@@ -14,28 +13,8 @@ service Scenario {
     rpc startScenario (ApateletScenario) returns (google.protobuf.Empty) {}
 }
 
-// TODO only include start_time when moving node to CRD
 // The top level object which defines how the different Apatelet will emulate certain deployments
 message ApateletScenario {
-    // A scenario consists of multiple tasks that will be scheduled on a Apatelet
-    repeated Task task = 1;
-
     // The absolute timestamp at which the scenario will start
-    int64 start_time = 2;
-}
-
-message Task {
-    // Whether to revert the event in this task
-    bool revert_task = 1;
-
-    // The timestamp on which this task will be executed
-    // Is in nanoseconds since the scenario has started
-    int64 relative_timestamp = 2;
-
-    // The UUID of the nodes on which this task will be executed
-    // Should not be used by the apatelet as every task it receives is target towards that apatelet
-    map<string, bool> node_set = 3;
-
-    // The node event flags belonging to this task
-    map<int32, google.protobuf.Any> node_event_flags = 4;
+    int64 start_time = 1;
 }

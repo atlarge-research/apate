@@ -34,11 +34,6 @@ const (
 	// NodePingResponse determines how to respond to the Ping request
 	NodePingResponse
 
-	// NodeAddedLatencyEnabled defines the amount of added network latency the node experiences
-	// Whether to enable added latency
-	// If not enabled, the next field will be ignored
-	NodeAddedLatencyEnabled
-
 	// NodeAddedLatencyMsec is the amount of msec of latency
 	// Will default to 0 msec
 	NodeAddedLatencyMsec

@@ -21,7 +21,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	// Get docker cli
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting docker cli for spawning control plane container failed")
 	}
 
 	// Get docker port for control plane

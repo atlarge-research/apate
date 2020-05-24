@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -16,8 +17,6 @@ import (
 
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: podconfiguration.GroupName, Version: "v1"}
-
-// this is a hack, to register the emulated pod types with the decoder
 var schemeGroupVersionInternal = schema.GroupVersion{Group: podconfiguration.GroupName, Version: runtime.APIVersionInternal}
 
 var (
@@ -33,7 +32,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&PodConfiguration{},
 		&PodConfigurationList{},
 	)
-	// TODO find out why this is necessary
 	scheme.AddKnownTypes(schemeGroupVersionInternal,
 		&PodConfiguration{},
 		&PodConfigurationList{},

@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -24,14 +25,14 @@ func TestMagicPodAndNodePod(t *testing.T) {
 	PCPRF := events.PodCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	// SOT
 	var s store.Store = ms
 
 	out, err := podAndNodeResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -58,8 +59,8 @@ func TestMagicPodAndNodeNode(t *testing.T) {
 	NCPRF := events.PodCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
-	ms.EXPECT().GetNodeFlag(NCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(NCPRF).Return(scenario.ResponseNormal, nil)
 
 	// SOT
 	var s store.Store = ms
@@ -67,7 +68,7 @@ func TestMagicPodAndNodeNode(t *testing.T) {
 	out, err := podAndNodeResponse(
 		responseArgs{
 			ctx:      context.TODO(),
-			provider: &Provider{store: &s},
+			provider: &Provider{Store: &s},
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			},

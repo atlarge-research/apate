@@ -5,7 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
@@ -28,7 +29,7 @@ type responseArgs struct {
 }
 
 func podResponse(args responseArgs, label string, responseFlag events.PodEventFlag) (interface{}, bool, error) {
-	iflag, err := (*args.provider.store).GetPodFlag(label, responseFlag)
+	iflag, err := (*args.provider.Store).GetPodFlag(label, responseFlag)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get pod flag")
 	}
@@ -39,15 +40,15 @@ func podResponse(args responseArgs, label string, responseFlag events.PodEventFl
 	}
 
 	switch flag {
-	case scenario.Response_RESPONSE_NORMAL:
+	case scenario.ResponseNormal:
 		res, err := args.action()
 		return res, true, errors.Wrap(err, "failed to execute pod response action")
-	case scenario.Response_RESPONSE_TIMEOUT:
+	case scenario.ResponseTimeout:
 		<-args.ctx.Done()
 		return nil, true, nil
-	case scenario.Response_RESPONSE_ERROR:
+	case scenario.ResponseError:
 		return nil, true, emulationError("podResponse expected error")
-	case scenario.Response_RESPONSE_UNSET:
+	case scenario.ResponseUnset:
 		return nil, false, nil
 	default:
 		return nil, false, errors.New("podResponse invalid scenario")
@@ -56,7 +57,7 @@ func podResponse(args responseArgs, label string, responseFlag events.PodEventFl
 
 // nodeResponse checks the passed flags and calls the passed function on success
 func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interface{}, error) {
-	iflag, err := (*args.provider.store).GetNodeFlag(responseFlag)
+	iflag, err := (*args.provider.Store).GetNodeFlag(responseFlag)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get node flag")
 	}
@@ -67,15 +68,15 @@ func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interfa
 	}
 
 	switch flag {
-	case scenario.Response_RESPONSE_UNSET:
+	case scenario.ResponseUnset:
 		fallthrough // If unset, act as if it's normal
-	case scenario.Response_RESPONSE_NORMAL:
+	case scenario.ResponseNormal:
 		res, err := args.action()
 		return res, errors.Wrap(err, "failed to execute node response action")
-	case scenario.Response_RESPONSE_TIMEOUT:
+	case scenario.ResponseTimeout:
 		<-args.ctx.Done()
 		return nil, nil
-	case scenario.Response_RESPONSE_ERROR:
+	case scenario.ResponseError:
 		return nil, emulationError("nodeResponse expected error")
 	default:
 		return nil, errors.New("nodeResponse invalid scenario")

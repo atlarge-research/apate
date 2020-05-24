@@ -5,11 +5,10 @@
 package mock_store
 
 import (
-	reflect "reflect"
-
-	gomock "github.com/golang/mock/gomock"
-
 	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
+	time "time"
 )
 
 // MockStore is a mock of Store interface
@@ -33,32 +32,6 @@ func NewMockStore(ctrl *gomock.Controller) *MockStore {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
-}
-
-// EnqueuePodTasks mocks base method
-func (m *MockStore) EnqueuePodTasks(arg0 string, arg1 []*store.Task) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnqueuePodTasks", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// EnqueuePodTasks indicates an expected call of EnqueuePodTasks
-func (mr *MockStoreMockRecorder) EnqueuePodTasks(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueuePodTasks", reflect.TypeOf((*MockStore)(nil).EnqueuePodTasks), arg0, arg1)
-}
-
-// EnqueueTasks mocks base method
-func (m *MockStore) EnqueueTasks(arg0 []*store.Task) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EnqueueTasks", arg0)
-}
-
-// EnqueueTasks indicates an expected call of EnqueueTasks
-func (mr *MockStoreMockRecorder) EnqueueTasks(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueTasks", reflect.TypeOf((*MockStore)(nil).EnqueueTasks), arg0)
 }
 
 // GetNodeFlag mocks base method
@@ -106,12 +79,13 @@ func (mr *MockStoreMockRecorder) LenTasks() *gomock.Call {
 }
 
 // PeekTask mocks base method
-func (m *MockStore) PeekTask() (int64, error) {
+func (m *MockStore) PeekTask() (time.Duration, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PeekTask")
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(time.Duration)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // PeekTask indicates an expected call of PeekTask
@@ -161,6 +135,20 @@ func (mr *MockStoreMockRecorder) SetNodeFlag(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNodeFlag", reflect.TypeOf((*MockStore)(nil).SetNodeFlag), arg0, arg1)
 }
 
+// SetNodeTasks mocks base method
+func (m *MockStore) SetNodeTasks(arg0 []*store.Task) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetNodeTasks", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetNodeTasks indicates an expected call of SetNodeTasks
+func (mr *MockStoreMockRecorder) SetNodeTasks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNodeTasks", reflect.TypeOf((*MockStore)(nil).SetNodeTasks), arg0)
+}
+
 // SetPodFlag mocks base method
 func (m *MockStore) SetPodFlag(arg0 string, arg1 int32, arg2 interface{}) {
 	m.ctrl.T.Helper()
@@ -173,14 +161,16 @@ func (mr *MockStoreMockRecorder) SetPodFlag(arg0, arg1, arg2 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodFlag", reflect.TypeOf((*MockStore)(nil).SetPodFlag), arg0, arg1, arg2)
 }
 
-// SetStartTime mocks base method
-func (m *MockStore) SetStartTime(arg0 int64) {
+// SetPodTasks mocks base method
+func (m *MockStore) SetPodTasks(arg0 string, arg1 []*store.Task) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetStartTime", arg0)
+	ret := m.ctrl.Call(m, "SetPodTasks", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// SetStartTime indicates an expected call of SetStartTime
-func (mr *MockStoreMockRecorder) SetStartTime(arg0 interface{}) *gomock.Call {
+// SetPodTasks indicates an expected call of SetPodTasks
+func (mr *MockStoreMockRecorder) SetPodTasks(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStartTime", reflect.TypeOf((*MockStore)(nil).SetStartTime), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPodTasks", reflect.TypeOf((*MockStore)(nil).SetPodTasks), arg0, arg1)
 }

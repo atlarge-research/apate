@@ -5,16 +5,14 @@
 package mock_store
 
 import (
-	reflect "reflect"
-
-	gomock "github.com/golang/mock/gomock"
-	uuid "github.com/google/uuid"
-
 	apatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	health "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	kubeconfig "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	normalization "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
+	scenario "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
+	reflect "reflect"
 )
 
 // MockStore is a mock of Store interface
@@ -55,7 +53,7 @@ func (mr *MockStoreMockRecorder) AddNode(arg0 interface{}) *gomock.Call {
 }
 
 // AddResourcesToQueue mocks base method
-func (m *MockStore) AddResourcesToQueue(arg0 []normalization.NodeResources) error {
+func (m *MockStore) AddResourcesToQueue(arg0 []scenario.NodeResources) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddResourcesToQueue", arg0)
 	ret0, _ := ret[0].(error)
@@ -142,11 +140,26 @@ func (mr *MockStoreMockRecorder) GetNodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodes", reflect.TypeOf((*MockStore)(nil).GetNodes))
 }
 
+// GetNodesBySelector mocks base method
+func (m *MockStore) GetNodesBySelector(arg0 string) ([]store.Node, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNodesBySelector", arg0)
+	ret0, _ := ret[0].([]store.Node)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNodesBySelector indicates an expected call of GetNodesBySelector
+func (mr *MockStoreMockRecorder) GetNodesBySelector(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodesBySelector", reflect.TypeOf((*MockStore)(nil).GetNodesBySelector), arg0)
+}
+
 // GetResourceFromQueue mocks base method
-func (m *MockStore) GetResourceFromQueue() (*normalization.NodeResources, error) {
+func (m *MockStore) GetResourceFromQueue() (*scenario.NodeResources, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetResourceFromQueue")
-	ret0, _ := ret[0].(*normalization.NodeResources)
+	ret0, _ := ret[0].(*scenario.NodeResources)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -158,7 +171,7 @@ func (mr *MockStoreMockRecorder) GetResourceFromQueue() *gomock.Call {
 }
 
 // RemoveNode mocks base method
-func (m *MockStore) RemoveNode(arg0 *store.Node) error {
+func (m *MockStore) RemoveNode(arg0 uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveNode", arg0)
 	ret0, _ := ret[0].(error)

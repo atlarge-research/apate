@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -15,7 +17,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	api "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/deserialize"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -30,8 +31,11 @@ const (
 	defaultControlPlaneTimeout = 45
 )
 
+func fatal(err error) {
+	log.Fatalf("An error occurred while running the CLI: %+v\n", err)
+}
+
 func main() {
-	var scenarioFileLocation string
 	var k8sConfigurationFileLocation string
 	var controlPlaneAddress string
 	var controlPlanePort int
@@ -49,15 +53,9 @@ func main() {
 				Name:  "run",
 				Usage: "Runs a given scenario file on the Apate cluster",
 				Action: func(c *cli.Context) error {
-					return errors.Wrap(runScenario(ctx, scenarioFileLocation, controlPlaneAddress, controlPlanePort, k8sConfigurationFileLocation), "failed to run scenario")
+					return errors.Wrap(runScenario(ctx, controlPlaneAddress, k8sConfigurationFileLocation, controlPlanePort), "failed to run scenario")
 				},
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:        "scenario",
-						Usage:       "Load the scenario from `FILE`",
-						Destination: &scenarioFileLocation,
-						Required:    true,
-					},
 					&cli.StringFlag{
 						Name:        "address",
 						Usage:       "The address of the control plane",
@@ -188,18 +186,22 @@ func main() {
 }
 
 func printKubeConfig(ctx context.Context, address string, port int) error {
-	cfg, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false))
-
+	client, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(address, port, false))
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster operation client")
+		return errors.Wrap(err, "couldn't get cluster operation client for kube config")
 	}
 
-	kcfg, err := cfg.GetKubeConfig(ctx)
+	cfg, err := client.GetKubeConfig(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to get Kubeconfig")
+		return errors.Wrap(err, "couldn't get kube config from control plane")
 	}
 
-	fmt.Println(string(kcfg))
+	fmt.Println(string(cfg))
+
+	if err := client.Conn.Close(); err != nil {
+		return errors.Wrap(err, "error closing connection to cluster operation client")
+	}
+
 	return nil
 }
 
@@ -207,28 +209,24 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	fmt.Print("Creating control plane container ")
 	port, err := strconv.Atoi(cpEnv.Port)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse port to int (%v)", cpEnv.Port)
+		return errors.Wrap(err, "converting control plane port to integer failed")
 	}
 
 	err = container.SpawnControlPlaneContainer(ctx, pullPolicy, cpEnv)
-
 	if err != nil {
-		return errors.Wrap(err, "failed to spawn docker container for control plane")
+		return errors.Wrap(err, "couldn't spawn control plane container")
 	}
+
 	color.Green("DONE\n")
 	fmt.Print("Waiting for control plane to be up ")
 
 	// Polling control plane until up
-	statusClient, err := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
-	if err != nil {
-		return errors.Wrap(err, "failed to get status client")
-	}
+	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.Address, port, false))
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*time.Duration(timeout)))
 	defer cancel()
 	err = statusClient.WaitForControlPlane(ctx)
-
 	if err != nil {
-		return errors.Wrap(err, "failed waiting for the control plane to be up")
+		return errors.Wrap(err, "waiting for control plane on the client failed")
 	}
 
 	color.Green("DONE\n")
@@ -236,43 +234,18 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	return nil
 }
 
-func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneAddress string, controlPlanePort int, configFileLocation string) error {
-	// TODO remove scenario related code when moving node to CRD
-	var scenarioDeserializer deserialize.Deserializer
-	var err error
-
-	fmt.Printf("Reading scenario file")
-
-	if scenarioFileLocation == "-" {
-		// Read the file given by stdin
-		var bytes []byte
-
-		bytes, err = ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			return errors.Wrap(err, "failed to read scenario from stdin")
+func runScenario(ctx context.Context, controlPlaneAddress, configFileLocation string, controlPlanePort int) error {
+	k8sConfig, err := func() ([]byte, error) {
+		if len(configFileLocation) > 0 {
+			// #nosec
+			k8sConfig, err := ioutil.ReadFile(configFileLocation)
+			if err != nil {
+				return nil, errors.Wrap(err, "reading k8sconfig failed")
+			}
+			return k8sConfig, nil
 		}
-
-		scenarioDeserializer, err = deserialize.YamlScenario{}.FromBytes(bytes)
-	} else {
-		// Read the file given by the argument
-		scenarioDeserializer, err = deserialize.YamlScenario{}.FromFile(scenarioFileLocation)
-	}
-
-	if err != nil {
-		return errors.Wrap(err, "failed to deserialize scenario")
-	}
-
-	fmt.Printf("\rReading scenario file ")
-	color.Green("DONE\n")
-
-	var k8sConfig []byte
-	if len(configFileLocation) > 0 {
-		// Read the k8s configuration file #nosec
-		k8sConfig, err = ioutil.ReadFile(configFileLocation)
-		if err != nil {
-			return errors.Wrap(err, "failed to read kubernetes config")
-		}
-	}
+		return []byte{}, nil
+	}()
 
 	// The connectionInfo that will be used to connect to the control plane
 	info := &service.ConnectionInfo{
@@ -281,57 +254,45 @@ func runScenario(ctx context.Context, scenarioFileLocation string, controlPlaneA
 		TLS:     false,
 	}
 
-	fmt.Printf("Loading scenario ")
 	// Initial call: load the scenario
 	scenarioClient, err := controlplane.GetScenarioClient(info)
 	if err != nil {
 		return errors.Wrap(err, "failed to get scenario client")
 	}
 
-	scenario, err := scenarioDeserializer.GetScenario()
-	if err != nil {
-		return errors.Wrap(err, "failed to get scenario on control plane")
-	}
+	// Next: poll amount of healthy nodes
+	trigger := make(chan bool)
 
-	_, err = scenarioClient.Client.LoadScenario(ctx, scenario)
-	if err != nil {
-		return errors.Wrap(err, "failed to load scenario on control plane")
-	}
-	color.Green("DONE\n")
+	go func() {
+		_, err = bufio.NewReader(os.Stdin).ReadBytes('\n')
+		if err != nil {
+			fatal(err)
+		}
+		trigger <- true
+	}()
 
-	// Next: keep polling until the control plane is happy
-	expectedApatelets := getAmountOfApatelets(scenario)
 	statusClient, err := controlplane.GetStatusClient(info)
 	if err != nil {
-		return errors.Wrap(err, "failed to get status client")
+		return errors.Wrap(err, "getting status client for runScenario failed")
 	}
-	err = statusClient.WaitForHealthy(ctx, expectedApatelets, func(healthy int) {
-		fmt.Printf("\rWaiting for healthy apatelets (%d/%d) ", healthy, expectedApatelets)
+	err = statusClient.WaitForTrigger(ctx, trigger, func(healthy int) {
+		fmt.Printf("\rGot %d healthy apatelets - Press enter to start scenario...", healthy)
 	})
-
 	if err != nil {
-		return errors.Wrap(err, "failed to wait for healthy Apatelets")
+		return errors.Wrap(err, "waiting for healthy Apatelets failed")
 	}
 
-	color.Green("DONE\n")
 	fmt.Printf("Starting scenario ")
 
 	//Finally: actually start the scenario
-	if _, err := scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
-		return errors.Wrap(err, "failed to start scenario on control plane")
+	if _, err = scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
+		return errors.Wrap(err, "couldn't start scenario")
+	}
+	err = scenarioClient.Conn.Close()
+	if err != nil {
+		return errors.Wrap(err, "couldn't close connection to scenario client")
 	}
 
 	color.Green("DONE\n")
-
 	return nil
-}
-
-func getAmountOfApatelets(scenario *api.PublicScenario) int {
-	var cnt int32
-
-	for _, j := range scenario.NodeGroups {
-		cnt += j.Amount
-	}
-
-	return int(cnt)
 }

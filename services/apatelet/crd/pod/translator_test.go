@@ -3,10 +3,11 @@ package pod
 import (
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -14,21 +15,21 @@ import (
 )
 
 func TestTranslateResponse(t *testing.T) {
-	assert.Equal(t, scenario.Response_RESPONSE_NORMAL, translateResponse(v1.ResponseNormal))
-	assert.Equal(t, scenario.Response_RESPONSE_ERROR, translateResponse(v1.ResponseError))
-	assert.Equal(t, scenario.Response_RESPONSE_TIMEOUT, translateResponse(v1.ResponseTimeout))
-	assert.Equal(t, scenario.Response_RESPONSE_UNSET, translateResponse(v1.ResponseUnset))
-	assert.Equal(t, scenario.Response_RESPONSE_UNSET, translateResponse(v1.PodResponse(20)))
+	assert.Equal(t, scenario.ResponseNormal, translateResponse(v1.ResponseNormal))
+	assert.Equal(t, scenario.ResponseError, translateResponse(v1.ResponseError))
+	assert.Equal(t, scenario.ResponseTimeout, translateResponse(v1.ResponseTimeout))
+	assert.Equal(t, scenario.ResponseUnset, translateResponse(v1.ResponseUnset))
+	assert.Equal(t, scenario.ResponseUnset, translateResponse(v1.PodResponse(20)))
 }
 
 func TestTranslatePodStatus(t *testing.T) {
-	assert.Equal(t, scenario.PodStatus_POD_STATUS_PENDING, translatePodStatus(v1.PodStatusPending))
-	assert.Equal(t, scenario.PodStatus_POD_STATUS_RUNNING, translatePodStatus(v1.PodStatusRunning))
-	assert.Equal(t, scenario.PodStatus_POD_STATUS_SUCCEEDED, translatePodStatus(v1.PodStatusSucceeded))
-	assert.Equal(t, scenario.PodStatus_POD_STATUS_FAILED, translatePodStatus(v1.PodStatusFailed))
-	assert.Equal(t, scenario.PodStatus_POD_STATUS_UNKNOWN, translatePodStatus(v1.PodStatusUnknown))
-	assert.Equal(t, scenario.PodStatus_POD_STATUS_UNSET, translatePodStatus(v1.PodStatusUnset))
-	assert.Equal(t, scenario.PodStatus_POD_STATUS_UNSET, translatePodStatus(v1.PodStatus(20)))
+	assert.Equal(t, scenario.PodStatusPending, translatePodStatus(v1.PodStatusPending))
+	assert.Equal(t, scenario.PodStatusRunning, translatePodStatus(v1.PodStatusRunning))
+	assert.Equal(t, scenario.PodStatusSucceeded, translatePodStatus(v1.PodStatusSucceeded))
+	assert.Equal(t, scenario.PodStatusFailed, translatePodStatus(v1.PodStatusFailed))
+	assert.Equal(t, scenario.PodStatusUnknown, translatePodStatus(v1.PodStatusUnknown))
+	assert.Equal(t, scenario.PodStatusUnset, translatePodStatus(v1.PodStatusUnset))
+	assert.Equal(t, scenario.PodStatusUnset, translatePodStatus(v1.PodStatus(20)))
 }
 
 func TestTranslatePodResources(t *testing.T) {
