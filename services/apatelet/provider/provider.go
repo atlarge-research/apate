@@ -38,9 +38,8 @@ type Provider struct {
 	store     *store.Store
 	stats     *Stats
 
-	updateStatus func(*corev1.Node)
-	node         *corev1.Node
-	conditions   nodeConditions
+	node       *corev1.Node
+	conditions nodeConditions
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command

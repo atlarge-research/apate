@@ -44,7 +44,7 @@ func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 
 	client, err := rest.RESTClientFor(&config)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create new node crd client for config")
 	}
 
 	return &ConfigurationClient{restClient: client}, nil
@@ -82,7 +82,7 @@ func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.NodeConfigurati
 		Into(&result)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to list node configurations")
 	}
 
 	return &result, nil
@@ -98,7 +98,7 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 		Watch()
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to watch node configurtions")
 	}
 
 	return wi, nil
