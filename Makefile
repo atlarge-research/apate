@@ -79,6 +79,9 @@ mock_gen: ./api/health/mock_health/health_mock.go ./services/controlplane/store/
 ./services/apatelet/provider/podmanager/mock_podmanager/mock_podmanager.go:
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager PodManager > $@
 
+./pkg/run/mock_runner/mock_runner.go:
+	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run ApateletRunner > $@
+
 crd_gen:
 	controller-gen object paths=./pkg/apis/...
 	controller-gen crd:trivialVersions=false,crdVersions=v1 paths=./pkg/apis/...

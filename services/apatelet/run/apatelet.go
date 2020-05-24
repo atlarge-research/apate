@@ -10,6 +10,8 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"github.com/google/uuid"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
@@ -22,15 +24,14 @@ import (
 
 	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 
 	cli "github.com/virtual-kubelet/node-cli"
 
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -42,7 +43,7 @@ import (
 var KubeConfigWriter func(config []byte) = nil
 
 // StartApatelet starts the apatelet
-func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsPort int, readyCh *chan bool) error {
+func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsPort int, readyCh chan<- struct{}) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
@@ -142,7 +143,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 		sch.StartScheduler(startTime)
 	}
 
-	*readyCh <- true
+	readyCh <- struct{}{}
 
 	// Stop the server on signal or error
 	select {

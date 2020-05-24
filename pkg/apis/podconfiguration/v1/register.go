@@ -10,9 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
 // SchemeGroupVersion is group version used to register these objects

@@ -51,7 +51,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 }
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
-func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh chan struct{}) {
+func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
 	_, podConfigurationController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {

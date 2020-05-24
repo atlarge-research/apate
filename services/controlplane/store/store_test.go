@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
 // TestEnqueue ensures adding a single node resources results in a single allocation
@@ -42,7 +42,7 @@ func TestEmptyGet(t *testing.T) {
 func TestEmptyNodeMap(t *testing.T) {
 	store := NewStore()
 
-	// Verify there are no nodes by default
+	// Valid there are no nodes by default
 	nodes, err := store.GetNodes()
 	assert.NoError(t, err)
 	assert.Len(t, nodes, 0)
@@ -59,7 +59,7 @@ func TestAddNodeGet(t *testing.T) {
 	err := store.AddNode(&expected)
 	assert.NoError(t, err)
 
-	// Verify node was added
+	// Valid node was added
 	actual, err := store.GetNode(id)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -83,7 +83,7 @@ func TestAddNodeList(t *testing.T) {
 func TestGetNodeWrongUuid(t *testing.T) {
 	store := NewStore()
 
-	// Verify error on node existing node
+	// Valid error on node existing node
 	node, err := store.GetNode(uuid.New())
 	assert.Equal(t, Node{}, node)
 	assert.Error(t, err)
@@ -117,17 +117,17 @@ func TestRemoveNode(t *testing.T) {
 	err = store.RemoveNode(node.UUID)
 	assert.NoError(t, err)
 
-	// Verify there are no nodes left
+	// Valid there are no nodes left
 	list, err := store.GetNodes()
 	assert.NoError(t, err)
 	assert.Len(t, list, 0)
 
-	// Verify it cannot be retrieved
+	// Valid it cannot be retrieved
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
 
-	// Verify it's no longer in the selector
+	// Valid it's no longer in the selector
 	nodes, err := store.GetNodesBySelector(selector)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nodes))
@@ -167,17 +167,17 @@ func TestClearNodes(t *testing.T) {
 	err = store.ClearNodes()
 	assert.NoError(t, err)
 
-	// Verify there are no nodes left
+	// Valid there are no nodes left
 	list, err := store.GetNodes()
 	assert.NoError(t, err)
 	assert.Len(t, list, 0)
 
-	// Verify it cannot be retrieved
+	// Valid it cannot be retrieved
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
 
-	// Verify it's no longer in the selector
+	// Valid it's no longer in the selector
 	nodes, err := store.GetNodesBySelector(selector)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nodes))
@@ -196,7 +196,7 @@ func TestGetNodesBySelector(t *testing.T) {
 	err = store.AddNode(node2)
 	assert.NoError(t, err)
 
-	// Verify it gets returned based on its selector
+	// Valid it gets returned based on its selector
 	nodes, err := store.GetNodesBySelector(selector)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nodes))

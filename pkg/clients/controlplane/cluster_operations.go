@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -18,7 +18,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
 // ClusterOperationClient is the client for the ClusterOperationService containing the connection and gRPC client

@@ -1,14 +1,16 @@
-package cluster
+package kubernetes
 
 import (
 	"os"
 	"path"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kind"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kind"
 )
 
 // Builder allows for the creation of KubernetesClusters.
@@ -28,7 +30,7 @@ func New() Builder {
 func Default() (c Builder) {
 	c.name = "Apate"
 	c.manager = &kind.KinD{}
-	c.kubeConfigLocation = os.TempDir() + "/apate/config"
+	c.kubeConfigLocation = env.ControlPlaneEnv().KubeConfigLocation
 	return c
 }
 
@@ -57,15 +59,15 @@ func (b *Builder) WithCreator(creator Manager) *Builder {
 	return b
 }
 
-func (b *Builder) unmanaged() (KubernetesCluster, error) {
+func (b *Builder) unmanaged() (Cluster, error) {
 	config, err := kubeconfig.FromPath(b.kubeConfigLocation)
 	if err != nil {
-		return KubernetesCluster{}, errors.Wrap(err, "failed to load Kubeconfig")
+		return Cluster{}, errors.Wrap(err, "failed to load Kubeconfig")
 	}
 
-	res, err := KubernetesClusterFromKubeConfig(config)
+	res, err := ClusterFromKubeConfig(config)
 	if err != nil {
-		return KubernetesCluster{}, errors.Wrap(err, "failed to create kind cluster from Kubeconfig")
+		return Cluster{}, errors.Wrap(err, "failed to create kind cluster from Kubeconfig")
 	}
 
 	return res, nil

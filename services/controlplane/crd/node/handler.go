@@ -6,6 +6,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 
@@ -15,17 +17,16 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/run"
+	nodev1 "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	nodev1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *store.Store, info *service.ConnectionInfo, stopCh chan struct{}) error {
+func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *store.Store, info *service.ConnectionInfo, stopCh <-chan struct{}) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get kubeconfig for node informer")
@@ -112,7 +113,7 @@ func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res sce
 	environment.AddConnectionInfo(info.Address, info.Port)
 
 	// Start the apatelets
-	if err = run.StartApatelets(ctx, int(diff), environment); err != nil {
+	if err = run.Registry.Run(ctx, int(diff), environment); err != nil {
 		log.Print(err)
 		return errors.Wrap(err, "error starting apatelets")
 	}

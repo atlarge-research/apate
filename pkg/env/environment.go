@@ -25,7 +25,7 @@ const (
 )
 
 // PullPolicy defines the pull policy used for
-type PullPolicy = string
+type PullPolicy string
 
 const (
 	// DefaultPullPolicy returns the default pull policy
@@ -41,6 +41,11 @@ const (
 	// if the local image is possibly outdated
 	PullIfNotLocal PullPolicy = "pull-if-not-local"
 )
+
+// Valid returns true if the pull policy is valid
+func (p PullPolicy) Valid() bool {
+	return p == AlwaysPull || p == AlwaysLocal || p == PullIfNotLocal
+}
 
 // RetrieveFromEnvironment allows for a value to be retrieved from the environment
 func RetrieveFromEnvironment(key, def string) string {

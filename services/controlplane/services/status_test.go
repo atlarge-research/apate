@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store/mock_store"
 )

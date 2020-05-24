@@ -3,12 +3,9 @@ package kubeconfig
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
-
-	"github.com/google/uuid"
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -22,14 +19,17 @@ type KubeConfig struct {
 
 // FromBytes creates a kubeConfig struct from byte array.
 func FromBytes(bytes []byte) (*KubeConfig, error) {
-	path := os.TempDir() + "/apate/config-" + uuid.New().String()
+	file, err := ioutil.TempFile("", "config")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tmp file for kubeconfig")
+	}
 
-	if err := ioutil.WriteFile(path, bytes, 0o600); err != nil {
-		return nil, errors.Wrapf(err, "failed to write Kubeconfig to file at %v", path)
+	if _, err := file.Write(bytes); err != nil {
+		return nil, errors.Wrapf(err, "failed to write Kubeconfig to file at %v", file.Name())
 	}
 
 	return &KubeConfig{
-		Path:  path,
+		Path:  file.Name(),
 		Bytes: bytes,
 	}, nil
 }

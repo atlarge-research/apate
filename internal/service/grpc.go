@@ -8,8 +8,6 @@ import (
 	"sigs.k8s.io/kind/pkg/errors"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/testdata"
 )
 
 // GRPCServer represents the gRPC server and listener
@@ -35,7 +33,7 @@ func NewGRPCServer(info *ConnectionInfo) (*GRPCServer, error) {
 
 // Serve starts listening for incoming requests
 func (s *GRPCServer) Serve() error {
-	return errors.Wrap(s.Server.Serve(s.listener), "error while serving GRPC")
+	return errors.Wrap(s.Server.Serve(s.listener), "error while serving gRPC")
 }
 
 func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, server *grpc.Server, err error) {
@@ -45,48 +43,13 @@ func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, serve
 		return
 	}
 
-	var options []grpc.ServerOption
-
-	// Enable TLS if needed
-	if info.TLS {
-		tls, tlsErr := getServerTLS()
-		if tlsErr != nil {
-			err = errors.Wrap(err, "failed to get server TLS")
-			return
-		}
-
-		options = []grpc.ServerOption{tls}
-	}
-
-	server = grpc.NewServer(options...)
-
+	server = grpc.NewServer()
 	return
-}
-
-//TODO: Real TLS instead of test data
-func getServerTLS() (grpc.ServerOption, error) {
-	creds, err := credentials.NewServerTLSFromFile(testdata.Path("server1.pem"), testdata.Path("server1.key"))
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create TLS server")
-	}
-
-	return grpc.Creds(creds), nil
 }
 
 // CreateClientConnection creates a connection to a remote services with the given connection information
 func CreateClientConnection(info *ConnectionInfo) (*grpc.ClientConn, error) {
 	var options = []grpc.DialOption{grpc.WithInsecure()}
-
-	// Enable TLS if needed
-	if info.TLS {
-		tls, err := getClientTLS()
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create TLS client")
-		}
-
-		options = []grpc.DialOption{tls}
-	}
 
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", info.Address, info.Port), options...)
 	if err != nil {
@@ -94,14 +57,4 @@ func CreateClientConnection(info *ConnectionInfo) (*grpc.ClientConn, error) {
 	}
 
 	return conn, nil
-}
-
-func getClientTLS() (grpc.DialOption, error) {
-	creds, err := credentials.NewClientTLSFromFile(testdata.Path("ca.pem"), "x.test.youtube.com")
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create TLS client")
-	}
-
-	return grpc.WithTransportCredentials(creds), nil
 }

@@ -6,14 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/pod"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 // CreatePodInformer creates a new crd informer.
-func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch chan struct{}, cb func()) error {
+func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-chan struct{}, cb func()) error {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get restconfig from kubeconfig for the pod informer")

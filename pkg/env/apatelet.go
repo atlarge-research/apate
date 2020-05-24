@@ -51,21 +51,21 @@ func DefaultApateletEnvironment() (ApateletEnvironment, error) {
 	}, nil
 }
 
-// ApateletEnvironmentFromEnv build an ApateletEnvironment based on the actual environment
-func ApateletEnvironmentFromEnv() (ApateletEnvironment, error) {
+// ApateletEnv builds an ApateletEnvironment based on the actual environment
+func ApateletEnv() ApateletEnvironment {
 	controlPlaneAddress := RetrieveFromEnvironment(ControlPlaneAddress, ControlPlaneAddressDefault)
 
 	cpp := RetrieveFromEnvironment(ControlPlanePort, ControlPlanePortDefault)
 	controlPlanePort, err := strconv.Atoi(cpp)
 	if err != nil {
-		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert contolplane port (%v) to string", cpp)
+		panic("invalid port: " + err.Error())
 	}
 
 	// Retrieve own port
 	lp := RetrieveFromEnvironment(ApateletListenPort, ApateletListenPortDefault)
 	listenPort, err := strconv.Atoi(lp)
 	if err != nil {
-		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert default Apatelet listening port (%v) to string", lp)
+		panic("invalid port" + err.Error())
 	}
 
 	// Retrieving connection information
@@ -76,7 +76,7 @@ func ApateletEnvironmentFromEnv() (ApateletEnvironment, error) {
 		ListenPort:          listenPort,
 		ControlPlaneAddress: controlPlaneAddress,
 		ControlPlanePort:    controlPlanePort,
-	}, nil
+	}
 }
 
 // AddConnectionInfo adds the given connection information to the environment
