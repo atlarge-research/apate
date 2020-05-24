@@ -4,6 +4,8 @@ package controlplane
 import (
 	"context"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
@@ -11,8 +13,6 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/google/uuid"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
@@ -40,35 +40,36 @@ func GetClusterOperationClient(info *service.ConnectionInfo) (*ClusterOperationC
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the node resources
-func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int) (*kubeconfig.KubeConfig, *normalization.NodeResources, error) {
+func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
 	res, err := c.Client.JoinCluster(ctx, &controlplane.ApateletInformation{Port: int32(listenPort)})
 
 	// Check for any grpc error
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to join cluster")
+		return nil, nil, -1, errors.Wrap(err, "failed to join cluster")
 	}
 
 	// Parse the uuid and check for errors
 	id, err := uuid.Parse(res.NodeUuid)
 
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to parse node uuid (%v)", res.NodeUuid)
+		return nil, nil, -1, errors.Wrapf(err, "failed to parse node uuid (%v)", res.NodeUuid)
 	}
 
 	cfg, err := kubeconfig.FromBytes(res.KubeConfig)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load kubeconfig")
+		return nil, nil, -1, errors.Wrap(err, "failed to load kubeconfig")
 	}
 
 	// Return final join information
-	return cfg, &normalization.NodeResources{
+	return cfg, &scenario.NodeResources{
 		UUID:             id,
 		Memory:           res.Hardware.Memory,
 		CPU:              res.Hardware.Cpu,
 		Storage:          res.Hardware.Storage,
 		EphemeralStorage: res.Hardware.EphemeralStorage,
 		MaxPods:          res.Hardware.MaxPods,
-	}, nil
+		Selector:         res.NodeSelector,
+	}, res.StartTime, nil
 }
 
 // LeaveCluster signals to the apate control panel that this node is leaving the cluster

@@ -7,6 +7,10 @@ import (
 	"log"
 	"net"
 
+	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/watchdog"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
@@ -53,7 +57,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	}
 
 	// Get connection information and create node
-	node := store.NewNode(connectionInfo, nodeResources)
+	node := store.NewNode(connectionInfo, nodeResources, nodeResources.Selector)
 
 	// Add to apate store
 	err = st.AddNode(node)
@@ -66,9 +70,19 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 
 	log.Printf("Added node to apate store: %v\n", node)
 
+	// Check start time for scenario
+	time := int64(-1)
+	scenario, err := st.GetApateletScenario()
+	if err == nil {
+		time = scenario.StartTime
+	}
+
 	return &controlplane.JoinInformation{
-		KubeConfig: s.kubernetesCluster.KubeConfig.Bytes,
-		NodeUuid:   node.UUID.String(),
+		KubeConfig:   s.kubernetesCluster.KubeConfig.Bytes,
+		NodeUuid:     node.UUID.String(),
+		NodeSelector: nodeResources.Selector,
+		StartTime:    time,
+
 		Hardware: &controlplane.NodeHardware{
 			Memory:           nodeResources.Memory,
 			Cpu:              nodeResources.CPU,
@@ -82,15 +96,18 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 // LeaveCluster removes the node from the store
 // This will maybe also remove it from k8s itself, TBD
 func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformation *controlplane.LeaveInformation) (*empty.Empty, error) {
-	// TODO: Maybe check if the remote address is still the same? idk
+	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
 
-	log.Printf("Received request to leave apate store from node %s\n", leaveInformation.NodeUuid)
-
-	if err := s.kubernetesCluster.RemoveNodeFromCluster("apatelet-" + leaveInformation.NodeUuid); err != nil {
+	id, err := uuid.Parse(leaveInformation.NodeUuid)
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to remove node from cluster")
 	}
 
-	log.Printf("Received request to leave apate cluster from node %s\n", leaveInformation.NodeUuid)
+	err = watchdog.RemoveNodeWithUUID(id, s.store, &s.kubernetesCluster)
+	if err != nil {
+		return nil, errors.Wrap(err, "removing node with uuid during leave cluster failed")
+	}
+
 	return &empty.Empty{}, nil
 }
 

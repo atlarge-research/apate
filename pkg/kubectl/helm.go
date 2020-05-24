@@ -2,7 +2,6 @@ package kubectl
 
 import (
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -64,9 +63,6 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-
 	return errors.Wrapf(cmd.Run(), "failed to install Prometheus with helm %v", strings.Join(args, " "))
 }
 

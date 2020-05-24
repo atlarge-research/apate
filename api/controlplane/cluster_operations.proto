@@ -54,8 +54,14 @@ message JoinInformation {
     // The UUID that will be used from the control plane to identify this node
     string node_uuid = 2;
 
+    // The selector of the node
+    string node_selector = 3;
+
+    // Start time if scenario already started
+    int64 start_time = 4;
+
     // The hardware that was 'allocated' to the apatelet
-    NodeHardware hardware = 3;
+    NodeHardware hardware = 5;
 }
 
 message LeaveInformation {

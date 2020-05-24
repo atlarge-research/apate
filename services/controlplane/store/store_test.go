@@ -3,45 +3,18 @@ package store
 import (
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/normalization"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 )
-
-// TestNoScenario ensures the store returns an error if no scenario was set
-func TestNoScenario(t *testing.T) {
-	store := NewStore()
-
-	// Verify there is no scenario
-	actual, err := store.GetApateletScenario()
-	assert.Nil(t, actual)
-	assert.Error(t, err)
-}
-
-// TestScenario ensures a scenario is returned if set
-func TestScenario(t *testing.T) {
-	store := NewStore()
-	expected := &apatelet.ApateletScenario{
-		Task: nil,
-	}
-
-	// Set scenario
-	err := store.SetApateletScenario(expected)
-	assert.NoError(t, err)
-
-	// Verify it was set
-	actual, err := store.GetApateletScenario()
-	assert.Nil(t, err)
-	assert.Equal(t, expected, actual)
-}
 
 // TestEnqueue ensures adding a single node resources results in a single allocation
 func TestEnqueue(t *testing.T) {
 	store := NewStore()
-	err := store.AddResourcesToQueue([]normalization.NodeResources{{}})
+	err := store.AddResourcesToQueue([]scenario.NodeResources{{}})
 	assert.NoError(t, err)
 
 	// Retrieve only resource
@@ -82,7 +55,7 @@ func TestAddNodeGet(t *testing.T) {
 	// Add created node
 	id := uuid.New()
 	expected := *NewNode(*service.NewConnectionInfo("yeet", 42, false),
-		&normalization.NodeResources{UUID: id})
+		&scenario.NodeResources{UUID: id}, "6")
 	err := store.AddNode(&expected)
 	assert.NoError(t, err)
 
@@ -95,7 +68,7 @@ func TestAddNodeGet(t *testing.T) {
 // TestAddNodeList ensures an added node appears in the list of nodes
 func TestAddNodeList(t *testing.T) {
 	store := NewStore()
-	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "5")
 
 	err := store.AddNode(&node)
 	assert.NoError(t, err)
@@ -119,7 +92,7 @@ func TestGetNodeWrongUuid(t *testing.T) {
 // TestAddNodeDuplicateUuid ensures that a node with a duplicate uuid will not be aded
 func TestAddNodeDuplicateUuid(t *testing.T) {
 	store := NewStore()
-	expected := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	expected := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "4")
 
 	// Add first time
 	err := store.AddNode(expected)
@@ -132,15 +105,16 @@ func TestAddNodeDuplicateUuid(t *testing.T) {
 
 // TestRemoveNode ensures a removed node is no longer in the list and can no longer be retrieved
 func TestRemoveNode(t *testing.T) {
+	selector := "1231415"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
 
 	// Add node
 	err := store.AddNode(node)
 	assert.NoError(t, err)
 
 	// Remove node
-	err = store.RemoveNode(node)
+	err = store.RemoveNode(node.UUID)
 	assert.NoError(t, err)
 
 	// Verify there are no nodes left
@@ -152,19 +126,24 @@ func TestRemoveNode(t *testing.T) {
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
+
+	// Verify it's no longer in the selector
+	nodes, err := store.GetNodesBySelector(selector)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(nodes))
 }
 
 // TestDeleteNoNode ensures removing a node that does not exist keeps the store intact
 func TestDeleteNoNode(t *testing.T) {
 	store := NewStore()
-	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "3")
 
 	err := store.AddNode(&node)
 	assert.NoError(t, err)
 
 	// Remove random node
 	err = store.RemoveNode(NewNode(*service.NewConnectionInfo("yeet", 42, false),
-		&normalization.NodeResources{UUID: uuid.New()}))
+		&scenario.NodeResources{UUID: uuid.New()}, "awdaw2").UUID)
 	assert.NoError(t, err)
 
 	// Check if the original node is still intact
@@ -176,8 +155,9 @@ func TestDeleteNoNode(t *testing.T) {
 
 // TestClearNodes ensures nodes are no longer in the list and can no longer be retrieved when the store is cleared
 func TestClearNodes(t *testing.T) {
+	selector := "1231145"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &normalization.NodeResources{})
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
 
 	// Add node
 	err := store.AddNode(node)
@@ -196,4 +176,29 @@ func TestClearNodes(t *testing.T) {
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
+
+	// Verify it's no longer in the selector
+	nodes, err := store.GetNodesBySelector(selector)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(nodes))
+}
+
+// TestGetNodesBySelector ensures nodes can be retrieved based on their selector
+func TestGetNodesBySelector(t *testing.T) {
+	selector := "awidya8wdya9wd7iyh"
+	store := NewStore()
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{UUID: uuid.New()}, selector)
+	node2 := NewNode(*service.NewConnectionInfo("awdadaw", 124, false), &scenario.NodeResources{UUID: uuid.New()}, "123")
+
+	// Add nodes
+	err := store.AddNode(node)
+	assert.NoError(t, err)
+	err = store.AddNode(node2)
+	assert.NoError(t, err)
+
+	// Verify it gets returned based on its selector
+	nodes, err := store.GetNodesBySelector(selector)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(nodes))
+	assert.Equal(t, *node, nodes[0])
 }

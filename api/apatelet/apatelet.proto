@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet";
+package apate.apatelet;
+
+import "google/protobuf/empty.proto";
+
+// This service will act as a way to notify the apatelets of events
+service Apatelet {
+  // This will signal that the apatelet should leave the cluster and stop
+  rpc stopApatelet (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}

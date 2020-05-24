@@ -5,12 +5,13 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/pkg/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -25,14 +26,14 @@ func TestPodNormal(t *testing.T) {
 	PCPRF := events.PodCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_NORMAL, nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseNormal, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -64,7 +65,7 @@ func TestPodStoreError1(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -88,14 +89,14 @@ func TestPodStoreError2(t *testing.T) {
 	PCPRF := events.PodCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_ERROR, nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseError, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -119,14 +120,14 @@ func TestPodUnset(t *testing.T) {
 	PCPRF := events.PodCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_UNSET, nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseUnset, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -157,7 +158,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -190,7 +191,7 @@ func TestPodInvalidResponse(t *testing.T) {
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      context.TODO(),
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
@@ -216,14 +217,14 @@ func TestPodTimeOut(t *testing.T) {
 	PCPRF := events.PodCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.Response_RESPONSE_TIMEOUT, nil)
+	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseTimeout, nil)
 
 	var s store.Store = ms
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
 		ctx:      ctx,
-		provider: &Provider{store: &s},
+		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		},
