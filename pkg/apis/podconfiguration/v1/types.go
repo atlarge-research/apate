@@ -4,6 +4,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// PodConfigurationLabel defines the label which is used to define which pod configuration resource belongs to the pod
+	PodConfigurationLabel = "apate"
+)
+
 // PodConfiguration is a definition of PodConfiguration resource.
 // +genclient
 // +genclient:noStatus
@@ -39,9 +44,9 @@ type PodConfigurationSpec struct {
 // PodConfigurationTask is a single task which updates a pod state and is executed at a timestamp
 type PodConfigurationTask struct {
 	// The timestamp at which the task is executed
-	// +kubebuilder:validation:Minimum=0
+	// Any time.ParseDuration format is accepted, such as "10ms" or "42s"
 	// +kubebuilder:validation:Required
-	Timestamp int64 `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 
 	// The state to be set
 	// +kubebuilder:validation:Required

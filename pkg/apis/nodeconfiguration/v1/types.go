@@ -2,6 +2,14 @@ package v1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+const (
+	// NodeConfigurationLabel defines the label which can used to find out to which node configuration crd a node belongs
+	// by external tools
+	NodeConfigurationLabel = "apate-name"
+	// NodeConfigurationLabelNamespace defines the namespace of the above label
+	NodeConfigurationLabelNamespace = "apate-namespace"
+)
+
 // NodeConfiguration is a definition of a NodeConfiguration resource
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:path=nodeconfigurations,shortName=nc,singular=nodeconfiguration
@@ -60,9 +68,9 @@ type NodeResources struct {
 // NodeConfigurationTask is a single task which modifies the node state on the given timestamp
 type NodeConfigurationTask struct {
 	// The timestamp at which the task is executed
-	// +kubebuilder:validation:Minimum=0
+	// Any time.ParseDuration format is accepted, such as "10ms" or "42s"
 	// +kubebuilder:validation:Required
-	Timestamp int64 `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 
 	// The desired state of the node after this task
 	// +kubebuilder:validation:Required
@@ -79,10 +87,12 @@ type NodeConfigurationState struct {
 	// +kubebuilder:validation:Optional
 	NodeFailed bool `json:"node_failed,omitempty"`
 
-	// NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-	// +kubebuilder:default=-1
+	// NetworkLatency determines how much added latency will be introduced to requests by kubernetes.
+	// Any time.ParseDuration format is accepted, such as "10ms" or "42s"
+	// The default is unset. Any invalid or negative integer will also be interpreted as unset.
+	// +kubebuilder:default=unset
 	// +kubebuilder:validation:Optional
-	NetworkLatency int64 `json:"network_latency,omitempty"`
+	NetworkLatency string `json:"network_latency,omitempty"`
 
 	// If set, HeartbeatFailed will result in the node no longer responding to pings
 	// +kubebuilder:default=false

@@ -20,7 +20,6 @@ const (
 // Scheduler is struct on which all scheduler functionality is implemented.
 type Scheduler struct {
 	store *store.Store
-	ctx   context.Context
 
 	readyCh  chan struct{}
 	updateCh chan struct{}
@@ -30,10 +29,9 @@ type Scheduler struct {
 }
 
 // New returns a new scheduler
-func New(ctx context.Context, st *store.Store) Scheduler {
+func New(st *store.Store) Scheduler {
 	return Scheduler{
 		store:     st,
-		ctx:       ctx,
 		readyCh:   make(chan struct{}),
 		updateCh:  make(chan struct{}),
 		prevT:     time.Unix(0, 0),
@@ -44,7 +42,7 @@ func New(ctx context.Context, st *store.Store) Scheduler {
 // EnableScheduler enables the scheduler
 // this will wait until StartScheduler() is called, after that it
 // will poll the store queue for changes and write errors to a 3-buffered channel
-func (s *Scheduler) EnableScheduler() <-chan error {
+func (s *Scheduler) EnableScheduler(ctx context.Context) <-chan error {
 	ech := make(chan error, 3)
 
 	go func() {
@@ -52,21 +50,28 @@ func (s *Scheduler) EnableScheduler() <-chan error {
 		<-s.readyCh
 
 		for {
-			select {
-			case <-s.ctx.Done():
+			if err := ctx.Err(); err != nil {
+				ech <- errors.Wrap(err, "scheduler stopped")
 				return
-			default:
 			}
 
 			// Run iteration
 			done, delay := s.runner(ech)
 
 			if done {
-				<-s.updateCh
+				select {
+				case <-ctx.Done():
+					return
+				case <-s.updateCh:
+				}
 			}
 
 			if delay > time.Millisecond {
-				<-time.After(delay)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(delay):
+				}
 			}
 		}
 	}()
@@ -88,7 +93,7 @@ func (s *Scheduler) WakeScheduler() {
 	}
 }
 
-func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
+func (s *Scheduler) runner(ech chan<- error) (bool, time.Duration) {
 	now := time.Now()
 
 	relativeTime, taskFound, err := (*s.store).PeekTask()
@@ -104,7 +109,8 @@ func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
 	scheduledTime := s.startTime.Add(relativeTime)
 
 	if now.After(scheduledTime) {
-		task, err := (*s.store).PopTask()
+		var task *store.Task
+		task, err = (*s.store).PopTask()
 		if err != nil {
 			ech <- errors.Wrap(err, "failed to pop the next task from the store")
 			return false, 0
@@ -114,29 +120,29 @@ func (s *Scheduler) runner(ech chan error) (bool, time.Duration) {
 			s.prevT = scheduledTime
 			go s.taskHandler(ech, task)
 		}
+	}
 
-		nextRelativeTime, nextTaskFound, err := (*s.store).PeekTask()
-		if err != nil {
-			ech <- errors.Wrap(err, "failed to peek the next task from the store")
-			return false, 0
+	nextRelativeTime, nextTaskFound, err := (*s.store).PeekTask()
+	if err != nil {
+		ech <- errors.Wrap(err, "failed to peek the next task from the store")
+		return false, 0
+	}
+
+	if nextTaskFound {
+		nextTime := s.startTime.Add(nextRelativeTime)
+
+		delay := nextTime.Sub(now) - sleepMargin
+
+		if delay < time.Nanosecond {
+			return false, time.Nanosecond
 		}
-
-		if nextTaskFound {
-			nextTime := s.startTime.Add(nextRelativeTime)
-
-			delay := nextTime.Sub(now) - sleepMargin
-
-			if delay < time.Nanosecond {
-				return false, time.Nanosecond
-			}
-			return false, delay
-		}
+		return false, delay
 	}
 
 	return false, 0
 }
 
-func (s Scheduler) taskHandler(ech chan error, t *store.Task) {
+func (s Scheduler) taskHandler(ech chan<- error, t *store.Task) {
 	isPod, err := t.IsPod()
 	if err != nil {
 		ech <- errors.Wrap(err, "failed to determine task type")

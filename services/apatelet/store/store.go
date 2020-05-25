@@ -246,7 +246,7 @@ var defaultNodeValues = map[events.EventFlag]interface{}{
 	events.NodeGetPodsResponse:      scenario.ResponseNormal,
 	events.NodePingResponse:         scenario.ResponseNormal,
 
-	events.NodeAddedLatencyMsec: int64(0),
+	events.NodeAddedLatency: time.Duration(0),
 }
 
 var defaultPodValues = map[events.PodEventFlag]interface{}{
@@ -260,5 +260,5 @@ var defaultPodValues = map[events.PodEventFlag]interface{}{
 
 	events.PodResources: nil,
 
-	events.PodStatus: scenario.ResponseUnset,
+	events.PodStatus: scenario.PodStatusUnset,
 }

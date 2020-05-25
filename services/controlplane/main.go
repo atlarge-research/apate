@@ -6,28 +6,28 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/watchdog"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster/watchdog"
 
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
 
-	nodeconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	podconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/network"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
@@ -38,8 +38,8 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 }
 
-func fatal(err error) {
-	log.Fatalf("An error occurred while starting the controlplane: %+v\n", err)
+func panicf(err error) {
+	log.Panicf("An error occurred while starting the controlplane: %+v\n", err)
 }
 
 func main() {
@@ -49,16 +49,17 @@ func main() {
 
 	// Get external connection information
 	externalInformation, err := createExternalConnectionInformation()
-
 	if err != nil {
-		fatal(errors.Wrap(err, "failed to get external connection information"))
+		panicf(errors.Wrap(err, "failed to get external connection information"))
 	}
 
+	// Register runners
+	runnerRegistry := registerRunners()
+
 	// Create kubernetes cluster
-	log.Println("starting kubernetes control plane")
-	managedKubernetesCluster, err := createCluster(env.RetrieveFromEnvironment(env.ManagedClusterConfig, env.ManagedClusterConfigDefault))
+	managedKubernetesCluster, err := createCluster(env.ControlPlaneEnv().ManagerConfigLocation)
 	if err != nil {
-		fatal(errors.Wrap(err, "failed to create cluster"))
+		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
 
 	// Create apate cluster state
@@ -66,15 +67,12 @@ func main() {
 
 	// Save the kubeconfig in the store
 	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
-		fatal(errors.Wrap(err, "failed to set Kubeconfig"))
+		panicf(errors.Wrap(err, "failed to set Kubeconfig"))
 	}
 
 	// Create CRDs
-	if err = podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
-		fatal(errors.Wrap(err, "failed to register pod CRD spec"))
-	}
-	if err = nodeconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
-		fatal(errors.Wrap(err, "failed to register node CRD spec"))
+	if err = createCRDs(managedKubernetesCluster); err != nil {
+		panicf(errors.Wrap(err, "failed to create CRDs"))
 	}
 
 	// TODO: Remove later, seems to give k8s some breathing room for crd
@@ -82,26 +80,28 @@ func main() {
 
 	// Create node informer
 	stopInformer := make(chan struct{})
-	if err = node.CreateNodeInformer(ctx, managedKubernetesCluster.KubeConfig, &createdStore, externalInformation, stopInformer); err != nil {
-		fatal(errors.Wrap(err, "failed to create node informer"))
+	handler := node.NewHandler(&createdStore, runnerRegistry, externalInformation)
+	if err = node.WatchHandler(ctx, managedKubernetesCluster.KubeConfig, handler, stopInformer); err != nil {
+		panicf(errors.Wrap(err, "failed to watch node handler"))
 	}
 
 	// Create prometheus stack
-	createPrometheus := env.RetrieveFromEnvironment(env.PrometheusStackEnabled, env.PrometheusStackEnabledDefault)
-	if strings.ToLower(createPrometheus) == "true" {
+	createPrometheus := env.ControlPlaneEnv().PrometheusStackEnabled
+	if createPrometheus {
 		go kubectl.CreatePrometheusStack(managedKubernetesCluster.KubeConfig)
 	}
 
 	// Start gRPC server
-	server, err := createGRPC(&createdStore, managedKubernetesCluster.KubernetesCluster, externalInformation)
+	server, err := createGRPC(&createdStore, managedKubernetesCluster.Cluster, externalInformation)
 	if err != nil {
-		fatal(errors.Wrap(err, "failed to start GRPC server"))
+		panicf(errors.Wrap(err, "failed to start GRPC server"))
 	}
 
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
-	if err = ioutil.WriteFile(os.TempDir()+"/apate/config", managedKubernetesCluster.KubernetesCluster.KubeConfig.Bytes, 0600); err != nil {
-		fatal(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
+	kubeConfigLocation := env.ControlPlaneEnv().KubeConfigLocation
+	if err = ioutil.WriteFile(kubeConfigLocation, managedKubernetesCluster.Cluster.KubeConfig.Bytes, 0600); err != nil {
+		panicf(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
 	}
 
 	// Handle signals
@@ -109,10 +109,16 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start serving request
-	go server.Serve()
+	go func() {
+		err := server.Serve()
+
+		if err != nil {
+			panicf(errors.Wrap(err, "failed to start gRPC server"))
+		}
+	}()
 
 	// Start watchdog
-	watchdog.StartWatchDog(time.Second*30, &createdStore, &managedKubernetesCluster.KubernetesCluster)
+	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, &managedKubernetesCluster.Cluster)
 
 	// Stop the server on signal
 	<-stop
@@ -121,7 +127,31 @@ func main() {
 	log.Printf("apate control plane stopped")
 }
 
-func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, server *service.GRPCServer) {
+func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
+	if err := podconfigv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+		return errors.Wrap(err, "failed to register pod CRD spec")
+	}
+
+	if err := nodeconfigv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+		return errors.Wrap(err, "failed to register node CRD spec")
+	}
+
+	return nil
+}
+
+func registerRunners() *run.RunnerRegistry {
+	runnerRegistry := run.New()
+
+	var dockerRunner run.ApateletRunner = run.DockerRunner{}
+	runnerRegistry.RegisterRunner(env.Docker, &dockerRunner)
+
+	var routineRunner run.ApateletRunner = run.RoutineRunner{}
+	runnerRegistry.RegisterRunner(env.Routine, &routineRunner)
+
+	return runnerRegistry
+}
+
+func shutdown(store *store.Store, kubernetesCluster *kubernetes.ManagedCluster, server *service.GRPCServer) {
 	log.Println("stopping Apate control plane")
 
 	log.Println("stopping API")
@@ -140,7 +170,7 @@ func shutdown(store *store.Store, kubernetesCluster *cluster.ManagedCluster, ser
 
 func getExternalAddress() (string, error) {
 	// Check for external IP override
-	override := env.RetrieveFromEnvironment(env.ControlPlaneExternalIP, env.ControlPlaneExternalIPDefault)
+	override := env.ControlPlaneEnv().ExternalIP
 	if override != env.ControlPlaneExternalIPDefault {
 		return override, nil
 	}
@@ -153,9 +183,9 @@ func getExternalAddress() (string, error) {
 	return res, nil
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesCluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
+func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
 	// Retrieve from environment
-	listenAddress := env.RetrieveFromEnvironment(env.ControlPlaneListenAddress, env.ControlPlaneListenAddressDefault)
+	listenAddress := env.ControlPlaneEnv().ListenAddress
 
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
@@ -175,16 +205,18 @@ func createGRPC(createdStore *store.Store, kubernetesCluster cluster.KubernetesC
 	return server, nil
 }
 
-func createCluster(managedClusterConfigPath string) (cluster.ManagedCluster, error) {
-	cb := cluster.Default()
+func createCluster(managedClusterConfigPath string) (kubernetes.ManagedCluster, error) {
+	log.Println("starting kubernetes control plane")
+
+	cb := kubernetes.Default()
 	c, err := cb.WithName("Apate").WithManagerConfig(managedClusterConfigPath).ForceCreate()
 	if err != nil {
-		return cluster.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
+		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
 	}
 
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
-		return cluster.ManagedCluster{}, errors.Wrap(err, "failed to get number of pods from kubernetes")
+		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to get number of pods from kubernetes")
 	}
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)
@@ -201,12 +233,7 @@ func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	}
 
 	// Get port
-	portstring := env.RetrieveFromEnvironment(env.ControlPlaneListenPort, env.ControlPlaneListenPortDefault)
-	listenPort, err := strconv.Atoi(portstring)
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to convert listening port to an integer (was %v)", portstring)
-	}
+	listenPort := env.ControlPlaneEnv().ListenPort
 
 	// Create external information
 	log.Printf("external IP for control plane: %s", externalIP)

@@ -115,7 +115,7 @@ func prepareImage(ctx context.Context, cli *client.Client, imageName string, pul
 	case env.AlwaysLocal:
 		return errors.Wrap(alwaysCache(ctx, cli, imageName), "failed to run alwaysCache to prepare image")
 	default:
-		return errors.Errorf("unknown docker pull policy: %s", pullPolicy)
+		return errors.Errorf("unknown docker pull policy %s", pullPolicy)
 	}
 }
 

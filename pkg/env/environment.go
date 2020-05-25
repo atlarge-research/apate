@@ -2,7 +2,8 @@
 package env
 
 import (
-	"os"
+	goEnv "github.com/deanishe/go-env"
+	"github.com/pkg/errors"
 )
 
 // Docker constants
@@ -25,7 +26,7 @@ const (
 )
 
 // PullPolicy defines the pull policy used for
-type PullPolicy = string
+type PullPolicy string
 
 const (
 	// DefaultPullPolicy returns the default pull policy
@@ -42,11 +43,22 @@ const (
 	PullIfNotLocal PullPolicy = "pull-if-not-local"
 )
 
-// RetrieveFromEnvironment allows for a value to be retrieved from the environment
-func RetrieveFromEnvironment(key, def string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
+// Valid returns true if the pull policy is valid
+func (p PullPolicy) Valid() bool {
+	return p == AlwaysPull || p == AlwaysLocal || p == PullIfNotLocal
+}
+
+// DumpAsKeyValue makes a key=value string array from an environment
+func DumpAsKeyValue(env interface{}) ([]string, error) {
+	envMap, err := goEnv.Dump(env)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to dump controlplane env")
 	}
 
-	return def
+	var envArray []string
+	for k, v := range envMap {
+		envArray = append(envArray, k+"="+v)
+	}
+
+	return envArray, nil
 }

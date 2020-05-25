@@ -1,4 +1,4 @@
-package cluster
+package kubernetes
 
 import "github.com/pkg/errors"
 
@@ -7,7 +7,7 @@ import "github.com/pkg/errors"
 // A ManagedCluster is guaranteed to be created by Apate, and can
 // therefore also be safely be deleted by Apate.
 type ManagedCluster struct {
-	KubernetesCluster
+	Cluster
 	manager Manager
 	name    string
 }

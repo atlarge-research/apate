@@ -5,16 +5,13 @@ import (
 	"log"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
-)
-
-const (
-	podConfigurationLabel = "apate" // TODO: Change to constant somewhere else
 )
 
 // Stats is a simple wrapper for statistics fields
@@ -126,9 +123,9 @@ func (p *Provider) getAggregatePodStats() []stats.PodStats {
 	return statistics
 }
 
-func (p *Provider) getPodStats(pod *v1.Pod) *stats.PodStats {
+func (p *Provider) getPodStats(pod *corev1.Pod) *stats.PodStats {
 	for k, label := range pod.Labels {
-		if k == podConfigurationLabel {
+		if k == podconfigv1.PodConfigurationLabel {
 			unconvertedStats, err := (*p.Store).GetPodFlag(label, events.PodResources)
 			if err != nil {
 				log.Printf("error while retrieving pod flag for resources: %v\n", err)
@@ -148,7 +145,7 @@ func (p *Provider) getPodStats(pod *v1.Pod) *stats.PodStats {
 	return addPodSpecificStats(pod, &stats.PodStats{})
 }
 
-func addPodSpecificStats(pod *v1.Pod, statistics *stats.PodStats) *stats.PodStats {
+func addPodSpecificStats(pod *corev1.Pod, statistics *stats.PodStats) *stats.PodStats {
 	statistics.PodRef = stats.PodReference{
 		Name:      pod.Name,
 		Namespace: pod.Namespace,

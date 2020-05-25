@@ -12,9 +12,9 @@ import (
 
 	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 

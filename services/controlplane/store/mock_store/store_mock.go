@@ -7,7 +7,7 @@ package mock_store
 import (
 	apatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	health "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	kubeconfig "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
+	kubeconfig "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	scenario "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 	gomock "github.com/golang/mock/gomock"

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
 // Client holds all the information used to communicate with the server
@@ -77,14 +77,14 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 	// Receive heartbeat from server
 	go func() {
 		for {
-			r := make(chan bool)
+			r := make(chan struct{})
 
 			go func() {
 				_, err := stream.Recv()
 				if err != nil {
 					errCallback(errors.Wrap(ctx.Err(), "health stream timed out"))
 				}
-				r <- true
+				r <- struct{}{}
 			}()
 
 			select {

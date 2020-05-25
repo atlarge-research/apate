@@ -2,14 +2,16 @@
 package node
 
 import (
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	"time"
+
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 // SetNodeFlags sets the correct flags for the apatelet
-func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
+func SetNodeFlags(st *store.Store, state *nodeconfigv1.NodeConfigurationState) {
 	// Set custom flags
 	setCustomFlags(st, state.CustomState)
 
@@ -19,8 +21,10 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 	}
 
 	// Set latency
-	if state.NetworkLatency >= 0 {
-		(*st).SetNodeFlag(events.NodeAddedLatencyMsec, state.NetworkLatency)
+	latency, err := time.ParseDuration(state.NetworkLatency)
+	if err == nil && latency >= 0 {
+		// Ignore errors explicitly, only valid ints are seen as updates
+		(*st).SetNodeFlag(events.NodeAddedLatency, latency)
 	}
 
 	// Check if the node should fail
@@ -35,7 +39,7 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 	}
 }
 
-func setCustomFlags(st *store.Store, state *v1.NodeConfigurationCustomState) {
+func setCustomFlags(st *store.Store, state *nodeconfigv1.NodeConfigurationCustomState) {
 	// Check if there were no custom flags
 	if state == nil {
 		return
@@ -70,19 +74,19 @@ func setCustomFlags(st *store.Store, state *v1.NodeConfigurationCustomState) {
 	}
 }
 
-func isResponseUnset(response v1.NodeResponse) bool {
-	return response != v1.ResponseError && response != v1.ResponseNormal && response != v1.ResponseTimeout
+func isResponseUnset(response nodeconfigv1.NodeResponse) bool {
+	return response != nodeconfigv1.ResponseError && response != nodeconfigv1.ResponseNormal && response != nodeconfigv1.ResponseTimeout
 }
 
-func translateResponse(input v1.NodeResponse) scenario.Response {
+func translateResponse(input nodeconfigv1.NodeResponse) scenario.Response {
 	switch input {
-	case v1.ResponseNormal:
+	case nodeconfigv1.ResponseNormal:
 		return scenario.ResponseNormal
-	case v1.ResponseError:
+	case nodeconfigv1.ResponseError:
 		return scenario.ResponseError
-	case v1.ResponseTimeout:
+	case nodeconfigv1.ResponseTimeout:
 		return scenario.ResponseTimeout
-	case v1.ResponseUnset:
+	case nodeconfigv1.ResponseUnset:
 		fallthrough
 	default:
 		return scenario.ResponseUnset

@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -16,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/network"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/network"
 )
 
 const (
@@ -40,12 +42,12 @@ type nodeConditions struct {
 func (p *Provider) getPingResponse() (scenario.Response, error) {
 	rawFlag, err := (*p.Store).GetNodeFlag(events.NodePingResponse)
 	if err != nil {
-		return scenario.ResponseUnset, errors.Errorf("unable to retrieve ping flag: %v", err)
+		return scenario.ResponseUnset, errors.Errorf("unable to retrieve ping flag %v", err)
 	}
 
 	flag, ok := rawFlag.(scenario.Response)
 	if !ok {
-		return scenario.ResponseUnset, errors.Errorf("invalid ping flag: %v", rawFlag)
+		return scenario.ResponseUnset, errors.Errorf("invalid ping flag %v", rawFlag)
 	}
 
 	return flag, nil
@@ -75,7 +77,7 @@ func (p *Provider) Ping(ctx context.Context) error {
 	case scenario.ResponseError:
 		return emulationError("ping expected error")
 	default:
-		return errors.Errorf("invalid response flag: %v", flag)
+		return errors.Errorf("invalid response flag %v", flag)
 	}
 }
 
@@ -168,7 +170,9 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			"kubernetes.io/role":     p.NodeInfo.Role,
 			"kubernetes.io/hostname": p.NodeInfo.Name,
 			"metrics_port":           strconv.Itoa(p.NodeInfo.MetricsPort),
-			"apate":                  p.NodeInfo.Selector,
+
+			nodeconfigv1.NodeConfigurationLabelNamespace: p.NodeInfo.Namespace,
+			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Selector,
 		},
 	}
 }

@@ -3,6 +3,10 @@ package provider
 import (
 	"context"
 	"testing"
+	"time"
+
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -13,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/condition"
@@ -38,10 +42,10 @@ func TestPing(t *testing.T) {
 		Store: &st,
 	}
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(0), nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetNodeFlag(events.NodePingResponse).Return(scenario.ResponseNormal, nil)
 
-	res := prov.Ping(context.TODO())
+	res := prov.Ping(context.Background())
 	assert.Equal(t, nil, res)
 }
 
@@ -55,7 +59,7 @@ func TestPingError(t *testing.T) {
 	pmm := mock_podmanager.NewMockPodManager(ctrl)
 	var pm podmanager.PodManager = pmm
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(0), nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetNodeFlag(events.NodePingResponse).Return(scenario.ResponseError, nil)
 
 	prov := Provider{
@@ -63,7 +67,7 @@ func TestPingError(t *testing.T) {
 		Store: &st,
 	}
 
-	res := prov.Ping(context.TODO())
+	res := prov.Ping(context.Background())
 	assert.Error(t, res)
 }
 
@@ -81,12 +85,13 @@ func TestConfigureNode(t *testing.T) {
 	prov := Provider{
 		Pods:  pm,
 		Store: &st,
-		NodeInfo: cluster.NodeInfo{
+		NodeInfo: kubernetes.NodeInfo{
 			NodeType:    "apate",
 			Role:        "worker",
 			Name:        "apate-x",
 			Version:     "42",
-			Selector:    "my/apate",
+			Namespace:   "my",
+			Selector:    "apate",
 			MetricsPort: 123,
 		},
 		Cfg: provider.InitConfig{
@@ -118,7 +123,7 @@ func TestConfigureNode(t *testing.T) {
 	}
 
 	node := &corev1.Node{}
-	prov.ConfigureNode(context.TODO(), node)
+	prov.ConfigureNode(context.Background(), node)
 
 	assert.EqualValues(t, corev1.NodeSpec{
 		Taints: []corev1.Taint{},
@@ -127,11 +132,12 @@ func TestConfigureNode(t *testing.T) {
 	assert.EqualValues(t, metav1.ObjectMeta{
 		Name: "apate-x",
 		Labels: map[string]string{
-			"type":                   "apate",
-			"kubernetes.io/role":     "worker",
-			"kubernetes.io/hostname": "apate-x",
-			"metrics_port":           "123",
-			"apate":                  "my/apate",
+			"type":                              "apate",
+			"kubernetes.io/role":                "worker",
+			"kubernetes.io/hostname":            "apate-x",
+			"metrics_port":                      "123",
+			nodeconfigv1.NodeConfigurationLabel: "apate",
+			nodeconfigv1.NodeConfigurationLabelNamespace: "my",
 		},
 	}, node.ObjectMeta)
 
@@ -161,7 +167,7 @@ func TestUpdateConditionNoPressure(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 500, 2048, 1024)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -189,7 +195,7 @@ func TestUpdateConditionMemoryAndDiskPressure(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mt)+2, int64(dt)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -217,7 +223,7 @@ func TestUpdateConditionDiskFull(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mtf)+2, int64(dtf)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionFalse, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -248,7 +254,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	var pm podmanager.PodManager = pmm
 
 	lbl := make(map[string]string)
-	lbl["apate"] = "pod1"
+	lbl[podconfigv1.PodConfigurationLabel] = "pod1"
 	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl},
@@ -322,7 +328,7 @@ func TestNotifyNodeStatusNoPing(t *testing.T) {
 		Node:  &corev1.Node{},
 	}
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, &corev1.Node{}, node)
 	})
 }

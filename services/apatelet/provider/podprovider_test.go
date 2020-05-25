@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -26,7 +28,7 @@ func TestGetPodLabelByPod(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
 			Labels: map[string]string{
-				"apate": "TestLabel",
+				podconfigv1.PodConfigurationLabel: "TestLabel",
 			},
 		},
 	}
@@ -39,7 +41,7 @@ func TestGetPodLabelByPodApateNotFound(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
 			Labels: map[string]string{
-				"apate1": "TestLabel",
+				podconfigv1.PodConfigurationLabel + "xxx": "TestLabel",
 			},
 		},
 	}
@@ -64,7 +66,7 @@ func TestGetPodLabelByNameOk(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
 			Labels: map[string]string{
-				"apate": "TestLabel",
+				podconfigv1.PodConfigurationLabel: "TestLabel",
 			},
 		},
 	}
@@ -106,7 +108,7 @@ func TestPodStatusToPhase(t *testing.T) {
 }
 
 func TestRunLatencyError(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -118,7 +120,7 @@ func TestRunLatencyError(t *testing.T) {
 		Store: &s,
 	}
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, errors.New("test error")).Times(6)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), errors.New("test error")).Times(6)
 
 	assert.Error(t, p.UpdatePod(ctx, nil))
 	assert.Error(t, p.CreatePod(ctx, nil))
@@ -132,7 +134,7 @@ func TestRunLatencyError(t *testing.T) {
 }
 
 func TestCancelContextEarlyReturn(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
+	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	ctrl := gomock.NewController(t)
@@ -145,15 +147,15 @@ func TestCancelContextEarlyReturn(t *testing.T) {
 		Store: &s,
 	}
 
-	assert.Equal(t, p.UpdatePod(ctx, nil), context.Canceled)
-	assert.Equal(t, p.CreatePod(ctx, nil), context.Canceled)
-	assert.Equal(t, p.DeletePod(ctx, nil), context.Canceled)
+	assert.Error(t, p.UpdatePod(ctx, nil))
+	assert.Error(t, p.CreatePod(ctx, nil))
+	assert.Error(t, p.DeletePod(ctx, nil))
 	_, err := p.GetPod(ctx, "", "")
-	assert.Equal(t, err, context.Canceled)
+	assert.Error(t, err)
 	_, err = p.GetPodStatus(ctx, "", "")
-	assert.Equal(t, err, context.Canceled)
+	assert.Error(t, err)
 	_, err = p.GetPods(ctx)
-	assert.Equal(t, err, context.Canceled)
+	assert.Error(t, err)
 }
 
 func TestCancelContextWhileRunningLatency(t *testing.T) {
@@ -167,31 +169,31 @@ func TestCancelContextWhileRunningLatency(t *testing.T) {
 		Store: &s,
 	}
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(100000), nil).Times(6)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(100000*time.Millisecond, nil).Times(6)
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	assert.Error(t, p.UpdatePod(ctx, nil))
 
-	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	assert.Error(t, p.CreatePod(ctx, nil))
 
-	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	assert.Error(t, p.DeletePod(ctx, nil))
 
-	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	_, err := p.GetPod(ctx, "", "")
 	assert.Error(t, err)
 
-	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	_, err = p.GetPodStatus(ctx, "", "")
 	assert.Error(t, err)
 
-	ctx, cancel = context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	_, err = p.GetPods(ctx)
 	assert.Error(t, err)

@@ -11,13 +11,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
 // SetPodFlags sets all flags for a pod.
-func SetPodFlags(st *store.Store, label string, pt *v1.PodConfigurationState) error {
+func SetPodFlags(st *store.Store, label string, pt *podconfigv1.PodConfigurationState) error {
 	if !isResponseUnset(pt.CreatePodResponse) {
 		(*st).SetPodFlag(label, events.PodCreatePodResponse, translateResponse(pt.CreatePodResponse))
 	}
@@ -53,49 +53,49 @@ func SetPodFlags(st *store.Store, label string, pt *v1.PodConfigurationState) er
 	return nil
 }
 
-func isResponseUnset(response v1.PodResponse) bool {
-	return response != v1.ResponseError && response != v1.ResponseNormal && response != v1.ResponseTimeout
+func isResponseUnset(response podconfigv1.PodResponse) bool {
+	return response != podconfigv1.ResponseError && response != podconfigv1.ResponseNormal && response != podconfigv1.ResponseTimeout
 }
 
-func isPodStatusUnset(status v1.PodStatus) bool {
-	return status != v1.PodStatusFailed && status != v1.PodStatusPending && status != v1.PodStatusRunning && status != v1.PodStatusSucceeded && status != v1.PodStatusUnknown
+func isPodStatusUnset(status podconfigv1.PodStatus) bool {
+	return status != podconfigv1.PodStatusFailed && status != podconfigv1.PodStatusPending && status != podconfigv1.PodStatusRunning && status != podconfigv1.PodStatusSucceeded && status != podconfigv1.PodStatusUnknown
 }
 
-func translateResponse(input v1.PodResponse) scenario.Response {
+func translateResponse(input podconfigv1.PodResponse) scenario.Response {
 	switch input {
-	case v1.ResponseNormal:
+	case podconfigv1.ResponseNormal:
 		return scenario.ResponseNormal
-	case v1.ResponseError:
+	case podconfigv1.ResponseError:
 		return scenario.ResponseError
-	case v1.ResponseTimeout:
+	case podconfigv1.ResponseTimeout:
 		return scenario.ResponseTimeout
-	case v1.ResponseUnset:
+	case podconfigv1.ResponseUnset:
 		fallthrough
 	default:
 		return scenario.ResponseUnset
 	}
 }
 
-func translatePodStatus(input v1.PodStatus) scenario.PodStatus {
+func translatePodStatus(input podconfigv1.PodStatus) scenario.PodStatus {
 	switch input {
-	case v1.PodStatusPending:
+	case podconfigv1.PodStatusPending:
 		return scenario.PodStatusPending
-	case v1.PodStatusRunning:
+	case podconfigv1.PodStatusRunning:
 		return scenario.PodStatusRunning
-	case v1.PodStatusSucceeded:
+	case podconfigv1.PodStatusSucceeded:
 		return scenario.PodStatusSucceeded
-	case v1.PodStatusFailed:
+	case podconfigv1.PodStatusFailed:
 		return scenario.PodStatusFailed
-	case v1.PodStatusUnknown:
+	case podconfigv1.PodStatusUnknown:
 		return scenario.PodStatusUnknown
-	case v1.PodStatusUnset:
+	case podconfigv1.PodStatusUnset:
 		fallthrough
 	default:
 		return scenario.PodStatusUnset
 	}
 }
 
-func translatePodResources(input *v1.PodResources) (*stats.PodStats, error) {
+func translatePodResources(input *podconfigv1.PodResources) (*stats.PodStats, error) {
 	memory, err := scenario.GetInBytes(input.Memory, "memory")
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to translate memory bytes (was %v)", input.EphemeralStorage)

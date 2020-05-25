@@ -2,23 +2,24 @@ package node
 
 import (
 	"testing"
+	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
 func TestTranslateResponse(t *testing.T) {
-	assert.Equal(t, scenario.ResponseNormal, translateResponse(v1.ResponseNormal))
-	assert.Equal(t, scenario.ResponseError, translateResponse(v1.ResponseError))
-	assert.Equal(t, scenario.ResponseTimeout, translateResponse(v1.ResponseTimeout))
-	assert.Equal(t, scenario.ResponseUnset, translateResponse(v1.ResponseUnset))
+	assert.Equal(t, scenario.ResponseNormal, translateResponse(nodeconfigv1.ResponseNormal))
+	assert.Equal(t, scenario.ResponseError, translateResponse(nodeconfigv1.ResponseError))
+	assert.Equal(t, scenario.ResponseTimeout, translateResponse(nodeconfigv1.ResponseTimeout))
+	assert.Equal(t, scenario.ResponseUnset, translateResponse(nodeconfigv1.ResponseUnset))
 }
 
 func TestSetNodeFlagsUnsetDirect(t *testing.T) {
@@ -28,16 +29,16 @@ func TestSetNodeFlagsUnsetDirect(t *testing.T) {
 
 	var s store.Store = ms
 
-	SetNodeFlags(&s, &v1.NodeConfigurationState{
-		NetworkLatency: -1, // default in types.go
-		CustomState: &v1.NodeConfigurationCustomState{
-			CreatePodResponse:    v1.ResponseUnset,
-			UpdatePodResponse:    v1.ResponseUnset,
-			DeletePodResponse:    v1.ResponseUnset,
-			GetPodResponse:       v1.ResponseUnset,
-			GetPodsResponse:      v1.ResponseUnset,
-			GetPodStatusResponse: v1.ResponseUnset,
-			NodePingResponse:     v1.ResponseUnset,
+	SetNodeFlags(&s, &nodeconfigv1.NodeConfigurationState{
+		NetworkLatency: "unset", // default in types.go
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse:    nodeconfigv1.ResponseUnset,
+			UpdatePodResponse:    nodeconfigv1.ResponseUnset,
+			DeletePodResponse:    nodeconfigv1.ResponseUnset,
+			GetPodResponse:       nodeconfigv1.ResponseUnset,
+			GetPodsResponse:      nodeconfigv1.ResponseUnset,
+			GetPodStatusResponse: nodeconfigv1.ResponseUnset,
+			NodePingResponse:     nodeconfigv1.ResponseUnset,
 		},
 	})
 }
@@ -50,25 +51,25 @@ func TestSetNodeFlagsDirect(t *testing.T) {
 	var s store.Store = ms
 
 	gomock.InOrder(
-		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(v1.ResponseError)),
-		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodsResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(v1.ResponseNormal)),
+		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(nodeconfigv1.ResponseNormal)),
+		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(nodeconfigv1.ResponseError)),
+		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(nodeconfigv1.ResponseNormal)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodResponse, translateResponse(nodeconfigv1.ResponseNormal)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(nodeconfigv1.ResponseNormal)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodsResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(nodeconfigv1.ResponseNormal)),
 	)
 
-	SetNodeFlags(&s, &v1.NodeConfigurationState{
-		NetworkLatency: -1, // default in types.go
-		CustomState: &v1.NodeConfigurationCustomState{
-			CreatePodResponse:    v1.ResponseNormal,
-			UpdatePodResponse:    v1.ResponseError,
-			DeletePodResponse:    v1.ResponseNormal,
-			GetPodResponse:       v1.ResponseNormal,
-			GetPodsResponse:      v1.ResponseTimeout,
-			GetPodStatusResponse: v1.ResponseNormal,
-			NodePingResponse:     v1.ResponseNormal,
+	SetNodeFlags(&s, &nodeconfigv1.NodeConfigurationState{
+		NetworkLatency: "unset", // default in types.go
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse:    nodeconfigv1.ResponseNormal,
+			UpdatePodResponse:    nodeconfigv1.ResponseError,
+			DeletePodResponse:    nodeconfigv1.ResponseNormal,
+			GetPodResponse:       nodeconfigv1.ResponseNormal,
+			GetPodsResponse:      nodeconfigv1.ResponseTimeout,
+			GetPodStatusResponse: nodeconfigv1.ResponseNormal,
+			NodePingResponse:     nodeconfigv1.ResponseNormal,
 		},
 	})
 }
@@ -81,11 +82,11 @@ func TestSetNodeFlagsHeartbeat(t *testing.T) {
 	var s store.Store = ms
 
 	gomock.InOrder(
-		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(v1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
 	)
 
-	SetNodeFlags(&s, &v1.NodeConfigurationState{
-		NetworkLatency:  -1, // default in types.go
+	SetNodeFlags(&s, &nodeconfigv1.NodeConfigurationState{
+		NetworkLatency:  "unset", // default in types.go
 		HeartbeatFailed: true,
 	})
 }
@@ -98,13 +99,13 @@ func TestSetNodeFlagsLatency(t *testing.T) {
 	var s store.Store = ms
 
 	gomock.InOrder(
-		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(100)),
+		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 100*time.Millisecond),
 	)
 
-	SetNodeFlags(&s, &v1.NodeConfigurationState{
+	SetNodeFlags(&s, &nodeconfigv1.NodeConfigurationState{
 		HeartbeatFailed: true,
-		NetworkLatency:  100,
+		NetworkLatency:  "100ms",
 	})
 }
 
@@ -116,19 +117,19 @@ func TestSetNodeFlagsNodeFailure(t *testing.T) {
 	var s store.Store = ms
 
 	gomock.InOrder(
-		ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(100)),
-		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodsResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(v1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 100*time.Millisecond),
+		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodsResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
 	)
 
-	SetNodeFlags(&s, &v1.NodeConfigurationState{
+	SetNodeFlags(&s, &nodeconfigv1.NodeConfigurationState{
 		HeartbeatFailed: false,
-		NetworkLatency:  100,
+		NetworkLatency:  "100ms",
 		NodeFailed:      true,
 	})
 }

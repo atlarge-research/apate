@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
@@ -45,9 +45,11 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 			break
 		}
 
-		c := make(chan bool)
+		c := make(chan struct{})
 		go func() {
 			select {
+			case <-ctx.Done():
+				return
 			case <-time.After(recvTimeout):
 				atomic.AddInt32(&cnt, 1)
 				_ = (*h.store).SetNodeStatus(id, health.Status_UNKNOWN)
@@ -57,7 +59,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 
 		// receive data
 		req, err := server.Recv()
-		c <- true
+		c <- struct{}{}
 
 		if err != nil {
 			log.Printf("Receive error: %v\n", err)

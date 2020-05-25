@@ -2,12 +2,13 @@
 package pod
 
 import (
+	"log"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,13 +32,13 @@ type ConfigurationClient struct {
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
 	once.Do(func() {
-		if err := v1.AddToScheme(scheme.Scheme); err != nil {
-			panic(errors.Wrap(err, "failed to add crd information to the scheme"))
+		if err := podconfigv1.AddToScheme(scheme.Scheme); err != nil {
+			log.Panicf("%+v", errors.Wrap(err, "failed to add crd information to the scheme"))
 		}
 	})
 
 	config := *c
-	config.ContentConfig.GroupVersion = &v1.SchemeGroupVersion
+	config.ContentConfig.GroupVersion = &podconfigv1.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
@@ -51,7 +52,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 }
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
-func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh chan struct{}) {
+func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
 	_, podConfigurationController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -59,7 +60,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 			},
 			WatchFunc: e.watch,
 		},
-		&v1.PodConfiguration{},
+		&podconfigv1.PodConfiguration{},
 		1*time.Minute,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    addFunc,
@@ -71,8 +72,8 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 	go podConfigurationController.Run(stopCh)
 }
 
-func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.PodConfigurationList, error) {
-	result := v1.PodConfigurationList{}
+func (e *ConfigurationClient) list(opts metav1.ListOptions) (*podconfigv1.PodConfigurationList, error) {
+	result := podconfigv1.PodConfigurationList{}
 
 	err := e.restClient.Get().
 		Namespace(e.nameSpace).

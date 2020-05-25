@@ -3,8 +3,9 @@ package provider
 
 import (
 	"context"
-	"os"
 	"strconv"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/virtual-kubelet/node-cli/opts"
 	"github.com/virtual-kubelet/node-cli/provider"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -34,7 +35,7 @@ type Provider struct {
 	Pods      podmanager.PodManager
 	Resources *scenario.NodeResources
 	Cfg       provider.InitConfig
-	NodeInfo  cluster.NodeInfo
+	NodeInfo  kubernetes.NodeInfo
 	Store     *store.Store
 	Stats     *Stats
 
@@ -43,20 +44,23 @@ type Provider struct {
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(ctx context.Context, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
+func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get options from env")
 	}
 
 	name := baseName + "-" + res.UUID.String()
-	op.KubeConfigPath = os.TempDir() + "/apate/config"
+	op.KubeConfigPath = env.KubeConfigLocation
 	op.ListenPort = int32(k8sPort)
 	op.MetricsAddr = ":" + strconv.Itoa(metricsPort)
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo := cluster.NewNodeInfo("apatelet", "agent", name, res.Selector, k8sVersion, metricsPort)
+	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector, metricsPort)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kubernetes node info")
+	}
 
 	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
@@ -74,7 +78,7 @@ func CreateProvider(ctx context.Context, res *scenario.NodeResources, k8sPort in
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo cluster.NodeInfo, store *store.Store) provider.Provider {
+func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store) provider.Provider {
 	return &Provider{
 		Pods:      pods,
 		Resources: resources,
