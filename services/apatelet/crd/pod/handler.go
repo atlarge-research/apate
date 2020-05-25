@@ -13,7 +13,7 @@ import (
 )
 
 // CreatePodInformer creates a new crd informer.
-func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-chan struct{}, cb func()) error {
+func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-chan struct{}, wakeScheduler func()) error {
 	restConfig, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get restconfig from kubeconfig for the pod informer")
@@ -25,21 +25,30 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 	}
 
 	podClient.WatchResources(func(obj interface{}) {
-		cb()
+		// Add function
+		podCfg := obj.(*podconfigv1.PodConfiguration)
 
-		err := setPodTasks(obj, st)
+		err := setPodTasks(podCfg, st)
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)
 		}
-	}, func(oldObj, newObj interface{}) {
-		cb()
 
-		err := setPodTasks(newObj, st) // just replace all tasks with the <namespace>/<name>
+		wakeScheduler()
+	}, func(_, obj interface{}) {
+		// Update function
+		podCfg := obj.(*podconfigv1.PodConfiguration)
+
+		err := setPodTasks(podCfg, st) // just replace all tasks with the <namespace>/<name>
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)
 		}
+
+		wakeScheduler()
 	}, func(obj interface{}) {
-		_, crdLabel := getCRDAndLabel(obj)
+		// Delete function
+		podCfg := obj.(*podconfigv1.PodConfiguration)
+
+		crdLabel := getCRDAndLabel(podCfg)
 		err := (*st).RemovePodTasks(crdLabel)
 		if err != nil {
 			log.Printf("error while removing pod tasks: %v\n", err)
@@ -49,27 +58,36 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 	return nil
 }
 
-func setPodTasks(obj interface{}, st *store.Store) error {
-	newCRD, crdLabel := getCRDAndLabel(obj)
+func setPodTasks(podCfg *podconfigv1.PodConfiguration, st *store.Store) error {
+	// Validating timestamps before actually doing anything
+	var durations = make([]time.Duration, len(podCfg.Spec.Tasks))
+	for i, task := range podCfg.Spec.Tasks {
+		duration, err := time.ParseDuration(task.Timestamp)
+		if err != nil {
+			return errors.Wrapf(err, "error while converting timestamp %v to a duration", task.Timestamp)
+		}
+		durations[i] = duration
+	}
+
+	crdLabel := getCRDAndLabel(podCfg)
 
 	empty := podconfigv1.PodConfigurationState{}
-	if newCRD.Spec.PodConfigurationState != empty {
-		if err := SetPodFlags(st, crdLabel, &newCRD.Spec.PodConfigurationState); err != nil {
+	if podCfg.Spec.PodConfigurationState != empty {
+		if err := SetPodFlags(st, crdLabel, &podCfg.Spec.PodConfigurationState); err != nil {
 			return errors.Wrap(err, "failed to set pod flags during enqueueing of crd")
 		}
 	}
 
 	var tasks []*store.Task
-	for _, task := range newCRD.Spec.Tasks {
+	for i, task := range podCfg.Spec.Tasks {
 		state := task.State
-		tasks = append(tasks, store.NewPodTask(time.Duration(task.Timestamp), crdLabel, &state))
+		tasks = append(tasks, store.NewPodTask(durations[i], crdLabel, &state))
 	}
 
 	return errors.Wrap((*st).SetPodTasks(crdLabel, tasks), "failed to set pod tasks")
 }
 
-func getCRDAndLabel(obj interface{}) (*podconfigv1.PodConfiguration, string) {
-	newCRD := obj.(*podconfigv1.PodConfiguration)
-	crdLabel := newCRD.Namespace + "/" + newCRD.Name
-	return newCRD, crdLabel
+func getCRDAndLabel(podCfg *podconfigv1.PodConfiguration) string {
+	crdLabel := podCfg.Namespace + "/" + podCfg.Name
+	return crdLabel
 }

@@ -44,9 +44,9 @@ type PodConfigurationSpec struct {
 // PodConfigurationTask is a single task which updates a pod state and is executed at a timestamp
 type PodConfigurationTask struct {
 	// The timestamp at which the task is executed
-	// +kubebuilder:validation:Minimum=0
+	// Any time.ParseDuration format is accepted, such as "10ms" or "42s"
 	// +kubebuilder:validation:Required
-	Timestamp int64 `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 
 	// The state to be set
 	// +kubebuilder:validation:Required

@@ -68,9 +68,9 @@ type NodeResources struct {
 // NodeConfigurationTask is a single task which modifies the node state on the given timestamp
 type NodeConfigurationTask struct {
 	// The timestamp at which the task is executed
-	// +kubebuilder:validation:Minimum=0
+	// Any time.ParseDuration format is accepted, such as "10ms" or "42s"
 	// +kubebuilder:validation:Required
-	Timestamp int64 `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 
 	// The desired state of the node after this task
 	// +kubebuilder:validation:Required

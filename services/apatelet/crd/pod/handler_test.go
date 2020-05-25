@@ -25,10 +25,9 @@ func TestGetCRDAndLabel(t *testing.T) {
 		},
 	}
 
-	rep, lbl := getCRDAndLabel(&ep)
+	lbl := getCRDAndLabel(&ep)
 
 	assert.Equal(t, lbl, "TestNamespace/TestName")
-	assert.Equal(t, &ep, rep)
 }
 
 func TestEnqueueCRD(t *testing.T) {
@@ -39,13 +38,13 @@ func TestEnqueueCRD(t *testing.T) {
 	var s store.Store = ms
 
 	et1 := store.NewPodTask(
-		1,
+		1*time.Millisecond,
 		"TestNamespace/TestName", &podconfigv1.PodConfigurationState{
 			PodStatus: podconfigv1.PodStatusFailed,
 		})
 
 	et2 := store.NewPodTask(
-		42,
+		42*time.Millisecond,
 		"TestNamespace/TestName", &podconfigv1.PodConfigurationState{
 			PodStatus: podconfigv1.PodStatusPending,
 		})
@@ -58,13 +57,13 @@ func TestEnqueueCRD(t *testing.T) {
 		Spec: podconfigv1.PodConfigurationSpec{
 			Tasks: []podconfigv1.PodConfigurationTask{
 				{
-					Timestamp: 1,
+					Timestamp: "1ms",
 					State: podconfigv1.PodConfigurationState{
 						PodStatus: podconfigv1.PodStatusFailed,
 					},
 				},
 				{
-					Timestamp: 42,
+					Timestamp: "42ms",
 					State: podconfigv1.PodConfigurationState{
 						PodStatus: podconfigv1.PodStatusPending,
 					},
