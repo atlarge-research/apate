@@ -75,14 +75,12 @@ func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *v1.NodeC
 		// Not enough apatelets, spawn extra
 		err := a.SpawnApatelets(ctx, desired, res, selector)
 		if err != nil {
-			// TODO: Stop, notify, idk?
 			return errors.Wrap(err, "error while spawning apatelets")
 		}
 	} else if current > desired {
 		// Too many apatelets, stop a few
 		err := a.StopApatelets(ctx, desired, selector)
 		if err != nil {
-			// TODO: Stop, notify, idk?
 			return errors.Wrap(err, "error while stopping apatelets")
 		}
 	}
@@ -130,6 +128,7 @@ func (a apateletHandler) StopApatelets(ctx context.Context, desired int64, selec
 	log.Printf("Stopping %v apatelets", diff)
 
 	var wg sync.WaitGroup
+	wg.Add(diff)
 
 	for i, node := range nodes {
 		if i >= diff {
@@ -137,7 +136,6 @@ func (a apateletHandler) StopApatelets(ctx context.Context, desired int64, selec
 		}
 
 		node := node
-		wg.Add(diff)
 
 		go func() {
 			defer wg.Done()

@@ -40,7 +40,7 @@ func GetClusterOperationClient(info *service.ConnectionInfo) (*ClusterOperationC
 }
 
 // JoinCluster joins the apate cluster, saves the received kube config and returns the node resources
-func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
+func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int, kubeConfigPath string) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
 	res, err := c.Client.JoinCluster(ctx, &controlplane.ApateletInformation{Port: int32(listenPort)})
 
 	// Check for any grpc error
@@ -55,7 +55,7 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 		return nil, nil, -1, errors.Wrapf(err, "failed to parse node uuid (%v)", res.NodeUuid)
 	}
 
-	cfg, err := kubeconfig.FromBytes(res.KubeConfig)
+	cfg, err := kubeconfig.FromBytes(res.KubeConfig, kubeConfigPath)
 	if err != nil {
 		return nil, nil, -1, errors.Wrap(err, "failed to load kubeconfig")
 	}

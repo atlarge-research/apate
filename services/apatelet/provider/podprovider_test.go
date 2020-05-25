@@ -147,15 +147,15 @@ func TestCancelContextEarlyReturn(t *testing.T) {
 		Store: &s,
 	}
 
-	assert.Equal(t, p.UpdatePod(ctx, nil), context.Canceled)
-	assert.Equal(t, p.CreatePod(ctx, nil), context.Canceled)
-	assert.Equal(t, p.DeletePod(ctx, nil), context.Canceled)
+	assert.Error(t, p.UpdatePod(ctx, nil))
+	assert.Error(t, p.CreatePod(ctx, nil))
+	assert.Error(t, p.DeletePod(ctx, nil))
 	_, err := p.GetPod(ctx, "", "")
-	assert.Equal(t, err, context.Canceled)
+	assert.Error(t, err)
 	_, err = p.GetPodStatus(ctx, "", "")
-	assert.Equal(t, err, context.Canceled)
+	assert.Error(t, err)
 	_, err = p.GetPods(ctx)
-	assert.Equal(t, err, context.Canceled)
+	assert.Error(t, err)
 }
 
 func TestCancelContextWhileRunningLatency(t *testing.T) {

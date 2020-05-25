@@ -3,6 +3,7 @@ package kubeconfig
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -11,26 +12,29 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// KubeConfig is an alias of a bytearray, and represents a raw kube configuration file loaded from file.
+// KubeConfig is a combination
 type KubeConfig struct {
 	Path  string
 	Bytes []byte
 }
 
-// FromBytes creates a kubeConfig struct from byte array.
-func FromBytes(bytes []byte) (*KubeConfig, error) {
-	// TODO maybe remove this? We never use it. Kubeconfig could just be an alias to []byte
-	file, err := ioutil.TempFile("", "apate-config")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create tmp file for kubeconfig")
-	}
+// FromBytes creates a kubeConfig struct from byte array and writes it to the given path if the file doesn't exist.
+func FromBytes(bytes []byte, path string) (*KubeConfig, error) {
+	_, err := os.Stat(path)
 
-	if _, err := file.Write(bytes); err != nil {
-		return nil, errors.Wrapf(err, "failed to write Kubeconfig to file at %v", file.Name())
+	if os.IsNotExist(err) {
+		file, err := os.Create(path)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed opening file from provided path")
+		}
+
+		if _, err := file.Write(bytes); err != nil {
+			return nil, errors.Wrapf(err, "failed to write Kubeconfig to file at %v", file.Name())
+		}
 	}
 
 	return &KubeConfig{
-		Path:  file.Name(),
+		Path:  path,
 		Bytes: bytes,
 	}, nil
 }

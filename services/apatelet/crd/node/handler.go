@@ -13,7 +13,7 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh <-chan struct{}, cb func()) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh <-chan struct{}, wakeScheduler func()) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get kubeconfig")
@@ -25,20 +25,17 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	}
 
 	client.WatchResources(func(obj interface{}) {
+		nodeCfg := obj.(*v1.NodeConfiguration)
+		if node.GetSelector(nodeCfg) == selector {
+			err := setNodeTasks(nodeCfg, st)
+			if err != nil {
+				log.Printf("error while adding node tasks: %v\n", err)
+			}
+		}
+
 		// Add function
-		cb()
-
-		nodeCfg := obj.(*v1.NodeConfiguration)
-		if node.GetSelector(nodeCfg) == selector {
-			err := setNodeTasks(nodeCfg, st)
-			if err != nil {
-				log.Printf("error while adding node tasks: %v\n", err)
-			}
-		}
+		wakeScheduler()
 	}, func(_, obj interface{}) {
-		// Update function
-		cb()
-
 		nodeCfg := obj.(*v1.NodeConfiguration)
 		if node.GetSelector(nodeCfg) == selector {
 			err := setNodeTasks(nodeCfg, st)
@@ -46,6 +43,9 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 				log.Printf("error while adding node tasks: %v\n", err)
 			}
 		}
+
+		// Update function
+		wakeScheduler()
 	}, func(obj interface{}) {
 		// Delete function
 		// Do nothing here, as control plane will determine which, if any, apatelets should stop

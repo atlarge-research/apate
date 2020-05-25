@@ -16,7 +16,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
+func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int, kubeConfigPath string) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
 	log.Println("Joining apate cluster")
 
 	client, err := controlplane.GetClusterOperationClient(connectionInfo)
@@ -31,7 +31,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 		}
 	}()
 
-	cfg, res, startTime, err := client.JoinCluster(ctx, listenPort)
+	cfg, res, startTime, err := client.JoinCluster(ctx, listenPort, kubeConfigPath)
 
 	if err != nil {
 		return nil, nil, -1, errors.Wrap(err, "failed to join cluster")
@@ -42,7 +42,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, startTime, nil
 }
 
-func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer chan struct{}, sch scheduler.Scheduler, res *scenario.NodeResources) error {
+func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer chan struct{}, sch *scheduler.Scheduler, res *scenario.NodeResources) error {
 	err := crdPod.CreatePodInformer(config, &st, stopInformer, sch.WakeScheduler)
 	if err != nil {
 		return errors.Wrap(err, "failed creating crd pod informer")
