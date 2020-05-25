@@ -34,6 +34,8 @@ func (d RoutineRunner) SpawnApatelets(_ context.Context, amountOfNodes int, envi
 		}
 
 		apateletEnv.ListenPort = ports[0]
+		apateletEnv.MetricsPort = ports[1]
+		apateletEnv.KubernetesPort = ports[2]
 
 		go func() {
 			// TODO: Add retry logic
@@ -42,7 +44,7 @@ func (d RoutineRunner) SpawnApatelets(_ context.Context, amountOfNodes int, envi
 					log.Printf("Apatelet failed to start: %v\n", r)
 				}
 			}()
-			err := apateRun.StartApatelet(apateletEnv, ports[1], ports[2], readyCh)
+			err := apateRun.StartApatelet(apateletEnv, readyCh)
 			if err != nil {
 				log.Printf("Apatelet failed to start: %v\n", err)
 			}

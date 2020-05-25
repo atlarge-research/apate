@@ -36,9 +36,6 @@ func init() {
 	// Enable line numbers in logging
 	// Enables date time flags & file name + line
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-
-	// Create registry
-	run.Registry = run.New()
 }
 
 func panicf(err error) {

@@ -29,13 +29,8 @@ type RunnerRegistry struct {
 // TODO: Do we want this global var?
 
 // Registry is the global RunnerRegistry
-var Registry RunnerRegistry
-
-// New returns a new registry
-func New() RunnerRegistry {
-	return RunnerRegistry{
-		registrations: make(map[env.RunType]registration),
-	}
+var Registry = RunnerRegistry{
+	registrations: make(map[env.RunType]registration),
 }
 
 // RegisterRunner registers a new runner

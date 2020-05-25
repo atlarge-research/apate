@@ -6,11 +6,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -27,24 +27,21 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 
 	// Get docker port for control plane
 	port, err := nat.NewPort("tcp", strconv.Itoa(cpEnv.ListenPort))
-
 	if err != nil {
 		return errors.Wrap(err, "failed to create docker port for Control plane")
+	}
+
+	// Dump environment as string array
+	envArray, err := env.DumpAsKeyValue(cpEnv)
+	if err != nil {
+		return errors.Wrap(err, "failed to dump cp env to strings")
 	}
 
 	// Set spawn information
 	spawnInfo := NewSpawnInformation(pullPolicy, env.ControlPlaneFullImage, env.ControlPlaneContainerName, 1, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
 			Image: env.ControlPlaneImageName,
-			Env: []string{
-				env.ControlPlaneListenAddress + "=" + cpEnv.ListenAddress,
-				env.ControlPlaneListenPort + "=" + strconv.Itoa(cpEnv.ListenPort),
-				env.ManagedClusterConfigLocation + "=" + cpEnv.ManagerConfigLocation,
-				env.ControlPlaneKubeConfigLocation + "=" + cpEnv.KubeConfigLocation,
-				env.ControlPlaneExternalIP + "=" + cpEnv.ExternalIP,
-				env.ControlPlaneDockerPolicy + "=" + string(cpEnv.DockerPolicy),
-				env.PrometheusStackEnabled + "=" + strconv.FormatBool(cpEnv.PrometheusStackEnabled),
-			},
+			Env:   envArray,
 			ExposedPorts: nat.PortSet{
 				port: struct{}{},
 			},
