@@ -51,7 +51,7 @@ func (s *Scheduler) EnableScheduler(ctx context.Context) <-chan error {
 
 		for {
 			if err := ctx.Err(); err != nil {
-				ech <- errors.Wrap(err, "context cancelled")
+				ech <- errors.Wrap(err, "scheduler stopped")
 				return
 			}
 

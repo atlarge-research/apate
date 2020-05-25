@@ -14,7 +14,7 @@ import (
 type DockerRunner struct{}
 
 // SpawnApatelets spawns the apatelets using docker containers
-func (d DockerRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, environment env.ApateletEnvironment, _ ...interface{}) error {
+func (d DockerRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, environment env.ApateletEnvironment) error {
 	// Retrieve pull policy
 	pullPolicy := env.ControlPlaneEnv().DockerPolicy
 	fmt.Printf("Using pull policy %s to spawn apatelets\n", pullPolicy)

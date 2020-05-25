@@ -113,7 +113,7 @@ func (b *Builder) Create() (ManagedCluster, error) {
 		// If something went wrong, there still could be a built cluster we can't interact with.
 		// delete the cluster to be safe for the next run, otherwise ForceCreate would be necessary
 		if deleteClusterError := b.manager.DeleteCluster(b.name); deleteClusterError != nil {
-			err = errors.Wrapf(deleteClusterError, "failed to delete kind cluster to clean up earlier failure: (%v)", err)
+			err = errors.Wrapf(deleteClusterError, "failed to delete kind cluster to clean up earlier failure (%v)", err)
 		}
 		return ManagedCluster{}, err
 	}

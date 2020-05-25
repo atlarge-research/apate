@@ -9,7 +9,8 @@ import (
 // NodeInfo contains all information used for creating an equivalent kubernetes node
 type NodeInfo struct {
 	NodeType, Role, Name, Version, Namespace, Selector string
-	MetricsPort                                        int
+
+	MetricsPort int
 }
 
 // NewNodeInfo creates a new NodeInfo

@@ -1,7 +1,10 @@
 package env
 
 import (
+	"log"
+
 	"github.com/deanishe/go-env"
+	"github.com/pkg/errors"
 )
 
 // Control plane environment variables
@@ -96,7 +99,7 @@ func ControlPlaneEnv() ControlPlaneEnvironment {
 
 	c := DefaultControlPlaneEnvironment()
 	if err := env.Bind(&c); err != nil {
-		panic(err)
+		log.Panicf("%+v", errors.Wrap(err, "unable to bind control plane environment"))
 	}
 
 	controlPlaneEnvironment = &c

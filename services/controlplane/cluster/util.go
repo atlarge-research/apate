@@ -16,11 +16,11 @@ func RemoveNodeWithUUID(uuid uuid.UUID, st *store.Store, cl *kubernetes.Cluster)
 	log.Printf("Removing %s from the cluster", uuid)
 
 	if err := cl.RemoveNodeFromCluster("apatelet-" + uuid.String()); err != nil {
-		return errors.Wrapf(err, "removing node with uuid from cluster: %v failed", uuid)
+		return errors.Wrapf(err, "removing node with uuid from cluster %v failed", uuid)
 	}
 
 	if err := (*st).RemoveNode(uuid); err != nil {
-		return errors.Wrapf(err, "removing node with uuid: %v failed", uuid)
+		return errors.Wrapf(err, "removing node with uuid %v failed", uuid)
 	}
 
 	return nil

@@ -30,12 +30,12 @@ func TestRegisterRunner(t *testing.T) {
 	var r ApateletRunner = mar
 
 	registry := New()
-	registry.RegisterRunner(MyRunType, &r, 1, 2)
+	registry.RegisterRunner(MyRunType, &r)
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	environment := env.ApateletEnvironment{}
 
-	mar.EXPECT().SpawnApatelets(ctx, 20, environment, 1, 2).Return(nil)
+	mar.EXPECT().SpawnApatelets(ctx, 20, environment).Return(nil)
 
 	err := registry.Run(ctx, 20, environment)
 	assert.NoError(t, err)
@@ -48,7 +48,7 @@ func TestRegisterRunnerUnknownType(t *testing.T) {
 	defer ctrl.Finish()
 
 	registry := New()
-	err := registry.Run(context.TODO(), 20, env.ApateletEnvironment{})
+	err := registry.Run(context.Background(), 20, env.ApateletEnvironment{})
 	assert.Error(t, err)
 }
 
@@ -62,12 +62,12 @@ func TestRegisterRunnerReturnsError(t *testing.T) {
 	var r ApateletRunner = mar
 
 	registry := New()
-	registry.RegisterRunner(MyRunType, &r, 1, 2)
+	registry.RegisterRunner(MyRunType, &r)
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	environment := env.ApateletEnvironment{}
 
-	mar.EXPECT().SpawnApatelets(ctx, 20, environment, 1, 2).Return(errors.New("oops"))
+	mar.EXPECT().SpawnApatelets(ctx, 20, environment).Return(errors.New("oops"))
 
 	err := registry.Run(ctx, 20, environment)
 	assert.Error(t, err)
