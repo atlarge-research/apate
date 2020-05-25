@@ -2,6 +2,7 @@
 package pod
 
 import (
+	"log"
 	"sync"
 	"time"
 
@@ -32,7 +33,7 @@ type ConfigurationClient struct {
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
 	once.Do(func() {
 		if err := v1.AddToScheme(scheme.Scheme); err != nil {
-			panic(errors.Wrap(err, "failed to add crd information to the scheme"))
+			log.Panicf("%+v", errors.Wrap(err, "failed to add crd information to the scheme"))
 		}
 	})
 

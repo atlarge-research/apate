@@ -41,8 +41,8 @@ func init() {
 	run.Registry = run.New()
 }
 
-func fatal(err error) {
-	log.Fatalf("An error occurred while starting the controlplane: %+v\n", err)
+func panicf(err error) {
+	log.Panicf("An error occurred while starting the controlplane: %+v\n", err)
 }
 
 func main() {
@@ -53,21 +53,16 @@ func main() {
 	// Get external connection information
 	externalInformation, err := createExternalConnectionInformation()
 	if err != nil {
-		fatal(errors.Wrap(err, "failed to get external connection information"))
+		panicf(errors.Wrap(err, "failed to get external connection information"))
 	}
 
 	// Register runners
-	var dockerRunner run.ApateletRunner = run.DockerRunner{}
-	run.Registry.RegisterRunner(env.Docker, &dockerRunner)
-
-	var routineRunner run.ApateletRunner = run.RoutineRunner{}
-	run.Registry.RegisterRunner(env.Routine, &routineRunner)
+	registerRunners()
 
 	// Create kubernetes cluster
-	log.Println("starting kubernetes control plane")
 	managedKubernetesCluster, err := createCluster(env.ControlPlaneEnv().ManagerConfigLocation)
 	if err != nil {
-		fatal(errors.Wrap(err, "failed to create cluster"))
+		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
 
 	// Create apate cluster state
@@ -75,15 +70,12 @@ func main() {
 
 	// Save the kubeconfig in the store
 	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
-		fatal(errors.Wrap(err, "failed to set Kubeconfig"))
+		panicf(errors.Wrap(err, "failed to set Kubeconfig"))
 	}
 
 	// Create CRDs
-	if err = podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
-		fatal(errors.Wrap(err, "failed to register pod CRD spec"))
-	}
-	if err = nodeconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
-		fatal(errors.Wrap(err, "failed to register node CRD spec"))
+	if err = createCRDs(managedKubernetesCluster); err != nil {
+		panicf(errors.Wrap(err, "failed to create CRDs"))
 	}
 
 	// TODO: Remove later, seems to give k8s some breathing room for crd
@@ -92,7 +84,7 @@ func main() {
 	// Create node informer
 	stopInformer := make(chan struct{})
 	if err = node.CreateNodeInformer(ctx, managedKubernetesCluster.KubeConfig, &createdStore, externalInformation, stopInformer); err != nil {
-		fatal(errors.Wrap(err, "failed to create node informer"))
+		panicf(errors.Wrap(err, "failed to create node informer"))
 	}
 
 	// Create prometheus stack
@@ -104,14 +96,14 @@ func main() {
 	// Start gRPC server
 	server, err := createGRPC(&createdStore, managedKubernetesCluster.Cluster, externalInformation)
 	if err != nil {
-		fatal(errors.Wrap(err, "failed to start GRPC server"))
+		panicf(errors.Wrap(err, "failed to start GRPC server"))
 	}
 
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	kubeConfigLocation := env.ControlPlaneEnv().KubeConfigLocation
 	if err = ioutil.WriteFile(kubeConfigLocation, managedKubernetesCluster.Cluster.KubeConfig.Bytes, 0600); err != nil {
-		fatal(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
+		panicf(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
 	}
 
 	// Handle signals
@@ -123,7 +115,7 @@ func main() {
 		err := server.Serve()
 
 		if err != nil {
-			fatal(errors.Wrap(err, "failed to start gRPC server"))
+			panicf(errors.Wrap(err, "failed to start gRPC server"))
 		}
 	}()
 
@@ -135,6 +127,26 @@ func main() {
 	stopInformer <- struct{}{}
 	shutdown(&createdStore, &managedKubernetesCluster, server)
 	log.Printf("apate control plane stopped")
+}
+
+func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
+	if err := podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+		return errors.Wrap(err, "failed to register pod CRD spec")
+	}
+
+	if err := nodeconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+		return errors.Wrap(err, "failed to register node CRD spec")
+	}
+
+	return nil
+}
+
+func registerRunners() {
+	var dockerRunner run.ApateletRunner = run.DockerRunner{}
+	run.Registry.RegisterRunner(env.Docker, &dockerRunner)
+
+	var routineRunner run.ApateletRunner = run.RoutineRunner{}
+	run.Registry.RegisterRunner(env.Routine, &routineRunner)
 }
 
 func shutdown(store *store.Store, kubernetesCluster *kubernetes.ManagedCluster, server *service.GRPCServer) {
@@ -192,6 +204,8 @@ func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster,
 }
 
 func createCluster(managedClusterConfigPath string) (kubernetes.ManagedCluster, error) {
+	log.Println("starting kubernetes control plane")
+
 	cb := kubernetes.Default()
 	c, err := cb.WithName("Apate").WithManagerConfig(managedClusterConfigPath).ForceCreate()
 	if err != nil {

@@ -105,11 +105,7 @@ func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res sce
 	}
 
 	// Create environment for apatelets
-	environment, err := env.DefaultApateletEnvironment()
-	if err != nil {
-		return errors.Wrap(err, "getting default Apatelet environment failed")
-	}
-
+	environment := env.DefaultApateletEnvironment()
 	environment.AddConnectionInfo(info.Address, info.Port)
 
 	// Start the apatelets

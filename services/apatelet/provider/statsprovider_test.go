@@ -48,14 +48,14 @@ func TestEmpty(t *testing.T) {
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
 
-	// Valid node
+	// Verify node
 	zero := uint64(0)
 	assert.Equal(t, name, result.Node.NodeName)
 	assert.Equal(t, zero, *result.Node.CPU.UsageNanoCores)
 	assert.Equal(t, zero, *result.Node.Memory.UsageBytes)
 	assert.Equal(t, uint64(mem), *result.Node.Memory.AvailableBytes)
 
-	// Valid pods
+	// Verify pods
 	var statistics []stats.PodStats
 	assert.EqualValues(t, statistics, result.Pods)
 
@@ -98,14 +98,14 @@ func TestSinglePod(t *testing.T) {
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
 
-	// Valid node
+	// Verify node
 	left := uint64(mem) - memUsage
 	assert.Equal(t, name, result.Node.NodeName)
 	assert.Equal(t, cpuUsage, *result.Node.CPU.UsageNanoCores)
 	assert.Equal(t, memUsage, *result.Node.Memory.UsageBytes)
 	assert.Equal(t, left, *result.Node.Memory.AvailableBytes)
 
-	// Valid pod
+	// Verify pod
 	podStats := []stats.PodStats{statistics}
 	assert.EqualValues(t, podStats, result.Pods)
 
@@ -218,7 +218,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
 
-	// Valid node
+	// Verify node
 	memLeft := uint64(mem) - memUsage
 	fsLeft := uint64(fs) - fsUsage
 	assert.Equal(t, name, result.Node.NodeName)
@@ -229,7 +229,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	assert.Equal(t, fsLeft, *result.Node.Fs.AvailableBytes)
 	assert.Equal(t, uint64(fs), *result.Node.Fs.CapacityBytes)
 
-	// Valid pod
+	// Verify pod
 	for _, podStat := range result.Pods {
 		assert.Equal(t, statMap[podStat.PodRef.UID], podStat)
 	}

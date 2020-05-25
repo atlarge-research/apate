@@ -2,6 +2,7 @@
 package node
 
 import (
+	"log"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -32,7 +33,7 @@ var once sync.Once
 func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 	once.Do(func() {
 		if err := v1.AddToScheme(scheme.Scheme); err != nil {
-			panic(errors.Wrap(err, "adding global node scheme failed"))
+			log.Panicf("%+v", errors.Wrap(err, "adding global node scheme failed"))
 		}
 	})
 

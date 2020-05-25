@@ -22,6 +22,8 @@ func (d RoutineRunner) SpawnApatelets(_ context.Context, amountOfNodes int, envi
 
 	readyCh := make(chan struct{})
 
+	environment.KubeConfigLocation = env.ControlPlaneEnv().KubeConfigLocation
+
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
 		const numports = 3
