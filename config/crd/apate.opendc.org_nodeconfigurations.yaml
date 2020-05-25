@@ -24,10 +24,14 @@ spec:
         description: NodeConfiguration is a definition of a NodeConfiguration resource
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -42,7 +46,8 @@ spec:
                     properties:
                       create_pod_response:
                         default: UNSET
-                        description: CreatePodResponse determines how to respond to the CreatePod request
+                        description: CreatePodResponse determines how to respond to
+                          the CreatePod request
                         enum:
                         - NORMAL
                         - TIMEOUT
@@ -51,7 +56,8 @@ spec:
                         type: string
                       delete_pod_response:
                         default: UNSET
-                        description: DeletePodResponse determines how to respond to the DeletePod request
+                        description: DeletePodResponse determines how to respond to
+                          the DeletePod request
                         enum:
                         - NORMAL
                         - TIMEOUT
@@ -60,7 +66,8 @@ spec:
                         type: string
                       get_pod_response:
                         default: UNSET
-                        description: PodGetPodResponse determines how to respond to the GetPod request
+                        description: PodGetPodResponse determines how to respond to
+                          the GetPod request
                         enum:
                         - NORMAL
                         - TIMEOUT
@@ -69,7 +76,8 @@ spec:
                         type: string
                       get_pod_status_response:
                         default: UNSET
-                        description: GetPodStatusResponse determines how to respond to the GetPodStatus request
+                        description: GetPodStatusResponse determines how to respond
+                          to the GetPodStatus request
                         enum:
                         - NORMAL
                         - TIMEOUT
@@ -78,7 +86,8 @@ spec:
                         type: string
                       get_pods_response:
                         default: UNSET
-                        description: GetPodsResponse determines how to respond to the GetPods request
+                        description: GetPodsResponse determines how to respond to
+                          the GetPods request
                         enum:
                         - NORMAL
                         - TIMEOUT
@@ -87,7 +96,8 @@ spec:
                         type: string
                       node_ping_response:
                         default: UNSET
-                        description: NodePingResponse determines how to respond to a heartbeat ping
+                        description: NodePingResponse determines how to respond to
+                          a heartbeat ping
                         enum:
                         - NORMAL
                         - TIMEOUT
@@ -96,7 +106,8 @@ spec:
                         type: string
                       update_pod_response:
                         default: UNSET
-                        description: UpdatePodResponse determines how to respond to the UpdatePod request
+                        description: UpdatePodResponse determines how to respond to
+                          the UpdatePod request
                         enum:
                         - NORMAL
                         - TIMEOUT
@@ -106,16 +117,19 @@ spec:
                     type: object
                   heartbeat_failed:
                     default: false
-                    description: If set, HeartbeatFailed will result in the node no longer responding to pings
+                    description: If set, HeartbeatFailed will result in the node no
+                      longer responding to pings
                     type: boolean
                   network_latency:
-                    default: "-1"
-                    description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
+                    default: -1
+                    description: NetworkLatency determines how much added latency
+                      will be introduced to requests by kubernetes
                     format: int64
                     type: integer
                   node_failed:
                     default: false
-                    description: If set, NodeFailed will result in timeouts for all requests by kubernetes effectively taking down the node
+                    description: If set, NodeFailed will result in timeouts for all
+                      requests by kubernetes effectively taking down the node
                     type: boolean
                 type: object
               replicas:
@@ -141,7 +155,8 @@ spec:
               tasks:
                 description: The tasks to be executed on this node
                 items:
-                  description: NodeConfigurationTask is a single task which modifies the node state on the given timestamp
+                  description: NodeConfigurationTask is a single task which modifies
+                    the node state on the given timestamp
                   properties:
                     state:
                       description: The desired state of the node after this task
@@ -151,7 +166,8 @@ spec:
                           properties:
                             create_pod_response:
                               default: UNSET
-                              description: CreatePodResponse determines how to respond to the CreatePod request
+                              description: CreatePodResponse determines how to respond
+                                to the CreatePod request
                               enum:
                               - NORMAL
                               - TIMEOUT
@@ -160,7 +176,8 @@ spec:
                               type: string
                             delete_pod_response:
                               default: UNSET
-                              description: DeletePodResponse determines how to respond to the DeletePod request
+                              description: DeletePodResponse determines how to respond
+                                to the DeletePod request
                               enum:
                               - NORMAL
                               - TIMEOUT
@@ -169,7 +186,8 @@ spec:
                               type: string
                             get_pod_response:
                               default: UNSET
-                              description: PodGetPodResponse determines how to respond to the GetPod request
+                              description: PodGetPodResponse determines how to respond
+                                to the GetPod request
                               enum:
                               - NORMAL
                               - TIMEOUT
@@ -178,7 +196,8 @@ spec:
                               type: string
                             get_pod_status_response:
                               default: UNSET
-                              description: GetPodStatusResponse determines how to respond to the GetPodStatus request
+                              description: GetPodStatusResponse determines how to
+                                respond to the GetPodStatus request
                               enum:
                               - NORMAL
                               - TIMEOUT
@@ -187,7 +206,8 @@ spec:
                               type: string
                             get_pods_response:
                               default: UNSET
-                              description: GetPodsResponse determines how to respond to the GetPods request
+                              description: GetPodsResponse determines how to respond
+                                to the GetPods request
                               enum:
                               - NORMAL
                               - TIMEOUT
@@ -196,7 +216,8 @@ spec:
                               type: string
                             node_ping_response:
                               default: UNSET
-                              description: NodePingResponse determines how to respond to a heartbeat ping
+                              description: NodePingResponse determines how to respond
+                                to a heartbeat ping
                               enum:
                               - NORMAL
                               - TIMEOUT
@@ -205,7 +226,8 @@ spec:
                               type: string
                             update_pod_response:
                               default: UNSET
-                              description: UpdatePodResponse determines how to respond to the UpdatePod request
+                              description: UpdatePodResponse determines how to respond
+                                to the UpdatePod request
                               enum:
                               - NORMAL
                               - TIMEOUT
@@ -215,16 +237,20 @@ spec:
                           type: object
                         heartbeat_failed:
                           default: false
-                          description: If set, HeartbeatFailed will result in the node no longer responding to pings
+                          description: If set, HeartbeatFailed will result in the
+                            node no longer responding to pings
                           type: boolean
                         network_latency:
-                          default: "-1"
-                          description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
+                          default: -1
+                          description: NetworkLatency determines how much added latency
+                            will be introduced to requests by kubernetes
                           format: int64
                           type: integer
                         node_failed:
                           default: false
-                          description: If set, NodeFailed will result in timeouts for all requests by kubernetes effectively taking down the node
+                          description: If set, NodeFailed will result in timeouts
+                            for all requests by kubernetes effectively taking down
+                            the node
                           type: boolean
                       type: object
                     timestamp:

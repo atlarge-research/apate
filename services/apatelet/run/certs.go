@@ -1,10 +1,10 @@
 package run
 
 import (
-	"github.com/pkg/errors"
-
 	"io/ioutil"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 const (

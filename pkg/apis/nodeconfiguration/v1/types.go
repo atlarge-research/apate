@@ -2,6 +2,14 @@ package v1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+const (
+	// NodeConfigurationLabel defines the label which can used to find out to which node configuration crd a node belongs
+	// by external tools
+	NodeConfigurationLabel = "apate-name"
+	// NodeConfigurationLabelNamespace defines the namespace of the above label
+	NodeConfigurationLabelNamespace = "apate-namespace"
+)
+
 // NodeConfiguration is a definition of a NodeConfiguration resource
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:path=nodeconfigurations,shortName=nc,singular=nodeconfiguration

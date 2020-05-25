@@ -6,6 +6,7 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	podv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
@@ -61,7 +62,7 @@ func TestCreatePod(t *testing.T) {
 	pod.Namespace = podNamespace
 	pod.Name = podName
 	pod.Labels = map[string]string{
-		"apate": podLabel,
+		podv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodCreatePodResponse
@@ -98,7 +99,7 @@ func TestUpdatePod(t *testing.T) {
 	pod.Namespace = podNamespace
 	pod.Name = podName
 	pod.Labels = map[string]string{
-		"apate": podLabel,
+		podv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodUpdatePodResponse
@@ -133,7 +134,7 @@ func TestDeletePod(t *testing.T) {
 	pod.Namespace = podNamespace
 	pod.Name = podName
 	pod.Labels = map[string]string{
-		"apate": podLabel,
+		podv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodDeletePodResponse
@@ -166,7 +167,7 @@ func TestGetPod(t *testing.T) {
 	pod.Namespace = podNamespace
 	pod.Name = podName
 	pod.Labels = map[string]string{
-		"apate": podLabel,
+		podv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodGetPodResponse
@@ -201,7 +202,7 @@ func TestGetPods(t *testing.T) {
 	pod.Namespace = podNamespace
 	pod.Name = podName
 	pod.Labels = map[string]string{
-		"apate": podLabel,
+		podv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.NodeGetPodsResponse
@@ -238,7 +239,7 @@ func TestGetPodStatus(t *testing.T) {
 	pod.Namespace = podNamespace
 	pod.Name = podName
 	pod.Labels = map[string]string{
-		"apate": podLabel,
+		podv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
 	PCPRF := events.PodGetPodStatusResponse
@@ -281,7 +282,8 @@ func TestNewProvider(t *testing.T) {
 	}
 
 	cfg := provider.InitConfig{}
-	ni := kubernetes.NewNodeInfo("a", "b", "c", "d", "e", 4242)
+	ni, err := kubernetes.NewNodeInfo("a", "b", "c", "d", "e/f", 4242)
+	assert.NoError(t, err)
 
 	var s store.Store = ms
 

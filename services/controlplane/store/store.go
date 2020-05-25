@@ -18,7 +18,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 )
 
-//TODO: Multi-master soon :tm:
+//TODO: Multi-master not soon :tm:
 
 // Store represents the store of the control plane
 type Store interface {

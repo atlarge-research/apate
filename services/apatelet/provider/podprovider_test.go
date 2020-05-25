@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -26,7 +28,7 @@ func TestGetPodLabelByPod(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
 			Labels: map[string]string{
-				"apate": "TestLabel",
+				v1.PodConfigurationLabel: "TestLabel",
 			},
 		},
 	}
@@ -39,7 +41,7 @@ func TestGetPodLabelByPodApateNotFound(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
 			Labels: map[string]string{
-				"apate1": "TestLabel",
+				v1.PodConfigurationLabel + "xxx": "TestLabel",
 			},
 		},
 	}
@@ -64,7 +66,7 @@ func TestGetPodLabelByNameOk(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
 			Labels: map[string]string{
-				"apate": "TestLabel",
+				v1.PodConfigurationLabel: "TestLabel",
 			},
 		},
 	}
