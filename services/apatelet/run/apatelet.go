@@ -9,34 +9,24 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"syscall"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
-	"github.com/google/uuid"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-
 	"github.com/pkg/errors"
-
-	crdNode "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
-	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-var once sync.Once
+var onceKubeConfig sync.Once
 
 // StartApatelet starts the apatelet
 func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsPort int, readyCh chan<- struct{}) error {
@@ -156,34 +146,18 @@ func createScheduler(ctx context.Context, st store.Store) scheduler.Scheduler {
 }
 
 func writeKubeConfig(apateletEnv env.ApateletEnvironment, config *kubeconfig.KubeConfig) {
-	once.Do(func() {
+	onceKubeConfig.Do(func() {
 		kubeConfigLocation := apateletEnv.KubeConfigLocation
 		_, err := os.Stat(kubeConfigLocation)
 		if os.IsNotExist(err) {
-			return
+			err = ioutil.WriteFile(kubeConfigLocation, config.Bytes, 0600)
+			if err != nil {
+				panic(errors.Wrap(err, "error while writing kubeconfig to file"))
+			}
 		} else if err != nil {
 			panic(errors.Wrap(err, "error while reading kubeconfig file"))
 		}
-
-		err = ioutil.WriteFile(kubeConfigLocation, config.Bytes, 0600)
-		if err != nil {
-			panic(errors.Wrap(err, "error while writing kubeconfig to file"))
-		}
 	})
-}
-
-func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer chan struct{}, sch scheduler.Scheduler, res *scenario.NodeResources) error {
-	err := crdPod.CreatePodInformer(config, &st, stopInformer, sch.WakeScheduler)
-	if err != nil {
-		return errors.Wrap(err, "failed creating crd pod informer")
-	}
-
-	err = crdNode.CreateNodeInformer(config, &st, res.Selector, stopInformer, sch.WakeScheduler)
-	if err != nil {
-		return errors.Wrap(err, "failed creating crd node informer")
-	}
-
-	return nil
 }
 
 func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *service.ConnectionInfo, uuid string) error {
@@ -212,66 +186,4 @@ func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *s
 	log.Println("Stopped Apatelet")
 
 	return nil
-}
-
-func startHealth(ctx context.Context, connectionInfo *service.ConnectionInfo, uuid uuid.UUID, stop chan<- os.Signal) (*health.Client, error) {
-	hc, err := health.GetClient(connectionInfo, uuid.String())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get health client")
-	}
-	hc.SetStatus(healthpb.Status_UNKNOWN)
-	var retries int32 = 3
-	hc.StartStream(ctx, func(err error) {
-		if atomic.LoadInt32(&retries) < 1 {
-			// Stop after retries amount of errors
-			stop <- syscall.SIGTERM
-			return
-		}
-		log.Println(err)
-		atomic.AddInt32(&retries, -1)
-	})
-	return hc, nil
-}
-
-func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
-	log.Println("Joining apate cluster")
-
-	client, err := controlplane.GetClusterOperationClient(connectionInfo)
-	if err != nil {
-		return nil, nil, -1, errors.Wrap(err, "failed to get cluster operation client")
-	}
-
-	defer func() {
-		closeErr := client.Conn.Close()
-		if closeErr != nil {
-			log.Printf("could not close connection: %v\n", closeErr)
-		}
-	}()
-
-	cfg, res, startTime, err := client.JoinCluster(ctx, listenPort)
-
-	if err != nil {
-		return nil, nil, -1, errors.Wrap(err, "failed to join cluster")
-	}
-
-	log.Printf("Joined apate cluster with resources: %v", res)
-
-	return cfg, res, startTime, nil
-}
-
-func createGRPC(listenPort int, store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel chan<- os.Signal) (*service.GRPCServer, error) {
-	// Connection settings
-	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
-
-	// Create gRPC server
-	server, err := service.NewGRPCServer(connectionInfo)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create new GRPC server")
-	}
-
-	// Add services
-	vkService.RegisterScenarioService(server, store, sch)
-	vkService.RegisterApateletService(server, stopChannel)
-
-	return server, nil
 }

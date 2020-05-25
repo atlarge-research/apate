@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	podv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/golang/mock/gomock"
@@ -35,7 +37,9 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	pm := podmanager.New() // TODO mock?
 
 	res := scenario.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
-	info := kubernetes.NewNodeInfo("", "", name, "", "", port)
+	info, err := kubernetes.NewNodeInfo("", "", name, "", "a/b", port)
+	assert.NoError(t, err)
+
 	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
 
 	return prov.(provider.PodMetricsProvider), ctrl, ms, pm
@@ -71,7 +75,7 @@ func TestSinglePod(t *testing.T) {
 
 	// Create pod
 	lbl := make(map[string]string)
-	lbl["apate"] = flag
+	lbl[podv1.PodConfigurationLabel] = flag
 	pod := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl},
@@ -123,7 +127,7 @@ func TestUnspecifiedPods(t *testing.T) {
 
 	// Create pods
 	lbl := make(map[string]string)
-	lbl["apate"] = flag
+	lbl[podv1.PodConfigurationLabel] = flag
 	pod := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl, UID: flag},
@@ -133,7 +137,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	pm.AddPod(pod) //TODO mock?
 
 	lbl2 := make(map[string]string)
-	lbl2["apate"] = flag + "2"
+	lbl2[podv1.PodConfigurationLabel] = flag + "2"
 	pod2 := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl2, UID: flag + "2"},
@@ -143,7 +147,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	pm.AddPod(pod2) //TODO mock?
 
 	lbl3 := make(map[string]string)
-	lbl3["apate"] = flag + "3"
+	lbl3[podv1.PodConfigurationLabel] = flag + "3"
 	pod3 := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl3, UID: flag + "3"},

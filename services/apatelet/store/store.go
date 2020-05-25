@@ -260,5 +260,5 @@ var defaultPodValues = map[events.PodEventFlag]interface{}{
 
 	events.PodResources: nil,
 
-	events.PodStatus: scenario.ResponseUnset,
+	events.PodStatus: scenario.PodStatusUnset,
 }

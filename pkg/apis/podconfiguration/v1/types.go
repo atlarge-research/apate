@@ -4,6 +4,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// PodConfigurationLabel defines the label which is used to define which pod configuration resource belongs to the pod
+	PodConfigurationLabel = "apate"
+)
+
 // PodConfiguration is a definition of PodConfiguration resource.
 // +genclient
 // +genclient:noStatus

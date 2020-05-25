@@ -19,7 +19,8 @@ type KubeConfig struct {
 
 // FromBytes creates a kubeConfig struct from byte array.
 func FromBytes(bytes []byte) (*KubeConfig, error) {
-	file, err := ioutil.TempFile("", "config")
+	// TODO maybe remove this? We never use it. Kubeconfig could just be an alias to []byte
+	file, err := ioutil.TempFile("", "apate-config")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tmp file for kubeconfig")
 	}
