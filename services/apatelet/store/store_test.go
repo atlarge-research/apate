@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 
-	podV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +29,7 @@ func TestEmptyQueue(t *testing.T) {
 
 // TestGetSingleTask ensures a retrieved task is also deleted
 func TestGetSingleTask(t *testing.T) {
-	task := &nodeV1.NodeConfigurationState{}
+	task := &nodeconfigv1.NodeConfigurationState{}
 	st := NewStore()
 
 	// Enqueue single task
@@ -48,7 +48,7 @@ func TestGetSingleTask(t *testing.T) {
 // TestGetSingleTask ensures a polled task is not deleted
 func TestPollSingleTask(t *testing.T) {
 	timestamp := time.Duration(424242)
-	task := &nodeV1.NodeConfigurationState{}
+	task := &nodeconfigv1.NodeConfigurationState{}
 	st := NewStore()
 
 	// Enqueue single task
@@ -70,9 +70,9 @@ func TestMultipleTasks(t *testing.T) {
 	task1Time := time.Duration(213123)
 	task2Time := time.Duration(4242)
 	task3Time := time.Duration(83481234)
-	task1 := &nodeV1.NodeConfigurationState{}
-	task2 := &nodeV1.NodeConfigurationState{}
-	task3 := &nodeV1.NodeConfigurationState{}
+	task1 := &nodeconfigv1.NodeConfigurationState{}
+	task2 := &nodeconfigv1.NodeConfigurationState{}
+	task3 := &nodeconfigv1.NodeConfigurationState{}
 
 	st := NewStore()
 
@@ -114,8 +114,8 @@ func TestMultipleTasks(t *testing.T) {
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
 func TestArrayWithNil(t *testing.T) {
-	task1 := NewNodeTask(213123, &nodeV1.NodeConfigurationState{})
-	task2 := NewNodeTask(4242, &nodeV1.NodeConfigurationState{})
+	task1 := NewNodeTask(213123, &nodeconfigv1.NodeConfigurationState{})
+	task2 := NewNodeTask(4242, &nodeconfigv1.NodeConfigurationState{})
 	st := NewStore()
 
 	// Enqueue tasks
@@ -142,9 +142,9 @@ func TestArrayWithNil(t *testing.T) {
 
 // TestReplaceNodeTask tests tasks are indeed replaced
 func TestReplaceNodeTask(t *testing.T) {
-	task1 := NewNodeTask(213123, &nodeV1.NodeConfigurationState{})
-	task2 := NewNodeTask(4242, &nodeV1.NodeConfigurationState{})
-	task3 := NewNodeTask(53156, &nodeV1.NodeConfigurationState{})
+	task1 := NewNodeTask(213123, &nodeconfigv1.NodeConfigurationState{})
+	task2 := NewNodeTask(4242, &nodeconfigv1.NodeConfigurationState{})
+	task3 := NewNodeTask(53156, &nodeconfigv1.NodeConfigurationState{})
 	st := NewStore()
 
 	// Enqueue tasks
@@ -270,8 +270,8 @@ func TestEnqueueCRDUpdate(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding less means old CRDs are removed
 	err := st.SetPodTasks("la/clappe", []*Task{
-		NewPodTask(10, "la/clappe", &podV1.PodConfigurationState{}),
-		NewPodTask(20, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(10, "la/clappe", &podconfigv1.PodConfigurationState{}),
+		NewPodTask(20, "la/clappe", &podconfigv1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -287,10 +287,10 @@ func TestEnqueueCRDUpdateMore(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding more means new CRDs are added
 	err := st.SetPodTasks("la/clappe", []*Task{
-		NewPodTask(10, "la/clappe", &podV1.PodConfigurationState{}),
-		NewPodTask(20, "la/clappe", &podV1.PodConfigurationState{}),
-		NewPodTask(220, "la/clappe", &podV1.PodConfigurationState{}),
-		NewPodTask(120, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(10, "la/clappe", &podconfigv1.PodConfigurationState{}),
+		NewPodTask(20, "la/clappe", &podconfigv1.PodConfigurationState{}),
+		NewPodTask(220, "la/clappe", &podconfigv1.PodConfigurationState{}),
+		NewPodTask(120, "la/clappe", &podconfigv1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -308,7 +308,7 @@ func TestEnqueueCRDNewLabel(t *testing.T) {
 	// Testing whether updating CRDs works
 	// And if adding more means new CRDs are added
 	err := st.SetPodTasks("high/tech", []*Task{
-		NewPodTask(44, "high/tech", &podV1.PodConfigurationState{}),
+		NewPodTask(44, "high/tech", &podconfigv1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -325,7 +325,7 @@ func TestRemoveCRD(t *testing.T) {
 
 	// Testing whether removig CRDs works, even when there are multiple
 	err := st.SetPodTasks("high/tech", []*Task{
-		NewPodTask(44, "high/tech", &podV1.PodConfigurationState{}),
+		NewPodTask(44, "high/tech", &podconfigv1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
@@ -341,16 +341,16 @@ func insertBaselineCRD(t *testing.T) Store {
 	st := NewStore()
 
 	err := st.SetNodeTasks([]*Task{
-		NewNodeTask(80, &nodeV1.NodeConfigurationState{}),
-		NewNodeTask(200, &nodeV1.NodeConfigurationState{}),
+		NewNodeTask(80, &nodeconfigv1.NodeConfigurationState{}),
+		NewNodeTask(200, &nodeconfigv1.NodeConfigurationState{}),
 	})
 	assert.NoError(t, err)
 
 	// Testing whether adding new CRDs works
 	err = st.SetPodTasks("la/clappe", []*Task{
-		NewPodTask(100, "la/clappe", &podV1.PodConfigurationState{}),
-		NewPodTask(42, "la/clappe", &podV1.PodConfigurationState{}),
-		NewPodTask(140, "la/clappe", &podV1.PodConfigurationState{}),
+		NewPodTask(100, "la/clappe", &podconfigv1.PodConfigurationState{}),
+		NewPodTask(42, "la/clappe", &podconfigv1.PodConfigurationState{}),
+		NewPodTask(140, "la/clappe", &podconfigv1.PodConfigurationState{}),
 	})
 	assert.NoError(t, err)
 

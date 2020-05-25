@@ -9,9 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubectl"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
 // SchemeGroupVersion is group version used to register these objects
@@ -46,7 +46,7 @@ func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
 	const filename = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return errors.Wrapf(err, "reading file: %v failed", filename)
+		return errors.Wrapf(err, "reading file '%v' failed", filename)
 	}
 
 	return kubectl.Create(file, config)

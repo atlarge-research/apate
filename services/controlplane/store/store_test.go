@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
 // TestEnqueue ensures adding a single node resources results in a single allocation

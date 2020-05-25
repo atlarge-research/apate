@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -23,40 +23,40 @@ func TestEnqueueNodeTasks(t *testing.T) {
 
 	et1 := store.NewNodeTask(
 		1*time.Millisecond,
-		&v1.NodeConfigurationState{
-			CustomState: &v1.NodeConfigurationCustomState{
-				CreatePodResponse: v1.ResponseNormal,
+		&nodeconfigv1.NodeConfigurationState{
+			CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+				CreatePodResponse: nodeconfigv1.ResponseNormal,
 			},
 		})
 
 	et2 := store.NewNodeTask(
 		42*time.Millisecond,
-		&v1.NodeConfigurationState{
-			CustomState: &v1.NodeConfigurationCustomState{
-				CreatePodResponse: v1.ResponseTimeout,
+		&nodeconfigv1.NodeConfigurationState{
+			CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+				CreatePodResponse: nodeconfigv1.ResponseTimeout,
 			},
 		})
 
-	ep := v1.NodeConfiguration{
+	ep := nodeconfigv1.NodeConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
 		},
-		Spec: v1.NodeConfigurationSpec{
-			Tasks: []v1.NodeConfigurationTask{
+		Spec: nodeconfigv1.NodeConfigurationSpec{
+			Tasks: []nodeconfigv1.NodeConfigurationTask{
 				{
-					Timestamp: 1,
-					State: v1.NodeConfigurationState{
-						CustomState: &v1.NodeConfigurationCustomState{
-							CreatePodResponse: v1.ResponseNormal,
+					Timestamp: "1ms",
+					State: nodeconfigv1.NodeConfigurationState{
+						CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+							CreatePodResponse: nodeconfigv1.ResponseNormal,
 						},
 					},
 				},
 				{
-					Timestamp: 42,
-					State: v1.NodeConfigurationState{
-						CustomState: &v1.NodeConfigurationCustomState{
-							CreatePodResponse: v1.ResponseTimeout,
+					Timestamp: "42ms",
+					State: nodeconfigv1.NodeConfigurationState{
+						CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+							CreatePodResponse: nodeconfigv1.ResponseTimeout,
 						},
 					},
 				},
@@ -81,28 +81,28 @@ func TestEnqueueCRDDirect(t *testing.T) {
 
 	var s store.Store = ms
 
-	ep := v1.NodeConfiguration{
+	ep := nodeconfigv1.NodeConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
 		},
-		Spec: v1.NodeConfigurationSpec{
-			NodeConfigurationState: v1.NodeConfigurationState{
-				NetworkLatency: -1,
+		Spec: nodeconfigv1.NodeConfigurationSpec{
+			NodeConfigurationState: nodeconfigv1.NodeConfigurationState{
+				NetworkLatency: "unset",
 				NodeFailed:     true,
 			},
-			Tasks: []v1.NodeConfigurationTask{},
+			Tasks: []nodeconfigv1.NodeConfigurationTask{},
 		},
 	}
 
 	gomock.InOrder(
-		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodsResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(v1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodeGetPodsResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
+		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
 	)
 
 	ms.EXPECT().SetNodeTasks(gomock.Any()).Do(func(arr []*store.Task) {

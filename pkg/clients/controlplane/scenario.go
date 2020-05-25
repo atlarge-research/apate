@@ -5,7 +5,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
 // ScenarioClient is the client for the ScenarioService containing the connection and gRPC client

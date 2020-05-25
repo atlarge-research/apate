@@ -6,6 +6,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 
@@ -13,56 +15,56 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
-	"github.com/google/uuid"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/run"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kubeconfig"
-	nodev1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/crd/node"
+	nodev1 "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
-// CreateNodeInformer creates a new node informer
-func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *store.Store, info *service.ConnectionInfo, stopCh chan struct{}) error {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "couldn't get kubeconfig for node informer")
-	}
+// ApateletHandler contains utilities to spawn and stop apatelets, and to update them based on a given node configuration
+type ApateletHandler interface {
+	// Updates the amount of apatelets based on a given node configuration
+	GetDesiredApatelets(context.Context, *nodeconfigv1.NodeConfiguration) error
 
-	client, err := nodev1.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "couldn't create node client from config")
-	}
+	// Spawns n apatelets with resources and selector
+	SpawnApatelets(context.Context, int64, scenario.NodeResources, string) error
 
-	// Create lock for stabilising creation
-	var lock sync.Locker = &sync.Mutex{}
-
-	client.WatchResources(func(obj interface{}) {
-		go getDesiredApatelets(ctx, obj.(*v1.NodeConfiguration), st, &lock, info)
-	}, func(_, obj interface{}) {
-		go getDesiredApatelets(ctx, obj.(*v1.NodeConfiguration), st, &lock, info)
-	}, func(obj interface{}) {
-		cfg := obj.(*v1.NodeConfiguration)
-		cfg.Spec.Replicas = 0
-
-		go getDesiredApatelets(ctx, cfg, st, &lock, info)
-	}, stopCh)
-
-	return nil
+	// Stops n apatelets with selector
+	StopApatelets(context.Context, int64, string) error
 }
 
-func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *store.Store, lock *sync.Locker, info *service.ConnectionInfo) {
+type apateletHandler struct {
+	lock           sync.Mutex
+	store          *store.Store
+	connectionInfo *service.ConnectionInfo
+	runnerRegistry *run.RunnerRegistry
+}
+
+// NewHandler creates a new ApateletHandler
+func NewHandler(st *store.Store, runnerRegistry *run.RunnerRegistry, info *service.ConnectionInfo) *ApateletHandler {
+	var handler ApateletHandler = &apateletHandler{
+		store:          st,
+		connectionInfo: info,
+		runnerRegistry: runnerRegistry,
+	}
+
+	return &handler
+}
+
+func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconfigv1.NodeConfiguration) error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
 	res, err := getNodeResources(cfg)
 	if err != nil {
-		log.Printf("error while retrieving node resources from CRD: %v\n", err)
+		return errors.Wrap(err, "error while retrieving node resources from CRD")
 	}
 
 	selector := nodev1.GetSelector(cfg)
-	nodes, err := (*st).GetNodesBySelector(selector)
+	nodes, err := (*a.store).GetNodesBySelector(selector)
 	if err != nil {
-		log.Printf("error while retrieving nodes with selector %s: %v\n", nodev1.GetSelector(cfg), err)
+		return errors.Wrapf(err, "error while retrieving nodes with selector %s", nodev1.GetSelector(cfg))
 	}
 
 	current := int64(len(nodes))
@@ -70,26 +72,23 @@ func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *sto
 
 	if current < desired {
 		// Not enough apatelets, spawn extra
-		err := spawnApatelets(ctx, st, desired, res, info, lock, selector)
+		err := a.SpawnApatelets(ctx, desired, res, selector)
 		if err != nil {
-			log.Printf("error while spawning apatelets: %v\n", err)
-			// TODO: Stop, notify, idk?
+			return errors.Wrap(err, "error while spawning apatelets")
 		}
 	} else if current > desired {
 		// Too many apatelets, stop a few
-		err := stopApatelets(ctx, st, desired, selector, lock)
+		err := a.StopApatelets(ctx, desired, selector)
 		if err != nil {
-			log.Printf("error while stopping apatelets: %v\n", err)
-			// TODO: Stop, notify, idk?
+			return errors.Wrap(err, "error while stopping apatelets")
 		}
 	}
+
+	return nil
 }
 
-func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res scenario.NodeResources, info *service.ConnectionInfo, lock *sync.Locker, selector string) error {
-	(*lock).Lock()
-	defer (*lock).Unlock()
-
-	nodes, err := (*st).GetNodesBySelector(selector)
+func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res scenario.NodeResources, selector string) error {
+	nodes, err := (*a.store).GetNodesBySelector(selector)
 	if err != nil {
 		return errors.Wrap(err, "failed getting nodes using selector")
 	}
@@ -99,20 +98,16 @@ func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res sce
 
 	log.Printf("Creating %v apatelets", diff)
 	resources := createResources(int(diff), res)
-	if err = (*st).AddResourcesToQueue(resources); err != nil {
+	if err = (*a.store).AddResourcesToQueue(resources); err != nil {
 		return errors.Wrap(err, "failed to add Apatalet resources to queue")
 	}
 
 	// Create environment for apatelets
-	environment, err := env.DefaultApateletEnvironment()
-	if err != nil {
-		return errors.Wrap(err, "getting default Apatelet environment failed")
-	}
-
-	environment.AddConnectionInfo(info.Address, info.Port)
+	environment := env.DefaultApateletEnvironment()
+	environment.AddConnectionInfo(a.connectionInfo.Address, a.connectionInfo.Port)
 
 	// Start the apatelets
-	if err = run.StartApatelets(ctx, int(diff), environment); err != nil {
+	if err = a.runnerRegistry.Run(ctx, int(diff), environment); err != nil {
 		log.Print(err)
 		return errors.Wrap(err, "error starting apatelets")
 	}
@@ -120,11 +115,8 @@ func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res sce
 	return nil
 }
 
-func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector string, lock *sync.Locker) error {
-	(*lock).Lock()
-	defer (*lock).Unlock()
-
-	nodes, err := (*st).GetNodesBySelector(selector)
+func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, selector string) error {
+	nodes, err := (*a.store).GetNodesBySelector(selector)
 	if err != nil {
 		return errors.Wrapf(err, "error while retrieving nodes with selector %s\n", selector)
 	}
@@ -135,6 +127,7 @@ func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector
 	log.Printf("Stopping %v apatelets", diff)
 
 	var wg sync.WaitGroup
+	wg.Add(diff)
 
 	for i, node := range nodes {
 		if i >= diff {
@@ -142,7 +135,6 @@ func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector
 		}
 
 		node := node
-		wg.Add(diff)
 
 		go func() {
 			defer wg.Done()
@@ -166,44 +158,4 @@ func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector
 
 	wg.Wait()
 	return nil
-}
-
-func createResources(needed int, base scenario.NodeResources) []scenario.NodeResources {
-	var resources []scenario.NodeResources
-
-	for i := 0; i < needed; i++ {
-		res := base
-		res.UUID = uuid.New()
-
-		resources = append(resources, res)
-	}
-
-	return resources
-}
-
-func getNodeResources(nodeCfg *v1.NodeConfiguration) (scenario.NodeResources, error) {
-	res := nodeCfg.Spec.Resources
-	mem, err := scenario.GetInBytes(res.Memory, "memory")
-	if err != nil {
-		return scenario.NodeResources{}, errors.Wrap(err, "couldn't convert memory to bytes")
-	}
-
-	storage, err := scenario.GetInBytes(res.Storage, "storage")
-	if err != nil {
-		return scenario.NodeResources{}, errors.Wrap(err, "couldn't convert storage to bytes")
-	}
-
-	ephemeralStorage, err := scenario.GetInBytes(res.EphemeralStorage, "ephemeral storage")
-	if err != nil {
-		return scenario.NodeResources{}, errors.Wrap(err, "couldn't convert ephemeral storage to bytes")
-	}
-
-	return scenario.NodeResources{
-		Memory:           mem,
-		CPU:              res.CPU,
-		Storage:          storage,
-		EphemeralStorage: ephemeralStorage,
-		MaxPods:          res.MaxPods,
-		Selector:         nodev1.GetSelector(nodeCfg),
-	}, nil
 }

@@ -33,7 +33,7 @@ func TestNodeNormal(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -63,7 +63,7 @@ func TestNodeStoreError1(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -92,7 +92,7 @@ func TestNodeErrorAction(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return nil, errors.New("some error")
@@ -121,7 +121,7 @@ func TestNodeInvalidResponseType(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -152,7 +152,7 @@ func TestNodeInvalidResponse(t *testing.T) {
 
 	// Run code under test
 	out, err := nodeResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil

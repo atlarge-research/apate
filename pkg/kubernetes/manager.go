@@ -1,5 +1,5 @@
-// Package cluster defines an interface used to set up a cluster.
-package cluster
+// Package kubernetes defines an interface used to set up a cluster.
+package kubernetes
 
 // Manager provides methods to manage a cluster. Currently only implemented for KinD.
 type Manager interface {

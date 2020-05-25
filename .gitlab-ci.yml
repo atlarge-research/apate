@@ -30,7 +30,7 @@ variables:
   CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
-  CP_K8S_CONFIG: "$CI_PROJECT_DIR/pkg/cluster/kind/kind"
+  CP_K8S_CONFIG: "$CI_PROJECT_DIR/config/kind"
   # Taken from the following minus kubesec (because SCAN_KUBERNETES_MANIFESTS was somehow always set to true)
   # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml#L15
   SAST_DEFAULT_ANALYZERS: "bandit, brakeman, gosec, flawfinder, security-code-scan, secrets, sobelow"

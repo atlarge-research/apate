@@ -109,10 +109,9 @@ spec:
                     description: If set, HeartbeatFailed will result in the node no longer responding to pings
                     type: boolean
                   network_latency:
-                    default: "-1"
-                    description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-                    format: int64
-                    type: integer
+                    default: unset
+                    description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes. Any time.ParseDuration format is accepted, such as "10ms" or "42s" The default is unset. Any invalid or negative integer will also be interpreted as unset.
+                    type: string
                   node_failed:
                     default: false
                     description: If set, NodeFailed will result in timeouts for all requests by kubernetes effectively taking down the node
@@ -218,20 +217,17 @@ spec:
                           description: If set, HeartbeatFailed will result in the node no longer responding to pings
                           type: boolean
                         network_latency:
-                          default: "-1"
-                          description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-                          format: int64
-                          type: integer
+                          default: unset
+                          description: NetworkLatency determines how much added latency will be introduced to requests by kubernetes. Any time.ParseDuration format is accepted, such as "10ms" or "42s" The default is unset. Any invalid or negative integer will also be interpreted as unset.
+                          type: string
                         node_failed:
                           default: false
                           description: If set, NodeFailed will result in timeouts for all requests by kubernetes effectively taking down the node
                           type: boolean
                       type: object
                     timestamp:
-                      description: The timestamp at which the task is executed
-                      format: int64
-                      minimum: 0
-                      type: integer
+                      description: The timestamp at which the task is executed Any time.ParseDuration format is accepted, such as "10ms" or "42s"
+                      type: string
                   required:
                   - state
                   - timestamp

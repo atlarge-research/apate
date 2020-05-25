@@ -9,8 +9,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
-	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -28,18 +28,18 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := &nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := &nodeconfigv1.NodeConfigurationState{
+
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
 	// Set up expectations
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(0))
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -60,15 +60,15 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := store.NewPodTask(42, "la/clappe", &v1.PodConfigurationState{
-		PodStatus: v1.PodStatusFailed,
+	task := store.NewPodTask(42, "la/clappe", &podconfigv1.PodConfigurationState{
+		PodStatus: podconfigv1.PodStatusFailed,
 	})
 
 	// Set up expectations
 	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatusFailed)
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -89,20 +89,20 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		NetworkLatency: 42,
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		NetworkLatency: "42s",
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
 	// Set up expectations
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil).AnyTimes()
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil).AnyTimes()
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
+	ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 42*time.Second)
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -123,9 +123,9 @@ func TestRunner(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -135,7 +135,7 @@ func TestRunner(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 	sched.WakeScheduler()
 
 	// Run code under test
@@ -157,9 +157,9 @@ func TestRunnerDelay(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -172,7 +172,7 @@ func TestRunnerDelay(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 	sched.startTime = time.Now()
 
 	// Run code under test
@@ -198,9 +198,9 @@ func TestRunnerSleep(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -211,8 +211,8 @@ func TestRunnerSleep(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
-	ech := sched.EnableScheduler()
+	sched := New(&s)
+	ech := sched.EnableScheduler(context.Background())
 
 	sched.StartScheduler(0)
 	time.Sleep(time.Millisecond * 500)
@@ -234,14 +234,13 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 
 	// Expectations
 	ms.EXPECT().PeekTask().Return(time.Duration(10), true, nil).AnyTimes()
-	ms.EXPECT().PopTask().Return(store.NewPodTask(10, "la/clappe", &v1.PodConfigurationState{
-		PodStatus: v1.PodStatusUnknown,
+	ms.EXPECT().PopTask().Return(store.NewPodTask(10, "la/clappe", &podconfigv1.PodConfigurationState{
+		PodStatus: podconfigv1.PodStatusUnknown,
 	}), nil)
 
 	var s store.Store = ms
 	sched := Scheduler{
 		store:     &s,
-		ctx:       context.Background(),
 		readyCh:   make(chan struct{}),
 		prevT:     time.Unix(0, 40),
 		startTime: time.Unix(0, 0),
@@ -270,7 +269,7 @@ func TestRunnerEarlyFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -297,7 +296,7 @@ func TestRunnerPopFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -321,9 +320,9 @@ func TestStartScheduler(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -334,10 +333,10 @@ func TestStartScheduler(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(ctx, &s)
+	sched := New(&s)
 
 	// Run code under test
-	ech := sched.EnableScheduler()
+	ech := sched.EnableScheduler(ctx)
 	sched.StartScheduler(0)
 
 	time.Sleep(time.Second)

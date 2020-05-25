@@ -194,10 +194,8 @@ spec:
                           type: string
                       type: object
                     timestamp:
-                      description: The timestamp at which the task is executed
-                      format: int64
-                      minimum: 0
-                      type: integer
+                      description: The timestamp at which the task is executed Any time.ParseDuration format is accepted, such as "10ms" or "42s"
+                      type: string
                   required:
                   - state
                   - timestamp

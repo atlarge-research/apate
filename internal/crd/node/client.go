@@ -2,6 +2,7 @@
 package node
 
 import (
+	"log"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -10,7 +11,7 @@ import (
 
 	"time"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -31,13 +32,13 @@ var once sync.Once
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 	once.Do(func() {
-		if err := v1.AddToScheme(scheme.Scheme); err != nil {
-			panic(errors.Wrap(err, "adding global node scheme failed"))
+		if err := nodeconfigv1.AddToScheme(scheme.Scheme); err != nil {
+			log.Panicf("%+v", errors.Wrap(err, "adding global node scheme failed"))
 		}
 	})
 
 	config := *c
-	config.ContentConfig.GroupVersion = &v1.SchemeGroupVersion
+	config.ContentConfig.GroupVersion = &nodeconfigv1.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
@@ -52,7 +53,7 @@ func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 
 // WatchResources creates an informer which watches for new or updated NodeConfigurations and updates the store accordingly
 // This will also trigger the creation and removal of nodes when applicable
-func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh chan struct{}) {
+func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
 	_, nodeConfigurationController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -60,7 +61,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 			},
 			WatchFunc: e.watch,
 		},
-		&v1.NodeConfiguration{},
+		&nodeconfigv1.NodeConfiguration{},
 		1*time.Minute,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    addFunc,
@@ -72,8 +73,8 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 	go nodeConfigurationController.Run(stopCh)
 }
 
-func (e *ConfigurationClient) list(opts metav1.ListOptions) (*v1.NodeConfigurationList, error) {
-	result := v1.NodeConfigurationList{}
+func (e *ConfigurationClient) list(opts metav1.ListOptions) (*nodeconfigv1.NodeConfigurationList, error) {
+	result := nodeconfigv1.NodeConfigurationList{}
 
 	err := e.restClient.Get().
 		Resource(resource).
@@ -105,6 +106,6 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 }
 
 // GetSelector concatenates the namespace and name to create a unique selector
-func GetSelector(cfg *v1.NodeConfiguration) string {
+func GetSelector(cfg *nodeconfigv1.NodeConfiguration) string {
 	return cfg.Namespace + "/" + cfg.Name
 }

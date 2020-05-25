@@ -11,24 +11,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
 func TestGetCRDAndLabel(t *testing.T) {
-	ep := v1.PodConfiguration{
+	ep := podconfigv1.PodConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
 		},
 	}
 
-	rep, lbl := getCRDAndLabel(&ep)
+	lbl := getCRDAndLabel(&ep)
 
 	assert.Equal(t, lbl, "TestNamespace/TestName")
-	assert.Equal(t, &ep, rep)
 }
 
 func TestEnqueueCRD(t *testing.T) {
@@ -39,34 +38,34 @@ func TestEnqueueCRD(t *testing.T) {
 	var s store.Store = ms
 
 	et1 := store.NewPodTask(
-		1,
-		"TestNamespace/TestName", &v1.PodConfigurationState{
-			PodStatus: v1.PodStatusFailed,
+		1*time.Millisecond,
+		"TestNamespace/TestName", &podconfigv1.PodConfigurationState{
+			PodStatus: podconfigv1.PodStatusFailed,
 		})
 
 	et2 := store.NewPodTask(
-		42,
-		"TestNamespace/TestName", &v1.PodConfigurationState{
-			PodStatus: v1.PodStatusPending,
+		42*time.Millisecond,
+		"TestNamespace/TestName", &podconfigv1.PodConfigurationState{
+			PodStatus: podconfigv1.PodStatusPending,
 		})
 
-	ep := v1.PodConfiguration{
+	ep := podconfigv1.PodConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
 		},
-		Spec: v1.PodConfigurationSpec{
-			Tasks: []v1.PodConfigurationTask{
+		Spec: podconfigv1.PodConfigurationSpec{
+			Tasks: []podconfigv1.PodConfigurationTask{
 				{
-					Timestamp: 1,
-					State: v1.PodConfigurationState{
-						PodStatus: v1.PodStatusFailed,
+					Timestamp: "1ms",
+					State: podconfigv1.PodConfigurationState{
+						PodStatus: podconfigv1.PodStatusFailed,
 					},
 				},
 				{
-					Timestamp: 42,
-					State: v1.PodConfigurationState{
-						PodStatus: v1.PodStatusPending,
+					Timestamp: "42ms",
+					State: podconfigv1.PodConfigurationState{
+						PodStatus: podconfigv1.PodStatusPending,
 					},
 				},
 			},
@@ -93,27 +92,27 @@ func TestEnqueueCRDDirect(t *testing.T) {
 
 	var s store.Store = ms
 
-	ep := v1.PodConfiguration{
+	ep := podconfigv1.PodConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
 			Namespace: "TestNamespace",
 		},
-		Spec: v1.PodConfigurationSpec{
-			PodConfigurationState: v1.PodConfigurationState{
-				CreatePodResponse:    v1.ResponseNormal,
-				UpdatePodResponse:    v1.ResponseNormal,
-				DeletePodResponse:    v1.ResponseNormal,
-				GetPodResponse:       v1.ResponseNormal,
-				GetPodStatusResponse: v1.ResponseNormal,
-				PodResources: &v1.PodResources{
+		Spec: podconfigv1.PodConfigurationSpec{
+			PodConfigurationState: podconfigv1.PodConfigurationState{
+				CreatePodResponse:    podconfigv1.ResponseNormal,
+				UpdatePodResponse:    podconfigv1.ResponseNormal,
+				DeletePodResponse:    podconfigv1.ResponseNormal,
+				GetPodResponse:       podconfigv1.ResponseNormal,
+				GetPodStatusResponse: podconfigv1.ResponseNormal,
+				PodResources: &podconfigv1.PodResources{
 					Memory:           "10T",
 					CPU:              1000,
 					Storage:          "5K",
 					EphemeralStorage: "100M",
 				},
-				PodStatus: v1.PodStatusRunning,
+				PodStatus: podconfigv1.PodStatusRunning,
 			},
-			Tasks: []v1.PodConfigurationTask{},
+			Tasks: []podconfigv1.PodConfigurationTask{},
 		},
 	}
 
@@ -123,11 +122,11 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	ephStorage := uint64(100 * units.MiB)
 
 	gomock.InOrder(
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodCreatePodResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodUpdatePodResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodDeletePodResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodResponse, translateResponse(v1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodStatusResponse, translateResponse(v1.ResponseNormal)),
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodCreatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodUpdatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodDeletePodResponse, translateResponse(podconfigv1.ResponseNormal)),
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodResponse, translateResponse(podconfigv1.ResponseNormal)),
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodStatusResponse, translateResponse(podconfigv1.ResponseNormal)),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodResources, gomock.Any()).Do(func(label string, flag events.EventFlag, f interface{}) {
 			stat := f.(*stats.PodStats)
 
@@ -143,7 +142,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 			assert.EqualValues(t, ephStorage, *stat.EphemeralStorage.UsedBytes)
 			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
 		}),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(v1.PodStatusRunning)),
+		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(podconfigv1.PodStatusRunning)),
 	)
 
 	ms.EXPECT().SetPodTasks(

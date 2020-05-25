@@ -8,24 +8,30 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/google/uuid"
-
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// KubeConfig is an alias of a bytearray, and represents a raw kube configuration file loaded from file.
+// KubeConfig contains a bytearray representing the kubeconfig and a path to a file in which this kubeconfig is written.
+// It makes sure that this path is only written to once and read from as little as possible.
 type KubeConfig struct {
 	Path  string
 	Bytes []byte
 }
 
-// FromBytes creates a kubeConfig struct from byte array.
-func FromBytes(bytes []byte) (*KubeConfig, error) {
-	path := os.TempDir() + "/apate/config-" + uuid.New().String()
+// FromBytes creates a kubeConfig struct from byte array and writes it to the given path if the file doesn't exist.
+func FromBytes(bytes []byte, path string) (*KubeConfig, error) {
+	_, err := os.Stat(path)
 
-	if err := ioutil.WriteFile(path, bytes, 0o600); err != nil {
-		return nil, errors.Wrapf(err, "failed to write Kubeconfig to file at %v", path)
+	if os.IsNotExist(err) {
+		file, err := os.Create(path)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed opening file from provided path")
+		}
+
+		if _, err := file.Write(bytes); err != nil {
+			return nil, errors.Wrapf(err, "failed to write Kubeconfig to file at %v", file.Name())
+		}
 	}
 
 	return &KubeConfig{

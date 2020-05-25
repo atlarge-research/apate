@@ -32,7 +32,7 @@ func TestPodNormal(t *testing.T) {
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -64,7 +64,7 @@ func TestPodStoreError1(t *testing.T) {
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -95,7 +95,7 @@ func TestPodStoreError2(t *testing.T) {
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -126,7 +126,7 @@ func TestPodUnset(t *testing.T) {
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -157,7 +157,7 @@ func TestPodInvalidResponseType(t *testing.T) {
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil
@@ -190,7 +190,7 @@ func TestPodInvalidResponse(t *testing.T) {
 
 	// Run code under test
 	out, changed, err := podResponse(responseArgs{
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 		provider: &Provider{Store: &s},
 		action: func() (i interface{}, err error) {
 			return tStr, nil

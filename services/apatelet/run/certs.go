@@ -1,10 +1,10 @@
 package run
 
 import (
-	"github.com/pkg/errors"
-
 	"io/ioutil"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -14,21 +14,29 @@ const (
 
 // SetCerts sets the certificates required for the kubelet API server
 func SetCerts() error {
-	certFileName := os.TempDir() + "/apate/cert.pem"
-	if err := ioutil.WriteFile(certFileName, []byte(cert), 0600); err != nil {
-		return errors.Wrapf(err, "failed to write certificate to file at %v", certFileName)
+	certFile, err := ioutil.TempFile("", "cert.pem")
+	if err != nil {
+		return errors.Wrap(err, "failed to create tmp file for cert.pem")
 	}
 
-	keyFileName := os.TempDir() + "/apate/key.pem"
-	if err := ioutil.WriteFile(keyFileName, []byte(key), 0600); err != nil {
-		return errors.Wrapf(err, "failed to write key to file at %v", certFileName)
+	if _, err = certFile.Write([]byte(cert)); err != nil {
+		return errors.Wrapf(err, "failed to write certificate to file at %v", certFile.Name())
 	}
 
-	if err := os.Setenv("APISERVER_CERT_LOCATION", certFileName); err != nil {
+	keyFile, err := ioutil.TempFile("", "key.pem")
+	if err != nil {
+		return errors.Wrap(err, "failed to create tmp file for key.pem")
+	}
+
+	if _, err := keyFile.Write([]byte(key)); err != nil {
+		return errors.Wrapf(err, "failed to write key to file at %v", keyFile.Name())
+	}
+
+	if err := os.Setenv("APISERVER_CERT_LOCATION", certFile.Name()); err != nil {
 		return errors.Wrap(err, "failed to set APISERVER_CERT_LOCATION environment variable")
 	}
 
-	if err := os.Setenv("APISERVER_KEY_LOCATION", keyFileName); err != nil {
+	if err := os.Setenv("APISERVER_KEY_LOCATION", keyFile.Name()); err != nil {
 		return errors.Wrap(err, "failed to set APISERVER_KEY_LOCATION environment variable")
 	}
 

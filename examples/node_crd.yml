@@ -11,7 +11,7 @@ spec:
         ephemeral_storage: 120G
         max_pods: 150
     tasks:
-        - timestamp: 10000
+        - timestamp: 10s
           state:
               node_failed: true
-              network_latency: 1
+              network_latency: 10ms

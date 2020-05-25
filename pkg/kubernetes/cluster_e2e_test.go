@@ -1,10 +1,10 @@
-package cluster
+package kubernetes
 
 import (
 	"os"
 	"testing"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/cluster/kind"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kind"
 
 	"github.com/stretchr/testify/assert"
 )
