@@ -45,7 +45,7 @@ func TestPing(t *testing.T) {
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetNodeFlag(events.NodePingResponse).Return(scenario.ResponseNormal, nil)
 
-	res := prov.Ping(context.TODO())
+	res := prov.Ping(context.Background())
 	assert.Equal(t, nil, res)
 }
 
@@ -67,7 +67,7 @@ func TestPingError(t *testing.T) {
 		Store: &st,
 	}
 
-	res := prov.Ping(context.TODO())
+	res := prov.Ping(context.Background())
 	assert.Error(t, res)
 }
 
@@ -123,7 +123,7 @@ func TestConfigureNode(t *testing.T) {
 	}
 
 	node := &corev1.Node{}
-	prov.ConfigureNode(context.TODO(), node)
+	prov.ConfigureNode(context.Background(), node)
 
 	assert.EqualValues(t, corev1.NodeSpec{
 		Taints: []corev1.Taint{},
@@ -167,7 +167,7 @@ func TestUpdateConditionNoPressure(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 500, 2048, 1024)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -195,7 +195,7 @@ func TestUpdateConditionMemoryAndDiskPressure(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mt)+2, int64(dt)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -223,7 +223,7 @@ func TestUpdateConditionDiskFull(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mtf)+2, int64(dtf)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionFalse, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -328,7 +328,7 @@ func TestNotifyNodeStatusNoPing(t *testing.T) {
 		Node:  &corev1.Node{},
 	}
 
-	prov.updateConditions(context.TODO(), func(node *corev1.Node) {
+	prov.updateConditions(context.Background(), func(node *corev1.Node) {
 		assert.EqualValues(t, &corev1.Node{}, node)
 	})
 }

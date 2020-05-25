@@ -12,7 +12,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// KubeConfig is an alias of a bytearray, and represents a raw kube configuration file loaded from file.
+// KubeConfig contains a bytearray representing the kubeconfig and a path to a file in which this kubeconfig is written.
+// It makes sure that this path is only written to once and read from as little as possible.
 type KubeConfig struct {
 	Path  string
 	Bytes []byte

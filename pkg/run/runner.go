@@ -13,11 +13,10 @@ import (
 // ApateletRunner is something that can be used to create new apatelets
 type ApateletRunner interface {
 	// SpawnApatelets spawns n apatelets
-	SpawnApatelets(context.Context, int, env.ApateletEnvironment, ...interface{}) error
+	SpawnApatelets(context.Context, int, env.ApateletEnvironment) error
 }
 
 type registration struct {
-	args   []interface{}
 	runner *ApateletRunner
 }
 
@@ -35,12 +34,11 @@ func New() *RunnerRegistry {
 }
 
 // RegisterRunner registers a new runner
-func (rr *RunnerRegistry) RegisterRunner(name env.RunType, runner *ApateletRunner, args ...interface{}) {
+func (rr *RunnerRegistry) RegisterRunner(name env.RunType, runner *ApateletRunner) {
 	rr.Lock()
 	defer rr.Unlock()
 
 	rr.registrations[name] = registration{
-		args:   args,
 		runner: runner,
 	}
 }
@@ -52,7 +50,7 @@ func (rr *RunnerRegistry) Run(ctx context.Context, amount int, environment env.A
 
 	runType := env.ControlPlaneEnv().ApateletRunType
 	if runner, ok := rr.registrations[runType]; ok {
-		return errors.Wrapf((*runner.runner).SpawnApatelets(ctx, amount, environment, runner.args...), "failed to spawn apatelet using runner %v", runner)
+		return errors.Wrapf((*runner.runner).SpawnApatelets(ctx, amount, environment), "failed to spawn apatelet using runner %v", runner)
 	}
 
 	return errors.Errorf("unable to find runner type %v, have you registered it?", runType)

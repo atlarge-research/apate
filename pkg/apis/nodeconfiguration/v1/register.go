@@ -46,7 +46,7 @@ func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
 	const filename = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return errors.Wrapf(err, "reading file: %v failed", filename)
+		return errors.Wrapf(err, "reading file '%v' failed", filename)
 	}
 
 	return kubectl.Create(file, config)

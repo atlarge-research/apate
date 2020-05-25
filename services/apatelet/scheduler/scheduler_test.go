@@ -212,7 +212,7 @@ func TestRunnerSleep(t *testing.T) {
 
 	var s store.Store = ms
 	sched := New(&s)
-	ech := sched.EnableScheduler(context.TODO())
+	ech := sched.EnableScheduler(context.Background())
 
 	sched.StartScheduler(0)
 	time.Sleep(time.Millisecond * 500)

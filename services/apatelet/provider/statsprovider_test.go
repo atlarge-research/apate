@@ -11,7 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-kubelet/node-cli/provider"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
@@ -76,11 +76,11 @@ func TestSinglePod(t *testing.T) {
 	// Create pod
 	lbl := make(map[string]string)
 	lbl[podconfigv1.PodConfigurationLabel] = flag
-	pod := v1.Pod{
+	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl},
-		Spec:       v1.PodSpec{},
-		Status:     v1.PodStatus{},
+		Spec:       corev1.PodSpec{},
+		Status:     corev1.PodStatus{},
 	}
 	pm.AddPod(pod) //TODO mock?
 
@@ -128,38 +128,38 @@ func TestUnspecifiedPods(t *testing.T) {
 	// Create pods
 	lbl := make(map[string]string)
 	lbl[podconfigv1.PodConfigurationLabel] = flag
-	pod := v1.Pod{
+	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl, UID: flag},
-		Spec:       v1.PodSpec{},
-		Status:     v1.PodStatus{},
+		Spec:       corev1.PodSpec{},
+		Status:     corev1.PodStatus{},
 	}
 	pm.AddPod(pod) //TODO mock?
 
 	lbl2 := make(map[string]string)
 	lbl2[podconfigv1.PodConfigurationLabel] = flag + "2"
-	pod2 := v1.Pod{
+	pod2 := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl2, UID: flag + "2"},
-		Spec:       v1.PodSpec{},
-		Status:     v1.PodStatus{},
+		Spec:       corev1.PodSpec{},
+		Status:     corev1.PodStatus{},
 	}
 	pm.AddPod(pod2) //TODO mock?
 
 	lbl3 := make(map[string]string)
 	lbl3[podconfigv1.PodConfigurationLabel] = flag + "3"
-	pod3 := v1.Pod{
+	pod3 := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl3, UID: flag + "3"},
-		Spec:       v1.PodSpec{},
-		Status:     v1.PodStatus{},
+		Spec:       corev1.PodSpec{},
+		Status:     corev1.PodStatus{},
 	}
 	pm.AddPod(pod3) //TODO mock?
-	pod4 := v1.Pod{
+	pod4 := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{UID: flag + "4"},
-		Spec:       v1.PodSpec{},
-		Status:     v1.PodStatus{},
+		Spec:       corev1.PodSpec{},
+		Status:     corev1.PodStatus{},
 	}
 	pm.AddPod(pod4) //TODO mock?
 

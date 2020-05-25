@@ -33,7 +33,7 @@ func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error 
 // When this config is empty, it will not be called
 func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig, namespace string) error {
 	if len(resourceConfig) > 0 {
-		cfgFile, err := ioutil.TempFile("", "apate-kubectl")
+		cfgFile, err := ioutil.TempFile("", "apate-kubectl-")
 		if err != nil {
 			return errors.Wrap(err, "failed to create tempfile for Kubeconfig")
 		}

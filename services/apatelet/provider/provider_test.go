@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -45,7 +45,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	fakeNode := corev1.Node{}
 
 	// Run the method
-	prov.ConfigureNode(context.TODO(), &fakeNode)
+	prov.ConfigureNode(context.Background(), &fakeNode)
 
 	assert.EqualValues(t, resources.CPU, fakeNode.Status.Capacity.Cpu().Value())
 	assert.EqualValues(t, resources.Memory, fakeNode.Status.Capacity.Memory().Value())
@@ -80,7 +80,7 @@ func TestCreatePod(t *testing.T) {
 		Pods:  podmanager.New(),
 	}
 
-	err := p.CreatePod(context.TODO(), &pod)
+	err := p.CreatePod(context.Background(), &pod)
 
 	// assert
 	assert.NoError(t, err)
@@ -116,7 +116,7 @@ func TestUpdatePod(t *testing.T) {
 		Pods:  podmanager.New(),
 	}
 
-	err := p.UpdatePod(context.TODO(), &pod)
+	err := p.UpdatePod(context.Background(), &pod)
 
 	// assert
 	assert.NoError(t, err)
@@ -151,7 +151,7 @@ func TestDeletePod(t *testing.T) {
 		Pods:  podmanager.New(),
 	}
 
-	err := p.DeletePod(context.TODO(), &pod)
+	err := p.DeletePod(context.Background(), &pod)
 
 	// assert
 	assert.NoError(t, err)
@@ -186,7 +186,7 @@ func TestGetPod(t *testing.T) {
 
 	prov.Pods.AddPod(pod)
 
-	np, err := prov.GetPod(context.TODO(), podNamespace, podName)
+	np, err := prov.GetPod(context.Background(), podNamespace, podName)
 
 	// assert
 	assert.NoError(t, err)
@@ -220,7 +220,7 @@ func TestGetPods(t *testing.T) {
 	}
 	prov.Pods.AddPod(pod)
 
-	ps, err := prov.GetPods(context.TODO())
+	ps, err := prov.GetPods(context.Background())
 
 	// assert
 	assert.NoError(t, err)
@@ -258,7 +258,7 @@ func TestGetPodStatus(t *testing.T) {
 	}
 	prov.Pods.AddPod(pod)
 
-	ps, err := prov.GetPodStatus(context.TODO(), podNamespace, podName)
+	ps, err := prov.GetPodStatus(context.Background(), podNamespace, podName)
 
 	// assert
 	assert.NoError(t, err)
@@ -292,10 +292,10 @@ func TestNewProvider(t *testing.T) {
 
 	assert.True(t, ok)
 
-	assert.EqualValues(t, p.Conditions.ready.Get().Status, v1.ConditionTrue)
-	assert.EqualValues(t, p.Conditions.outOfDisk.Get().Status, v1.ConditionFalse)
-	assert.EqualValues(t, p.Conditions.memoryPressure.Get().Status, v1.ConditionFalse)
-	assert.EqualValues(t, p.Conditions.diskPressure.Get().Status, v1.ConditionFalse)
-	assert.EqualValues(t, p.Conditions.networkUnavailable.Get().Status, v1.ConditionFalse)
-	assert.EqualValues(t, p.Conditions.pidPressure.Get().Status, v1.ConditionFalse)
+	assert.EqualValues(t, p.Conditions.ready.Get().Status, metav1.ConditionTrue)
+	assert.EqualValues(t, p.Conditions.outOfDisk.Get().Status, metav1.ConditionFalse)
+	assert.EqualValues(t, p.Conditions.memoryPressure.Get().Status, metav1.ConditionFalse)
+	assert.EqualValues(t, p.Conditions.diskPressure.Get().Status, metav1.ConditionFalse)
+	assert.EqualValues(t, p.Conditions.networkUnavailable.Get().Status, metav1.ConditionFalse)
+	assert.EqualValues(t, p.Conditions.pidPressure.Get().Status, metav1.ConditionFalse)
 }

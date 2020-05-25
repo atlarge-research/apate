@@ -24,29 +24,22 @@ spec:
         description: PodConfiguration is a definition of PodConfiguration resource.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
-            description: PodConfigurationSpec is the spec which belongs to the PodConfiguration
-              CRD
+            description: PodConfigurationSpec is the spec which belongs to the PodConfiguration CRD
             properties:
               inline:
-                description: A direct way to update state, this will circumvent the
-                  timestamps / scenario
+                description: A direct way to update state, this will circumvent the timestamps / scenario
                 properties:
                   create_pod_response:
                     default: UNSET
-                    description: CreatePodResponse determines how to respond to the
-                      CreatePod request
+                    description: CreatePodResponse determines how to respond to the CreatePod request
                     enum:
                     - NORMAL
                     - TIMEOUT
@@ -55,8 +48,7 @@ spec:
                     type: string
                   delete_pod_response:
                     default: UNSET
-                    description: DeletePodResponse determines how to respond to the
-                      DeletePod request
+                    description: DeletePodResponse determines how to respond to the DeletePod request
                     enum:
                     - NORMAL
                     - TIMEOUT
@@ -65,8 +57,7 @@ spec:
                     type: string
                   get_pod_response:
                     default: UNSET
-                    description: PodGetPodResponse determines how to respond to the
-                      GetPod request
+                    description: PodGetPodResponse determines how to respond to the GetPod request
                     enum:
                     - NORMAL
                     - TIMEOUT
@@ -75,8 +66,7 @@ spec:
                     type: string
                   get_pod_status_response:
                     default: UNSET
-                    description: GetPodStatusResponse determines how to respond to
-                      the GetPodStatus request
+                    description: GetPodStatusResponse determines how to respond to the GetPodStatus request
                     enum:
                     - NORMAL
                     - TIMEOUT
@@ -84,8 +74,7 @@ spec:
                     - UNSET
                     type: string
                   pod_resources:
-                    description: PodResources sets the amount of resources the related
-                      pods are using
+                    description: PodResources sets the amount of resources the related pods are using
                     properties:
                       cpu:
                         default: 0
@@ -114,8 +103,7 @@ spec:
                     type: string
                   update_pod_response:
                     default: UNSET
-                    description: UpdatePodResponse determines how to respond to the
-                      UpdatePod request
+                    description: UpdatePodResponse determines how to respond to the UpdatePod request
                     enum:
                     - NORMAL
                     - TIMEOUT
@@ -126,16 +114,14 @@ spec:
               tasks:
                 description: The tasks to be executed
                 items:
-                  description: PodConfigurationTask is a single task which updates
-                    a pod state and is executed at a timestamp
+                  description: PodConfigurationTask is a single task which updates a pod state and is executed at a timestamp
                   properties:
                     state:
                       description: The state to be set
                       properties:
                         create_pod_response:
                           default: UNSET
-                          description: CreatePodResponse determines how to respond
-                            to the CreatePod request
+                          description: CreatePodResponse determines how to respond to the CreatePod request
                           enum:
                           - NORMAL
                           - TIMEOUT
@@ -144,8 +130,7 @@ spec:
                           type: string
                         delete_pod_response:
                           default: UNSET
-                          description: DeletePodResponse determines how to respond
-                            to the DeletePod request
+                          description: DeletePodResponse determines how to respond to the DeletePod request
                           enum:
                           - NORMAL
                           - TIMEOUT
@@ -154,8 +139,7 @@ spec:
                           type: string
                         get_pod_response:
                           default: UNSET
-                          description: PodGetPodResponse determines how to respond
-                            to the GetPod request
+                          description: PodGetPodResponse determines how to respond to the GetPod request
                           enum:
                           - NORMAL
                           - TIMEOUT
@@ -164,8 +148,7 @@ spec:
                           type: string
                         get_pod_status_response:
                           default: UNSET
-                          description: GetPodStatusResponse determines how to respond
-                            to the GetPodStatus request
+                          description: GetPodStatusResponse determines how to respond to the GetPodStatus request
                           enum:
                           - NORMAL
                           - TIMEOUT
@@ -173,8 +156,7 @@ spec:
                           - UNSET
                           type: string
                         pod_resources:
-                          description: PodResources sets the amount of resources the
-                            related pods are using
+                          description: PodResources sets the amount of resources the related pods are using
                           properties:
                             cpu:
                               default: 0
@@ -203,8 +185,7 @@ spec:
                           type: string
                         update_pod_response:
                           default: UNSET
-                          description: UpdatePodResponse determines how to respond
-                            to the UpdatePod request
+                          description: UpdatePodResponse determines how to respond to the UpdatePod request
                           enum:
                           - NORMAL
                           - TIMEOUT
@@ -213,8 +194,7 @@ spec:
                           type: string
                       type: object
                     timestamp:
-                      description: The timestamp at which the task is executed Any
-                        time.ParseDuration format is accepted, such as "10ms" or "42s"
+                      description: The timestamp at which the task is executed Any time.ParseDuration format is accepted, such as "10ms" or "42s"
                       type: string
                   required:
                   - state

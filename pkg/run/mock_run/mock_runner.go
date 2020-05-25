@@ -35,20 +35,15 @@ func (m *MockApateletRunner) EXPECT() *MockApateletRunnerMockRecorder {
 }
 
 // SpawnApatelets mocks base method
-func (m *MockApateletRunner) SpawnApatelets(arg0 context.Context, arg1 int, arg2 env.ApateletEnvironment, arg3 ...interface{}) error {
+func (m *MockApateletRunner) SpawnApatelets(arg0 context.Context, arg1 int, arg2 env.ApateletEnvironment) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1, arg2}
-	for _, a := range arg3 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "SpawnApatelets", varargs...)
+	ret := m.ctrl.Call(m, "SpawnApatelets", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SpawnApatelets indicates an expected call of SpawnApatelets
-func (mr *MockApateletRunnerMockRecorder) SpawnApatelets(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+func (mr *MockApateletRunnerMockRecorder) SpawnApatelets(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpawnApatelets", reflect.TypeOf((*MockApateletRunner)(nil).SpawnApatelets), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpawnApatelets", reflect.TypeOf((*MockApateletRunner)(nil).SpawnApatelets), arg0, arg1, arg2)
 }

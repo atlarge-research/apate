@@ -34,7 +34,7 @@ func TestStatusSimple(t *testing.T) {
 	var s store.Store = ms
 	ss := statusService{&s}
 
-	ret, err := ss.Status(context.TODO(), nil)
+	ret, err := ss.Status(context.Background(), nil)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, ret.HealthyNodes)
 }
@@ -77,7 +77,7 @@ func TestStatusExtensive(t *testing.T) {
 	var s store.Store = ms
 	ss := statusService{&s}
 
-	ret, err := ss.Status(context.TODO(), nil)
+	ret, err := ss.Status(context.Background(), nil)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 3, ret.HealthyNodes)
 }
