@@ -12,6 +12,7 @@ import (
 
 // ApateletRunner is something that can be used to create new apatelets
 type ApateletRunner interface {
+	// SpawnApatelets spawns n apatelets
 	SpawnApatelets(context.Context, int, env.ApateletEnvironment, ...interface{}) error
 }
 
@@ -26,11 +27,11 @@ type RunnerRegistry struct {
 	registrations map[env.RunType]registration
 }
 
-// TODO: Do we want this global var?
-
-// Registry is the global RunnerRegistry
-var Registry = RunnerRegistry{
-	registrations: make(map[env.RunType]registration),
+// New returns a new registry
+func New() *RunnerRegistry {
+	return &RunnerRegistry{
+		registrations: make(map[env.RunType]registration),
+	}
 }
 
 // RegisterRunner registers a new runner

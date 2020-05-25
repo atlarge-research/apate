@@ -88,7 +88,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		},
 		Spec: v1.NodeConfigurationSpec{
 			NodeConfigurationState: v1.NodeConfigurationState{
-				NetworkLatency: -1,
+				NetworkLatency: "unset",
 				NodeFailed:     true,
 			},
 			Tasks: []v1.NodeConfigurationTask{},

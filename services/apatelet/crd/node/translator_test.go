@@ -2,6 +2,7 @@ package node
 
 import (
 	"testing"
+	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
@@ -29,7 +30,7 @@ func TestSetNodeFlagsUnsetDirect(t *testing.T) {
 	var s store.Store = ms
 
 	SetNodeFlags(&s, &v1.NodeConfigurationState{
-		NetworkLatency: -1, // default in types.go
+		NetworkLatency: "unset", // default in types.go
 		CustomState: &v1.NodeConfigurationCustomState{
 			CreatePodResponse:    v1.ResponseUnset,
 			UpdatePodResponse:    v1.ResponseUnset,
@@ -60,7 +61,7 @@ func TestSetNodeFlagsDirect(t *testing.T) {
 	)
 
 	SetNodeFlags(&s, &v1.NodeConfigurationState{
-		NetworkLatency: -1, // default in types.go
+		NetworkLatency: "unset", // default in types.go
 		CustomState: &v1.NodeConfigurationCustomState{
 			CreatePodResponse:    v1.ResponseNormal,
 			UpdatePodResponse:    v1.ResponseError,
@@ -85,7 +86,7 @@ func TestSetNodeFlagsHeartbeat(t *testing.T) {
 	)
 
 	SetNodeFlags(&s, &v1.NodeConfigurationState{
-		NetworkLatency:  -1, // default in types.go
+		NetworkLatency:  "unset", // default in types.go
 		HeartbeatFailed: true,
 	})
 }
@@ -99,12 +100,12 @@ func TestSetNodeFlagsLatency(t *testing.T) {
 
 	gomock.InOrder(
 		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(v1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(100)),
+		ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 100*time.Millisecond),
 	)
 
 	SetNodeFlags(&s, &v1.NodeConfigurationState{
 		HeartbeatFailed: true,
-		NetworkLatency:  100,
+		NetworkLatency:  "100ms",
 	})
 }
 
@@ -116,7 +117,7 @@ func TestSetNodeFlagsNodeFailure(t *testing.T) {
 	var s store.Store = ms
 
 	gomock.InOrder(
-		ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(100)),
+		ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 100*time.Millisecond),
 		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(v1.ResponseTimeout)),
 		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(v1.ResponseTimeout)),
 		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(v1.ResponseTimeout)),
@@ -128,7 +129,7 @@ func TestSetNodeFlagsNodeFailure(t *testing.T) {
 
 	SetNodeFlags(&s, &v1.NodeConfigurationState{
 		HeartbeatFailed: false,
-		NetworkLatency:  100,
+		NetworkLatency:  "100ms",
 		NodeFailed:      true,
 	})
 }
