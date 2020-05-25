@@ -17,8 +17,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
 
-	nodeconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	podconfigurationv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 
@@ -128,11 +128,11 @@ func main() {
 }
 
 func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
-	if err := podconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+	if err := podconfigv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		return errors.Wrap(err, "failed to register pod CRD spec")
 	}
 
-	if err := nodeconfigurationv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+	if err := nodeconfigv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
 		return errors.Wrap(err, "failed to register node CRD spec")
 	}
 

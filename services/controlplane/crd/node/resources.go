@@ -4,8 +4,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	nodev1 "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 )
 
@@ -22,7 +22,7 @@ func createResources(needed int, base scenario.NodeResources) []scenario.NodeRes
 	return resources
 }
 
-func getNodeResources(nodeCfg *v1.NodeConfiguration) (scenario.NodeResources, error) {
+func getNodeResources(nodeCfg *nodeconfigv1.NodeConfiguration) (scenario.NodeResources, error) {
 	res := nodeCfg.Spec.Resources
 	mem, err := scenario.GetInBytes(res.Memory, "memory")
 	if err != nil {
@@ -45,6 +45,6 @@ func getNodeResources(nodeCfg *v1.NodeConfiguration) (scenario.NodeResources, er
 		Storage:          storage,
 		EphemeralStorage: ephemeralStorage,
 		MaxPods:          res.MaxPods,
-		Selector:         nodev1.GetSelector(nodeCfg),
+		Selector:         node.GetSelector(nodeCfg),
 	}, nil
 }

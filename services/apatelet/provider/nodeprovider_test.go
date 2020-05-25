@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	podv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -132,12 +132,12 @@ func TestConfigureNode(t *testing.T) {
 	assert.EqualValues(t, metav1.ObjectMeta{
 		Name: "apate-x",
 		Labels: map[string]string{
-			"type":                                 "apate",
-			"kubernetes.io/role":                   "worker",
-			"kubernetes.io/hostname":               "apate-x",
-			"metrics_port":                         "123",
-			nodeV1.NodeConfigurationLabel:          "apate",
-			nodeV1.NodeConfigurationLabelNamespace: "my",
+			"type":                              "apate",
+			"kubernetes.io/role":                "worker",
+			"kubernetes.io/hostname":            "apate-x",
+			"metrics_port":                      "123",
+			nodeconfigv1.NodeConfigurationLabel: "apate",
+			nodeconfigv1.NodeConfigurationLabelNamespace: "my",
 		},
 	}, node.ObjectMeta)
 
@@ -254,7 +254,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	var pm podmanager.PodManager = pmm
 
 	lbl := make(map[string]string)
-	lbl[podv1.PodConfigurationLabel] = "pod1"
+	lbl[podconfigv1.PodConfigurationLabel] = "pod1"
 	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl},

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 
 	"github.com/pkg/errors"
 
@@ -166,12 +166,12 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name: p.NodeInfo.Name,
 		Labels: map[string]string{
-			"type":                             p.NodeInfo.NodeType,
-			"kubernetes.io/role":               p.NodeInfo.Role,
-			"kubernetes.io/hostname":           p.NodeInfo.Name,
-			"metrics_port":                     strconv.Itoa(p.NodeInfo.MetricsPort),
-			v1.NodeConfigurationLabelNamespace: p.NodeInfo.Namespace,
-			v1.NodeConfigurationLabel:          p.NodeInfo.Selector,
+			"type":                   p.NodeInfo.NodeType,
+			"kubernetes.io/role":     p.NodeInfo.Role,
+			"kubernetes.io/hostname": p.NodeInfo.Name,
+			"metrics_port":           strconv.Itoa(p.NodeInfo.MetricsPort),
+			nodeconfigv1.NodeConfigurationLabelNamespace: p.NodeInfo.Namespace,
+			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Selector,
 		},
 	}
 }

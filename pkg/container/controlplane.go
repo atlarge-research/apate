@@ -34,7 +34,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	// Dump environment as string array
 	envArray, err := env.DumpAsKeyValue(cpEnv)
 	if err != nil {
-		return errors.Wrap(err, "failed to dump cp env to strings")
+		return errors.Wrap(err, "failed to dump control plane environment to strings")
 	}
 
 	// Set spawn information

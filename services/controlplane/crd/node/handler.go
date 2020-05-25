@@ -17,7 +17,7 @@ import (
 
 	nodev1 "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
@@ -25,7 +25,7 @@ import (
 // ApateletHandler contains utilities to spawn and stop apatelets, and to update them based on a given node configuration
 type ApateletHandler interface {
 	// Updates the amount of apatelets based on a given node configuration
-	GetDesiredApatelets(context.Context, *v1.NodeConfiguration) error
+	GetDesiredApatelets(context.Context, *nodeconfigv1.NodeConfiguration) error
 
 	// Spawns n apatelets with resources and selector
 	SpawnApatelets(context.Context, int64, scenario.NodeResources, string) error
@@ -35,7 +35,7 @@ type ApateletHandler interface {
 }
 
 type apateletHandler struct {
-	lock           sync.Locker
+	lock           *sync.Mutex
 	store          *store.Store
 	connectionInfo *service.ConnectionInfo
 	runnerRegistry *run.RunnerRegistry
@@ -44,7 +44,6 @@ type apateletHandler struct {
 // NewHandler creates a new ApateletHandler
 func NewHandler(st *store.Store, runnerRegistry *run.RunnerRegistry, info *service.ConnectionInfo) *ApateletHandler {
 	var handler ApateletHandler = &apateletHandler{
-		lock:           &sync.Mutex{},
 		store:          st,
 		connectionInfo: info,
 		runnerRegistry: runnerRegistry,
@@ -53,7 +52,7 @@ func NewHandler(st *store.Store, runnerRegistry *run.RunnerRegistry, info *servi
 	return &handler
 }
 
-func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration) error {
+func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconfigv1.NodeConfiguration) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 

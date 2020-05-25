@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
@@ -25,7 +25,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	}
 
 	client.WatchResources(func(obj interface{}) {
-		nodeCfg := obj.(*v1.NodeConfiguration)
+		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
 		if node.GetSelector(nodeCfg) == selector {
 			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
@@ -36,7 +36,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 		// Add function
 		wakeScheduler()
 	}, func(_, obj interface{}) {
-		nodeCfg := obj.(*v1.NodeConfiguration)
+		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
 		if node.GetSelector(nodeCfg) == selector {
 			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
@@ -54,8 +54,8 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	return nil
 }
 
-func setNodeTasks(nodeCfg *v1.NodeConfiguration, st *store.Store) error {
-	if nodeCfg.Spec.NodeConfigurationState != (v1.NodeConfigurationState{}) {
+func setNodeTasks(nodeCfg *nodeconfigv1.NodeConfiguration, st *store.Store) error {
+	if nodeCfg.Spec.NodeConfigurationState != (nodeconfigv1.NodeConfigurationState{}) {
 		SetNodeFlags(st, &nodeCfg.Spec.NodeConfigurationState)
 	}
 
