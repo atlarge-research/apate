@@ -9,8 +9,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
-	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
@@ -28,10 +28,10 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := &nodeV1.NodeConfigurationState{
+	task := &nodeconfigv1.NodeConfigurationState{
 
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -60,8 +60,8 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := store.NewPodTask(42, "la/clappe", &v1.PodConfigurationState{
-		PodStatus: v1.PodStatusFailed,
+	task := store.NewPodTask(42, "la/clappe", &podconfigv1.PodConfigurationState{
+		PodStatus: podconfigv1.PodStatusFailed,
 	})
 
 	// Set up expectations
@@ -89,10 +89,10 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
+	task := nodeconfigv1.NodeConfigurationState{
 		NetworkLatency: "42s",
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -123,9 +123,9 @@ func TestRunner(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -157,9 +157,9 @@ func TestRunnerDelay(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -198,9 +198,9 @@ func TestRunnerSleep(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 
@@ -234,8 +234,8 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 
 	// Expectations
 	ms.EXPECT().PeekTask().Return(time.Duration(10), true, nil).AnyTimes()
-	ms.EXPECT().PopTask().Return(store.NewPodTask(10, "la/clappe", &v1.PodConfigurationState{
-		PodStatus: v1.PodStatusUnknown,
+	ms.EXPECT().PopTask().Return(store.NewPodTask(10, "la/clappe", &podconfigv1.PodConfigurationState{
+		PodStatus: podconfigv1.PodStatusUnknown,
 	}), nil)
 
 	var s store.Store = ms
@@ -320,9 +320,9 @@ func TestStartScheduler(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Test task:
-	task := nodeV1.NodeConfigurationState{
-		CustomState: &nodeV1.NodeConfigurationCustomState{
-			CreatePodResponse: nodeV1.ResponseError,
+	task := nodeconfigv1.NodeConfigurationState{
+		CustomState: &nodeconfigv1.NodeConfigurationCustomState{
+			CreatePodResponse: nodeconfigv1.ResponseError,
 		},
 	}
 

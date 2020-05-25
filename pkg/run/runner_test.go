@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -16,12 +15,9 @@ import (
 const MyRunType env.RunType = "newRunType"
 
 func setEnv() {
-	once := sync.Once{}
-	once.Do(func() {
-		planeEnv := env.ControlPlaneEnv()
-		planeEnv.ApateletRunType = MyRunType
-		env.SetEnv(planeEnv)
-	})
+	planeEnv := env.ControlPlaneEnv()
+	planeEnv.ApateletRunType = MyRunType
+	env.SetEnv(planeEnv)
 }
 
 func TestRegisterRunner(t *testing.T) {

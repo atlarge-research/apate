@@ -67,11 +67,11 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{})
 
 	// Create virtual kubelet
 	log.Println("Joining kubernetes cluster")
-	errch := make(chan error)
+	ech := make(chan error)
 	go func() {
 		if err = nc.Run(ctx); err != nil {
 			hc.SetStatus(healthpb.Status_UNHEALTHY)
-			errch <- errors.Wrap(err, "failed to run node controller")
+			ech <- errors.Wrap(err, "failed to run node controller")
 		}
 	}()
 
@@ -92,7 +92,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{})
 	// Start serving request
 	go func() {
 		if err := server.Serve(); err != nil {
-			errch <- errors.Wrap(err, "apatelet server failed")
+			ech <- errors.Wrap(err, "apatelet server failed")
 		}
 	}()
 
@@ -105,7 +105,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{})
 
 	// Stop the server on signal or error
 	select {
-	case err := <-errch:
+	case err := <-ech:
 		err = errors.Wrap(err, "apatelet stopped because of an error")
 		log.Println(err)
 		return err

@@ -32,7 +32,7 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 	// Dump environment as string array
 	envArray, err := env.DumpAsKeyValue(apateletEnv)
 	if err != nil {
-		return errors.Wrap(err, "failed to dump cp env to strings")
+		return errors.Wrap(err, "failed to dump apatelet environment to strings")
 	}
 
 	// Set spawn information

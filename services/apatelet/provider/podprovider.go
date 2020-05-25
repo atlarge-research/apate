@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/pkg/errors"
 
@@ -298,5 +298,5 @@ func (p *Provider) getPodLabelByName(ns string, name string) string {
 }
 
 func getPodLabelByPod(pod *corev1.Pod) string {
-	return pod.Namespace + "/" + pod.Labels[v1.PodConfigurationLabel]
+	return pod.Namespace + "/" + pod.Labels[podconfigv1.PodConfigurationLabel]
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	podv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
@@ -75,7 +75,7 @@ func TestSinglePod(t *testing.T) {
 
 	// Create pod
 	lbl := make(map[string]string)
-	lbl[podv1.PodConfigurationLabel] = flag
+	lbl[podconfigv1.PodConfigurationLabel] = flag
 	pod := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl},
@@ -127,7 +127,7 @@ func TestUnspecifiedPods(t *testing.T) {
 
 	// Create pods
 	lbl := make(map[string]string)
-	lbl[podv1.PodConfigurationLabel] = flag
+	lbl[podconfigv1.PodConfigurationLabel] = flag
 	pod := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl, UID: flag},
@@ -137,7 +137,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	pm.AddPod(pod) //TODO mock?
 
 	lbl2 := make(map[string]string)
-	lbl2[podv1.PodConfigurationLabel] = flag + "2"
+	lbl2[podconfigv1.PodConfigurationLabel] = flag + "2"
 	pod2 := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl2, UID: flag + "2"},
@@ -147,7 +147,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	pm.AddPod(pod2) //TODO mock?
 
 	lbl3 := make(map[string]string)
-	lbl3[podv1.PodConfigurationLabel] = flag + "3"
+	lbl3[podconfigv1.PodConfigurationLabel] = flag + "3"
 	pod3 := v1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{Labels: lbl3, UID: flag + "3"},

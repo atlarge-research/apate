@@ -7,7 +7,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	podv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -125,7 +125,7 @@ func (p *Provider) getAggregatePodStats() []stats.PodStats {
 
 func (p *Provider) getPodStats(pod *v1.Pod) *stats.PodStats {
 	for k, label := range pod.Labels {
-		if k == podv1.PodConfigurationLabel {
+		if k == podconfigv1.PodConfigurationLabel {
 			unconvertedStats, err := (*p.Store).GetPodFlag(label, events.PodResources)
 			if err != nil {
 				log.Printf("error while retrieving pod flag for resources: %v\n", err)

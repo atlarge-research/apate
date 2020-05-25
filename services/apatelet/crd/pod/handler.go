@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
-	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
@@ -52,7 +52,7 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 func setPodTasks(obj interface{}, st *store.Store) error {
 	newCRD, crdLabel := getCRDAndLabel(obj)
 
-	empty := v1.PodConfigurationState{}
+	empty := podconfigv1.PodConfigurationState{}
 	if newCRD.Spec.PodConfigurationState != empty {
 		if err := SetPodFlags(st, crdLabel, &newCRD.Spec.PodConfigurationState); err != nil {
 			return errors.Wrap(err, "failed to set pod flags during enqueueing of crd")
@@ -68,8 +68,8 @@ func setPodTasks(obj interface{}, st *store.Store) error {
 	return errors.Wrap((*st).SetPodTasks(crdLabel, tasks), "failed to set pod tasks")
 }
 
-func getCRDAndLabel(obj interface{}) (*v1.PodConfiguration, string) {
-	newCRD := obj.(*v1.PodConfiguration)
+func getCRDAndLabel(obj interface{}) (*podconfigv1.PodConfiguration, string) {
+	newCRD := obj.(*podconfigv1.PodConfiguration)
 	crdLabel := newCRD.Namespace + "/" + newCRD.Name
 	return newCRD, crdLabel
 }
