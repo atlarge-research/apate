@@ -1,9 +1,8 @@
 package env
 
 import (
+	"log"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 // Control plane environment variables
@@ -16,17 +15,17 @@ const (
 	// ControlPlaneListenPort is the port the control plane will listen on
 	ControlPlaneListenPort = "CP_LISTEN_PORT"
 	// ControlPlaneListenPortDefault is the default value for ControlPlaneListenPort
-	ControlPlaneListenPortDefault = "8085"
+	ControlPlaneListenPortDefault = 8085
 
 	// ManagedClusterConfigLocation is the path to the config of the cluster manager, if applicable
 	ManagedClusterConfigLocation = "CP_MANAGER_LOCATION"
 	// ManagedClusterConfigDefault is the default value for ManagedClusterConfigLocation
 	ManagedClusterConfigLocationDefault = "/tmp/apate/manager"
 
-	// KubeConfigLocation is the path to the kube config
-	KubeConfigLocation = "CP_KUBE_CONFIG"
-	// KubeConfigLocationDefault is the default value for KubeConfigLocation
-	KubeConfigLocationDefault = "/tmp/apate/config"
+	// ControlPlaneKubeConfigLocation is the path to the kube config
+	ControlPlaneKubeConfigLocation = "CP_KUBE_CONFIG"
+	// ControlPlaneKubeConfigLocationDefault is the default value for ControlPlaneKubeConfigLocation
+	ControlPlaneKubeConfigLocationDefault = "/tmp/apate/config"
 
 	// ControlPlaneExternalIP can be used to override the IP the control plane will give to apatelets to connect to
 	ControlPlaneExternalIP = "CP_EXTERNAL_IP"
@@ -46,7 +45,7 @@ const (
 	// PrometheusStackEnabled specifies
 	PrometheusStackEnabled = "CP_PROMETHEUS"
 	// PrometheusStackEnabledDefault is the default for PrometheusStackEnabled
-	PrometheusStackEnabledDefault = "true"
+	PrometheusStackEnabledDefault = true
 )
 
 // RunType is the run strategy used by the control plane to run apalets
@@ -76,30 +75,21 @@ type ControlPlaneEnvironment struct {
 var controlPlaneEnvironment *ControlPlaneEnvironment
 
 // DefaultControlPlaneEnvironment returns the default control plane environment
-func DefaultControlPlaneEnvironment() (ControlPlaneEnvironment, error) {
-	defaultPort, err := strconv.Atoi(ControlPlaneListenPortDefault)
-	if err != nil {
-		return ControlPlaneEnvironment{}, errors.Wrapf(err, "failed to convert Apatelet listening port (%v) to string", ApateletListenPortDefault)
-	}
-
-	prometheusEnabled, err := strconv.ParseBool(PrometheusStackEnabledDefault)
-	if err != nil {
-		return ControlPlaneEnvironment{}, errors.Wrapf(err, "failed to convert Apatelet listening port (%v) to string", ApateletListenPortDefault)
-	}
-
+func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 	return ControlPlaneEnvironment{
 		ListenAddress:          ControlPlaneListenAddressDefault,
-		ListenPort:             defaultPort,
+		ListenPort:             ControlPlaneListenPortDefault,
 		ManagerConfigLocation:  ManagedClusterConfigLocationDefault,
-		KubeConfigLocation:     KubeConfigLocationDefault,
+		KubeConfigLocation:     ControlPlaneKubeConfigLocationDefault,
 		ExternalIP:             ControlPlaneExternalIPDefault,
 		DockerPolicy:           ControlPlaneDockerPolicyDefault,
 		ApateletRunType:        ControlPlaneApateletRunTypeDefault,
-		PrometheusStackEnabled: prometheusEnabled,
-	}, nil
+		PrometheusStackEnabled: PrometheusStackEnabledDefault,
+	}
 }
 
 // SetEnv overrides the current environment for the control plane
+// We preferred this over providing a pointer in the getter to avoid accidental overrides
 func SetEnv(environment ControlPlaneEnvironment) {
 	controlPlaneEnvironment = &environment
 }
@@ -112,19 +102,19 @@ func ControlPlaneEnv() ControlPlaneEnvironment {
 
 	pullPolicy := PullPolicy(RetrieveFromEnvironment(ControlPlaneDockerPolicy, string(ControlPlaneDockerPolicyDefault)))
 	if !pullPolicy.Valid() {
-		panic("invalid pull policy: " + pullPolicy)
+		log.Panicf("invalid pull policy %v when creating control plane env", pullPolicy)
 	}
 
-	port := RetrieveFromEnvironment(ControlPlaneListenPort, ControlPlaneListenPortDefault)
+	port := RetrieveFromEnvironment(ControlPlaneListenPort, strconv.Itoa(ControlPlaneListenPortDefault))
 	listenPort, err := strconv.Atoi(port)
 	if err != nil {
-		panic("invalid port: " + err.Error())
+		log.Panicf("invalid port %v when parsing listen port %+v to create control plane env", port, err)
 	}
 
-	prometheus := RetrieveFromEnvironment(PrometheusStackEnabled, PrometheusStackEnabledDefault)
+	prometheus := RetrieveFromEnvironment(PrometheusStackEnabled, strconv.FormatBool(PrometheusStackEnabledDefault))
 	prometheusEnabled, err := strconv.ParseBool(prometheus)
 	if err != nil {
-		panic("invalid boolean for prometheus enabled: " + port)
+		log.Panicf("invalid boolean %v for prometheus enabled %v to create control plane env", prometheus, port)
 	}
 
 	controlPlaneEnvironment = &ControlPlaneEnvironment{
@@ -132,7 +122,7 @@ func ControlPlaneEnv() ControlPlaneEnvironment {
 		ListenPort:             listenPort,
 		ManagerConfigLocation:  RetrieveFromEnvironment(ManagedClusterConfigLocation, ManagedClusterConfigLocationDefault),
 		ExternalIP:             RetrieveFromEnvironment(ControlPlaneExternalIP, ControlPlaneExternalIPDefault),
-		KubeConfigLocation:     RetrieveFromEnvironment(KubeConfigLocation, KubeConfigLocationDefault),
+		KubeConfigLocation:     RetrieveFromEnvironment(ControlPlaneKubeConfigLocation, ControlPlaneKubeConfigLocationDefault),
 		DockerPolicy:           pullPolicy,
 		ApateletRunType:        RunType(RetrieveFromEnvironment(ControlPlaneApateletRunType, string(ControlPlaneApateletRunTypeDefault))),
 		PrometheusStackEnabled: prometheusEnabled,

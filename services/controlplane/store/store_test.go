@@ -42,7 +42,7 @@ func TestEmptyGet(t *testing.T) {
 func TestEmptyNodeMap(t *testing.T) {
 	store := NewStore()
 
-	// Valid there are no nodes by default
+	// Verify there are no nodes by default
 	nodes, err := store.GetNodes()
 	assert.NoError(t, err)
 	assert.Len(t, nodes, 0)
@@ -59,7 +59,7 @@ func TestAddNodeGet(t *testing.T) {
 	err := store.AddNode(&expected)
 	assert.NoError(t, err)
 
-	// Valid node was added
+	// Verify node was added
 	actual, err := store.GetNode(id)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -83,7 +83,7 @@ func TestAddNodeList(t *testing.T) {
 func TestGetNodeWrongUuid(t *testing.T) {
 	store := NewStore()
 
-	// Valid error on node existing node
+	// Verify error on node existing node
 	node, err := store.GetNode(uuid.New())
 	assert.Equal(t, Node{}, node)
 	assert.Error(t, err)
@@ -117,17 +117,17 @@ func TestRemoveNode(t *testing.T) {
 	err = store.RemoveNode(node.UUID)
 	assert.NoError(t, err)
 
-	// Valid there are no nodes left
+	// Verify there are no nodes left
 	list, err := store.GetNodes()
 	assert.NoError(t, err)
 	assert.Len(t, list, 0)
 
-	// Valid it cannot be retrieved
+	// Verify it cannot be retrieved
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
 
-	// Valid it's no longer in the selector
+	// Verify it's no longer in the selector
 	nodes, err := store.GetNodesBySelector(selector)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nodes))
@@ -167,17 +167,17 @@ func TestClearNodes(t *testing.T) {
 	err = store.ClearNodes()
 	assert.NoError(t, err)
 
-	// Valid there are no nodes left
+	// Verify there are no nodes left
 	list, err := store.GetNodes()
 	assert.NoError(t, err)
 	assert.Len(t, list, 0)
 
-	// Valid it cannot be retrieved
+	// Verify it cannot be retrieved
 	res, err := store.GetNode(node.UUID)
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
 
-	// Valid it's no longer in the selector
+	// Verify it's no longer in the selector
 	nodes, err := store.GetNodesBySelector(selector)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nodes))
@@ -196,7 +196,7 @@ func TestGetNodesBySelector(t *testing.T) {
 	err = store.AddNode(node2)
 	assert.NoError(t, err)
 
-	// Valid it gets returned based on its selector
+	// Verify it gets returned based on its selector
 	nodes, err := store.GetNodesBySelector(selector)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nodes))

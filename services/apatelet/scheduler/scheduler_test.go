@@ -276,7 +276,7 @@ func TestRunnerEarlyFail(t *testing.T) {
 	ech := make(chan error, 1)
 	sched.runner(ech)
 
-	// Valid
+	// Verify
 	select {
 	case err := <-ech:
 		assert.Error(t, err)
@@ -303,7 +303,7 @@ func TestRunnerPopFail(t *testing.T) {
 	ech := make(chan error, 1)
 	sched.runner(ech)
 
-	// Valid
+	// Verify
 	select {
 	case err := <-ech:
 		assert.Error(t, err)

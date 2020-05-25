@@ -44,14 +44,14 @@ type Provider struct {
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(ctx context.Context, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
+func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get options from env")
 	}
 
 	name := baseName + "-" + res.UUID.String()
-	op.KubeConfigPath = env.ControlPlaneEnv().KubeConfigLocation
+	op.KubeConfigPath = env.KubeConfigLocation
 	op.ListenPort = int32(k8sPort)
 	op.MetricsAddr = ":" + strconv.Itoa(metricsPort)
 	op.Provider = baseName

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 
 	"github.com/pkg/errors"
@@ -10,8 +9,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 )
 
-func fatal(err error) {
-	log.Fatalf("an error occurred while starting the Apatelet: %+v\n", err)
+func panicf(err error) {
+	log.Panicf("an error occurred while starting the Apatelet: %+v\n", err)
 }
 
 func init() {
@@ -23,22 +22,19 @@ func init() {
 // This function is only called when started separately (as Docker container for example)
 // When starting from a goroutine, `StartApatelet` is called.
 func main() {
-	environment := env.ApateletEnv()
-
-	if err := run.SetCerts(); err != nil {
-		fatal(err)
+	// Create Apatelet environment
+	environment, err := env.ApateletEnv()
+	if err != nil {
+		panicf(errors.Wrap(err, "error while creating apatelet environment"))
 	}
 
-	run.KubeConfigWriter = func(config []byte) {
-		kubeConfigLocation := env.ControlPlaneEnv().KubeConfigLocation
-		err := ioutil.WriteFile(kubeConfigLocation, config, 0600)
-		if err != nil {
-			fatal(err)
-		}
+	// Set the certificates to communicate with the kubelet API
+	if err := run.SetCerts(); err != nil {
+		panicf(errors.Wrap(err, "error while setting certs"))
 	}
 
 	ch := make(chan struct{})
 	if err := run.StartApatelet(environment, 10250, 10255, ch); err != nil {
-		fatal(errors.Wrap(err, "error while running apatelet"))
+		panicf(errors.Wrap(err, "error while running apatelet"))
 	}
 }

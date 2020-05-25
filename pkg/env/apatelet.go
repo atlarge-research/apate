@@ -16,7 +16,12 @@ const (
 	// ApateletListenPort is the port the apatelet will listen on for requests
 	ApateletListenPort = "APATELET_LISTEN_PORT"
 	// ApateletListenPortDefault is the default for ApateletListenPort
-	ApateletListenPortDefault = "8086"
+	ApateletListenPortDefault = 8086
+
+	// ApateletKubeConfigLocation is the path to the kube config
+	ApateletKubeConfigLocation = "APATELET_KUBE_CONFIG"
+	// ApateletKubeConfigLocationDefault is the default value for ApateletKubeConfigLocation
+	ApateletKubeConfigLocationDefault = "/tmp/apate/config"
 
 	// ControlPlaneAddress is the address of the control plane which will be used to connect to
 	ControlPlaneAddress = "CP_ADDRESS"
@@ -34,49 +39,47 @@ type ApateletEnvironment struct {
 	ListenAddress string
 	ListenPort    int
 
+	KubeConfigLocation string
+
 	ControlPlaneAddress string
 	ControlPlanePort    int
 }
 
 // DefaultApateletEnvironment returns the default apate environment
-func DefaultApateletEnvironment() (ApateletEnvironment, error) {
-	defaultPort, err := strconv.Atoi(ApateletListenPortDefault)
-	if err != nil {
-		return ApateletEnvironment{}, errors.Wrapf(err, "failed to convert Apatelet listening port (%v) to string", ApateletListenPortDefault)
-	}
-
+func DefaultApateletEnvironment() ApateletEnvironment {
 	return ApateletEnvironment{
 		ListenAddress: ApateletListenAddressDefault,
-		ListenPort:    defaultPort,
-	}, nil
+		ListenPort:    ApateletListenPortDefault,
+
+		KubeConfigLocation: ApateletKubeConfigLocationDefault,
+
+		ControlPlaneAddress: ControlPlaneAddressDefault,
+		ControlPlanePort:    ControlPlanePortDefault,
+	}
 }
 
 // ApateletEnv builds an ApateletEnvironment based on the actual environment
-func ApateletEnv() ApateletEnvironment {
-	controlPlaneAddress := RetrieveFromEnvironment(ControlPlaneAddress, ControlPlaneAddressDefault)
-
-	cpp := RetrieveFromEnvironment(ControlPlanePort, ControlPlanePortDefault)
+func ApateletEnv() (ApateletEnvironment, error) {
+	cpp := RetrieveFromEnvironment(ControlPlanePort, strconv.Itoa(ControlPlanePortDefault))
 	controlPlanePort, err := strconv.Atoi(cpp)
 	if err != nil {
-		panic("invalid port: " + err.Error())
+		return ApateletEnvironment{}, errors.Wrapf(err, "invalid port %v while parsing controlPlanePort", cpp)
 	}
 
 	// Retrieve own port
-	lp := RetrieveFromEnvironment(ApateletListenPort, ApateletListenPortDefault)
+	lp := RetrieveFromEnvironment(ApateletListenPort, strconv.Itoa(ApateletListenPortDefault))
 	listenPort, err := strconv.Atoi(lp)
 	if err != nil {
-		panic("invalid port" + err.Error())
+		return ApateletEnvironment{}, errors.Wrapf(err, "invalid port %v while parsing listenPort", lp)
 	}
-
-	// Retrieving connection information
-	listenAddress := RetrieveFromEnvironment(ApateletListenAddress, ApateletListenAddressDefault)
 
 	return ApateletEnvironment{
-		ListenAddress:       listenAddress,
+		ListenAddress:       RetrieveFromEnvironment(ApateletListenAddress, ApateletListenAddressDefault),
 		ListenPort:          listenPort,
-		ControlPlaneAddress: controlPlaneAddress,
+		KubeConfigLocation:  RetrieveFromEnvironment(ApateletKubeConfigLocation, ApateletKubeConfigLocationDefault),
+		ControlPlaneAddress: RetrieveFromEnvironment(ControlPlaneAddress, ControlPlaneAddressDefault),
 		ControlPlanePort:    controlPlanePort,
-	}
+	}, nil
 }
 
 // AddConnectionInfo adds the given connection information to the environment

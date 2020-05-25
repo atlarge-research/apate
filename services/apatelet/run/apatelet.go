@@ -4,9 +4,11 @@ package run
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"sync/atomic"
 	"syscall"
 
@@ -18,15 +20,12 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
-
 	"github.com/pkg/errors"
 
+	crdNode "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
 	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
-
-	cli "github.com/virtual-kubelet/node-cli"
 
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
@@ -37,10 +36,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-// KubeConfigWriter is the function used for writing the kube config to the local file system
-// Because we only want to write it once and not on every apatelet, this should only be set in main.go, for standalone instances
-// For goroutines, this should be written to file earlier
-var KubeConfigWriter func(config []byte) = nil
+var once sync.Once
 
 // StartApatelet starts the apatelet
 func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsPort int, readyCh chan<- struct{}) error {
@@ -51,48 +47,29 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Create stop channel
+	// Create stop channels
 	stop := make(chan os.Signal, 1)
 	stopInformer := make(chan struct{})
 
 	// Join the apate cluster
-	log.Println("Joining apate cluster")
 	config, res, startTime, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
 	if err != nil {
 		return errors.Wrap(err, "failed to join apate cluster")
 	}
 
-	if KubeConfigWriter != nil {
-		KubeConfigWriter(config.Bytes)
-	}
+	// Write kubeconfig if it doesn't exist
+	writeKubeConfig(apateletEnv, config)
 
 	// Create store
 	st := store.NewStore()
 
 	// Create scheduler
-	sch := scheduler.New(ctx, &st)
-	go func() {
-		ech := sch.EnableScheduler()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case err = <-ech:
-				fmt.Printf("error while scheduling task occurred: %v\n", err)
-			}
-		}
-	}()
+	sch := createScheduler(ctx, st)
 
 	// Create crd informers
-	err = crdPod.CreatePodInformer(config, &st, stopInformer, sch.WakeScheduler)
+	err = createInformers(config, st, stopInformer, sch, res)
 	if err != nil {
-		return errors.Wrap(err, "failed creating crd pod informer")
-	}
-
-	err = node.CreateNodeInformer(config, &st, res.Selector, stopInformer, sch.WakeScheduler)
-	if err != nil {
-		return errors.Wrap(err, "failed creating crd node informer")
+		return errors.Wrap(err, "failed to create informers")
 	}
 
 	// Setup health status
@@ -102,9 +79,9 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	}
 
 	// Start the Apatelet
-	nc, err := createNodeController(ctx, res, kubernetesPort, metricsPort, &st)
+	nc, err := vkProvider.CreateProvider(ctx, &apateletEnv, res, kubernetesPort, metricsPort, &st)
 	if err != nil {
-		return errors.Wrap(err, "failed to create node controller")
+		return errors.Wrap(err, "failed to create provider")
 	}
 
 	// Create virtual kubelet
@@ -160,6 +137,55 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	}
 }
 
+func createScheduler(ctx context.Context, st store.Store) scheduler.Scheduler {
+	sch := scheduler.New(ctx, &st)
+	go func() {
+		ech := sch.EnableScheduler()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case err := <-ech:
+				fmt.Printf("error while scheduling task occurred: %v\n", err)
+			}
+		}
+	}()
+
+	return sch
+}
+
+func writeKubeConfig(apateletEnv env.ApateletEnvironment, config *kubeconfig.KubeConfig) {
+	once.Do(func() {
+		kubeConfigLocation := apateletEnv.KubeConfigLocation
+		_, err := os.Stat(kubeConfigLocation)
+		if os.IsNotExist(err) {
+			return
+		} else if err != nil {
+			panic(errors.Wrap(err, "error while reading kubeconfig file"))
+		}
+
+		err = ioutil.WriteFile(kubeConfigLocation, config.Bytes, 0600)
+		if err != nil {
+			panic(errors.Wrap(err, "error while writing kubeconfig to file"))
+		}
+	})
+}
+
+func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer chan struct{}, sch scheduler.Scheduler, res *scenario.NodeResources) error {
+	err := crdPod.CreatePodInformer(config, &st, stopInformer, sch.WakeScheduler)
+	if err != nil {
+		return errors.Wrap(err, "failed creating crd pod informer")
+	}
+
+	err = crdNode.CreateNodeInformer(config, &st, res.Selector, stopInformer, sch.WakeScheduler)
+	if err != nil {
+		return errors.Wrap(err, "failed creating crd node informer")
+	}
+
+	return nil
+}
+
 func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *service.ConnectionInfo, uuid string) error {
 	log.Println("Stopping Apatelet")
 
@@ -208,10 +234,13 @@ func startHealth(ctx context.Context, connectionInfo *service.ConnectionInfo, uu
 }
 
 func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {
+	log.Println("Joining apate cluster")
+
 	client, err := controlplane.GetClusterOperationClient(connectionInfo)
 	if err != nil {
 		return nil, nil, -1, errors.Wrap(err, "failed to get cluster operation client")
 	}
+
 	defer func() {
 		closeErr := client.Conn.Close()
 		if closeErr != nil {
@@ -228,11 +257,6 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	log.Printf("Joined apate cluster with resources: %v", res)
 
 	return cfg, res, startTime, nil
-}
-
-func createNodeController(ctx context.Context, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
-	cmd, err := vkProvider.CreateProvider(ctx, res, k8sPort, metricsPort, store)
-	return cmd, errors.Wrap(err, "failed to create provider")
 }
 
 func createGRPC(listenPort int, store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel chan<- os.Signal) (*service.GRPCServer, error) {
