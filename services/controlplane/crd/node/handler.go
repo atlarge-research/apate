@@ -55,6 +55,9 @@ func CreateNodeInformer(ctx context.Context, config *kubeconfig.KubeConfig, st *
 }
 
 func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *store.Store, lock *sync.Locker, info *service.ConnectionInfo) {
+	(*lock).Lock()
+	defer (*lock).Unlock()
+
 	res, err := getNodeResources(cfg)
 	if err != nil {
 		log.Printf("error while retrieving node resources from CRD: %v\n", err)
@@ -71,14 +74,14 @@ func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *sto
 
 	if current < desired {
 		// Not enough apatelets, spawn extra
-		err := spawnApatelets(ctx, st, desired, res, info, lock, selector)
+		err := spawnApatelets(ctx, st, desired, res, info, selector)
 		if err != nil {
 			log.Printf("error while spawning apatelets: %v\n", err)
 			// TODO: Stop, notify, idk?
 		}
 	} else if current > desired {
 		// Too many apatelets, stop a few
-		err := stopApatelets(ctx, st, desired, selector, lock)
+		err := stopApatelets(ctx, st, desired, selector)
 		if err != nil {
 			log.Printf("error while stopping apatelets: %v\n", err)
 			// TODO: Stop, notify, idk?
@@ -86,9 +89,7 @@ func getDesiredApatelets(ctx context.Context, cfg *v1.NodeConfiguration, st *sto
 	}
 }
 
-func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res scenario.NodeResources, info *service.ConnectionInfo, lock *sync.Locker, selector string) error {
-	(*lock).Lock()
-	defer (*lock).Unlock()
+func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res scenario.NodeResources, info *service.ConnectionInfo, selector string) error {
 
 	nodes, err := (*st).GetNodesBySelector(selector)
 	if err != nil {
@@ -117,10 +118,7 @@ func spawnApatelets(ctx context.Context, st *store.Store, desired int64, res sce
 	return nil
 }
 
-func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector string, lock *sync.Locker) error {
-	(*lock).Lock()
-	defer (*lock).Unlock()
-
+func stopApatelets(ctx context.Context, st *store.Store, desired int64, selector string) error {
 	nodes, err := (*st).GetNodesBySelector(selector)
 	if err != nil {
 		return errors.Wrapf(err, "error while retrieving nodes with selector %s\n", selector)

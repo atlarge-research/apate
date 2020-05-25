@@ -29,7 +29,7 @@ import (
 var onceKubeConfig sync.Once
 
 // StartApatelet starts the apatelet
-func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsPort int, readyCh chan<- struct{}) error {
+func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
@@ -69,7 +69,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	}
 
 	// Start the Apatelet
-	nc, err := vkProvider.CreateProvider(ctx, &apateletEnv, res, kubernetesPort, metricsPort, &st)
+	nc, err := vkProvider.CreateProvider(ctx, &apateletEnv, res, apateletEnv.KubernetesPort, apateletEnv.MetricsPort, &st)
 	if err != nil {
 		return errors.Wrap(err, "failed to create provider")
 	}
@@ -93,7 +93,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, kubernetesPort, metricsP
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
-	log.Printf("now listening on :%d for kube api and :%d for metrics", kubernetesPort, metricsPort)
+	log.Printf("now listening on :%d for kube api and :%d for metrics", apateletEnv.KubernetesPort, apateletEnv.MetricsPort)
 
 	// Handle stop
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
