@@ -45,7 +45,7 @@ func TestEnqueueNodeTasks(t *testing.T) {
 		Spec: nodeconfigv1.NodeConfigurationSpec{
 			Tasks: []nodeconfigv1.NodeConfigurationTask{
 				{
-					Timestamp: 1,
+					Timestamp: "1ms",
 					State: nodeconfigv1.NodeConfigurationState{
 						CustomState: &nodeconfigv1.NodeConfigurationCustomState{
 							CreatePodResponse: nodeconfigv1.ResponseNormal,
@@ -53,7 +53,7 @@ func TestEnqueueNodeTasks(t *testing.T) {
 					},
 				},
 				{
-					Timestamp: 42,
+					Timestamp: "42ms",
 					State: nodeconfigv1.NodeConfigurationState{
 						CustomState: &nodeconfigv1.NodeConfigurationCustomState{
 							CreatePodResponse: nodeconfigv1.ResponseTimeout,

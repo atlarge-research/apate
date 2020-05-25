@@ -35,7 +35,7 @@ type ApateletHandler interface {
 }
 
 type apateletHandler struct {
-	lock           *sync.Mutex
+	lock           sync.Mutex
 	store          *store.Store
 	connectionInfo *service.ConnectionInfo
 	runnerRegistry *run.RunnerRegistry
@@ -87,7 +87,7 @@ func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconf
 	return nil
 }
 
-func (a apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res scenario.NodeResources, selector string) error {
+func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res scenario.NodeResources, selector string) error {
 	nodes, err := (*a.store).GetNodesBySelector(selector)
 	if err != nil {
 		return errors.Wrap(err, "failed getting nodes using selector")
@@ -115,7 +115,7 @@ func (a apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res 
 	return nil
 }
 
-func (a apateletHandler) StopApatelets(ctx context.Context, desired int64, selector string) error {
+func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, selector string) error {
 	nodes, err := (*a.store).GetNodesBySelector(selector)
 	if err != nil {
 		return errors.Wrapf(err, "error while retrieving nodes with selector %s\n", selector)

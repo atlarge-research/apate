@@ -13,7 +13,7 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopCh <-chan struct{}, wakeScheduler func()) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopch <-chan struct{}, wakeScheduler func()) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get kubeconfig")
@@ -25,7 +25,9 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	}
 
 	client.WatchResources(func(obj interface{}) {
+		// Add function
 		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
+
 		if node.GetSelector(nodeCfg) == selector {
 			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
@@ -33,10 +35,11 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 			}
 		}
 
-		// Add function
 		wakeScheduler()
 	}, func(_, obj interface{}) {
+		// Update function
 		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
+
 		if node.GetSelector(nodeCfg) == selector {
 			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
@@ -44,25 +47,34 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 			}
 		}
 
-		// Update function
 		wakeScheduler()
 	}, func(obj interface{}) {
 		// Delete function
 		// Do nothing here, as control plane will determine which, if any, apatelets should stop
-	}, stopCh)
+	}, stopch)
 
 	return nil
 }
 
 func setNodeTasks(nodeCfg *nodeconfigv1.NodeConfiguration, st *store.Store) error {
+	// Validating timestamps before actually doing anything
+	var durations = make([]time.Duration, len(nodeCfg.Spec.Tasks))
+	for i, task := range nodeCfg.Spec.Tasks {
+		duration, err := time.ParseDuration(task.Timestamp)
+		if err != nil {
+			return errors.Wrapf(err, "error while converting timestamp %v to a duration", task.Timestamp)
+		}
+		durations[i] = duration
+	}
+
 	if nodeCfg.Spec.NodeConfigurationState != (nodeconfigv1.NodeConfigurationState{}) {
 		SetNodeFlags(st, &nodeCfg.Spec.NodeConfigurationState)
 	}
 
 	var tasks []*store.Task
-	for _, task := range nodeCfg.Spec.Tasks {
+	for i, task := range nodeCfg.Spec.Tasks {
 		state := task.State
-		tasks = append(tasks, store.NewNodeTask(time.Duration(task.Timestamp)*time.Millisecond, &state))
+		tasks = append(tasks, store.NewNodeTask(durations[i], &state))
 	}
 
 	if err := (*st).SetNodeTasks(tasks); err != nil {
