@@ -39,7 +39,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -68,7 +68,7 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatusFailed)
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -102,7 +102,7 @@ func TestTaskHandlerMultiple(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 42*time.Second)
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Run code under test
 	ech := make(chan error)
@@ -135,7 +135,7 @@ func TestRunner(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 	sched.WakeScheduler()
 
 	// Run code under test
@@ -172,7 +172,7 @@ func TestRunnerDelay(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 	sched.startTime = time.Now()
 
 	// Run code under test
@@ -211,8 +211,8 @@ func TestRunnerSleep(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
-	ech := sched.EnableScheduler()
+	sched := New(&s)
+	ech := sched.EnableScheduler(context.TODO())
 
 	sched.StartScheduler(0)
 	time.Sleep(time.Millisecond * 500)
@@ -241,7 +241,6 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 	var s store.Store = ms
 	sched := Scheduler{
 		store:     &s,
-		ctx:       context.Background(),
 		readyCh:   make(chan struct{}),
 		prevT:     time.Unix(0, 40),
 		startTime: time.Unix(0, 0),
@@ -270,7 +269,7 @@ func TestRunnerEarlyFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -297,7 +296,7 @@ func TestRunnerPopFail(t *testing.T) {
 
 	// Setup
 	var s store.Store = ms
-	sched := New(context.Background(), &s)
+	sched := New(&s)
 
 	// Test
 	ech := make(chan error, 1)
@@ -334,10 +333,10 @@ func TestStartScheduler(t *testing.T) {
 	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
-	sched := New(ctx, &s)
+	sched := New(&s)
 
 	// Run code under test
-	ech := sched.EnableScheduler()
+	ech := sched.EnableScheduler(ctx)
 	sched.StartScheduler(0)
 
 	time.Sleep(time.Second)

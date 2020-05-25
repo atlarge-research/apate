@@ -21,19 +21,10 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
-func checkContext(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		return nil
-	}
-}
-
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
-	if err := checkContext(ctx); err != nil {
-		return err
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context closed in CreatePod")
 	}
 
 	return p.createOrUpdate(ctx, pod, events.PodCreatePodResponse, events.NodeCreatePodResponse)
@@ -41,8 +32,8 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
-	if err := checkContext(ctx); err != nil {
-		return err
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context closed in UpdatePod")
 	}
 
 	return p.createOrUpdate(ctx, pod, events.PodUpdatePodResponse, events.NodeUpdatePodResponse)
@@ -83,12 +74,12 @@ func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
-	if err := checkContext(ctx); err != nil {
-		return err
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context closed in DeletePod")
 	}
 
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency (Delete Pod)")
+		err = errors.Wrap(err, "failed to run latency DeletePod")
 		log.Println(err)
 		return err
 	}
@@ -117,12 +108,12 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 // GetPod retrieves a pod by label.
 func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
-	if err := checkContext(ctx); err != nil {
-		return nil, err
+	if err := ctx.Err(); err != nil {
+		return nil, errors.Wrap(err, "context closed in GetPod")
 	}
 
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency (Get Pod)")
+		err = errors.Wrap(err, "failed to run latency GetPod")
 		log.Println(err)
 		return nil, err
 	}
@@ -177,12 +168,12 @@ func podStatusToPhase(status interface{}) corev1.PodPhase {
 
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
-	if err := checkContext(ctx); err != nil {
-		return nil, err
+	if err := ctx.Err(); err != nil {
+		return nil, errors.Wrap(err, "context closed in GetPodStatus")
 	}
 
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency (Get Pod Status)")
+		err = errors.Wrap(err, "failed to run latency in GetPodStatus)")
 		log.Println(err)
 		return nil, err
 	}
@@ -233,12 +224,12 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 
 // GetPods retrieves a list of all pods running.
 func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
-	if err := checkContext(ctx); err != nil {
-		return nil, err
+	if err := ctx.Err(); err != nil {
+		return nil, errors.Wrap(err, "context closed in GetPods")
 	}
 
 	if err := p.runLatency(ctx); err != nil {
-		err = errors.Wrap(err, "failed to run latency (Get Pods)")
+		err = errors.Wrap(err, "failed to run latency in GetPods")
 		log.Println(err)
 		return nil, err
 	}

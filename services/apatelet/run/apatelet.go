@@ -4,11 +4,9 @@ package run
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -17,16 +15,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
-
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
-
-var onceKubeConfig sync.Once
 
 // StartApatelet starts the apatelet
 func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
@@ -42,13 +36,10 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{})
 	stopInformer := make(chan struct{})
 
 	// Join the apate cluster
-	config, res, startTime, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort)
+	config, res, startTime, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort, apateletEnv.KubeConfigLocation)
 	if err != nil {
 		return errors.Wrap(err, "failed to join apate cluster")
 	}
-
-	// Write kubeconfig if it doesn't exist
-	writeKubeConfig(apateletEnv, config)
 
 	// Create store
 	st := store.NewStore()
@@ -85,7 +76,7 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{})
 	}()
 
 	// Start gRPC server
-	server, err := createGRPC(apateletEnv.ListenPort, &st, &sch, apateletEnv.ListenAddress, stop)
+	server, err := createGRPC(apateletEnv.ListenPort, &st, sch, apateletEnv.ListenAddress, stop)
 	if err != nil {
 		return errors.Wrap(err, "failed to set up GRPC endpoints")
 	}
@@ -127,10 +118,10 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{})
 	}
 }
 
-func createScheduler(ctx context.Context, st store.Store) scheduler.Scheduler {
-	sch := scheduler.New(ctx, &st)
+func createScheduler(ctx context.Context, st store.Store) *scheduler.Scheduler {
+	sch := scheduler.New(&st)
 	go func() {
-		ech := sch.EnableScheduler()
+		ech := sch.EnableScheduler(ctx)
 
 		for {
 			select {
@@ -142,22 +133,7 @@ func createScheduler(ctx context.Context, st store.Store) scheduler.Scheduler {
 		}
 	}()
 
-	return sch
-}
-
-func writeKubeConfig(apateletEnv env.ApateletEnvironment, config *kubeconfig.KubeConfig) {
-	onceKubeConfig.Do(func() {
-		kubeConfigLocation := apateletEnv.KubeConfigLocation
-		_, err := os.Stat(kubeConfigLocation)
-		if os.IsNotExist(err) {
-			err = ioutil.WriteFile(kubeConfigLocation, config.Bytes, 0600)
-			if err != nil {
-				panic(errors.Wrap(err, "error while writing kubeconfig to file"))
-			}
-		} else if err != nil {
-			panic(errors.Wrap(err, "error while reading kubeconfig file"))
-		}
-	})
+	return &sch
 }
 
 func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *service.ConnectionInfo, uuid string) error {
