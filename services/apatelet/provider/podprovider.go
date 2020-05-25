@@ -279,20 +279,20 @@ func (p *Provider) RunInContainer(context.Context, string, string, string, []str
 }
 
 func (p *Provider) runLatency(ctx context.Context) error {
-	ims, err := (*p.Store).GetNodeFlag(events.NodeAddedLatencyMsec)
+	durationFlag, err := (*p.Store).GetNodeFlag(events.NodeAddedLatency)
 	if err != nil {
 		return errors.Wrap(err, "failed to get node flag (msec)")
 	}
 
-	ms, ok := ims.(int64)
+	duration, ok := durationFlag.(time.Duration)
 	if !ok {
-		return errors.New("NodeAddedLatencyMsec is not an int")
+		return errors.New("NodeAddedLatency is not a duration")
 	}
 
 	select {
 	case <-ctx.Done():
 		return errors.Wrap(ctx.Err(), "context cancelled while running latency")
-	case <-time.After(time.Duration(ms) * time.Millisecond):
+	case <-time.After(duration):
 		// Do the actual latency
 		return nil
 	}

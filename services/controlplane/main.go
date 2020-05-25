@@ -54,7 +54,7 @@ func main() {
 	}
 
 	// Register runners
-	registerRunners()
+	runnerRegistry := registerRunners()
 
 	// Create kubernetes cluster
 	managedKubernetesCluster, err := createCluster(env.ControlPlaneEnv().ManagerConfigLocation)
@@ -80,8 +80,9 @@ func main() {
 
 	// Create node informer
 	stopInformer := make(chan struct{})
-	if err = node.CreateNodeInformer(ctx, managedKubernetesCluster.KubeConfig, &createdStore, externalInformation, stopInformer); err != nil {
-		panicf(errors.Wrap(err, "failed to create node informer"))
+	handler := node.NewHandler(&createdStore, runnerRegistry, externalInformation)
+	if err = node.WatchHandler(ctx, managedKubernetesCluster.KubeConfig, handler, stopInformer); err != nil {
+		panicf(errors.Wrap(err, "failed to watch node handler"))
 	}
 
 	// Create prometheus stack
@@ -138,12 +139,16 @@ func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
 	return nil
 }
 
-func registerRunners() {
+func registerRunners() *run.RunnerRegistry {
+	runnerRegistry := run.New()
+
 	var dockerRunner run.ApateletRunner = run.DockerRunner{}
-	run.Registry.RegisterRunner(env.Docker, &dockerRunner)
+	runnerRegistry.RegisterRunner(env.Docker, &dockerRunner)
 
 	var routineRunner run.ApateletRunner = run.RoutineRunner{}
-	run.Registry.RegisterRunner(env.Routine, &routineRunner)
+	runnerRegistry.RegisterRunner(env.Routine, &routineRunner)
+
+	return runnerRegistry
 }
 
 func shutdown(store *store.Store, kubernetesCluster *kubernetes.ManagedCluster, server *service.GRPCServer) {

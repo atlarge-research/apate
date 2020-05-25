@@ -121,11 +121,13 @@ spec:
                       longer responding to pings
                     type: boolean
                   network_latency:
-                    default: -1
+                    default: unset
                     description: NetworkLatency determines how much added latency
-                      will be introduced to requests by kubernetes
-                    format: int64
-                    type: integer
+                      will be introduced to requests by kubernetes. Any time.ParseDuration
+                      format is accepted, such as "10ms" or "42s" The default is unset.
+                      Any invalid or negative integer will also be interpreted as
+                      unset.
+                    type: string
                   node_failed:
                     default: false
                     description: If set, NodeFailed will result in timeouts for all
@@ -241,11 +243,13 @@ spec:
                             node no longer responding to pings
                           type: boolean
                         network_latency:
-                          default: -1
+                          default: unset
                           description: NetworkLatency determines how much added latency
-                            will be introduced to requests by kubernetes
-                          format: int64
-                          type: integer
+                            will be introduced to requests by kubernetes. Any time.ParseDuration
+                            format is accepted, such as "10ms" or "42s" The default
+                            is unset. Any invalid or negative integer will also be
+                            interpreted as unset.
+                          type: string
                         node_failed:
                           default: false
                           description: If set, NodeFailed will result in timeouts

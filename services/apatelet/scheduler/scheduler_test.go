@@ -29,6 +29,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 
 	// Test task:
 	task := &nodeV1.NodeConfigurationState{
+
 		CustomState: &nodeV1.NodeConfigurationCustomState{
 			CreatePodResponse: nodeV1.ResponseError,
 		},
@@ -36,7 +37,6 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 
 	// Set up expectations
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(0))
 
 	var s store.Store = ms
 	sched := New(context.Background(), &s)
@@ -90,16 +90,16 @@ func TestTaskHandlerMultiple(t *testing.T) {
 
 	// Test task:
 	task := nodeV1.NodeConfigurationState{
-		NetworkLatency: 42,
+		NetworkLatency: "42s",
 		CustomState: &nodeV1.NodeConfigurationCustomState{
 			CreatePodResponse: nodeV1.ResponseError,
 		},
 	}
 
 	// Set up expectations
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, nil).AnyTimes()
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil).AnyTimes()
 	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatencyMsec, int64(42))
+	ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 42*time.Second)
 
 	var s store.Store = ms
 	sched := New(context.Background(), &s)

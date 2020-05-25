@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"testing"
+	"time"
 
 	nodeV1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
@@ -41,7 +42,7 @@ func TestPing(t *testing.T) {
 		Store: &st,
 	}
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(0), nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetNodeFlag(events.NodePingResponse).Return(scenario.ResponseNormal, nil)
 
 	res := prov.Ping(context.TODO())
@@ -58,7 +59,7 @@ func TestPingError(t *testing.T) {
 	pmm := mock_podmanager.NewMockPodManager(ctrl)
 	var pm podmanager.PodManager = pmm
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(0), nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetNodeFlag(events.NodePingResponse).Return(scenario.ResponseError, nil)
 
 	prov := Provider{

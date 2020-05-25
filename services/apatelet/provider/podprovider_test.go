@@ -120,7 +120,7 @@ func TestRunLatencyError(t *testing.T) {
 		Store: &s,
 	}
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(0, errors.New("test error")).Times(6)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), errors.New("test error")).Times(6)
 
 	assert.Error(t, p.UpdatePod(ctx, nil))
 	assert.Error(t, p.CreatePod(ctx, nil))
@@ -169,7 +169,7 @@ func TestCancelContextWhileRunningLatency(t *testing.T) {
 		Store: &s,
 	}
 
-	ms.EXPECT().GetNodeFlag(events.NodeAddedLatencyMsec).Return(int64(100000), nil).Times(6)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(100000*time.Millisecond, nil).Times(6)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
 	defer cancel()

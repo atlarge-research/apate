@@ -87,10 +87,12 @@ type NodeConfigurationState struct {
 	// +kubebuilder:validation:Optional
 	NodeFailed bool `json:"node_failed,omitempty"`
 
-	// NetworkLatency determines how much added latency will be introduced to requests by kubernetes
-	// +kubebuilder:default=-1
+	// NetworkLatency determines how much added latency will be introduced to requests by kubernetes.
+	// Any time.ParseDuration format is accepted, such as "10ms" or "42s"
+	// The default is unset. Any invalid or negative integer will also be interpreted as unset.
+	// +kubebuilder:default=unset
 	// +kubebuilder:validation:Optional
-	NetworkLatency int64 `json:"network_latency,omitempty"`
+	NetworkLatency string `json:"network_latency,omitempty"`
 
 	// If set, HeartbeatFailed will result in the node no longer responding to pings
 	// +kubebuilder:default=false

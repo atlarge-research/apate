@@ -2,6 +2,8 @@
 package node
 
 import (
+	"time"
+
 	v1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -19,8 +21,10 @@ func SetNodeFlags(st *store.Store, state *v1.NodeConfigurationState) {
 	}
 
 	// Set latency
-	if state.NetworkLatency >= 0 {
-		(*st).SetNodeFlag(events.NodeAddedLatencyMsec, state.NetworkLatency)
+	latency, err := time.ParseDuration(state.NetworkLatency)
+	if err == nil && latency >= 0 {
+		// Ignore errors explicitly, only valid ints are seen as updates
+		(*st).SetNodeFlag(events.NodeAddedLatency, latency)
 	}
 
 	// Check if the node should fail

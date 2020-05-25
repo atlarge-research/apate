@@ -34,9 +34,9 @@ const (
 	// NodePingResponse determines how to respond to the Ping request
 	NodePingResponse
 
-	// NodeAddedLatencyMsec is the amount of msec of latency
-	// Will default to 0 msec
-	NodeAddedLatencyMsec
+	// NodeAddedLatency is the amount of nanoseconds of latency
+	// Will default to 0 nano seconds
+	NodeAddedLatency
 )
 
 // PodEventFlag is a pod specific flag to be used by the Apatelet
