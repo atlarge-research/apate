@@ -32,6 +32,10 @@ const (
 
 	// PrometheusStackEnabledDefault is the default for PrometheusStackEnabled
 	PrometheusStackEnabledDefault = true
+
+	// Pod/Node CRD Defaults
+	NodeCRDLocationDefault = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
+	PodCRDLocationDefault  = "config/crd/apate.opendc.org_podconfigurations.yaml"
 )
 
 // RunType is the run strategy used by the control plane to run apalets
@@ -67,6 +71,10 @@ type ControlPlaneEnvironment struct {
 
 	// PrometheusStackEnabled specifies
 	PrometheusStackEnabled bool `env:"CP_PROMETHEUS"`
+
+	// CRD Locations
+	PodCRDLocation  string `env:"CP_POD_CRD_LOCATION"`
+	NodeCRDLocation string `env:"CP_NODE_CRD_LOCATION"`
 }
 
 var controlPlaneEnvironment *ControlPlaneEnvironment
@@ -82,6 +90,8 @@ func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 		DockerPolicy:           ControlPlaneDockerPolicyDefault,
 		ApateletRunType:        ControlPlaneApateletRunTypeDefault,
 		PrometheusStackEnabled: PrometheusStackEnabledDefault,
+		NodeCRDLocation:        NodeCRDLocationDefault,
+		PodCRDLocation:         PodCRDLocationDefault,
 	}
 }
 

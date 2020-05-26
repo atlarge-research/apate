@@ -33,25 +33,34 @@ func GetStatusClient(info *service.ConnectionInfo) (*StatusClient, error) {
 }
 
 // WaitForControlPlane waits for the control plane to be up and running
-func (c *StatusClient) WaitForControlPlane(ctx context.Context) error {
-	for {
-		cancellable, cancel := context.WithCancel(ctx)
-		_, err := c.Client.Status(cancellable, new(empty.Empty))
+func (c *StatusClient) WaitForControlPlane(ctx context.Context, timeout time.Duration) error {
+	ready := make(chan struct{})
 
-		deadline, _ := ctx.Deadline()
+	// Checks if the cp is up
+	go func() {
+		for {
+			_, err := c.Client.Status(ctx, new(empty.Empty))
+			if err == nil {
+				ready <- struct{}{}
+				return
+			}
 
-		if deadline.Before(time.Now()) {
-			cancel()
-			return errors.New("waiting too long on control plane, giving up")
+			select {
+			case <-ctx.Done():
+				// cancel
+				return
+			case <-time.After(time.Millisecond * 500):
+			}
 		}
+	}()
 
-		if err == nil {
-			cancel()
-			return nil
-		}
-
-		time.Sleep(time.Millisecond * 500)
-		cancel()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-ready:
+		return nil
+	case <-time.After(timeout):
+		return errors.New("Timeout reached but control plane still offline")
 	}
 }
 

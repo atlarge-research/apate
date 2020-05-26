@@ -3,6 +3,8 @@ package v1
 import (
 	"io/ioutil"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,10 +45,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 
 // CreateInKubernetes registers the generated CRD YAML to Kubernetes
 func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
-	const filename = "config/crd/apate.opendc.org_podconfigurations.yaml"
-	file, err := ioutil.ReadFile(filename)
+	cpEnv := env.ControlPlaneEnv()
+
+	file, err := ioutil.ReadFile(cpEnv.PodCRDLocation)
 	if err != nil {
-		return errors.Wrapf(err, "failed to read crd file at %v", filename)
+		return errors.Wrapf(err, "failed to read crd file at %v", cpEnv.PodCRDLocation)
 	}
 
 	return errors.Wrap(kubectl.Create(file, config), "failed to create crd")
