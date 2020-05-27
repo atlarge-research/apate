@@ -44,10 +44,8 @@ func panicf(err error) {
 }
 
 // Main is the main control plane entrypoint
-func Main() {
+func Main(ctx context.Context) {
 	log.Println("starting Apate control plane")
-
-	ctx := context.Background()
 
 	// Get external connection information
 	externalInformation, err := createExternalConnectionInformation()
@@ -58,8 +56,11 @@ func Main() {
 	// Register runners
 	runnerRegistry := registerRunners()
 
+	// Get the env
+	e := env.ControlPlaneEnv()
+
 	// Create kubernetes cluster
-	managedKubernetesCluster, err := createCluster(env.ControlPlaneEnv().ManagerConfigLocation)
+	managedKubernetesCluster, err := createCluster(e.ManagerConfigLocation, e.KinDClusterName)
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
@@ -88,7 +89,7 @@ func Main() {
 	}
 
 	// Create prometheus stack
-	createPrometheus := env.ControlPlaneEnv().PrometheusStackEnabled
+	createPrometheus := e.PrometheusStackEnabled
 	if createPrometheus {
 		go kubectl.CreatePrometheusStack(managedKubernetesCluster.KubeConfig)
 	}
@@ -101,7 +102,7 @@ func Main() {
 
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
-	kubeConfigLocation := env.ControlPlaneEnv().KubeConfigLocation
+	kubeConfigLocation := e.KubeConfigLocation
 	if err = ioutil.WriteFile(kubeConfigLocation, managedKubernetesCluster.Cluster.KubeConfig.Bytes, 0600); err != nil {
 		panicf(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
 	}
@@ -123,7 +124,12 @@ func Main() {
 	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, &managedKubernetesCluster.Cluster)
 
 	// Stop the server on signal
-	<-stop
+	select {
+	case <-stop:
+		//
+	case <-ctx.Done():
+		//
+	}
 	stopInformer <- struct{}{}
 	shutdown(&createdStore, &managedKubernetesCluster, server)
 	log.Printf("apate control plane stopped")
@@ -207,11 +213,11 @@ func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster,
 	return server, nil
 }
 
-func createCluster(managedClusterConfigPath string) (kubernetes.ManagedCluster, error) {
+func createCluster(managedClusterConfigPath string, name string) (kubernetes.ManagedCluster, error) {
 	log.Println("starting kubernetes control plane")
 
 	cb := kubernetes.Default()
-	c, err := cb.WithName("Apate").WithManagerConfig(managedClusterConfigPath).ForceCreate()
+	c, err := cb.WithName(name).WithManagerConfig(managedClusterConfigPath).ForceCreate()
 	if err != nil {
 		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
 	}
