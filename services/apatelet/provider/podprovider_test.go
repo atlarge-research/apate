@@ -24,6 +24,8 @@ import (
 )
 
 func TestGetPodLabelByPod(t *testing.T) {
+	t.Parallel()
+
 	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
@@ -37,6 +39,8 @@ func TestGetPodLabelByPod(t *testing.T) {
 }
 
 func TestGetPodLabelByPodApateNotFound(t *testing.T) {
+	t.Parallel()
+
 	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "TestNamespace",
@@ -50,6 +54,8 @@ func TestGetPodLabelByPodApateNotFound(t *testing.T) {
 }
 
 func TestGetPodLabelByNameOk(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -79,6 +85,8 @@ func TestGetPodLabelByNameOk(t *testing.T) {
 }
 
 func TestGetPodLabelByNameFail(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -99,6 +107,8 @@ func TestGetPodLabelByNameFail(t *testing.T) {
 }
 
 func TestPodStatusToPhase(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, corev1.PodPending, podStatusToPhase(scenario.PodStatusPending))
 	assert.Equal(t, corev1.PodRunning, podStatusToPhase(scenario.PodStatusRunning))
 	assert.Equal(t, corev1.PodSucceeded, podStatusToPhase(scenario.PodStatusSucceeded))
@@ -108,6 +118,8 @@ func TestPodStatusToPhase(t *testing.T) {
 }
 
 func TestRunLatencyError(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	ctrl := gomock.NewController(t)
@@ -134,6 +146,8 @@ func TestRunLatencyError(t *testing.T) {
 }
 
 func TestCancelContextEarlyReturn(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
@@ -159,6 +173,8 @@ func TestCancelContextEarlyReturn(t *testing.T) {
 }
 
 func TestCancelContextWhileRunningLatency(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)

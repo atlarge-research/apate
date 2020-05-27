@@ -17,6 +17,8 @@ import (
 //go:generate sh -c "cd ../../../ && make mockgen"
 
 func TestHealthClient(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	ctrl, ctx := gomock.WithContext(ctx, t)
 	defer ctrl.Finish()

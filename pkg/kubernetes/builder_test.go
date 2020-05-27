@@ -7,12 +7,16 @@ import (
 )
 
 func TestDefault(t *testing.T) {
+	t.Parallel()
+
 	clusterbuilder := Default()
 
 	assert.Equal(t, "Apate", clusterbuilder.name)
 }
 
 func TestWithName(t *testing.T) {
+	t.Parallel()
+
 	clusterbuilder := New()
 
 	clusterbuilder.WithName("Test")
@@ -21,6 +25,8 @@ func TestWithName(t *testing.T) {
 }
 
 func TestEmptyName(t *testing.T) {
+	t.Parallel()
+
 	clusterbuilder := New()
 
 	clusterbuilder.WithName("")
@@ -30,6 +36,8 @@ func TestEmptyName(t *testing.T) {
 }
 
 func TestEmptyNameForce(t *testing.T) {
+	t.Parallel()
+
 	clusterbuilder := New()
 
 	clusterbuilder.WithName("")

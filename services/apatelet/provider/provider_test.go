@@ -27,6 +27,8 @@ const podName = "pod"
 const podLabel = "label"
 
 func TestConfigureNodeWithCreate(t *testing.T) {
+	t.Parallel()
+
 	resources := scenario.NodeResources{
 		UUID:    uuid.New(),
 		Memory:  42,
@@ -52,6 +54,8 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 }
 
 func TestCreatePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -89,6 +93,8 @@ func TestCreatePod(t *testing.T) {
 }
 
 func TestUpdatePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -124,6 +130,8 @@ func TestUpdatePod(t *testing.T) {
 }
 
 func TestDeletePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -157,6 +165,8 @@ func TestDeletePod(t *testing.T) {
 }
 
 func TestGetPod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -192,6 +202,8 @@ func TestGetPod(t *testing.T) {
 }
 
 func TestGetPods(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -228,6 +240,8 @@ func TestGetPods(t *testing.T) {
 }
 
 func TestGetPodStatus(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -263,6 +277,8 @@ func TestGetPodStatus(t *testing.T) {
 }
 
 func TestNewProvider(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
