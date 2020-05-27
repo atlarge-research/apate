@@ -21,11 +21,11 @@ lint_fix:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -p 24 -v ./...
 
 .PHONY: test_short
 test_short:
-	go test -short ./...
+	go test -short -p 24 ./...
 
 .PHONY: test_race
 test_race:

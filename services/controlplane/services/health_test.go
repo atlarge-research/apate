@@ -20,6 +20,8 @@ import (
 //go:generate sh -c "cd ../../../ && make mockgen"
 
 func TestHealthStream(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctrl, ctx := gomock.WithContext(ctx, t)

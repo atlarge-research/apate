@@ -31,6 +31,7 @@ func TestCreateCluster_e2e(t *testing.T) {
 }
 
 func TestCreateClusterNoFolder_e2e(t *testing.T) {
+
 	if testing.Short() {
 		t.Skip("Skipping e2e test")
 	}
@@ -57,6 +58,7 @@ func TestCreateClusterNoFolder_e2e(t *testing.T) {
 }
 
 func TestForceCreateCluster_e2e(t *testing.T) {
+
 	if testing.Short() {
 		t.Skip("Skipping e2e test")
 	}
