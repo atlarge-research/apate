@@ -1,7 +1,12 @@
 package main
 
-import "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/app"
+import (
+	"context"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/app"
+)
 
 func main() {
-	app.Main()
+	ctx := context.Background()
+	app.Main(ctx)
 }

@@ -36,6 +36,9 @@ const (
 	// Pod/Node CRD Defaults
 	NodeCRDLocationDefault = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
 	PodCRDLocationDefault  = "config/crd/apate.opendc.org_podconfigurations.yaml"
+
+	// KinD default cluster name
+	KinDClusterNameDefault = "Apate"
 )
 
 // RunType is the run strategy used by the control plane to run apalets
@@ -75,6 +78,9 @@ type ControlPlaneEnvironment struct {
 	// CRD Locations
 	PodCRDLocation  string `env:"CP_POD_CRD_LOCATION"`
 	NodeCRDLocation string `env:"CP_NODE_CRD_LOCATION"`
+
+	// (KinD) Cluster Name
+	KinDClusterName string `env:"KIND_CLUSTER_NAME"`
 }
 
 var controlPlaneEnvironment *ControlPlaneEnvironment
@@ -92,6 +98,7 @@ func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 		PrometheusStackEnabled: PrometheusStackEnabledDefault,
 		NodeCRDLocation:        NodeCRDLocationDefault,
 		PodCRDLocation:         PodCRDLocationDefault,
+		KinDClusterName:        KinDClusterNameDefault,
 	}
 }
 
