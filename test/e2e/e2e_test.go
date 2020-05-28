@@ -52,7 +52,7 @@ func TestSimplePodDeployment(t *testing.T) {
 }
 
 // To run this, make sure ./config/kind is put in the right directory (/tmp/apate/manager)
-// or the env var CP_K8S_CONFIG point to it
+// or the env var CP_MANAGER_LOCATION point to it
 func TestSimpleNodeDeployment(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping E2E")
