@@ -23,12 +23,12 @@ import (
 )
 
 // StartApatelet starts the apatelet
-func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
+func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
 	connectionInfo := service.NewConnectionInfo(apateletEnv.ControlPlaneAddress, apateletEnv.ControlPlanePort, false)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Create stop channels

@@ -1,5 +1,5 @@
-// Package app is the main package for the apate cli
-package app
+// Package run is the main package for the apate cli
+package run
 
 import (
 	"bufio"
@@ -43,8 +43,8 @@ func panicf(err error) {
 	log.Panicf("An error occurred while running the CLI: %+v\n", err)
 }
 
-// Main is the cmd entrypoint
-func Main(cmdArgs []string) {
+// StartCmd is the cmd entrypoint
+func StartCmd(cmdArgs []string) {
 	args := &commandLineArgs{}
 
 	ctx := context.Background()
@@ -55,10 +55,10 @@ func Main(cmdArgs []string) {
 		Usage: "Control the Apate control plane.",
 		Commands: []*cli.Command{
 			{
-				Name:  "runner",
+				Name:  "run",
 				Usage: "Runs a given scenario file on the Apate cluster",
 				Action: func(c *cli.Context) error {
-					return errors.Wrap(runScenario(ctx, args), "failed to runner scenario")
+					return errors.Wrap(runScenario(ctx, args), "failed to run scenario")
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{

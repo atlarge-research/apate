@@ -1,5 +1,5 @@
-// Package app is the main package for the controlplane
-package app
+// Package run is the main package for the controlplane
+package run
 
 import (
 	"context"
@@ -11,25 +11,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster/watchdog"
-
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
-
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/network"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/network"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster/watchdog"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
@@ -45,7 +38,9 @@ func panicf(err error) {
 }
 
 // Main is the main control plane entrypoint
-func Main(ctx context.Context) {
+func StartControlPlane(ctx context.Context, registry *runner.Registry) {
+	cpEnv := env.ControlPlaneEnv()
+
 	log.Println("starting Apate control plane")
 
 	// Get external connection information
@@ -55,13 +50,10 @@ func Main(ctx context.Context) {
 	}
 
 	// Register runners
-	runnerRegistry := registerRunners()
-
-	// Get the env
-	e := env.ControlPlaneEnv()
+	registerRunners(registry)
 
 	// Create kubernetes cluster
-	managedKubernetesCluster, err := createCluster(e.ManagerConfigLocation, e.KinDClusterName)
+	managedKubernetesCluster, err := createCluster(cpEnv.ManagerConfigLocation, cpEnv.KinDClusterName)
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
@@ -84,13 +76,13 @@ func Main(ctx context.Context) {
 
 	// Create node informer
 	stopInformer := make(chan struct{})
-	handler := node.NewHandler(&createdStore, runnerRegistry, externalInformation)
+	handler := node.NewHandler(&createdStore, registry, externalInformation)
 	if err = node.WatchHandler(ctx, managedKubernetesCluster.KubeConfig, handler, stopInformer); err != nil {
 		panicf(errors.Wrap(err, "failed to watch node handler"))
 	}
 
 	// Create prometheus stack
-	createPrometheus := e.PrometheusStackEnabled
+	createPrometheus := cpEnv.PrometheusStackEnabled
 	if createPrometheus {
 		go kubectl.CreatePrometheusStack(managedKubernetesCluster.KubeConfig)
 	}
@@ -103,7 +95,7 @@ func Main(ctx context.Context) {
 
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
-	kubeConfigLocation := e.KubeConfigLocation
+	kubeConfigLocation := cpEnv.KubeConfigLocation
 	if err = ioutil.WriteFile(kubeConfigLocation, managedKubernetesCluster.Cluster.KubeConfig.Bytes, 0600); err != nil {
 		panicf(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
 	}
@@ -148,16 +140,12 @@ func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
 	return nil
 }
 
-func registerRunners() *run.RunnerRegistry {
-	runnerRegistry := run.New()
+func registerRunners(registry *runner.Registry) {
+	var dockerRunner runner.ApateletRunner = runner.DockerRunner{}
+	registry.RegisterRunner(env.Docker, &dockerRunner)
 
-	var dockerRunner run.ApateletRunner = run.DockerRunner{}
-	runnerRegistry.RegisterRunner(env.Docker, &dockerRunner)
-
-	var routineRunner run.ApateletRunner = run.RoutineRunner{}
-	runnerRegistry.RegisterRunner(env.Routine, &routineRunner)
-
-	return runnerRegistry
+	var routineRunner runner.ApateletRunner = runner.RoutineRunner{}
+	registry.RegisterRunner(env.Routine, &routineRunner)
 }
 
 func shutdown(store *store.Store, kubernetesCluster *kubernetes.ManagedCluster, server *service.GRPCServer) {
@@ -180,7 +168,7 @@ func shutdown(store *store.Store, kubernetesCluster *kubernetes.ManagedCluster, 
 func getExternalAddress() (string, error) {
 	// Check for external IP override
 	override := env.ControlPlaneEnv().ExternalIP
-	if override != env.ControlPlaneExternalIPDefault {
+	if override != env.CPExternalIPDefault {
 		return override, nil
 	}
 
@@ -226,12 +214,12 @@ func createCluster(managedClusterConfigPath string, name string) (kubernetes.Man
 	// TODO Remove
 	log.Printf("Kubeconfig path: %v", c.KubeConfig.Path)
 
-	if err := exec.Command("kubectl cluster-info --context kind-TestSimplePodDeployment --kubeconfig /tmp/apate/config").Run(); err != nil {
+	if err := exec.Command("cat", c.KubeConfig.Path).Run(); err != nil {
 		log.Printf("!!!!!! %v", err)
 	}
 	time.Sleep(time.Second * 10)
 
-
+	// TODO This times out in CI:
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
 		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to get number of pods from kubernetes")

@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/app"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
 func main() {
 	ctx := context.Background()
-	app.Main(ctx)
+	run.StartControlPlane(ctx, runner.New())
 }
