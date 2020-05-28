@@ -20,7 +20,7 @@ type registration struct {
 	runner *ApateletRunner
 }
 
-// RunnerRegistry is the registry that holds all runners
+// Registry is the registry that holds all runners
 type Registry struct {
 	sync.RWMutex
 	registrations map[env.RunType]registration

@@ -1,6 +1,6 @@
 # Based on: https://github.com/docker-library/golang/tree/master/1.14/alpine3.11
 # But switched out alpine for docker as base image
-FROM docker:dind
+FROM docker
 
 RUN apk add --no-cache ca-certificates go git make protobuf
 

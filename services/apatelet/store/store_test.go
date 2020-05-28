@@ -370,7 +370,6 @@ func TestRemoveCRD(t *testing.T) {
 }
 
 func insertBaselineCRD(t *testing.T) Store {
-
 	st := NewStore()
 
 	err := st.SetNodeTasks([]*Task{

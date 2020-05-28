@@ -15,9 +15,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o controlpl
 
 # Run stage
 FROM docker
-COPY --from=build /build/controlplane /controlplane
-COPY --from=build /build/config/kind.yml /tmp/apate/manager
-COPY --from=build /build/config/crd /config/crd
+WORKDIR /app
+COPY --from=build /build/controlplane /app/controlplane
+COPY --from=build /build/config/kind.yml /app/config/kind.yml
+COPY --from=build /build/config/crd /app/config/crd
 
 RUN apk add curl --no-cache && \
     curl -L -o /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl && \
@@ -30,4 +31,4 @@ RUN curl -L -o /helm.tar.gz https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz &
 
 RUN apk del curl
 
-CMD ["/controlplane"]
+CMD ["/app/controlplane"]

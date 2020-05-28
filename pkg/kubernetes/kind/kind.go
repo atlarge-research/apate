@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"github.com/pkg/errors"
 
 	"sigs.k8s.io/kind/cmd/kind/app"
@@ -39,15 +41,21 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 		return errors.Wrapf(err, "failed to create kind cluster with kind %v", strings.Join(args, " "))
 	}
 
-	// Update kube config to use internal
-	//err := useInternalKubeConfig(name, kubeConfigLocation)
-	//if err != nil {
-	//	return errors.Wrapf(err, "failed to use internal Kubeconfig")
-	//}
-
-	cmdSed := exec.Command("sed", "-i", "-r", "s/https:\\/\\/(.+):/https:\\/\\/docker:/g", kubeConfigLocation)
-	if err := cmdSed.Run(); err != nil {
-		return errors.Wrap(err, "failed SED")
+	if env.ControlPlaneEnv().UseDockerHostname {
+		// Replace any https address by the "docker" hostname.
+		// This is used in CI, where the control plane had a 172.17.0.0/16 address, and the KinD cluster a 172.18.0.0/16 address
+		// which was only reachable using "docker"s as hostname.
+		// #nosec
+		cmdSed := exec.Command("sed", "-i", "-r", "s/https:\\/\\/(.+):/https:\\/\\/docker:/g", kubeConfigLocation)
+		if err := cmdSed.Run(); err != nil {
+			return errors.Wrap(err, "failed to apply sed to the kube config")
+		}
+	} else {
+		// Update kube config to use internal
+		err := useInternalKubeConfig(name, kubeConfigLocation)
+		if err != nil {
+			return errors.Wrapf(err, "failed to use internal Kubeconfig")
+		}
 	}
 
 	// Only gets here after the cluster is running
