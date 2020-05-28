@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o controlpl
 # Run stage
 FROM docker
 COPY --from=build /build/controlplane /controlplane
-COPY --from=build /build/config/kind /tmp/apate/manager
+COPY --from=build /build/config/kind.yml /tmp/apate/manager
 COPY --from=build /build/config/crd /config/crd
 
 RUN apk add curl --no-cache && \

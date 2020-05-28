@@ -1,28 +1,28 @@
 stages:
   - prepare
-  - build
+#  - build
   - test
-  - verify
-  - deploy
+#  - verify
+#  - deploy
 
 # Enable some gitlab templates for nice integrations
-include:
-  - template: Dependency-Scanning.gitlab-ci.yml
-  - template: License-Scanning.gitlab-ci.yml
-  - template: SAST.gitlab-ci.yml
-
-dependency_scanning:
-  stage: verify
-  needs: [build]
-
-license_scanning:
-  stage: verify
-  needs: [build]
-
-sast:
-  stage: verify
-  tags: [xirion]
-  needs: [build]
+#include:
+#  - template: Dependency-Scanning.gitlab-ci.yml
+#  - template: License-Scanning.gitlab-ci.yml
+#  - template: SAST.gitlab-ci.yml
+#
+#dependency_scanning:
+#  stage: verify
+#  needs: [build]
+#
+#license_scanning:
+#  stage: verify
+#  needs: [build]
+#
+#sast:
+#  stage: verify
+#  tags: [xirion]
+#  needs: [build]
 
 variables:
   DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
@@ -30,7 +30,7 @@ variables:
   CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans
-  CP_K8S_CONFIG: "$CI_PROJECT_DIR/config/kind"
+  CP_K8S_CONFIG: "$CI_PROJECT_DIR/config/kind.yml"
   # Taken from the following minus kubesec (because SCAN_KUBERNETES_MANIFESTS was somehow always set to true)
   # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml#L15
   SAST_DEFAULT_ANALYZERS: "bandit, brakeman, gosec, flawfinder, security-code-scan, secrets, sobelow"
@@ -60,102 +60,99 @@ prepare-build-image:
     - docker build --pull -t "$DIND_GO_IMAGE" .
     - docker push "$DIND_GO_IMAGE"
 
-build:
-  stage: build
-  before_script:
-    - go mod download
-  script:
-    - go install ./...
-
-gen:
-  stage: build
-  before_script:
-    - go mod download
-  script:
-    - make crd_gen mock_gen
-    # Had to add -I /go/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ in order to make it work
-    - protoc -I ./api -I $GOPATH/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find ./api/ -type f -name "*.proto" -print`
-
-static-analysis:
-  stage: verify
-  needs: [build]
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
-  allow_failure: true
-  before_script:
-    # Use default .golangci.yml file from the image if one is not present in the project root.
-    - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'
-  script:
-    - golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
-  artifacts:
-    reports:
-      codequality: gl-code-quality-report.json
-    paths:
-      - gl-code-quality-report.json
-
-test:
-  stage: test
-  needs: [build]
-  variables:
-    CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
-    CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
-    CP_MANAGER_LOCATION: "$CI_PROJECT_DIR/config/kind"
-  services:
-    - docker:dind
-  coverage: /^total:.+\)\s+(\d+.?\d*)%$/
-  before_script:
-    - go mod download
-  script:
-    - go test -v -p 24 -covermode=atomic -coverprofile=cover.cov ./... 2>&1 | tee /dev/stdout | go-junit-report > report.xml
-    - go tool cover -func=cover.cov
-  artifacts:
-    reports:
-      junit: report.xml
-    paths:
-      - cover.cov
+#build:
+#  stage: build
+#  before_script:
+#    - go mod download
+#  script:
+#    - go install ./...
+#
+#gen:
+#  stage: build
+#  before_script:
+#    - go mod download
+#  script:
+#    - make crd_gen mock_gen
+#    # Had to add -I /go/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ in order to make it work
+#    - protoc -I ./api -I $GOPATH/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find ./api/ -type f -name "*.proto" -print`
+#
+#static-analysis:
+#  stage: verify
+#  needs: [build]
+#  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+#  allow_failure: true
+#  before_script:
+#    # Use default .golangci.yml file from the image if one is not present in the project root.
+#    - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'
+#  script:
+#    - golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
+#  artifacts:
+#    reports:
+#      codequality: gl-code-quality-report.json
+#    paths:
+#      - gl-code-quality-report.json
+#
+#test:
+#  stage: test
+#  needs: [build]
+#  variables:
+#    CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
+#    CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
+#    CP_MANAGER_LOCATION: "$CI_PROJECT_DIR/config/kind.yml"
+#  services:
+#    - docker:dind
+#  coverage: /^total:.+\)\s+(\d+.?\d*)%$/
+#  before_script:
+#    - go mod download
+#  script:
+#    - go test -v -p 24 -covermode=atomic -coverprofile=cover.cov ./... 2>&1 | tee /dev/stdout | go-junit-report > report.xml
+#    - go tool cover -func=cover.cov
+#  artifacts:
+#    reports:
+#      junit: report.xml
+#    paths:
+#      - cover.cov
 
 test-e2e:
   stage: test
-  needs: [build]
+#  needs: [build]
   variables:
     CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
     CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
-    CP_MANAGER_LOCATION: "$CI_PROJECT_DIR/config/kind"
+    CP_MANAGER_CONFIG_LOCATION: "$CI_PROJECT_DIR/config/gitlab-kind.yml"
   services:
     - docker:dind
-  before_script:
-    - go mod download
   script:
     - go test -v ./test/e2e/
-
-race:
-  stage: test
-  needs: [build]
-  image: golang:1.14
-  before_script:
-    - go mod download
-  script: # Test for race conditions in small tests as race condition testing is slow
-    - go test -race -short ./...
-
-deploy-apatelet:
-  stage: deploy
-  image: docker:latest
-  only: [master]
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - docker build -f services/apatelet/Dockerfile -t $VK_IMAGE .
-    - docker push "$VK_IMAGE"
-
-deploy-cp:
-  stage: deploy
-  image: docker:latest
-  only: [master]
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - docker build -f services/controlplane/Dockerfile -t $CP_IMAGE .
-    - docker push "$CP_IMAGE"
+#race:
+#  stage: test
+#  needs: [build]
+#  image: golang:1.14
+#  before_script:
+#    - go mod download
+#  script: # Test for race conditions in small tests as race condition testing is slow
+#    - go test -race -short ./...
+#
+#deploy-apatelet:
+#  stage: deploy
+#  image: docker:latest
+#  only: [master]
+#  services:
+#    - docker:dind
+#  before_script:
+#    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#  script:
+#    - docker build -f services/apatelet/Dockerfile -t $VK_IMAGE .
+#    - docker push "$VK_IMAGE"
+#
+#deploy-cp:
+#  stage: deploy
+#  image: docker:latest
+#  only: [master]
+#  services:
+#    - docker:dind
+#  before_script:
+#    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#  script:
+#    - docker build -f services/controlplane/Dockerfile -t $CP_IMAGE .
+#    - docker push "$CP_IMAGE"

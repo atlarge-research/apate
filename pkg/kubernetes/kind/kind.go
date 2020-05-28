@@ -3,6 +3,7 @@ package kind
 
 import (
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -25,7 +26,7 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 		"cluster",
 	}
 
-	args = append(args, "--name", name)
+	args = append(args, "--name", strings.ToLower(name))
 	args = append(args, "--kubeconfig", kubeConfigLocation)
 	args = append(args, "--config", managerConfigPath)
 
@@ -39,10 +40,14 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 	}
 
 	// Update kube config to use internal
-	err := useInternalKubeConfig(name, kubeConfigLocation)
+	//err := useInternalKubeConfig(name, kubeConfigLocation)
+	//if err != nil {
+	//	return errors.Wrapf(err, "failed to use internal Kubeconfig")
+	//}
 
-	if err != nil {
-		return errors.Wrapf(err, "failed to use internal Kubeconfig")
+	cmdSed := exec.Command("sed", "-i", "-r", "s/https:\\/\\/(.+):/https:\\/\\/docker:/g", kubeConfigLocation)
+	if err := cmdSed.Run(); err != nil {
+		return errors.Wrap(err, "failed SED")
 	}
 
 	// Only gets here after the cluster is running
@@ -57,7 +62,7 @@ func useInternalKubeConfig(name string, kubeConfigLocation string) error {
 		"kubeconfig",
 	}
 
-	args = append(args, "--name", name)
+	args = append(args, "--name", strings.ToLower(name))
 	args = append(args, "--internal")
 
 	cfg, err := os.Create(kubeConfigLocation)

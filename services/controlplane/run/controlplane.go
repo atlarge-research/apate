@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
@@ -211,15 +210,6 @@ func createCluster(managedClusterConfigPath string, name string) (kubernetes.Man
 		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
 	}
 
-	// TODO Remove
-	log.Printf("Kubeconfig path: %v", c.KubeConfig.Path)
-
-	if err := exec.Command("cat", c.KubeConfig.Path).Run(); err != nil {
-		log.Printf("!!!!!! %v", err)
-	}
-	time.Sleep(time.Second * 10)
-
-	// TODO This times out in CI:
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
 		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to get number of pods from kubernetes")
