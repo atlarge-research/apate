@@ -12,7 +12,7 @@ import (
 // I specifically give clusters the name of their test,
 // so even if tests are ran in parallel there won't be a problem.
 
-func TestCreateCluster_e2e(t *testing.T) {
+func TestCreateCluster(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping e2e test")
 	}
@@ -30,7 +30,7 @@ func TestCreateCluster_e2e(t *testing.T) {
 	assert.NoError(t, cluster.Delete())
 }
 
-func TestCreateClusterNoFolder_e2e(t *testing.T) {
+func TestCreateClusterNoFolder(t *testing.T) {
 
 	if testing.Short() {
 		t.Skip("Skipping e2e test")
@@ -57,7 +57,7 @@ func TestCreateClusterNoFolder_e2e(t *testing.T) {
 	_ = os.RemoveAll("/tmp/TestCreateClusterNoFolder_e2e")
 }
 
-func TestForceCreateCluster_e2e(t *testing.T) {
+func TestForceCreateCluster(t *testing.T) {
 
 	if testing.Short() {
 		t.Skip("Skipping e2e test")

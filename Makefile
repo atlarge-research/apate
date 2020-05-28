@@ -41,8 +41,8 @@ test_cover_short:
 	go test -short -coverprofile cover.out ./...
 	go tool cover -html=cover.out
 
-.PHONY: docker_build_vk
-docker_build_vk:
+.PHONY: docker_build_apatelet
+docker_build_apatelet:
 	docker build -f services/apatelet/Dockerfile -t apatelet .
 	docker tag apatelet apatekubernetes/apatelet
 

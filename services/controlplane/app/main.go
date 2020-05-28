@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
@@ -221,6 +222,15 @@ func createCluster(managedClusterConfigPath string, name string) (kubernetes.Man
 	if err != nil {
 		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
 	}
+
+	// TODO Remove
+	log.Printf("Kubeconfig path: %v", c.KubeConfig.Path)
+
+	if err := exec.Command("kubectl cluster-info --context kind-TestSimplePodDeployment --kubeconfig /tmp/apate/config").Run(); err != nil {
+		log.Printf("!!!!!! %v", err)
+	}
+	time.Sleep(time.Second * 10)
+
 
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
