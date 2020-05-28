@@ -9,39 +9,40 @@ import (
 
 // Control plane environment variables
 const (
-	// ControlPlaneListenAddressDefault is the default value for ControlPlaneListenAddress
-	ControlPlaneListenAddressDefault = "0.0.0.0"
+	// CPListenAddressDefault is the default value for ControlPlaneListenAddress
+	CPListenAddressDefault = "0.0.0.0"
 
-	// ControlPlaneListenPortDefault is the default value for ControlPlaneListenPort
-	ControlPlaneListenPortDefault = 8085
+	// CPListenPortDefault is the default value for ControlPlaneListenPort
+	CPListenPortDefault = 8085
 
-	// ManagedClusterConfigDefault is the default value for ManagedClusterConfigLocation
-	ManagedClusterConfigLocationDefault = "/tmp/apate/manager"
+	// CPManagedClusterConfigLocationDefault is the default value for ManagedClusterConfigLocation
+	CPManagedClusterConfigLocationDefault = "config/kind"
 
-	// ControlPlaneKubeConfigLocationDefault is the default value for ControlPlaneKubeConfigLocation
-	ControlPlaneKubeConfigLocationDefault = "/tmp/apate/config"
+	// CPKubeConfigLocationDefault is the default value for ControlPlaneKubeConfigLocation
+	CPKubeConfigLocationDefault = "/tmp/apate/config"
 
-	// ControlPlaneExternalIPDefault is the default for ControlPlaneExternalIP
-	ControlPlaneExternalIPDefault = "auto"
+	// CPExternalIPDefault is the default for ControlPlaneExternalIP
+	CPExternalIPDefault = "auto"
 
-	// ControlPlaneDockerPolicyDefault is the default for ControlPlaneDockerPolicy
-	ControlPlaneDockerPolicyDefault = DefaultPullPolicy
+	// CPDockerPolicyDefault is the default for ControlPlaneDockerPolicy
+	CPDockerPolicyDefault = DefaultPullPolicy
 
-	// ControlPlaneApateletRunTypeDefault is the default for ControlPlaneApateletRunType
-	ControlPlaneApateletRunTypeDefault = Routine
+	// CPApateletRunTypeDefault is the default for ControlPlaneApateletRunType
+	CPApateletRunTypeDefault = Routine
 
-	// PrometheusStackEnabledDefault is the default for PrometheusStackEnabled
-	PrometheusStackEnabledDefault = true
+	// CPPrometheusStackEnabledDefault is the default for PrometheusStackEnabled
+	CPPrometheusStackEnabledDefault = true
 
-	// Pod/Node CRD Defaults
-	NodeCRDLocationDefault = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
-	PodCRDLocationDefault  = "config/crd/apate.opendc.org_podconfigurations.yaml"
+	// CPNodeCRDLocationDefault CRD default location
+	CPNodeCRDLocationDefault = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
+	// CPPodCRDLocationDefault CRD default location
+	CPPodCRDLocationDefault  = "config/crd/apate.opendc.org_podconfigurations.yaml"
 
-	// KinD default cluster name
-	KinDClusterNameDefault = "Apate"
+	// CPKinDClusterNameDefault default cluster name
+	CPKinDClusterNameDefault = "Apate"
 )
 
-// RunType is the run strategy used by the control plane to run apalets
+// RunType is the runner strategy used by the control plane to run apalets
 type RunType string
 
 const (
@@ -63,9 +64,9 @@ type ControlPlaneEnvironment struct {
 	ExternalIP string `env:"CP_EXTERNAL_IP"`
 
 	// ManagerConfigLocation is the path to the config of the cluster manager, if applicable
-	ManagerConfigLocation string `env:"CP_MANAGER_LOCATION"`
+	ManagerConfigLocation string `env:"CP_MANAGER_CONFIG_LOCATION"`
 	// KubeConfigLocation is the path to the kube config
-	KubeConfigLocation string `env:"CP_KUBE_CONFIG"`
+	KubeConfigLocation string `env:"CP_KUBE_CONFIG_LOCATION"`
 
 	// DockerPolicy specifies the docker pull policy for apatelet images
 	DockerPolicy PullPolicy `env:"CP_DOCKER_POLICY"`
@@ -80,7 +81,7 @@ type ControlPlaneEnvironment struct {
 	NodeCRDLocation string `env:"CP_NODE_CRD_LOCATION"`
 
 	// (KinD) Cluster Name
-	KinDClusterName string `env:"KIND_CLUSTER_NAME"`
+	KinDClusterName string `env:"CP_KIND_CLUSTER_NAME"`
 }
 
 var controlPlaneEnvironment *ControlPlaneEnvironment
@@ -88,17 +89,17 @@ var controlPlaneEnvironment *ControlPlaneEnvironment
 // DefaultControlPlaneEnvironment returns the default control plane environment
 func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 	return ControlPlaneEnvironment{
-		ListenAddress:          ControlPlaneListenAddressDefault,
-		ListenPort:             ControlPlaneListenPortDefault,
-		ManagerConfigLocation:  ManagedClusterConfigLocationDefault,
-		KubeConfigLocation:     ControlPlaneKubeConfigLocationDefault,
-		ExternalIP:             ControlPlaneExternalIPDefault,
-		DockerPolicy:           ControlPlaneDockerPolicyDefault,
-		ApateletRunType:        ControlPlaneApateletRunTypeDefault,
-		PrometheusStackEnabled: PrometheusStackEnabledDefault,
-		NodeCRDLocation:        NodeCRDLocationDefault,
-		PodCRDLocation:         PodCRDLocationDefault,
-		KinDClusterName:        KinDClusterNameDefault,
+		ListenAddress:          CPListenAddressDefault,
+		ListenPort:             CPListenPortDefault,
+		ManagerConfigLocation:  CPManagedClusterConfigLocationDefault,
+		KubeConfigLocation:     CPKubeConfigLocationDefault,
+		ExternalIP:             CPExternalIPDefault,
+		DockerPolicy:           CPDockerPolicyDefault,
+		ApateletRunType:        CPApateletRunTypeDefault,
+		PrometheusStackEnabled: CPPrometheusStackEnabledDefault,
+		NodeCRDLocation:        CPNodeCRDLocationDefault,
+		PodCRDLocation:         CPPodCRDLocationDefault,
+		KinDClusterName:        CPKinDClusterNameDefault,
 	}
 }
 

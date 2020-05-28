@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/pkg/errors"
@@ -34,7 +35,7 @@ func main() {
 	}
 
 	ch := make(chan struct{})
-	if err := run.StartApatelet(environment, ch); err != nil {
+	if err := run.StartApatelet(context.Background(), environment, ch); err != nil {
 		panicf(errors.Wrap(err, "error while running apatelet"))
 	}
 }

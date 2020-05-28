@@ -3,7 +3,6 @@ package services
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"net"
 
@@ -112,12 +111,5 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 }
 
 func (s *clusterOperationService) GetKubeConfig(_ context.Context, _ *empty.Empty) (*controlplane.KubeConfig, error) {
-	// FIXME
-	cfg, err := ioutil.ReadFile("/tmp/apate/config")
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read Kubeconfig from /tmp/apate/config")
-	}
-
-	return &controlplane.KubeConfig{Config: cfg}, nil
+	return &controlplane.KubeConfig{Config: s.kubernetesCluster.KubeConfig.Bytes}, nil
 }

@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 	"os"
 	"os/exec"
 	"testing"
@@ -10,29 +11,47 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/app"
+	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/app"
+	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/run"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
-func TestSimplePodDeployment(t *testing.T) {
+// Please set the `$CI_PROJECT_DIR` to the root of the project
+func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	if testing.Short() {
 		t.Skip("Skipping E2E")
 	}
+
 	os.Args = []string{"apate-cp"}
 
-	err := os.Setenv("KIND_CLUSTER_NAME", "TestSimplePodDeployment")
-	assert.NoError(t, err)
+	dir := os.Getenv("CI_PROJECT_DIR")
+
+	initEnv := env.ControlPlaneEnv()
+	initEnv.PodCRDLocation = dir + "/config/crd/apate.opendc.org_podconfigurations.yaml"
+	initEnv.NodeCRDLocation = dir + "/config/crd/apate.opendc.org_nodeconfigurations.yaml"
+	initEnv.ManagerConfigLocation = dir + "/config/kind"
+	initEnv.KinDClusterName = kindClusterName
+	initEnv.ApateletRunType = runType
+	env.SetEnv(initEnv)
+}
+
+func TestSimplePodDeployment(t *testing.T)  {
+	testSimplePodDeployment(t, env.Routine)
+	testSimplePodDeployment(t, env.Docker)
+}
+
+func testSimplePodDeployment(t *testing.T, rt env.RunType) {
+	setup(t, "testSimplePodDeployment_" + string(rt), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go cp.Main(ctx)
+	go cp.StartControlPlane(ctx, runner.New())
 
 	waitForCP(t)
 
@@ -52,21 +71,20 @@ func TestSimplePodDeployment(t *testing.T) {
 	time.Sleep(time.Second * 5)
 }
 
+func TestSimpleNodeDeployment(t *testing.T)  {
+	testSimpleNodeDeployment(t, env.Routine)
+	testSimpleNodeDeployment(t, env.Docker)
+}
+
 // To run this, make sure ./config/kind is put in the right directory (/tmp/apate/manager)
 // or the env var CP_MANAGER_LOCATION point to it
-func TestSimpleNodeDeployment(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping E2E")
-	}
-	os.Args = []string{"apate-cp"}
-
-	err := os.Setenv("KIND_CLUSTER_NAME", "TestSimpleNodeDeployment")
-	assert.NoError(t, err)
+func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
+	setup(t, "TestSimpleNodeDeployment_" + string(rt), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Start CP
-	go cp.Main(ctx)
+	go cp.StartControlPlane(ctx, runner.New())
 
 	// Wait
 	waitForCP(t)
@@ -100,7 +118,7 @@ func getKubeConfig(t *testing.T) *kubeconfig.KubeConfig {
 
 	// read kubeconfig
 	c := capture()
-	cmd.Main(args)
+	cmd.StartCmd(args)
 	cfg := c.stop()
 	println(cfg)
 

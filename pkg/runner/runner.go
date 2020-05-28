@@ -1,5 +1,5 @@
-// Package run exposes an interface to run new apatelets, and a registry to track all runners
-package run
+// Package runner exposes an interface to run new apatelets, and a registry to track all runners
+package runner
 
 import (
 	"context"
@@ -21,35 +21,35 @@ type registration struct {
 }
 
 // RunnerRegistry is the registry that holds all runners
-type RunnerRegistry struct {
+type Registry struct {
 	sync.RWMutex
 	registrations map[env.RunType]registration
 }
 
 // New returns a new registry
-func New() *RunnerRegistry {
-	return &RunnerRegistry{
+func New() *Registry {
+	return &Registry{
 		registrations: make(map[env.RunType]registration),
 	}
 }
 
 // RegisterRunner registers a new runner
-func (rr *RunnerRegistry) RegisterRunner(name env.RunType, runner *ApateletRunner) {
-	rr.Lock()
-	defer rr.Unlock()
+func (r *Registry) RegisterRunner(name env.RunType, runner *ApateletRunner) {
+	r.Lock()
+	defer r.Unlock()
 
-	rr.registrations[name] = registration{
+	r.registrations[name] = registration{
 		runner: runner,
 	}
 }
 
 // Run call the appropriate ApateletRunner based on the current environment
-func (rr *RunnerRegistry) Run(ctx context.Context, amount int, environment env.ApateletEnvironment) error {
-	rr.RLock()
-	defer rr.RUnlock()
+func (r *Registry) Run(ctx context.Context, amount int, environment env.ApateletEnvironment) error {
+	r.RLock()
+	defer r.RUnlock()
 
 	runType := env.ControlPlaneEnv().ApateletRunType
-	if runner, ok := rr.registrations[runType]; ok {
+	if runner, ok := r.registrations[runType]; ok {
 		return errors.Wrapf((*runner.runner).SpawnApatelets(ctx, amount, environment), "failed to spawn apatelet using runner %v", runner)
 	}
 

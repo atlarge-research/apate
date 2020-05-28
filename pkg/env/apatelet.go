@@ -26,7 +26,7 @@ const (
 	ControlPlaneAddressDefault = "localhost"
 
 	// ControlPlanePortDefault is the default for ControlPlanePort
-	ControlPlanePortDefault = ControlPlaneListenPortDefault
+	ControlPlanePortDefault = CPListenPortDefault
 )
 
 // ApateletEnvironment represents the environment variables of the apatelet

@@ -1,4 +1,4 @@
-package run
+package runner
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run/mock_run"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner/mock_run"
 )
 
 const MyRunType env.RunType = "newRunType"

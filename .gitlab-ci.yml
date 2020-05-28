@@ -125,7 +125,7 @@ test-e2e:
   before_script:
     - go mod download
   script:
-    - go test -v ./pkg/kubernetes/
+    - go test -v ./test/e2e/
 
 race:
   stage: test

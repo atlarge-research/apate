@@ -24,8 +24,12 @@ func TestCreateCluster(t *testing.T) {
 
 	clusterBuilder := Default()
 	cluster, err := clusterBuilder.WithCreator(&clusterInterface).WithName("TestCreateCluster").Create()
-
+	assert.NotNil(t, cluster)
 	assert.NoError(t, err)
+
+	nodes, err := cluster.GetNumberOfNodes()
+	assert.Equal(t, 1, nodes)
+
 
 	assert.NoError(t, cluster.Delete())
 }
@@ -50,7 +54,12 @@ func TestCreateClusterNoFolder(t *testing.T) {
 		WithConfigLocation("/tmp/TestCreateClusterNoFolder_e2e").
 		Create()
 
+	assert.NotNil(t, cluster)
 	assert.NoError(t, err)
+
+	nodes, err := cluster.GetNumberOfNodes()
+	assert.Equal(t, 1, nodes)
+
 
 	assert.NoError(t, cluster.Delete())
 
@@ -58,7 +67,6 @@ func TestCreateClusterNoFolder(t *testing.T) {
 }
 
 func TestForceCreateCluster(t *testing.T) {
-
 	if testing.Short() {
 		t.Skip("Skipping e2e test")
 	}
@@ -70,16 +78,25 @@ func TestForceCreateCluster(t *testing.T) {
 
 	clusterBuilder := Default()
 	// Create a cluster
-	_, err := clusterBuilder.WithCreator(&clusterInterface).WithName("TestForceCreateCluster").Create()
+	cluster, err := clusterBuilder.WithCreator(&clusterInterface).WithName("TestForceCreateCluster").Create()
+	assert.NotNil(t, cluster)
 	assert.NoError(t, err)
+
+	nodes, err := cluster.GetNumberOfNodes()
+	assert.Equal(t, 1, nodes)
+
 
 	// Now create another one. This should error
 	_, err = clusterBuilder.WithName("TestForceCreateCluster").Create()
 	assert.Error(t, err)
 
 	// Now force create one. This should not error but instead delete the old one.
-	cluster, err := clusterBuilder.WithName("TestForceCreateCluster").ForceCreate()
+	cluster, err = clusterBuilder.WithName("TestForceCreateCluster").ForceCreate()
+	assert.NotNil(t, cluster)
 	assert.NoError(t, err)
+
+	nodes, err = cluster.GetNumberOfNodes()
+	assert.Equal(t, 1, nodes)
 
 	assert.NoError(t, cluster.Delete())
 }

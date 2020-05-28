@@ -26,7 +26,7 @@ func (KinD) CreateCluster(name string, kubeConfigLocation string, managerConfigP
 	}
 
 	args = append(args, "--name", name)
-	args = append(args, "--kubeconfig", kubeConfigLocation) // + "-ext"
+	args = append(args, "--kubeconfig", kubeConfigLocation)
 	args = append(args, "--config", managerConfigPath)
 
 	// Set up a cluster

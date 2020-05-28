@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/app"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/run"
 )
 
 func main() {
-	app.Main(os.Args)
+	run.StartCmd(os.Args)
 }
