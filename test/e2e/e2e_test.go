@@ -5,6 +5,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,11 +32,14 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	os.Args = []string{"apate-cp"}
 
 	dir := os.Getenv("CI_PROJECT_DIR")
+	if len(dir) == 0 {
+		dir = "./"
+	}
 
 	initEnv := env.ControlPlaneEnv()
 	initEnv.PodCRDLocation = dir + "/config/crd/apate.opendc.org_podconfigurations.yaml"
 	initEnv.NodeCRDLocation = dir + "/config/crd/apate.opendc.org_nodeconfigurations.yaml"
-	initEnv.ManagerConfigLocation = dir + "/config/kind"
+	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
 	initEnv.KinDClusterName = kindClusterName
 	initEnv.ApateletRunType = runType
 	env.SetEnv(initEnv)
@@ -47,7 +51,7 @@ func TestSimplePodDeployment(t *testing.T)  {
 }
 
 func testSimplePodDeployment(t *testing.T, rt env.RunType) {
-	setup(t, "testSimplePodDeployment_" + string(rt), rt)
+	setup(t, strings.ToLower("testSimplePodDeployment_" + string(rt)), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -76,7 +80,7 @@ func TestSimpleNodeDeployment(t *testing.T)  {
 	testSimpleNodeDeployment(t, env.Docker)
 }
 
-// To run this, make sure ./config/kind is put in the right directory (/tmp/apate/manager)
+// To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
 // or the env var CP_MANAGER_LOCATION point to it
 func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
 	setup(t, "TestSimpleNodeDeployment_" + string(rt), rt)
