@@ -25,6 +25,7 @@ func TestSimplePodDeployment(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping E2E")
 	}
+	os.Args = []string{"apate-cp"}
 
 	err := os.Setenv("KIND_CLUSTER_NAME", "TestSimplePodDeployment")
 	assert.NoError(t, err)
@@ -57,6 +58,7 @@ func TestSimpleNodeDeployment(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping E2E")
 	}
+	os.Args = []string{"apate-cp"}
 
 	err := os.Setenv("KIND_CLUSTER_NAME", "TestSimpleNodeDeployment")
 	assert.NoError(t, err)
@@ -126,7 +128,7 @@ spec:
 
 	err := kubectl.Create([]byte(rc), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 15)
 
 	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
