@@ -28,14 +28,13 @@ func TestCreateCluster(t *testing.T) {
 	assert.NoError(t, err)
 
 	nodes, err := cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+
 	assert.Equal(t, 1, nodes)
-
-
 	assert.NoError(t, cluster.Delete())
 }
 
 func TestCreateClusterNoFolder(t *testing.T) {
-
 	if testing.Short() {
 		t.Skip("Skipping e2e test")
 	}
@@ -58,9 +57,9 @@ func TestCreateClusterNoFolder(t *testing.T) {
 	assert.NoError(t, err)
 
 	nodes, err := cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+
 	assert.Equal(t, 1, nodes)
-
-
 	assert.NoError(t, cluster.Delete())
 
 	_ = os.RemoveAll("/tmp/TestCreateClusterNoFolder_e2e")
@@ -83,8 +82,9 @@ func TestForceCreateCluster(t *testing.T) {
 	assert.NoError(t, err)
 
 	nodes, err := cluster.GetNumberOfNodes()
-	assert.Equal(t, 1, nodes)
+	assert.NoError(t, err)
 
+	assert.Equal(t, 1, nodes)
 
 	// Now create another one. This should error
 	_, err = clusterBuilder.WithName("TestForceCreateCluster").Create()
@@ -96,6 +96,7 @@ func TestForceCreateCluster(t *testing.T) {
 	assert.NoError(t, err)
 
 	nodes, err = cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
 	assert.Equal(t, 1, nodes)
 
 	assert.NoError(t, cluster.Delete())

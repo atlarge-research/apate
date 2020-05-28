@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="controlplane" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="emulating-k8s" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="CP_MANAGER_LOCATION" value="./config/kind" />
+      <env name="CP_APATELET_RUN_TYPE" value="DOCKER" />
+    </envs>
+    <kind value="PACKAGE" />
+    <filePath value="$PROJECT_DIR$/services/controlplane/main.go" />
+    <package value="github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane" />
+    <directory value="$PROJECT_DIR$/" />
+    <method v="2" />
+  </configuration>
+</component>

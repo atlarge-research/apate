@@ -36,7 +36,7 @@ func panicf(err error) {
 	log.Panicf("An error occurred while starting the controlplane: %+v\n", err)
 }
 
-// Main is the main control plane entrypoint
+// StartControlPlane is the main control plane entrypoint
 func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	cpEnv := env.ControlPlaneEnv()
 

@@ -1,3 +1,4 @@
+# This Dockerfile can be used to run e2e tests locally if you do not want to set up an environment.
 FROM docker
 
 RUN apk add --no-cache ca-certificates go git make protobuf
@@ -18,12 +19,9 @@ RUN curl -L -o /helm.tar.gz https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz &
 WORKDIR /app
 # Copy project
 COPY . .
-COPY config/kind /tmp/apate/manager
-
-ENV CP_POD_CRD_LOCATION=/app/config/crd/apate.opendc.org_podconfigurations.yaml
-ENV CP_NODE_CRD_LOCATION=/app/config/crd/apate.opendc.org_nodeconfigurations.yaml
-#ENV CP_LISTEN_ADDRESS=
 
 RUN go install -v ./...
+
+ENV CI_PROJECT_DIR=/app
 
 CMD ["/usr/bin/go", "test", "-v", "./test/e2e/"]

@@ -16,7 +16,7 @@ const (
 	CPListenPortDefault = 8085
 
 	// CPManagedClusterConfigLocationDefault is the default value for ManagedClusterConfigLocation
-	CPManagedClusterConfigLocationDefault = "config/kind"
+	CPManagedClusterConfigLocationDefault = "config/kind.yml"
 
 	// CPKubeConfigLocationDefault is the default value for ControlPlaneKubeConfigLocation
 	CPKubeConfigLocationDefault = "/tmp/apate/config"
@@ -36,10 +36,13 @@ const (
 	// CPNodeCRDLocationDefault CRD default location
 	CPNodeCRDLocationDefault = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
 	// CPPodCRDLocationDefault CRD default location
-	CPPodCRDLocationDefault  = "config/crd/apate.opendc.org_podconfigurations.yaml"
+	CPPodCRDLocationDefault = "config/crd/apate.opendc.org_podconfigurations.yaml"
 
 	// CPKinDClusterNameDefault default cluster name
 	CPKinDClusterNameDefault = "Apate"
+
+	// CPUseKinDInternalConfig default for UseDockerHostname
+	CPUseDockerHostnameDefault = false
 )
 
 // RunType is the runner strategy used by the control plane to run apalets
@@ -73,7 +76,7 @@ type ControlPlaneEnvironment struct {
 	// ApateletRunType specifies how the control plane runs new apatelets
 	ApateletRunType RunType `env:"CP_APATELET_RUN_TYPE"`
 
-	// PrometheusStackEnabled specifies
+	// PrometheusStackEnabled specifies if the control plane should create a prometheus stack on startup
 	PrometheusStackEnabled bool `env:"CP_PROMETHEUS"`
 
 	// CRD Locations
@@ -82,6 +85,9 @@ type ControlPlaneEnvironment struct {
 
 	// (KinD) Cluster Name
 	KinDClusterName string `env:"CP_KIND_CLUSTER_NAME"`
+
+	// UseDockerHostname specifies if we should rewrite the KinD address to 'docker'
+	UseDockerHostname bool `env:"CP_DOCKER_HOSTNAME"`
 }
 
 var controlPlaneEnvironment *ControlPlaneEnvironment
@@ -100,6 +106,7 @@ func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 		NodeCRDLocation:        CPNodeCRDLocationDefault,
 		PodCRDLocation:         CPPodCRDLocationDefault,
 		KinDClusterName:        CPKinDClusterNameDefault,
+		UseDockerHostname:      CPUseDockerHostnameDefault,
 	}
 }
 

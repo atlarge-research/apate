@@ -2,12 +2,13 @@ package e2e
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
@@ -45,13 +46,13 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	env.SetEnv(initEnv)
 }
 
-func TestSimplePodDeployment(t *testing.T)  {
+func TestSimplePodDeployment(t *testing.T) {
 	testSimplePodDeployment(t, env.Routine)
-	testSimplePodDeployment(t, env.Docker)
+	//testSimplePodDeployment(t, env.Docker)
 }
 
 func testSimplePodDeployment(t *testing.T, rt env.RunType) {
-	setup(t, strings.ToLower("testSimplePodDeployment_" + string(rt)), rt)
+	setup(t, strings.ToLower("testSimplePodDeployment_"+string(rt)), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -75,15 +76,15 @@ func testSimplePodDeployment(t *testing.T, rt env.RunType) {
 	time.Sleep(time.Second * 5)
 }
 
-func TestSimpleNodeDeployment(t *testing.T)  {
+func TestSimpleNodeDeployment(t *testing.T) {
 	testSimpleNodeDeployment(t, env.Routine)
-	testSimpleNodeDeployment(t, env.Docker)
+	//testSimpleNodeDeployment(t, env.Docker)
 }
 
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
 // or the env var CP_MANAGER_LOCATION point to it
 func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
-	setup(t, "TestSimpleNodeDeployment_" + string(rt), rt)
+	setup(t, "TestSimpleNodeDeployment_"+string(rt), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
