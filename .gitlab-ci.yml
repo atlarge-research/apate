@@ -113,6 +113,20 @@ test:
     paths:
       - cover.cov
 
+test-e2e:
+  stage: test
+  needs: [build]
+  variables:
+    CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
+    CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
+    CP_K8S_CONFIG: "$CI_PROJECT_DIR/config/kind"
+  services:
+    - docker:dind
+  before_script:
+    - go mod download
+  script:
+    - go test -v ./test/e2e/
+
 race:
   stage: test
   needs: [build]
