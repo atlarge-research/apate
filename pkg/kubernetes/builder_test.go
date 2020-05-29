@@ -3,6 +3,9 @@ package kubernetes
 import (
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kind"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,37 +14,8 @@ func TestDefault(t *testing.T) {
 
 	clusterbuilder := Default()
 
-	assert.Equal(t, "Apate", clusterbuilder.name)
-}
-
-func TestWithName(t *testing.T) {
-	t.Parallel()
-
-	clusterbuilder := New()
-
-	clusterbuilder.WithName("Test")
-
-	assert.Equal(t, "Test", clusterbuilder.name)
-}
-
-func TestEmptyName(t *testing.T) {
-	t.Parallel()
-
-	clusterbuilder := New()
-
-	clusterbuilder.WithName("")
-
-	_, err := clusterbuilder.Create()
-	assert.Error(t, err)
-}
-
-func TestEmptyNameForce(t *testing.T) {
-	t.Parallel()
-
-	clusterbuilder := New()
-
-	clusterbuilder.WithName("")
-
-	_, err := clusterbuilder.ForceCreate()
-	assert.Error(t, err)
+	assert.Equal(t, env.ControlPlaneEnv().KinDClusterName, clusterbuilder.Name)
+	assert.Equal(t, env.ControlPlaneEnv().ManagerConfigLocation, clusterbuilder.ManagerConfigPath)
+	assert.Equal(t, env.ControlPlaneEnv().KubeConfigLocation, clusterbuilder.KubeConfigLocation)
+	assert.Equal(t, &kind.KinD{}, clusterbuilder.Manager)
 }

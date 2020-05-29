@@ -3,7 +3,7 @@
     <module name="emulating-k8s" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
-      <env name="CP_MANAGER_LOCATION" value="./config/kind" />
+      <env name="CP_MANAGER_CONFIG_LOCATION" value="./config/kind" />
       <env name="CP_APATELET_RUN_TYPE" value="DOCKER" />
     </envs>
     <kind value="PACKAGE" />

@@ -52,7 +52,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	registerRunners(registry)
 
 	// Create kubernetes cluster
-	managedKubernetesCluster, err := createCluster(cpEnv.ManagerConfigLocation, cpEnv.KinDClusterName)
+	managedKubernetesCluster, err := createCluster()
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
@@ -122,7 +122,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	case <-ctx.Done():
 		//
 	}
-	stopInformer <- struct{}{}
+	close(stopInformer)
 	shutdown(&createdStore, &managedKubernetesCluster, server)
 	log.Printf("apate control plane stopped")
 }
@@ -201,11 +201,11 @@ func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster,
 	return server, nil
 }
 
-func createCluster(managedClusterConfigPath string, name string) (kubernetes.ManagedCluster, error) {
+func createCluster() (kubernetes.ManagedCluster, error) {
 	log.Println("starting kubernetes control plane")
 
 	cb := kubernetes.Default()
-	c, err := cb.WithName(name).WithManagerConfig(managedClusterConfigPath).ForceCreate()
+	c, err := cb.ForceCreate()
 	if err != nil {
 		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
 	}

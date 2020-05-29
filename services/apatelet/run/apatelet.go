@@ -109,13 +109,16 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 		err = errors.Wrap(err, "apatelet stopped because of an error")
 		log.Println(err)
 		return err
+	case <-ctx.Done():
+		//
 	case <-stop:
-		stopInformer <- struct{}{}
-		if err := shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
-			log.Println(err)
-		}
-		return nil
+		//
 	}
+	close(stopInformer)
+	if err := shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
+		log.Println(err)
+	}
+	return nil
 }
 
 func createScheduler(ctx context.Context, st store.Store) *scheduler.Scheduler {

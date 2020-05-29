@@ -56,11 +56,11 @@ func (c *StatusClient) WaitForControlPlane(ctx context.Context, timeout time.Dur
 
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Wrap(ctx.Err(), "context canceled while waiting for control plane status")
 	case <-ready:
 		return nil
 	case <-time.After(timeout):
-		return errors.New("Timeout reached but control plane still offline")
+		return errors.New("timeout reached but control plane still offline")
 	}
 }
 
