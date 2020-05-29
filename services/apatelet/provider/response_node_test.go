@@ -20,6 +20,8 @@ import (
 const tStr = "test"
 
 func TestNodeNormal(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -49,6 +51,8 @@ func TestNodeNormal(t *testing.T) {
 }
 
 func TestNodeStoreError1(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -79,6 +83,8 @@ func TestNodeStoreError1(t *testing.T) {
 }
 
 func TestNodeErrorAction(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -108,6 +114,8 @@ func TestNodeErrorAction(t *testing.T) {
 }
 
 func TestNodeInvalidResponseType(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -137,6 +145,8 @@ func TestNodeInvalidResponseType(t *testing.T) {
 }
 
 func TestNodeInvalidResponse(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -168,6 +178,8 @@ func TestNodeInvalidResponse(t *testing.T) {
 }
 
 func TestNodeTimeOut(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3)
 	defer cancel()
 

@@ -5,22 +5,19 @@ import (
 	"testing"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
-
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-kubelet/node-cli/provider"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
@@ -30,6 +27,8 @@ const podName = "pod"
 const podLabel = "label"
 
 func TestConfigureNodeWithCreate(t *testing.T) {
+	t.Parallel()
+
 	resources := scenario.NodeResources{
 		UUID:    uuid.New(),
 		Memory:  42,
@@ -55,6 +54,8 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 }
 
 func TestCreatePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -92,6 +93,8 @@ func TestCreatePod(t *testing.T) {
 }
 
 func TestUpdatePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -127,6 +130,8 @@ func TestUpdatePod(t *testing.T) {
 }
 
 func TestDeletePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -160,6 +165,8 @@ func TestDeletePod(t *testing.T) {
 }
 
 func TestGetPod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -195,6 +202,8 @@ func TestGetPod(t *testing.T) {
 }
 
 func TestGetPods(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -231,6 +240,8 @@ func TestGetPods(t *testing.T) {
 }
 
 func TestGetPodStatus(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -266,6 +277,8 @@ func TestGetPodStatus(t *testing.T) {
 }
 
 func TestNewProvider(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)

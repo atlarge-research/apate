@@ -4,13 +4,13 @@ import (
 	"io/ioutil"
 
 	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
@@ -43,11 +43,12 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 
 // CreateInKubernetes registers the generated CRD YAML to Kubernetes
 func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
-	const filename = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
-	file, err := ioutil.ReadFile(filename)
+	cpEnv := env.ControlPlaneEnv()
+
+	file, err := ioutil.ReadFile(cpEnv.NodeCRDLocation)
 	if err != nil {
-		return errors.Wrapf(err, "reading file '%v' failed", filename)
+		return errors.Wrapf(err, "reading file '%v' failed", cpEnv.NodeCRDLocation)
 	}
 
-	return kubectl.Create(file, config)
+	return errors.Wrap(kubectl.Create(file, config), "creating node configuration failed")
 }

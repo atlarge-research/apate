@@ -13,6 +13,8 @@ import (
 
 // TestEnqueue ensures adding a single node resources results in a single allocation
 func TestEnqueue(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 	err := store.AddResourcesToQueue([]scenario.NodeResources{{}})
 	assert.NoError(t, err)
@@ -30,6 +32,8 @@ func TestEnqueue(t *testing.T) {
 
 // TestEmptyGet ensures the store returns an error if no resources were enqueued
 func TestEmptyGet(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 
 	// Attempt to get non-existing resource, should fail
@@ -40,6 +44,8 @@ func TestEmptyGet(t *testing.T) {
 
 // TestEmptyNodeMap ensures there are no nodes after start
 func TestEmptyNodeMap(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 
 	// Verify there are no nodes by default
@@ -50,6 +56,8 @@ func TestEmptyNodeMap(t *testing.T) {
 
 // TestAddNodeGet ensures a node can be retrieved by its uuid after it has been added
 func TestAddNodeGet(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 
 	// Add created node
@@ -67,6 +75,8 @@ func TestAddNodeGet(t *testing.T) {
 
 // TestAddNodeList ensures an added node appears in the list of nodes
 func TestAddNodeList(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "5")
 
@@ -81,6 +91,8 @@ func TestAddNodeList(t *testing.T) {
 
 // TestGetNodeWrongUuid ensures retrieving a node with an unknown uuid results in an error
 func TestGetNodeWrongUuid(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 
 	// Verify error on node existing node
@@ -91,6 +103,8 @@ func TestGetNodeWrongUuid(t *testing.T) {
 
 // TestAddNodeDuplicateUuid ensures that a node with a duplicate uuid will not be aded
 func TestAddNodeDuplicateUuid(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 	expected := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "4")
 
@@ -105,6 +119,8 @@ func TestAddNodeDuplicateUuid(t *testing.T) {
 
 // TestRemoveNode ensures a removed node is no longer in the list and can no longer be retrieved
 func TestRemoveNode(t *testing.T) {
+	t.Parallel()
+
 	selector := "1231415"
 	store := NewStore()
 	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
@@ -135,6 +151,8 @@ func TestRemoveNode(t *testing.T) {
 
 // TestDeleteNoNode ensures removing a node that does not exist keeps the store intact
 func TestDeleteNoNode(t *testing.T) {
+	t.Parallel()
+
 	store := NewStore()
 	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "3")
 
@@ -155,6 +173,8 @@ func TestDeleteNoNode(t *testing.T) {
 
 // TestClearNodes ensures nodes are no longer in the list and can no longer be retrieved when the store is cleared
 func TestClearNodes(t *testing.T) {
+	t.Parallel()
+
 	selector := "1231145"
 	store := NewStore()
 	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
@@ -185,6 +205,8 @@ func TestClearNodes(t *testing.T) {
 
 // TestGetNodesBySelector ensures nodes can be retrieved based on their selector
 func TestGetNodesBySelector(t *testing.T) {
+	t.Parallel()
+
 	selector := "awidya8wdya9wd7iyh"
 	store := NewStore()
 	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{UUID: uuid.New()}, selector)

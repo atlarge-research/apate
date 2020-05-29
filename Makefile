@@ -21,11 +21,11 @@ lint_fix:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -p 24 -v ./...
 
 .PHONY: test_short
 test_short:
-	go test -short ./...
+	go test -short -p 24 ./...
 
 .PHONY: test_race
 test_race:
@@ -41,8 +41,8 @@ test_cover_short:
 	go test -short -coverprofile cover.out ./...
 	go tool cover -html=cover.out
 
-.PHONY: docker_build_vk
-docker_build_vk:
+.PHONY: docker_build_apatelet
+docker_build_apatelet:
 	docker build -f services/apatelet/Dockerfile -t apatelet .
 	docker tag apatelet apatekubernetes/apatelet
 
@@ -51,7 +51,7 @@ docker_build_cp:
 	docker build -f ./services/controlplane/Dockerfile -t controlplane .
 	docker tag controlplane apatekubernetes/controlplane
 
-docker_build: docker_build_cp docker_build_vk
+docker_build: docker_build_cp docker_build_apatelet
 
 .PHONY: docker_build_cp
 run_cp: docker_build_cp
@@ -62,7 +62,7 @@ protobuf:
 	protoc -I ./api --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find ./api/ -type f -name "*.proto" -print`
 
 # Generates the various mocks
-mock_gen: ./pkg/run/mock_run/mock_runner.go ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go ./services/apatelet/store/mock_store/store_mock.go ./services/apatelet/provider/mock_cache_store/mock_cache_store.go ./services/apatelet/provider/podmanager/mock_podmanager/mock_podmanager.go
+mock_gen: ./pkg/runner/mock_run/mock_runner.go ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go ./services/apatelet/store/mock_store/store_mock.go ./services/apatelet/provider/mock_cache_store/mock_cache_store.go ./services/apatelet/provider/podmanager/mock_podmanager/mock_podmanager.go
 
 ./api/health/mock_health/health_mock.go: ./api/health/health.pb.go
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/api/health Health_HealthStreamClient,HealthClient,Health_HealthStreamServer > $@
@@ -79,7 +79,7 @@ mock_gen: ./pkg/run/mock_run/mock_runner.go ./api/health/mock_health/health_mock
 ./services/apatelet/provider/podmanager/mock_podmanager/mock_podmanager.go:
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager PodManager > $@
 
-./pkg/run/mock_run/mock_runner.go:
+./pkg/runner/mock_run/mock_runner.go:
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run ApateletRunner > $@
 
 crd_gen:
@@ -87,5 +87,9 @@ crd_gen:
 	controller-gen crd:trivialVersions=false,crdVersions=v1 paths=./pkg/apis/...
 
 gen: crd_gen mock_gen protobuf
+
+run_e2e:
+	docker build -f ./test/e2e/Dockerfile -t apate_e2e .
+	docker run -iv /var/run/docker.sock:/var/run/docker.sock apate_e2e
 
 FORCE:

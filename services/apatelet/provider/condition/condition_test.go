@@ -8,6 +8,8 @@ import (
 )
 
 func TestConditionReady(t *testing.T) {
+	t.Parallel()
+
 	cond := New(true, corev1.NodeReady)
 
 	// Make sure the ready messages are okay
@@ -26,6 +28,8 @@ func TestConditionReady(t *testing.T) {
 }
 
 func TestConditionMemoryPressure(t *testing.T) {
+	t.Parallel()
+
 	cond := New(true, corev1.NodeMemoryPressure)
 
 	// Make sure the pressure messages are okay

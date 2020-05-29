@@ -17,6 +17,8 @@ import (
 //go:generate sh -c "cd ../../../ && make mockgen"
 
 func TestStatusSimple(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 
 	// Created mocked store

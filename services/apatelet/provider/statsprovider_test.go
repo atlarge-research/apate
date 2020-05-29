@@ -46,6 +46,8 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 }
 
 func TestEmpty(t *testing.T) {
+	t.Parallel()
+
 	mem := int64(34)
 	prov, ctrl, _, _ := createProvider(t, 12, mem, 0)
 
@@ -67,6 +69,8 @@ func TestEmpty(t *testing.T) {
 }
 
 func TestSinglePod(t *testing.T) {
+	t.Parallel()
+
 	cpu := int64(123124)
 	mem := int64(52562)
 	memUsage := uint64(15)
@@ -117,6 +121,8 @@ func TestSinglePod(t *testing.T) {
 }
 
 func TestUnspecifiedPods(t *testing.T) {
+	t.Parallel()
+
 	cpu := int64(2)
 	mem := int64(2)
 	fs := int64(15)

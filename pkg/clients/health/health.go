@@ -68,7 +68,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 
 			select {
 			case <-ctx.Done():
-				return
+				errCallback(errors.Wrap(ctx.Err(), "context cancelled"))
 			case <-time.After(sendInterval):
 			}
 		}
@@ -90,7 +90,7 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
 			select {
 			case <-ctx.Done():
 				// On context cancel stop
-				return
+				errCallback(errors.Wrap(ctx.Err(), "context cancelled"))
 			case <-time.After(time.Second * recvTimeout):
 				errCallback(errors.Errorf("health stream died"))
 			case <-r:
