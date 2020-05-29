@@ -15,6 +15,8 @@ import (
 
 // TestEmptyQueue ensures the store starts with an empty queue
 func TestEmptyQueue(t *testing.T) {
+	t.Parallel()
+
 	st := NewStore()
 
 	// Make sure the amount of tasks starts at zero
@@ -29,6 +31,8 @@ func TestEmptyQueue(t *testing.T) {
 
 // TestGetSingleTask ensures a retrieved task is also deleted
 func TestGetSingleTask(t *testing.T) {
+	t.Parallel()
+
 	task := &nodeconfigv1.NodeConfigurationState{}
 	st := NewStore()
 
@@ -47,6 +51,8 @@ func TestGetSingleTask(t *testing.T) {
 
 // TestGetSingleTask ensures a polled task is not deleted
 func TestPollSingleTask(t *testing.T) {
+	t.Parallel()
+
 	timestamp := time.Duration(424242)
 	task := &nodeconfigv1.NodeConfigurationState{}
 	st := NewStore()
@@ -67,6 +73,8 @@ func TestPollSingleTask(t *testing.T) {
 
 // TestMultipleTasks ensures the priority queue actually sorts the tasks properly (earliest task first)
 func TestMultipleTasks(t *testing.T) {
+	t.Parallel()
+
 	task1Time := time.Duration(213123)
 	task2Time := time.Duration(4242)
 	task3Time := time.Duration(83481234)
@@ -114,6 +122,8 @@ func TestMultipleTasks(t *testing.T) {
 
 // TestArrayWithNil ensures an array containing nills will not destroy the pq
 func TestArrayWithNil(t *testing.T) {
+	t.Parallel()
+
 	task1 := NewNodeTask(213123, &nodeconfigv1.NodeConfigurationState{})
 	task2 := NewNodeTask(4242, &nodeconfigv1.NodeConfigurationState{})
 	st := NewStore()
@@ -142,6 +152,8 @@ func TestArrayWithNil(t *testing.T) {
 
 // TestReplaceNodeTask tests tasks are indeed replaced
 func TestReplaceNodeTask(t *testing.T) {
+	t.Parallel()
+
 	task1 := NewNodeTask(213123, &nodeconfigv1.NodeConfigurationState{})
 	task2 := NewNodeTask(4242, &nodeconfigv1.NodeConfigurationState{})
 	task3 := NewNodeTask(53156, &nodeconfigv1.NodeConfigurationState{})
@@ -170,6 +182,8 @@ func TestReplaceNodeTask(t *testing.T) {
 
 // TestInvalidTaskSet
 func TestInvalidTaskSet(t *testing.T) {
+	t.Parallel()
+
 	task1 := &Task{
 		RelativeTimestamp: 1,
 		NodeTask: &NodeTask{
@@ -195,6 +209,8 @@ func TestInvalidTaskSet(t *testing.T) {
 
 // TestInvalidTask ensures the task functionality works
 func TestInvalidTask(t *testing.T) {
+	t.Parallel()
+
 	task := Task{}
 
 	_, err := task.IsPod()
@@ -218,6 +234,8 @@ func TestInvalidTask(t *testing.T) {
 
 // TestDefaultNodeFlag ensure the default node flags are working properly
 func TestDefaultNodeFlag(t *testing.T) {
+	t.Parallel()
+
 	st := NewStore()
 
 	// Retrieve default value
@@ -228,6 +246,8 @@ func TestDefaultNodeFlag(t *testing.T) {
 
 // TestUnsetNodeFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
 func TestUnsetNodeFlag(t *testing.T) {
+	t.Parallel()
+
 	st := NewStore()
 
 	// Retrieve unset flag and verify default value and err
@@ -238,6 +258,8 @@ func TestUnsetNodeFlag(t *testing.T) {
 
 // TestSetNodeFlag ensures the value for a flag is updated properly
 func TestSetNodeFlag(t *testing.T) {
+	t.Parallel()
+
 	st := NewStore()
 
 	// Set flag
@@ -255,6 +277,8 @@ func TestSetNodeFlag(t *testing.T) {
 }
 
 func TestEnqueueCRDBasic(t *testing.T) {
+	t.Parallel()
+
 	st := insertBaselineCRD(t)
 
 	testPeekAndPop(t, &st, 42, true)
@@ -265,6 +289,8 @@ func TestEnqueueCRDBasic(t *testing.T) {
 }
 
 func TestEnqueueCRDUpdate(t *testing.T) {
+	t.Parallel()
+
 	st := insertBaselineCRD(t)
 
 	// Testing whether updating CRDs works
@@ -282,6 +308,8 @@ func TestEnqueueCRDUpdate(t *testing.T) {
 }
 
 func TestEnqueueCRDUpdateMore(t *testing.T) {
+	t.Parallel()
+
 	st := insertBaselineCRD(t)
 
 	// Testing whether updating CRDs works
@@ -303,6 +331,8 @@ func TestEnqueueCRDUpdateMore(t *testing.T) {
 }
 
 func TestEnqueueCRDNewLabel(t *testing.T) {
+	t.Parallel()
+
 	st := insertBaselineCRD(t)
 
 	// Testing whether updating CRDs works
@@ -321,6 +351,8 @@ func TestEnqueueCRDNewLabel(t *testing.T) {
 }
 
 func TestRemoveCRD(t *testing.T) {
+	t.Parallel()
+
 	st := insertBaselineCRD(t)
 
 	// Testing whether removig CRDs works, even when there are multiple
@@ -376,6 +408,8 @@ func testPeekAndPop(t *testing.T, st *Store, relTime time.Duration, shouldBePod 
 
 // TestDefaultPodFlag ensure the default pod flags are working properly
 func TestDefaultPodFlag(t *testing.T) {
+	t.Parallel()
+
 	st := NewStore()
 
 	// Retrieve default value
@@ -386,6 +420,8 @@ func TestDefaultPodFlag(t *testing.T) {
 
 // TestUnsetPodFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
 func TestUnsetPodFlag(t *testing.T) {
+	t.Parallel()
+
 	st := NewStore()
 
 	// Retrieve unset flag and verify default value and err
@@ -396,6 +432,8 @@ func TestUnsetPodFlag(t *testing.T) {
 
 // TestSetPodFlag ensures the value for a flag is updated properly
 func TestSetPodFlag(t *testing.T) {
+	t.Parallel()
+
 	st := NewStore()
 
 	// Set flag

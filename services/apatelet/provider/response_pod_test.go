@@ -18,6 +18,8 @@ import (
 )
 
 func TestPodNormal(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -50,6 +52,8 @@ func TestPodNormal(t *testing.T) {
 }
 
 func TestPodStoreError1(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -82,6 +86,8 @@ func TestPodStoreError1(t *testing.T) {
 }
 
 func TestPodStoreError2(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -113,6 +119,8 @@ func TestPodStoreError2(t *testing.T) {
 }
 
 func TestPodUnset(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -144,6 +152,8 @@ func TestPodUnset(t *testing.T) {
 }
 
 func TestPodInvalidResponseType(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -175,6 +185,8 @@ func TestPodInvalidResponseType(t *testing.T) {
 }
 
 func TestPodInvalidResponse(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -208,6 +220,8 @@ func TestPodInvalidResponse(t *testing.T) {
 }
 
 func TestPodTimeOut(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3)
 	defer cancel()
 	ctrl, ctx := gomock.WithContext(ctx, t)

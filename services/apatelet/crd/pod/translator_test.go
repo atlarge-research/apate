@@ -15,6 +15,8 @@ import (
 )
 
 func TestTranslateResponse(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, scenario.ResponseNormal, translateResponse(podconfigv1.ResponseNormal))
 	assert.Equal(t, scenario.ResponseError, translateResponse(podconfigv1.ResponseError))
 	assert.Equal(t, scenario.ResponseTimeout, translateResponse(podconfigv1.ResponseTimeout))
@@ -23,6 +25,8 @@ func TestTranslateResponse(t *testing.T) {
 }
 
 func TestTranslatePodStatus(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, scenario.PodStatusPending, translatePodStatus(podconfigv1.PodStatusPending))
 	assert.Equal(t, scenario.PodStatusRunning, translatePodStatus(podconfigv1.PodStatusRunning))
 	assert.Equal(t, scenario.PodStatusSucceeded, translatePodStatus(podconfigv1.PodStatusSucceeded))
@@ -33,6 +37,8 @@ func TestTranslatePodStatus(t *testing.T) {
 }
 
 func TestTranslatePodResources(t *testing.T) {
+	t.Parallel()
+
 	r, err := translatePodResources(&podconfigv1.PodResources{
 		Memory:           "1B",
 		CPU:              50,
@@ -50,6 +56,8 @@ func TestTranslatePodResources(t *testing.T) {
 }
 
 func TestTranslatePodResourcesErrorMemory(t *testing.T) {
+	t.Parallel()
+
 	_, err := translatePodResources(&podconfigv1.PodResources{
 		Memory:           "-1B",
 		CPU:              50,
@@ -60,6 +68,8 @@ func TestTranslatePodResourcesErrorMemory(t *testing.T) {
 }
 
 func TestTranslatePodResourcesErrorStorage(t *testing.T) {
+	t.Parallel()
+
 	_, err := translatePodResources(&podconfigv1.PodResources{
 		Memory:           "1B",
 		CPU:              50,
@@ -70,6 +80,8 @@ func TestTranslatePodResourcesErrorStorage(t *testing.T) {
 }
 
 func TestTranslatePodResourcesErrorEphemeralStorage(t *testing.T) {
+	t.Parallel()
+
 	_, err := translatePodResources(&podconfigv1.PodResources{
 		Memory:           "1B",
 		CPU:              50,
@@ -80,6 +92,8 @@ func TestTranslatePodResourcesErrorEphemeralStorage(t *testing.T) {
 }
 
 func TestSetPodFlagsUnset(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -100,6 +114,8 @@ func TestSetPodFlagsUnset(t *testing.T) {
 }
 
 func TestSetPodFlags(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -136,6 +152,8 @@ func TestSetPodFlags(t *testing.T) {
 }
 
 func TestSetPodFlagsErr(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)

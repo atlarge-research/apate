@@ -69,7 +69,7 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 // CreatePrometheusStack attempts to create the prometheus operator in the kubernetes cluster
 func CreatePrometheusStack(kubecfg *kubeconfig.KubeConfig) {
 	log.Println("enabling prometheus stack")
-	if err := createNameSpace(prometheusNamespace, kubecfg); err != nil {
+	if err := CreateNameSpace(prometheusNamespace, kubecfg); err != nil {
 		log.Printf("error while creating prometheus namespace: %v", err)
 		return
 	}

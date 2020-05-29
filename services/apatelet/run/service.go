@@ -45,6 +45,7 @@ func startHealth(ctx context.Context, connectionInfo *service.ConnectionInfo, uu
 	hc.StartStream(ctx, func(err error) {
 		if atomic.LoadInt32(&retries) < 1 {
 			// Stop after retries amount of errors
+			log.Printf("stopping apatelet because of health stream failure")
 			stop <- syscall.SIGTERM
 			return
 		}

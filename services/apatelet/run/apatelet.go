@@ -23,12 +23,12 @@ import (
 )
 
 // StartApatelet starts the apatelet
-func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
+func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
 	connectionInfo := service.NewConnectionInfo(apateletEnv.ControlPlaneAddress, apateletEnv.ControlPlanePort, false)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Create stop channels
@@ -109,13 +109,16 @@ func StartApatelet(apateletEnv env.ApateletEnvironment, readyCh chan<- struct{})
 		err = errors.Wrap(err, "apatelet stopped because of an error")
 		log.Println(err)
 		return err
+	case <-ctx.Done():
+		//
 	case <-stop:
-		stopInformer <- struct{}{}
-		if err := shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
-			log.Println(err)
-		}
-		return nil
+		//
 	}
+	close(stopInformer)
+	if err := shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
+		log.Println(err)
+	}
+	return nil
 }
 
 func createScheduler(ctx context.Context, st store.Store) *scheduler.Scheduler {

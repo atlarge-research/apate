@@ -1,5 +1,3 @@
 ci/
 docs/
-**/*_mock.go
-**/*_test.go
 **/Dockerfile

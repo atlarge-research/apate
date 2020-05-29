@@ -42,7 +42,7 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, startTime, nil
 }
 
-func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer chan struct{}, sch *scheduler.Scheduler, res *scenario.NodeResources) error {
+func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer <-chan struct{}, sch *scheduler.Scheduler, res *scenario.NodeResources) error {
 	err := crdPod.CreatePodInformer(config, &st, stopInformer, sch.WakeScheduler)
 	if err != nil {
 		return errors.Wrap(err, "failed creating crd pod informer")
