@@ -34,8 +34,10 @@ func main() {
 		panicf(errors.Wrap(err, "error while setting certs"))
 	}
 
-	ch := make(chan struct{})
+	ch := make(chan struct{}, 1)
 	if err := run.StartApatelet(context.Background(), environment, ch); err != nil {
 		panicf(errors.Wrap(err, "error while running apatelet"))
+	} else {
+		<-ch
 	}
 }

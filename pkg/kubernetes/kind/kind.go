@@ -100,7 +100,7 @@ func (*KinD) DeleteCluster(name string) error {
 		"cluster",
 	}
 
-	args = append(args, "--name", name)
+	args = append(args, "--name", strings.ToLower(name))
 
 	// Deletes the cluster
 	// As far as I could test this call never errors (it just doesn't do anything

@@ -39,7 +39,7 @@ const (
 	CPPodCRDLocationDefault = "config/crd/apate.opendc.org_podconfigurations.yaml"
 
 	// CPKinDClusterNameDefault default cluster name
-	CPKinDClusterNameDefault = "Apate"
+	CPKinDClusterNameDefault = "apate"
 
 	// CPUseKinDInternalConfig default for UseDockerHostname
 	CPUseDockerHostnameDefault = false

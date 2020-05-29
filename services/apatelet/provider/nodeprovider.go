@@ -70,10 +70,10 @@ func (p *Provider) Ping(ctx context.Context) error {
 	case scenario.ResponseUnset:
 		fallthrough // If unset, act as if it's normal
 	case scenario.ResponseNormal:
-		return ctx.Err()
+		return errors.Wrap(ctx.Err(), "context canceled while sending normal response")
 	case scenario.ResponseTimeout:
 		<-ctx.Done()
-		return ctx.Err()
+		return ctx.Err() // Don't wrap, this context should be closing here
 	case scenario.ResponseError:
 		return emulationError("ping expected error")
 	default:

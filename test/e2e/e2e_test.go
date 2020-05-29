@@ -34,7 +34,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 
 	dir := os.Getenv("CI_PROJECT_DIR")
 	if len(dir) == 0 {
-		dir = "./"
+		dir = "../../"
 	}
 
 	initEnv := env.ControlPlaneEnv()
@@ -44,6 +44,15 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	initEnv.KinDClusterName = kindClusterName
 	initEnv.ApateletRunType = runType
 	env.SetEnv(initEnv)
+}
+
+func teardown(t *testing.T) {
+	// #nosec
+	_ = exec.Command("docker", "kill", "apate-cp").Run()
+	time.Sleep(time.Second * 5)
+
+	err := os.Remove(env.ControlPlaneEnv().KubeConfigLocation)
+	assert.NoError(t, err)
 }
 
 func TestSimplePodDeployment(t *testing.T) {
@@ -71,9 +80,7 @@ func testSimplePodDeployment(t *testing.T, rt env.RunType) {
 
 	cancel()
 
-	// #nosec
-	_ = exec.Command("docker", "kill", "apate-cp").Run()
-	time.Sleep(time.Second * 5)
+	teardown(t)
 }
 
 func TestSimpleNodeDeployment(t *testing.T) {
@@ -82,7 +89,7 @@ func TestSimpleNodeDeployment(t *testing.T) {
 }
 
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
-// or the env var CP_MANAGER_LOCATION point to it
+// or the env var CP_MANAGER_CONFIG_LOCATION point to it
 func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
 	setup(t, "TestSimpleNodeDeployment_"+string(rt), rt)
 
@@ -102,9 +109,7 @@ func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
 
 	cancel()
 
-	// #nosec
-	_ = exec.Command("docker", "kill", "apate-cp").Run()
-	time.Sleep(time.Second * 5)
+	teardown(t)
 }
 
 func waitForCP(t *testing.T) {

@@ -4,100 +4,113 @@ import (
 	"os"
 	"testing"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kind"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kind"
 )
+
+func setup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping e2e test")
+	}
+
+	dir := os.Getenv("CI_PROJECT_DIR")
+	if len(dir) == 0 {
+		dir = "../../"
+	}
+
+	initEnv := env.ControlPlaneEnv()
+	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
+	env.SetEnv(initEnv)
+}
 
 // I specifically give clusters the name of their test,
 // so even if tests are ran in parallel there won't be a problem.
 
 func TestCreateCluster(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test")
-	}
-
-	clusterInterface := kind.KinD{}
-
-	// Delete it before to be safe
-	assert.NoError(t, clusterInterface.DeleteCluster("TestCreateCluster"))
+	setup(t)
 
 	clusterBuilder := Default()
-	cluster, err := clusterBuilder.WithCreator(&clusterInterface).WithName("TestCreateCluster").Create()
-	assert.NotNil(t, cluster)
+	clusterBuilder.Name = "TestCreateCluster"
+	c, err := clusterBuilder.ForceCreate()
+	assert.NotNil(t, c)
 	assert.NoError(t, err)
 
-	nodes, err := cluster.GetNumberOfNodes()
+	nodes, err := c.GetNumberOfNodes()
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, nodes)
-	assert.NoError(t, cluster.Delete())
+	assert.NoError(t, c.Delete())
 }
 
 func TestCreateClusterNoFolder(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test")
-	}
+	path := "/tmp/TestCreateClusterNoFolder_e2e"
+	setup(t)
 
-	clusterInterface := kind.KinD{}
-
-	// Delete it before to be safe
-	assert.NoError(t, clusterInterface.DeleteCluster("TestCreateClusterNoFolder"))
-
-	_ = os.RemoveAll("/tmp/TestCreateClusterNoFolder_e2e")
+	_ = os.RemoveAll(path)
 
 	clusterBuilder := Default()
-	cluster, err := clusterBuilder.
-		WithCreator(&clusterInterface).
-		WithName("TestCreateClusterNoFolder").
-		WithConfigLocation("/tmp/TestCreateClusterNoFolder_e2e").
-		Create()
+	clusterBuilder.Name = "TestCreateClusterNoFolder"
+	clusterBuilder.KubeConfigLocation = path + "/config.yml"
+	c, err := clusterBuilder.ForceCreate()
+	assert.NoError(t, err)
+	assert.NotNil(t, c)
 
-	assert.NotNil(t, cluster)
+	f, err := os.Stat(path)
+	assert.NoError(t, err)
+	assert.NotNil(t, f)
+
+	assert.NotNil(t, c)
 	assert.NoError(t, err)
 
-	nodes, err := cluster.GetNumberOfNodes()
+	nodes, err := c.GetNumberOfNodes()
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, nodes)
-	assert.NoError(t, cluster.Delete())
+	assert.NoError(t, c.Delete())
 
-	_ = os.RemoveAll("/tmp/TestCreateClusterNoFolder_e2e")
+	_ = os.RemoveAll(path)
 }
 
 func TestForceCreateCluster(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test")
-	}
+	name := "TestForceCreateCluster"
+	setup(t)
 
 	clusterInterface := kind.KinD{}
 
 	// Delete it before to be safe
-	assert.NoError(t, clusterInterface.DeleteCluster("TestForceCreateCluster"))
+	assert.NoError(t, clusterInterface.DeleteCluster(name))
 
 	clusterBuilder := Default()
+	clusterBuilder.Name = name
+
 	// Create a cluster
-	cluster, err := clusterBuilder.WithCreator(&clusterInterface).WithName("TestForceCreateCluster").Create()
-	assert.NotNil(t, cluster)
+	c, err := clusterBuilder.Create()
+	assert.NotNil(t, c)
 	assert.NoError(t, err)
 
-	nodes, err := cluster.GetNumberOfNodes()
+	nodes, err := c.GetNumberOfNodes()
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, nodes)
 
 	// Now create another one. This should error
-	_, err = clusterBuilder.WithName("TestForceCreateCluster").Create()
+	cb := Default()
+	cb.Name = name
+	c, err = cb.Create()
 	assert.Error(t, err)
 
 	// Now force create one. This should not error but instead delete the old one.
-	cluster, err = clusterBuilder.WithName("TestForceCreateCluster").ForceCreate()
-	assert.NotNil(t, cluster)
+	cb = Default()
+	cb.Name = name
+	c, err = cb.ForceCreate()
+	assert.NotNil(t, c)
 	assert.NoError(t, err)
 
-	nodes, err = cluster.GetNumberOfNodes()
+	nodes, err = c.GetNumberOfNodes()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, nodes)
 
-	assert.NoError(t, cluster.Delete())
+	assert.NoError(t, c.Delete())
 }

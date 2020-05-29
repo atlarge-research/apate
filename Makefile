@@ -51,7 +51,7 @@ docker_build_cp:
 	docker build -f ./services/controlplane/Dockerfile -t controlplane .
 	docker tag controlplane apatekubernetes/controlplane
 
-docker_build: docker_build_cp docker_build_vk
+docker_build: docker_build_cp docker_build_apatelet
 
 .PHONY: docker_build_cp
 run_cp: docker_build_cp
