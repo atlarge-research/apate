@@ -16,6 +16,8 @@ import (
 )
 
 func TestTranslateResponse(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, scenario.ResponseNormal, translateResponse(nodeconfigv1.ResponseNormal))
 	assert.Equal(t, scenario.ResponseError, translateResponse(nodeconfigv1.ResponseError))
 	assert.Equal(t, scenario.ResponseTimeout, translateResponse(nodeconfigv1.ResponseTimeout))
@@ -23,6 +25,8 @@ func TestTranslateResponse(t *testing.T) {
 }
 
 func TestSetNodeFlagsUnsetDirect(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -44,6 +48,8 @@ func TestSetNodeFlagsUnsetDirect(t *testing.T) {
 }
 
 func TestSetNodeFlagsDirect(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -75,6 +81,8 @@ func TestSetNodeFlagsDirect(t *testing.T) {
 }
 
 func TestSetNodeFlagsHeartbeat(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -92,6 +100,8 @@ func TestSetNodeFlagsHeartbeat(t *testing.T) {
 }
 
 func TestSetNodeFlagsLatency(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -110,6 +120,8 @@ func TestSetNodeFlagsLatency(t *testing.T) {
 }
 
 func TestSetNodeFlagsNodeFailure(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)

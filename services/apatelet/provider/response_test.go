@@ -15,6 +15,8 @@ import (
 )
 
 func TestMagicPodAndNodePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)
@@ -47,6 +49,8 @@ func TestMagicPodAndNodePod(t *testing.T) {
 }
 
 func TestMagicPodAndNodeNode(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 
 	ms := mock_store.NewMockStore(ctrl)

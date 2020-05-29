@@ -18,6 +18,8 @@ import (
 )
 
 func TestGetCRDAndLabel(t *testing.T) {
+	t.Parallel()
+
 	ep := podconfigv1.PodConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "TestName",
@@ -31,6 +33,8 @@ func TestGetCRDAndLabel(t *testing.T) {
 }
 
 func TestEnqueueCRD(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
@@ -86,6 +90,8 @@ func TestEnqueueCRD(t *testing.T) {
 }
 
 func TestEnqueueCRDDirect(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ms := mock_store.NewMockStore(ctrl)
