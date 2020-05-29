@@ -22,6 +22,8 @@ import (
 )
 
 func TestTaskHandlerSimpleNode(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -54,6 +56,8 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 }
 
 func TestTaskHandlerSimplePod(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -83,6 +87,8 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 }
 
 func TestTaskHandlerMultiple(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -117,6 +123,8 @@ func TestTaskHandlerMultiple(t *testing.T) {
 }
 
 func TestRunner(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -151,6 +159,8 @@ func TestRunner(t *testing.T) {
 }
 
 func TestRunnerDelay(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -192,6 +202,8 @@ func TestRunnerDelay(t *testing.T) {
 }
 
 func TestRunnerSleep(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -227,6 +239,8 @@ func TestRunnerSleep(t *testing.T) {
 }
 
 func TestRunnerDontHandleOldTask(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -259,6 +273,8 @@ func TestRunnerDontHandleOldTask(t *testing.T) {
 }
 
 func TestRunnerEarlyFail(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -285,6 +301,8 @@ func TestRunnerEarlyFail(t *testing.T) {
 }
 
 func TestRunnerPopFail(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -312,6 +330,8 @@ func TestRunnerPopFail(t *testing.T) {
 }
 
 func TestStartScheduler(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctrl, ctx := gomock.WithContext(ctx, t)

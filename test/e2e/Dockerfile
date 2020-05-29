@@ -1,21 +1,12 @@
-FROM golang as build
+# This Dockerfile can be used to run e2e tests locally if you do not want to set up an environment.
+FROM docker
 
-WORKDIR /build
-
-# Force modules
-ENV GO111MODULE=on
+RUN apk add --no-cache ca-certificates go git make protobuf
 
 # Cache dependencies
 COPY go.* ./
 RUN go mod download
 
-# Build project
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o controlplane /build/services/controlplane
-
-# Run stage
-FROM docker
-WORKDIR /
 RUN apk add curl --no-cache && \
     curl -L -o /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl && \
     chmod +x /usr/bin/kubectl
@@ -25,13 +16,12 @@ RUN curl -L -o /helm.tar.gz https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz &
     mv /linux-amd64/helm /usr/bin/helm && \
     rm -rf /helm.tar.gz /linux-amd64
 
-RUN apk del curl
-
 WORKDIR /app
-COPY --from=build /build/controlplane /app/controlplane
-COPY --from=build /build/config/kind.yml /app/config/kind.yml
-COPY --from=build /build/config/crd /app/config/crd
+# Copy project
+COPY . .
 
+RUN go install -v ./...
 
+ENV CI_PROJECT_DIR=/app
 
-CMD ["/app/controlplane"]
+CMD ["/usr/bin/go", "test", "-v", "./test/e2e/"]

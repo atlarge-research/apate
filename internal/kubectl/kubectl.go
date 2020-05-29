@@ -13,7 +13,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
-func createNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error {
+// CreateNameSpace creates a namespace on the cluster
+func CreateNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error {
 	args := []string{
 		"create",
 		"namespace",

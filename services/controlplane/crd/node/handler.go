@@ -6,7 +6,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
@@ -38,11 +38,11 @@ type apateletHandler struct {
 	lock           sync.Mutex
 	store          *store.Store
 	connectionInfo *service.ConnectionInfo
-	runnerRegistry *run.RunnerRegistry
+	runnerRegistry *runner.Registry
 }
 
 // NewHandler creates a new ApateletHandler
-func NewHandler(st *store.Store, runnerRegistry *run.RunnerRegistry, info *service.ConnectionInfo) *ApateletHandler {
+func NewHandler(st *store.Store, runnerRegistry *runner.Registry, info *service.ConnectionInfo) *ApateletHandler {
 	var handler ApateletHandler = &apateletHandler{
 		store:          st,
 		connectionInfo: info,
