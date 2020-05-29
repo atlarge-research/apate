@@ -3,31 +3,76 @@
 package kubernetes
 
 import (
-	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/kubernetes"
+	"os"
+	"path"
 )
 
 // Cluster object can be used to interact with kubernetes clusters.
 // It abstracts away calls to the kubernetes client-go api.
 type Cluster struct {
-	clientSet *kubernetes.Clientset
-
+	clientSet  *kubernetes.Clientset
 	KubeConfig *kubeconfig.KubeConfig
+	manager    *ClusterManager
 }
 
-// ClusterFromKubeConfig Creates a new KubernetesCluster from a location of a configuration file.
-func ClusterFromKubeConfig(kubeConfig *kubeconfig.KubeConfig) (Cluster, error) {
+// Shutdown does iets
+func (c Cluster) Shutdown() error {
+	return errors.Wrap((*c.manager).Shutdown(), "error shutting down cluster")
+}
+
+// ClusterManager does something
+type ClusterManager interface {
+	GetKubeConfig() (*kubeconfig.KubeConfig, error)
+	Shutdown() error
+}
+
+// ClusterManagerHandler does something else
+type ClusterManagerHandler struct {
+	clusterManager ClusterManager
+}
+
+// NewClusterManagerHandler does yet another thing
+func NewClusterManagerHandler() ClusterManagerHandler {
+	if len(env.ControlPlaneEnv().KubeConfig) == 0 {
+		return ClusterManagerHandler{KinDClusterManager{}}
+	} else {
+		return ClusterManagerHandler{UnmanagedClusterManager{}}
+	}
+}
+
+// NewCluster does ite
+func (cmh ClusterManagerHandler) NewCluster() (Cluster, error) {
+	if _, err := os.Stat(env.ControlPlaneEnv().KubeConfigLocation); os.IsNotExist(err) {
+		if err := os.MkdirAll(path.Dir(env.ControlPlaneEnv().KubeConfigLocation), os.ModePerm); err != nil {
+			return Cluster{}, errors.Wrapf(err, "failed to create directory for kubeconfig (%v)", path.Dir(env.ControlPlaneEnv().KubeConfigLocation))
+		}
+	}
+
+	config, err := cmh.clusterManager.GetKubeConfig()
+	if err != nil {
+		return Cluster{}, errors.Wrap(err, "failed to get kube config")
+	}
+
+	res, err := cmh.NewClusterFromKubeConfig(config)
+	if err != nil {
+		return Cluster{}, errors.Wrap(err, "failed to create kind cluster from Kubeconfig")
+	}
+
+	return res, nil
+}
+
+// NewClusterFromKubeConfig Creates a new KubernetesCluster from a location of a configuration file.
+func (cmh ClusterManagerHandler) NewClusterFromKubeConfig(kubeConfig *kubeconfig.KubeConfig) (Cluster, error) {
 	restconfig, err := kubeConfig.GetConfig()
 	if err != nil {
 		return Cluster{}, errors.Wrap(err, "failed to get rest config from Kubeconfig")
 	}
 
 	clientSet, err := kubernetes.NewForConfig(restconfig)
-
 	if err != nil {
 		return Cluster{}, errors.Wrap(err, "failed to create kubernetes cluster from config")
 	}
@@ -35,58 +80,6 @@ func ClusterFromKubeConfig(kubeConfig *kubeconfig.KubeConfig) (Cluster, error) {
 	return Cluster{
 		clientSet,
 		kubeConfig,
+		&cmh.clusterManager,
 	}, nil
-}
-
-// ManagedCluster creates a managed cluster from an unmanaged cluster.
-// If you know the name and manager type of a cluster, you can make an unmanaged cluster become managed,
-// and you are for example able to delete it.
-func (c Cluster) ManagedCluster(name string, manager Manager) ManagedCluster {
-	return ManagedCluster{
-		c,
-		manager,
-		name,
-	}
-}
-
-// GetNumberOfPods returns the number of pods in the cluster, or an error if it couldn't get these.
-func (c Cluster) GetNumberOfPods(namespace string) (int, error) {
-	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		return -1, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
-	}
-
-	return len(pods.Items), nil
-}
-
-// RemoveNodeFromCluster removes a node with a given name from the cluster.
-func (c Cluster) RemoveNodeFromCluster(nodename string) error {
-	return errors.Wrap(c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{}), "failed to remove node from cluster")
-}
-
-// GetNumberOfPendingPods will return the number of pods in the pending state.
-func (c Cluster) GetNumberOfPendingPods(namespace string) (int, error) {
-	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		return -1, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
-	}
-
-	cnt := 0
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodPending {
-			cnt++
-		}
-	}
-
-	return cnt, nil
-}
-
-// GetNumberOfNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
-func (c Cluster) GetNumberOfNodes() (int, error) {
-	nodes, err := c.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
-	}
-
-	return len(nodes.Items), nil
 }

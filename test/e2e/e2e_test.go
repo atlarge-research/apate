@@ -158,7 +158,7 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 15)
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	cluster, err := kubernetes.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
 	nodes, err := cluster.GetNumberOfNodes()
@@ -201,7 +201,7 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	cluster, err := kubernetes.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
 	numpods, err := cluster.GetNumberOfPods(namespace)

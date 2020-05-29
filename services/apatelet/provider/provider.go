@@ -3,6 +3,7 @@ package provider
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 	"strconv"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -21,7 +22,6 @@ import (
 	"github.com/virtual-kubelet/node-cli/opts"
 	"github.com/virtual-kubelet/node-cli/provider"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -35,7 +35,7 @@ type Provider struct {
 	Pods      podmanager.PodManager
 	Resources *scenario.NodeResources
 	Cfg       provider.InitConfig
-	NodeInfo  kubernetes.NodeInfo
+	NodeInfo  node.NodeInfo
 	Store     *store.Store
 	Stats     *Stats
 
@@ -57,7 +57,7 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector, metricsPort)
+	nodeInfo, err := node.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector, metricsPort)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}
@@ -78,7 +78,7 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store) provider.Provider {
+func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo node.NodeInfo, store *store.Store) provider.Provider {
 	return &Provider{
 		Pods:      pods,
 		Resources: resources,
