@@ -3,6 +3,9 @@ package provider
 
 import (
 	"context"
+	root "github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/commands"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 	"strconv"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -16,10 +19,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
-
-	cli "github.com/virtual-kubelet/node-cli"
-	"github.com/virtual-kubelet/node-cli/opts"
-	"github.com/virtual-kubelet/node-cli/provider"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -43,8 +42,18 @@ type Provider struct {
 	Conditions nodeConditions
 }
 
+// TODO: Move
+type VK struct {
+	st   *provider.Store
+	opts *opts.Opts
+}
+
+func (vk *VK) Run(ctx context.Context) error {
+	return errors.Wrap(root.RunRootCommand(ctx, vk.st, vk.opts), "error while running virtual kubelet")
+}
+
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
+func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*VK, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get options from env")
@@ -62,19 +71,28 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}
 
-	node, err := cli.New(ctx,
-		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
-			cfg.DaemonPort = int32(k8sPort)
-			return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store), nil
-		}),
-		cli.WithBaseOpts(op),
-	)
+	providerStore := provider.NewStore()
+	providerStore.Register(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
+		cfg.DaemonPort = int32(k8sPort)
+		return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store), nil
+	})
 
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create new virtual kubelet provider")
-	}
+	//node, err := cli.New(ctx,
+	//	cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
+	//		cfg.DaemonPort = int32(k8sPort)
+	//		return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store), nil
+	//	}),
+	//	cli.WithBaseOpts(op),
+	//)
 
-	return node, nil
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "failed to create new virtual kubelet provider")
+	//}
+
+	return &VK{
+		st:   providerStore,
+		opts: op,
+	}, nil
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
