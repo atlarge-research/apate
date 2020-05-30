@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
@@ -70,16 +71,16 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 	ech := make(chan error)
 	go func() {
 		if err = nc.Run(ctx); err != nil {
-			hc.SetStatus(healthpb.Status_UNHEALTHY)
 			ech <- errors.Wrap(err, "failed to run node controller")
 		}
 	}()
 
 	// Start gRPC server
-	server, err := createGRPC(apateletEnv.ListenPort, &st, sch, apateletEnv.ListenAddress, stop)
+	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, stop)
 	if err != nil {
 		return errors.Wrap(err, "failed to set up GRPC endpoints")
 	}
+	apateletEnv.ListenPort = server.Conn.Port
 
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
@@ -101,11 +102,21 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 		sch.StartScheduler(startTime)
 	}
 
+	<-time.After(time.Millisecond * 50)
+	select {
+	case read := <-ech:
+		hc.SetStatus(healthpb.Status_UNHEALTHY)
+		err = errors.Wrap(read, "apatelet stopped because of an error")
+	default:
+		//
+	}
+
 	readyCh <- struct{}{}
 
 	// Stop the server on signal or error
 	select {
 	case read := <-ech:
+		hc.SetStatus(healthpb.Status_UNHEALTHY)
 		err = errors.Wrap(read, "apatelet stopped because of an error")
 	case <-ctx.Done():
 		//

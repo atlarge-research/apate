@@ -3,7 +3,7 @@ kind: NodeConfiguration
 metadata:
     name: test-deployment1
 spec:
-    replicas: 3001
+    replicas: 5000
     resources:
         memory: 5G
         cpu: 1000

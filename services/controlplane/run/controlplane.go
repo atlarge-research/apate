@@ -42,12 +42,6 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 
 	log.Println("starting Apate control plane")
 
-	// Get external connection information
-	externalInformation, err := createExternalConnectionInformation()
-	if err != nil {
-		panicf(errors.Wrap(err, "failed to get external connection information"))
-	}
-
 	// Register runners
 	registerRunners(registry)
 
@@ -73,6 +67,12 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	// TODO: Remove later, seems to give k8s some breathing room for crd
 	time.Sleep(time.Second)
 
+	// Get external connection information
+	externalInformation, err := createExternalConnectionInformation()
+	if err != nil {
+		panicf(errors.Wrap(err, "failed to get external connection information"))
+	}
+
 	// Create node informer
 	stopInformer := make(chan struct{})
 	handler := node.NewHandler(&createdStore, registry, externalInformation)
@@ -91,6 +91,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to start GRPC server"))
 	}
+	externalInformation.Port = server.Conn.Port
 
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 

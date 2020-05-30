@@ -52,8 +52,8 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 
 	name := baseName + "-" + res.UUID.String()
 	op.KubeConfigPath = env.KubeConfigLocation
-	op.ListenPort = int32(k8sPort)
-	op.MetricsAddr = ":" + strconv.Itoa(metricsPort)
+	op.ListenPort = 0                      //int32(k8sPort)
+	op.MetricsAddr = ":" + strconv.Itoa(0) //metricsPort)
 	op.Provider = baseName
 	op.NodeName = name
 
