@@ -55,7 +55,7 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 		return nil, nil, -1, errors.Wrapf(err, "failed to parse node uuid (%v)", res.NodeUuid)
 	}
 
-	cfg, err := kubeconfig.FromBytes(res.KubeConfig, kubeConfigPath)
+	cfg, err := kubeconfig.FromBytes(res.KubeConfig, kubeConfigPath, false)
 	if err != nil {
 		return nil, nil, -1, errors.Wrap(err, "failed to load kubeconfig")
 	}

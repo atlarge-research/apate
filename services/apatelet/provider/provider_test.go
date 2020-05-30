@@ -2,9 +2,10 @@ package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 	"testing"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -39,7 +40,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
 
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, node.NodeInfo{}, &st)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, node.Info{}, &st)
 
 	fakeNode := corev1.Node{}
 
@@ -296,7 +297,7 @@ func TestNewProvider(t *testing.T) {
 	}
 
 	cfg := provider.InitConfig{}
-	ni, err := node.NewNodeInfo("a", "b", "c", "d", "e/f", 4242)
+	ni, err := node.NewInfo("a", "b", "c", "d", "e/f", 4242)
 	assert.NoError(t, err)
 
 	var s store.Store = ms

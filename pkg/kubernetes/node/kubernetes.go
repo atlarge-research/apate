@@ -1,3 +1,4 @@
+// Package node contains some utilities to describe Kubernetes nodes
 package node
 
 import (
@@ -6,22 +7,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NodeInfo contains all information used for creating an equivalent kubernetes node
-type NodeInfo struct {
+// Info contains all information used for creating an equivalent kubernetes node
+type Info struct {
 	NodeType, Role, Name, Version, Namespace, Selector string
 
 	MetricsPort int
 }
 
-// NewNodeInfo creates a new NodeInfo
-func NewNodeInfo(nodeType string, role string, name string, version string, selector string, metricsPort int) (NodeInfo, error) {
+// NewInfo creates a new Info
+func NewInfo(nodeType string, role string, name string, version string, selector string, metricsPort int) (Info, error) {
 	selectorParts := strings.Split(selector, "/")
 
 	if len(selectorParts) != 2 {
-		return NodeInfo{}, errors.Errorf("invalid selector %s", selector)
+		return Info{}, errors.Errorf("invalid selector %s", selector)
 	}
 
-	return NodeInfo{
+	return Info{
 		NodeType:    nodeType,
 		Role:        role,
 		Name:        name,

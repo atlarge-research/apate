@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/fatih/color"
@@ -22,6 +23,7 @@ import (
 )
 
 type commandLineArgs struct {
+	kubeConfigFileLocation       string
 	k8sConfigurationFileLocation string
 
 	controlPlaneAddress string
@@ -73,6 +75,7 @@ func StartCmd(cmdArgs []string) {
 						Usage:       "The location of the kubernetes configuration for the resources to be created",
 						EnvVars:     []string{"K8S_CONFIG_LOCATION"},
 						Required:    false,
+						TakesFile:   true,
 						Value:       "",
 						Destination: &args.k8sConfigurationFileLocation,
 					},
@@ -107,10 +110,19 @@ func StartCmd(cmdArgs []string) {
 						Required:    false,
 					},
 					&cli.StringFlag{
-						Name:        "config",
+						Name:        "manager-location",
 						Usage:       "Manager config of cluster manager",
+						TakesFile:   true,
 						Destination: &cpEnv.ManagerConfigLocation,
 						Value:       cpEnv.ManagerConfigLocation,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "kubeconfig-location",
+						Usage:       "Location of the kubeconfig. If set, the managed cluster will be disabled",
+						TakesFile:   true,
+						Value:       args.kubeConfigFileLocation,
+						Destination: &args.kubeConfigFileLocation,
 						Required:    false,
 					},
 					&cli.StringFlag{
@@ -224,6 +236,14 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	}
 
 	cpEnv.ApateletRunType = env.RunType(args.apateletRunType)
+
+	if len(args.kubeConfigFileLocation) != 0 {
+		bytes, err := ioutil.ReadFile(filepath.Clean(args.kubeConfigFileLocation))
+		if err != nil {
+			return errors.Wrapf(err, "failed to read kubeconfig from file at %v", args.kubeConfigFileLocation)
+		}
+		cpEnv.KubeConfig = string(bytes)
+	}
 
 	err := container.SpawnControlPlaneContainer(ctx, pp, cpEnv)
 	if err != nil {

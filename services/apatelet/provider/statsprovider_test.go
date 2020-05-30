@@ -2,8 +2,9 @@ package provider
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 	"testing"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
@@ -37,7 +38,7 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	pm := podmanager.New() // TODO mock?
 
 	res := scenario.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
-	info, err := node.NewNodeInfo("", "", name, "", "a/b", port)
+	info, err := node.NewInfo("", "", name, "", "a/b", port)
 	assert.NoError(t, err)
 
 	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)

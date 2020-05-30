@@ -3,12 +3,14 @@
 package kubernetes
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"path"
+
+	"github.com/pkg/errors"
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
 // Cluster object can be used to interact with kubernetes clusters.
@@ -19,32 +21,34 @@ type Cluster struct {
 	manager    *ClusterManager
 }
 
-// Shutdown does iets
+// Shutdown is a wrapper around manager.Shutdown, which calls the shutdown function on the current cluster manager.
 func (c Cluster) Shutdown() error {
 	return errors.Wrap((*c.manager).Shutdown(), "error shutting down cluster")
 }
 
-// ClusterManager does something
+// ClusterManager contains utilities to handle connecting / creating a cluster and shutting it down if necessary.
 type ClusterManager interface {
+	// GetKubeConfig returns the KubeConfig by this cluster. This is also the place where one can create the cluster if necessary.
 	GetKubeConfig() (*kubeconfig.KubeConfig, error)
+
+	// Shutdown is called when the program exits. This can be used to clean up a cluster if necessary.
 	Shutdown() error
 }
 
-// ClusterManagerHandler does something else
+// ClusterManagerHandler contains utilities to create cluster objects based on a certain manager.
 type ClusterManagerHandler struct {
 	clusterManager ClusterManager
 }
 
-// NewClusterManagerHandler does yet another thing
+// NewClusterManagerHandler creates a new ClusterManagerHandler, depending on what environment variables have been set
 func NewClusterManagerHandler() ClusterManagerHandler {
 	if len(env.ControlPlaneEnv().KubeConfig) == 0 {
 		return ClusterManagerHandler{KinDClusterManager{}}
-	} else {
-		return ClusterManagerHandler{UnmanagedClusterManager{}}
 	}
+	return ClusterManagerHandler{UnmanagedClusterManager{}}
 }
 
-// NewCluster does ite
+// NewCluster creates a new cluster object by calling GetKubeConfig on its manager
 func (cmh ClusterManagerHandler) NewCluster() (Cluster, error) {
 	if _, err := os.Stat(env.ControlPlaneEnv().KubeConfigLocation); os.IsNotExist(err) {
 		if err := os.MkdirAll(path.Dir(env.ControlPlaneEnv().KubeConfigLocation), os.ModePerm); err != nil {
@@ -65,7 +69,7 @@ func (cmh ClusterManagerHandler) NewCluster() (Cluster, error) {
 	return res, nil
 }
 
-// NewClusterFromKubeConfig Creates a new KubernetesCluster from a location of a configuration file.
+// NewClusterFromKubeConfig creates a new KubernetesCluster from a location of a kubeconfig.
 func (cmh ClusterManagerHandler) NewClusterFromKubeConfig(kubeConfig *kubeconfig.KubeConfig) (Cluster, error) {
 	restconfig, err := kubeConfig.GetConfig()
 	if err != nil {

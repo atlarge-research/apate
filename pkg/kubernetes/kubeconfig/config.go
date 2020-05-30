@@ -20,10 +20,10 @@ type KubeConfig struct {
 }
 
 // FromBytes creates a kubeConfig struct from byte array and writes it to the given path if the file doesn't exist.
-func FromBytes(bytes []byte, path string) (*KubeConfig, error) {
+func FromBytes(bytes []byte, path string, forceWrite bool) (*KubeConfig, error) {
 	_, err := os.Stat(path)
 
-	if os.IsNotExist(err) {
+	if os.IsNotExist(err) || forceWrite {
 		file, err := os.Create(path)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed opening file from provided path")
