@@ -86,7 +86,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 				WatchFunc: e.watch,
 			},
 			&nodeconfigv1.NodeConfiguration{},
-			30*time.Second,
+			time.Minute,
 			cache.Indexers{},
 		)
 

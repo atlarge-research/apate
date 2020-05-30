@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -24,17 +23,7 @@ func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, en
 
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
-		const numports = 3
-		ports, err := freeport.GetFreePorts(numports)
-
-		if err != nil {
-			return errors.Wrapf(err, "failed to get %v free ports", numports)
-		}
-
 		readyCh := make(chan struct{}, 1)
-		apateletEnv.ListenPort = ports[0]
-		apateletEnv.MetricsPort = ports[1]
-		apateletEnv.KubernetesPort = ports[2]
 
 		go func() {
 			// TODO: Add retry logic

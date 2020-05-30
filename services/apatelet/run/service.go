@@ -18,9 +18,9 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-func createGRPC(listenPort int, store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel chan<- os.Signal) (*service.GRPCServer, error) {
+func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel chan<- os.Signal) (*service.GRPCServer, error) {
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort, false)
+	connectionInfo := service.NewConnectionInfo(listenAddress, 0, false)
 
 	// Create gRPC server
 	server, err := service.NewGRPCServer(connectionInfo)

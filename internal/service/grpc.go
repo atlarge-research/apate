@@ -37,10 +37,17 @@ func (s *GRPCServer) Serve() error {
 }
 
 func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, server *grpc.Server, err error) {
-	listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", info.Address, info.Port))
-	if err != nil {
-		err = errors.Wrapf(err, "failed to listen on %s:%d", info.Address, info.Port)
-		return
+	for {
+		listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", info.Address, 0))
+		//if err != nil {
+		//	err = errors.Wrapf(err, "failed to listen on %s:%d", info.Address, info.Port)
+		//	return
+		//}
+
+		if err == nil {
+			info.Port = listener.Addr().(*net.TCPAddr).Port
+			break
+		}
 	}
 
 	server = grpc.NewServer()
