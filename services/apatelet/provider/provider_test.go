@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -191,7 +194,7 @@ func TestGetPod(t *testing.T) {
 		Pods:  podmanager.New(),
 	}
 
-	prov.Pods.AddPod(pod)
+	prov.Pods.AddPod(&pod)
 
 	np, err := prov.GetPod(context.Background(), podNamespace, podName)
 
@@ -227,7 +230,7 @@ func TestGetPods(t *testing.T) {
 		Store: &s,
 		Pods:  podmanager.New(),
 	}
-	prov.Pods.AddPod(pod)
+	prov.Pods.AddPod(&pod)
 
 	ps, err := prov.GetPods(context.Background())
 
@@ -254,26 +257,121 @@ func TestGetPodStatus(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodGetPodStatusResponse
+	pod.Spec.Containers = []corev1.Container{
+		{
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:              *resource.NewQuantity(1000, ""),
+					corev1.ResourceMemory:           *resource.NewQuantity(1000, ""),
+					corev1.ResourceEphemeralStorage: *resource.NewQuantity(1000, ""),
+				},
+			},
+		},
+	}
 
 	// expect
+	one := uint64(1)
+
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(stats.PodStats{
+		CPU: &stats.CPUStats{
+			UsageNanoCores: &one,
+		},
+		Memory: &stats.MemoryStats{
+			UsageBytes: &one,
+		},
+		EphemeralStorage: &stats.FsStats{
+			UsedBytes: &one,
+		},
+	}, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
 
 	// sot
 	var s store.Store = ms
 	prov := Provider{
-		Store: &s,
-		Pods:  podmanager.New(),
+		Store:     &s,
+		Pods:      podmanager.New(),
+		Resources: &scenario.NodeResources{},
+		Stats: &Stats{
+			podTotalResources: &resources{},
+		},
 	}
-	prov.Pods.AddPod(pod)
+	prov.Pods.AddPod(&pod)
 
 	ps, err := prov.GetPodStatus(context.Background(), podNamespace, podName)
 
 	// assert
 	assert.NoError(t, err)
-	assert.Equal(t, ps.Phase, corev1.PodSucceeded)
+	assert.Equal(t, corev1.PodSucceeded, ps.Phase)
+	assert.Equal(t, corev1.PodReady, ps.Conditions[0].Type)
+	assert.Equal(t, corev1.ConditionTrue, ps.Conditions[0].Status)
+}
+
+func TestGetPodStatusLimitReached(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ms := mock_store.NewMockStore(ctrl)
+
+	// vars
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string{
+		podconfigv1.PodConfigurationLabel: podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
+	pod.Spec.Containers = []corev1.Container{
+		{
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:              *resource.NewQuantity(64, ""),
+					corev1.ResourceMemory:           *resource.NewQuantity(64, ""),
+					corev1.ResourceEphemeralStorage: *resource.NewQuantity(64, ""),
+				},
+			},
+		},
+	}
+
+	// expect
+	moreThan64 := uint64(128)
+
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(stats.PodStats{
+		CPU: &stats.CPUStats{
+			UsageNanoCores: &moreThan64,
+		},
+		Memory: &stats.MemoryStats{
+			UsageBytes: &moreThan64,
+		},
+		EphemeralStorage: &stats.FsStats{
+			UsedBytes: &moreThan64,
+		},
+	}, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
+
+	// sot
+	var s store.Store = ms
+	prov := Provider{
+		Store:     &s,
+		Pods:      podmanager.New(),
+		Resources: &scenario.NodeResources{},
+		Stats: &Stats{
+			podTotalResources: &resources{},
+		},
+	}
+	prov.Pods.AddPod(&pod)
+
+	ps, err := prov.GetPodStatus(context.Background(), podNamespace, podName)
+
+	// assert
+	assert.NoError(t, err)
+	assert.Equal(t, corev1.PodFailed, ps.Phase)
+	assert.Equal(t, corev1.PodReady, ps.Conditions[0].Type)
+	assert.Equal(t, corev1.ConditionFalse, ps.Conditions[0].Status)
 }
 
 func TestNewProvider(t *testing.T) {
@@ -300,6 +398,8 @@ func TestNewProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	var s store.Store = ms
+
+	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
 	p, ok := NewProvider(pm, stats, &resources, cfg, ni, &s).(*Provider)
 

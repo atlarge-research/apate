@@ -35,7 +35,7 @@ func (m *MockPodManager) EXPECT() *MockPodManagerMockRecorder {
 }
 
 // AddPod mocks base method
-func (m *MockPodManager) AddPod(arg0 v1.Pod) {
+func (m *MockPodManager) AddPod(arg0 *v1.Pod) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AddPod", arg0)
 }

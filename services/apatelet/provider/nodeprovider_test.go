@@ -307,6 +307,9 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
 		},
 	}
+
+	prov.updateAggregatePodStats()
+
 	return prov, ctrl
 }
 
