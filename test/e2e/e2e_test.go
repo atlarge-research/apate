@@ -132,7 +132,7 @@ func getKubeConfig(t *testing.T) *kubeconfig.KubeConfig {
 	cfg := c.stop()
 	println(cfg)
 
-	kcfg, err := kubeconfig.FromBytes([]byte(cfg), os.TempDir()+"/apate-e2e-kubeconfig-"+uuid.New().String())
+	kcfg, err := kubeconfig.FromBytes([]byte(cfg), os.TempDir()+"/apate-e2e-kubeconfig-"+uuid.New().String(), true)
 	assert.NoError(t, err)
 
 	return kcfg
@@ -158,7 +158,8 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 15)
 
-	cluster, err := kubernetes.NewClusterFromKubeConfig(kcfg)
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
 	nodes, err := cluster.GetNumberOfNodes()
@@ -201,7 +202,8 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	cluster, err := kubernetes.NewClusterFromKubeConfig(kcfg)
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
 	numpods, err := cluster.GetNumberOfPods(namespace)

@@ -1,11 +1,11 @@
-// Package kind contains code to manage a KinDClusterManager cluster and its configuration file
 package kubernetes
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
@@ -16,10 +16,10 @@ import (
 	"sigs.k8s.io/kind/pkg/cmd/kind"
 )
 
-// KinDClusterManager is a struct implementing Manager for KinDClusterManager clusters.
+// KinDClusterManager is a struct which implements ClusterManager by creating a kind cluster.
 type KinDClusterManager struct{}
 
-// CreateCluster creates a new cluster with a given name.
+// GetKubeConfig validates the cluster name, creates the Kind cluster and returns its kubeconfig.
 func (k KinDClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
 	if env.ControlPlaneEnv().KinDClusterName == "" {
 		return nil, errors.New("trying to create a KinDClusterManager cluster with an empty name")
@@ -50,6 +50,7 @@ func (k KinDClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
 	return kubeConfig, nil
 }
 
+// Shutdown deletes the KinD cluster.
 func (k KinDClusterManager) Shutdown() error {
 	return errors.Wrap(k.deleteCluster(), "failed to delete kind cluster")
 }
@@ -63,10 +64,10 @@ func (k KinDClusterManager) writeKubeConfig() error {
 		// #nosec
 		cmdSed := exec.Command("sed", "-i", "-r", "s/https:\\/\\/(.+):/https:\\/\\/docker:/g", kubeConfigLocation)
 		return errors.Wrap(cmdSed.Run(), "failed to apply sed to the kube config")
-	} else {
-		// Update kube config to use internal
-		return errors.Wrapf(k.useInternalKubeConfig(env.ControlPlaneEnv().KinDClusterName, kubeConfigLocation), "failed to use internal Kubeconfig")
 	}
+
+	// Update kube config to use internal
+	return errors.Wrapf(k.useInternalKubeConfig(env.ControlPlaneEnv().KinDClusterName, kubeConfigLocation), "failed to use internal Kubeconfig")
 }
 
 func (k KinDClusterManager) prepareCluster() error {
@@ -116,9 +117,6 @@ func (k KinDClusterManager) useInternalKubeConfig(name string, kubeConfigLocatio
 	return errors.Wrapf(c.Execute(), "failed run kind %v to retrieve internal Kubeconfig", strings.Join(args, " "))
 }
 
-// DeleteCluster deletes a cluster with a given name.
-// This function never errors, even if the cluster didn't exist yet.
-// Therefore it can be used to ensure no cluster with a certain name exists.
 func (k KinDClusterManager) deleteCluster() error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
