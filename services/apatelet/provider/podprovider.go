@@ -69,7 +69,7 @@ func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf event
 
 func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 	return func() (interface{}, error) {
-		p.Pods.AddPod(*pod)
+		p.Pods.AddPod(pod)
 		return nil, nil
 	}
 }

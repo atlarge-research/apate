@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/virtual-kubelet/node-cli/provider"
+
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/virtual-kubelet/node-cli/provider"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
@@ -29,7 +30,7 @@ const (
 	event = events.PodResources
 )
 
-func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvider, *gomock.Controller, *mock_store.MockStore, podmanager.PodManager) {
+func createProvider(t *testing.T, cpu, mem, fs int64) (*Provider, *gomock.Controller, *mock_store.MockStore, podmanager.PodManager) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
@@ -40,9 +41,11 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	info, err := kubernetes.NewNodeInfo("", "", name, "", "a/b", port)
 	assert.NoError(t, err)
 
-	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
+	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	return prov.(provider.PodMetricsProvider), ctrl, ms, pm
+	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
+	p := prov.(*Provider)
+	return p, ctrl, ms, pm
 }
 
 func TestEmpty(t *testing.T) {
@@ -77,6 +80,8 @@ func TestSinglePod(t *testing.T) {
 	cpuUsage := uint64(16)
 	prov, ctrl, ms, pm := createProvider(t, cpu, mem, 0)
 
+	prov.updateAggregatePodStats()
+
 	// Create pod
 	lbl := make(map[string]string)
 	lbl[podconfigv1.PodConfigurationLabel] = flag
@@ -86,7 +91,7 @@ func TestSinglePod(t *testing.T) {
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod) //TODO mock?
+	pm.AddPod(&pod) //TODO mock?
 
 	// Create stats
 	statistics := stats.PodStats{
@@ -140,7 +145,7 @@ func TestUnspecifiedPods(t *testing.T) {
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod) //TODO mock?
+	pm.AddPod(&pod) //TODO mock?
 
 	lbl2 := make(map[string]string)
 	lbl2[podconfigv1.PodConfigurationLabel] = flag + "2"
@@ -150,7 +155,7 @@ func TestUnspecifiedPods(t *testing.T) {
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod2) //TODO mock?
+	pm.AddPod(&pod2) //TODO mock?
 
 	lbl3 := make(map[string]string)
 	lbl3[podconfigv1.PodConfigurationLabel] = flag + "3"
@@ -160,14 +165,14 @@ func TestUnspecifiedPods(t *testing.T) {
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod3) //TODO mock?
+	pm.AddPod(&pod3) //TODO mock?
 	pod4 := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{UID: flag + "4"},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod4) //TODO mock?
+	pm.AddPod(&pod4) //TODO mock?
 
 	// Create stats
 	statistics := stats.PodStats{
