@@ -5,6 +5,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	corev1 "k8s.io/api/core/v1"
@@ -78,14 +80,14 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store) provider.Provider {
-	return &Provider{
+func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store) provider.Provider {
+	p := &Provider{
 		Pods:      pods,
 		Resources: resources,
 		Cfg:       cfg,
 		NodeInfo:  nodeInfo,
 		Store:     store,
-		Stats:     stats,
+		Stats:     nodeStats,
 		Conditions: nodeConditions{
 			ready:              condition.New(true, corev1.NodeReady),
 			outOfDisk:          condition.New(false, corev1.NodeOutOfDisk),
@@ -95,4 +97,12 @@ func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.N
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
 		},
 	}
+
+	(*store).AddPodListener(events.PodResources, func(obj interface{}) {
+		p.updateAggregatePodStats()
+	})
+
+	p.updateAggregatePodStats()
+
+	return p
 }

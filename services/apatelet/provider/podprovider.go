@@ -8,11 +8,13 @@ import (
 	"log"
 	"time"
 
+	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/pkg/errors"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 	corev1 "k8s.io/api/core/v1"
@@ -147,25 +149,6 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 	return nil, errors.Errorf("invalid pod %v", pod)
 }
 
-func podStatusToPhase(status interface{}) corev1.PodPhase {
-	switch status {
-	case scenario.PodStatusPending:
-		return corev1.PodPending
-	case scenario.PodStatusUnset:
-		fallthrough // act as a normal pod
-	case scenario.PodStatusRunning:
-		return corev1.PodRunning
-	case scenario.PodStatusSucceeded:
-		return corev1.PodSucceeded
-	case scenario.PodStatusFailed:
-		return corev1.PodFailed
-	case scenario.PodStatusUnknown:
-		return corev1.PodUnknown
-	default:
-		return corev1.PodUnknown
-	}
-}
-
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
 	if err := ctx.Err(); err != nil {
@@ -183,7 +166,30 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 	pod, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
 		status, err := (*p.Store).GetPodFlag(label, events.PodStatus)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get pod flag while getting pod status")
+			return nil, errors.Wrap(err, "failed to get pod status flag while getting pod status")
+		}
+
+		limitExceeded, err := p.doesPodExceedLimit(ns, name, label)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to determine if limit is exceeded while getting pod status")
+		}
+
+		if limitExceeded {
+			p.Pods.DeletePodByName(ns, name)
+
+			return &corev1.PodStatus{
+				Phase:   podStatusToPhase(scenario.PodStatusFailed),
+				Message: "Pod used too many resources",
+				Conditions: []corev1.PodCondition{
+					{
+						Type:               corev1.PodReady,
+						Status:             corev1.ConditionFalse,
+						LastProbeTime:      metav1.Time{Time: time.Now()},
+						LastTransitionTime: metav1.Time{Time: time.Now()},
+						Message:            "Failed pod...",
+					},
+				},
+			}, nil
 		}
 
 		return &corev1.PodStatus{
@@ -263,7 +269,7 @@ func (p *Provider) GetContainerLogs(context.Context, string, string, string, api
 	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate\n"))), nil
 }
 
-// RunInContainer retrieves the log of a specific container.
+// RunInContainer runs a command in a specific container.
 func (p *Provider) RunInContainer(context.Context, string, string, string, []string, api.AttachIO) error {
 	// There is no actual process running in the containers, so we can't do anything.
 	return nil
@@ -299,4 +305,77 @@ func (p *Provider) getPodLabelByName(ns string, name string) string {
 
 func getPodLabelByPod(pod *corev1.Pod) string {
 	return pod.Namespace + "/" + pod.Labels[podconfigv1.PodConfigurationLabel]
+}
+
+func (p *Provider) doesPodExceedLimit(ns string, name string, label string) (bool, error) {
+	limits, err := p.getPodResourceLimits(ns, name)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get resource limits while getting pod status")
+	}
+
+	podResourcesFlag, err := (*p.Store).GetPodFlag(label, events.PodResources)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get pod resources flag while getting pod status")
+	}
+
+	podResources, ok := podResourcesFlag.(stats.PodStats)
+	if !ok {
+		return false, errors.Wrapf(err, "unable to convert '%v' to PodStats", podResourcesFlag)
+	}
+
+	usageCores := podResources.CPU.UsageNanoCores
+	usageMemory := podResources.Memory.UsageBytes
+	usageEphemeralStorage := podResources.EphemeralStorage.UsedBytes
+
+	podExceedsPodLimit := *usageCores > limits.cpu || *usageMemory > limits.memory || *usageEphemeralStorage > limits.ephemeralStorage
+
+	// If the total amount of all pods resources exceed the resources on the node, just kill the current one
+	// TODO implement k8s OOM handling (much more complicated)
+	trs := p.Stats.podTotalResources
+	totalLimitExceeded := trs.cpu > uint64(p.Resources.CPU) || trs.memory > uint64(p.Resources.Memory) || trs.ephemeralStorage > uint64(p.Resources.EphemeralStorage)
+
+	return podExceedsPodLimit || totalLimitExceeded, nil
+}
+
+func (p *Provider) getPodResourceLimits(ns string, name string) (resources, error) {
+	pod, ok := p.Pods.GetPodByName(ns, name)
+	if !ok {
+		return resources{}, errors.Errorf("unable to find pod with namespace %v and name %v", ns, name)
+	}
+
+	totalCPU := uint64(0)
+	totalMem := uint64(0)
+	totalEphemeralStorage := uint64(0)
+
+	for _, c := range pod.Spec.Containers {
+		limits := c.Resources.Limits
+		totalCPU += uint64(limits.Cpu().Value())
+		totalMem += uint64(limits.Memory().Value())
+		totalEphemeralStorage += uint64(limits.StorageEphemeral().Value())
+	}
+
+	return resources{
+		totalCPU,
+		totalMem,
+		totalEphemeralStorage,
+	}, nil
+}
+
+func podStatusToPhase(status interface{}) corev1.PodPhase {
+	switch status {
+	case scenario.PodStatusPending:
+		return corev1.PodPending
+	case scenario.PodStatusUnset:
+		fallthrough // act as a normal pod
+	case scenario.PodStatusRunning:
+		return corev1.PodRunning
+	case scenario.PodStatusSucceeded:
+		return corev1.PodSucceeded
+	case scenario.PodStatusFailed:
+		return corev1.PodFailed
+	case scenario.PodStatusUnknown:
+		return corev1.PodUnknown
+	default:
+		return corev1.PodUnknown
+	}
 }

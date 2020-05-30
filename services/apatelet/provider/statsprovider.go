@@ -14,9 +14,17 @@ import (
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 )
 
+type resources struct {
+	cpu              uint64
+	memory           uint64
+	ephemeralStorage uint64
+}
+
 // Stats is a simple wrapper for statistics fields
 type Stats struct {
-	startTime metav1.Time
+	startTime         metav1.Time
+	podStats          *[]stats.PodStats
+	podTotalResources *resources
 }
 
 // NewStats creates a new Stats instance
@@ -30,31 +38,29 @@ func (p *Provider) now() metav1.Time {
 
 // GetStatsSummary should return a node level statistic report
 func (p *Provider) GetStatsSummary(context.Context) (*stats.Summary, error) {
-	pods := p.getAggregatePodStats()
-
 	return &stats.Summary{
-		Node: p.getNodeStats(&pods),
-		Pods: pods,
+		Node: p.getNodeStats(),
+		Pods: *p.Stats.podStats,
 	}, nil
 }
 
 // Node statistics
-func (p *Provider) getNodeStats(pods *[]stats.PodStats) stats.NodeStats {
+func (p *Provider) getNodeStats() stats.NodeStats {
 	return stats.NodeStats{
 		NodeName:         p.NodeInfo.Name,
 		SystemContainers: []stats.ContainerStats{},
 		StartTime:        p.Stats.startTime,
-		CPU:              p.cpuStats(pods),
-		Memory:           p.memoryStats(pods),
-		Fs:               p.filesystemStats(pods),
+		CPU:              p.cpuStats(),
+		Memory:           p.memoryStats(),
+		Fs:               p.filesystemStats(),
 	}
 }
 
-func (p *Provider) cpuStats(pods *[]stats.PodStats) *stats.CPUStats {
+func (p *Provider) cpuStats() *stats.CPUStats {
 	zero := uint64(0)
 	usage := uint64(0)
 
-	for _, pod := range *pods {
+	for _, pod := range *p.Stats.podStats {
 		if pod.CPU != nil && pod.CPU.UsageNanoCores != nil {
 			usage += *pod.CPU.UsageNanoCores
 		}
@@ -67,11 +73,11 @@ func (p *Provider) cpuStats(pods *[]stats.PodStats) *stats.CPUStats {
 	}
 }
 
-func (p *Provider) memoryStats(pods *[]stats.PodStats) *stats.MemoryStats {
+func (p *Provider) memoryStats() *stats.MemoryStats {
 	zero := uint64(0)
 	usage := uint64(0)
 
-	for _, pod := range *pods {
+	for _, pod := range *p.Stats.podStats {
 		if pod.Memory != nil && pod.Memory.UsageBytes != nil {
 			usage += *pod.Memory.UsageBytes
 		}
@@ -90,12 +96,12 @@ func (p *Provider) memoryStats(pods *[]stats.PodStats) *stats.MemoryStats {
 	}
 }
 
-func (p *Provider) filesystemStats(pods *[]stats.PodStats) *stats.FsStats {
+func (p *Provider) filesystemStats() *stats.FsStats {
 	zero := uint64(0)
 	capacity := uint64(p.Resources.EphemeralStorage)
 	usage := uint64(0)
 
-	for _, pod := range *pods {
+	for _, pod := range *p.Stats.podStats {
 		if pod.EphemeralStorage != nil && pod.EphemeralStorage.UsedBytes != nil {
 			usage += *pod.EphemeralStorage.UsedBytes
 		}
@@ -113,33 +119,37 @@ func (p *Provider) filesystemStats(pods *[]stats.PodStats) *stats.FsStats {
 	}
 }
 
-func (p *Provider) getAggregatePodStats() []stats.PodStats {
+func (p *Provider) updateAggregatePodStats() {
 	var statistics []stats.PodStats
+	var totalResources = resources{}
 
 	for _, pod := range p.Pods.GetAllPods() {
-		statistics = append(statistics, *p.getPodStats(pod))
+		podStats := *p.getPodStats(pod)
+		totalResources.cpu += *podStats.CPU.UsageNanoCores
+		totalResources.memory += *podStats.Memory.UsageBytes
+		totalResources.ephemeralStorage += *podStats.EphemeralStorage.UsedBytes
+		statistics = append(statistics, podStats)
 	}
 
-	return statistics
+	p.Stats.podStats = &statistics
+	p.Stats.podTotalResources = &totalResources
 }
 
 func (p *Provider) getPodStats(pod *corev1.Pod) *stats.PodStats {
-	for k, label := range pod.Labels {
-		if k == podconfigv1.PodConfigurationLabel {
-			unconvertedStats, err := (*p.Store).GetPodFlag(label, events.PodResources)
-			if err != nil {
-				log.Printf("error while retrieving pod flag for resources: %v\n", err)
-				return addPodSpecificStats(pod, &stats.PodStats{})
-			}
-
-			statistics, ok := unconvertedStats.(stats.PodStats)
-			if !ok {
-				log.Printf("unable to convert '%v' to PodStats\n", unconvertedStats)
-				return addPodSpecificStats(pod, &stats.PodStats{})
-			}
-
-			return addPodSpecificStats(pod, &statistics)
+	if label, ok := pod.Labels[podconfigv1.PodConfigurationLabel]; ok {
+		unconvertedStats, err := (*p.Store).GetPodFlag(label, events.PodResources)
+		if err != nil {
+			log.Printf("error while retrieving pod flag for resources: %v\n", err)
+			return addPodSpecificStats(pod, &stats.PodStats{})
 		}
+
+		statistics, ok := unconvertedStats.(stats.PodStats)
+		if !ok {
+			log.Printf("unable to convert '%v' to PodStats\n", unconvertedStats)
+			return addPodSpecificStats(pod, &stats.PodStats{})
+		}
+
+		return addPodSpecificStats(pod, &statistics)
 	}
 
 	return addPodSpecificStats(pod, &stats.PodStats{})

@@ -34,6 +34,18 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// AddPodListener mocks base method
+func (m *MockStore) AddPodListener(arg0 int32, arg1 func(interface{})) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddPodListener", arg0, arg1)
+}
+
+// AddPodListener indicates an expected call of AddPodListener
+func (mr *MockStoreMockRecorder) AddPodListener(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPodListener", reflect.TypeOf((*MockStore)(nil).AddPodListener), arg0, arg1)
+}
+
 // GetNodeFlag mocks base method
 func (m *MockStore) GetNodeFlag(arg0 int32) (interface{}, error) {
 	m.ctrl.T.Helper()
