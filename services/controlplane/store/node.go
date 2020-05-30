@@ -14,6 +14,7 @@ type Node struct {
 	UUID           uuid.UUID
 	Status         health.Status
 	Selector       string
+	Resources      *scenario.NodeResources
 }
 
 // NewNode creates a new Node based on the given connection information
@@ -23,5 +24,6 @@ func NewNode(info service.ConnectionInfo, resources *scenario.NodeResources, sel
 		UUID:           resources.UUID,
 		Status:         health.Status_UNKNOWN,
 		Selector:       selector,
+		Resources:      resources,
 	}
 }

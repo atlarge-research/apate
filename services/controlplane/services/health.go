@@ -74,7 +74,8 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 		}
 
 		if err = (*h.store).SetNodeStatus(id, req.Status); err != nil {
-			log.Printf("%v\n", err)
+			log.Printf("error while setting node status: %v\n", err)
+			break
 		}
 	}
 

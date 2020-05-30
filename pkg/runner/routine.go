@@ -20,8 +20,6 @@ func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, en
 		return errors.Wrap(err, "failed to set certificates")
 	}
 
-	readyCh := make(chan struct{})
-
 	environment.KubeConfigLocation = env.ControlPlaneEnv().KubeConfigLocation
 
 	for i := 0; i < amountOfNodes; i++ {
@@ -33,6 +31,7 @@ func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, en
 			return errors.Wrapf(err, "failed to get %v free ports", numports)
 		}
 
+		readyCh := make(chan struct{}, 1)
 		apateletEnv.ListenPort = ports[0]
 		apateletEnv.MetricsPort = ports[1]
 		apateletEnv.KubernetesPort = ports[2]
@@ -42,11 +41,13 @@ func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, en
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("Apatelet failed to start: %v\n", r)
+					readyCh <- struct{}{}
 				}
 			}()
 			err := apateRun.StartApatelet(ctx, apateletEnv, readyCh)
 			if err != nil {
 				log.Printf("Apatelet failed to start: %v\n", err)
+				readyCh <- struct{}{}
 			}
 		}()
 

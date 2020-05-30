@@ -105,10 +105,8 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 
 	// Stop the server on signal or error
 	select {
-	case err := <-ech:
-		err = errors.Wrap(err, "apatelet stopped because of an error")
-		log.Println(err)
-		return err
+	case read := <-ech:
+		err = errors.Wrap(read, "apatelet stopped because of an error")
 	case <-ctx.Done():
 		//
 	case <-stop:
@@ -118,7 +116,7 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 	if err := shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
 		log.Println(err)
 	}
-	return nil
+	return err
 }
 
 func createScheduler(ctx context.Context, st store.Store) *scheduler.Scheduler {
