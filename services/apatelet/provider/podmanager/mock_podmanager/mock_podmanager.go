@@ -58,6 +58,18 @@ func (mr *MockPodManagerMockRecorder) DeletePod(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePod", reflect.TypeOf((*MockPodManager)(nil).DeletePod), arg0)
 }
 
+// DeletePodByName mocks base method
+func (m *MockPodManager) DeletePodByName(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeletePodByName", arg0, arg1)
+}
+
+// DeletePodByName indicates an expected call of DeletePodByName
+func (mr *MockPodManagerMockRecorder) DeletePodByName(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePodByName", reflect.TypeOf((*MockPodManager)(nil).DeletePodByName), arg0, arg1)
+}
+
 // GetAllPods mocks base method
 func (m *MockPodManager) GetAllPods() []*v1.Pod {
 	m.ctrl.T.Helper()
