@@ -4,6 +4,7 @@ package watchdog
 
 import (
 	"context"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"log"
 	"time"
 
@@ -38,7 +39,12 @@ func checkUnhealthyApatelets(st *store.Store, cl *kubernetes.Cluster) {
 
 	for _, kubelet := range apatelets {
 		if kubelet.Status == health.Status_UNHEALTHY {
-			err := cluster.RemoveNodeWithUUID(kubelet.UUID, st, cl)
+			err := (*st).AddResourcesToQueue([]scenario.NodeResources{*kubelet.Resources})
+			if err != nil {
+				log.Printf("error while readding resources to queue: %v", err)
+			}
+
+			err = cluster.RemoveNodeWithUUID(kubelet.UUID, st, cl)
 			if err != nil {
 				log.Printf("error while removing apatelet from cluster: %v", err)
 			} else {
