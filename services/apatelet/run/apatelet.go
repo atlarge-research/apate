@@ -61,7 +61,7 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 	}
 
 	// Start the Apatelet
-	nc, err := vkProvider.CreateProvider(ctx, &apateletEnv, res, apateletEnv.KubernetesPort, apateletEnv.MetricsPort, &st)
+	nc, err := vkProvider.CreateProvider(&apateletEnv, res, apateletEnv.KubernetesPort, apateletEnv.MetricsPort, &st)
 	if err != nil {
 		return errors.Wrap(err, "failed to create provider")
 	}
