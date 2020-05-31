@@ -4,13 +4,11 @@ package run
 import (
 	"context"
 	"fmt"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
 
@@ -36,17 +34,24 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 	stop := make(chan os.Signal, 1)
 	stopInformer := make(chan struct{})
 
-	// Join the apate cluster
-	config, res, startTime, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort, apateletEnv.KubeConfigLocation)
-	if err != nil {
-		return errors.Wrap(err, "failed to join apate cluster")
-	}
-
 	// Create store
 	st := store.NewStore()
 
 	// Create scheduler
 	sch := createScheduler(ctx, st)
+
+	// Start gRPC server
+	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, stop)
+	if err != nil {
+		return errors.Wrap(err, "failed to set up GRPC endpoints")
+	}
+	apateletEnv.ListenPort = server.Conn.Port
+
+	// Join the apate cluster
+	config, res, startTime, err := joinApateCluster(ctx, connectionInfo, apateletEnv.ListenPort, apateletEnv.KubeConfigLocation)
+	if err != nil {
+		return errors.Wrap(err, "failed to join apate cluster")
+	}
 
 	// Create crd informers
 	err = createInformers(config, st, stopInformer, sch, res)
@@ -75,13 +80,6 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 		}
 	}()
 
-	// Start gRPC server
-	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, stop)
-	if err != nil {
-		return errors.Wrap(err, "failed to set up GRPC endpoints")
-	}
-	apateletEnv.ListenPort = server.Conn.Port
-
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
@@ -102,7 +100,6 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 		sch.StartScheduler(startTime)
 	}
 
-	<-time.After(time.Millisecond * 50)
 	select {
 	case read := <-ech:
 		hc.SetStatus(healthpb.Status_UNHEALTHY)

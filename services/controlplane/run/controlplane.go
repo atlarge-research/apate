@@ -188,7 +188,7 @@ func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster,
 	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
 
 	// Create gRPC server
-	server, err := service.NewGRPCServer(connectionInfo)
+	server, err := service.NewGRPCServer(false, connectionInfo)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create new GRPC server with connection info %v", connectionInfo)
 	}
