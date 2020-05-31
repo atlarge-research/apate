@@ -257,7 +257,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	lbl[podconfigv1.PodConfigurationLabel] = "pod1"
 	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{Labels: lbl},
+		ObjectMeta: metav1.ObjectMeta{Labels: lbl, Namespace: "a"},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
@@ -266,7 +266,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	cores := uint64(podCPU)
 	memory := uint64(podMemory)
 	storage := uint64(podStorage)
-	ms.EXPECT().GetPodFlag("pod1", events.PodResources).Return(stats.PodStats{
+	ms.EXPECT().GetPodFlag("a/pod1", events.PodResources).Return(stats.PodStats{
 		CPU: &stats.CPUStats{
 			Time:           metav1.Time{},
 			UsageNanoCores: &cores,
@@ -308,7 +308,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 		},
 	}
 
-	prov.updateAggregatePodStats()
+	prov.updateStatsSummary()
 
 	return prov, ctrl
 }

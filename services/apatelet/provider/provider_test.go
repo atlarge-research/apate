@@ -283,22 +283,27 @@ func TestGetPodStatus(t *testing.T) {
 		EphemeralStorage: &stats.FsStats{
 			UsedBytes: &one,
 		},
-	}, nil)
+	}, nil).Times(2)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
 
 	// sot
 	var s store.Store = ms
 	prov := Provider{
-		Store:     &s,
-		Pods:      podmanager.New(),
-		Resources: &scenario.NodeResources{},
+		Store: &s,
+		Pods:  podmanager.New(),
+		Resources: &scenario.NodeResources{
+			CPU:              1000,
+			Memory:           1000,
+			EphemeralStorage: 1000,
+		},
 		Stats: &Stats{
-			podTotalResources: &resources{},
+			statsSummary: &stats.Summary{},
 		},
 	}
 	prov.Pods.AddPod(&pod)
 
+	prov.updateStatsSummary()
 	ps, err := prov.GetPodStatus(context.Background(), podNamespace, podName)
 
 	// assert
@@ -349,7 +354,7 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 		EphemeralStorage: &stats.FsStats{
 			UsedBytes: &moreThan64,
 		},
-	}, nil)
+	}, nil).Times(2)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
 
@@ -360,11 +365,12 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 		Pods:      podmanager.New(),
 		Resources: &scenario.NodeResources{},
 		Stats: &Stats{
-			podTotalResources: &resources{},
+			statsSummary: &stats.Summary{},
 		},
 	}
 	prov.Pods.AddPod(&pod)
 
+	prov.updateStatsSummary()
 	ps, err := prov.GetPodStatus(context.Background(), podNamespace, podName)
 
 	// assert
