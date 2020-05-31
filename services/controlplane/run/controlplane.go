@@ -24,6 +24,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth" // Needed to connect with different providers, such as GKE
 )
 
 func init() {
