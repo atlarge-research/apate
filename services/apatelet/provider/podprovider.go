@@ -179,7 +179,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 
 			return &corev1.PodStatus{
 				Phase:   podStatusToPhase(scenario.PodStatusFailed),
-				Message: "Pod used too many resources",
+				Message: "Pod used too many resources and was then killed",
 				Conditions: []corev1.PodCondition{
 					{
 						Type:               corev1.PodReady,
@@ -304,7 +304,11 @@ func (p *Provider) getPodLabelByName(ns string, name string) string {
 }
 
 func getPodLabelByPod(pod *corev1.Pod) string {
-	return pod.Namespace + "/" + pod.Labels[podconfigv1.PodConfigurationLabel]
+	label, ok := pod.Labels[podconfigv1.PodConfigurationLabel]
+	if !ok {
+		return ""
+	}
+	return pod.Namespace + "/" + label
 }
 
 func (p *Provider) doesPodExceedLimit(ns string, name string, label string) (bool, error) {
@@ -331,8 +335,11 @@ func (p *Provider) doesPodExceedLimit(ns string, name string, label string) (boo
 
 	// If the total amount of all pods resources exceed the resources on the node, just kill the current one
 	// TODO implement k8s OOM handling (much more complicated)
-	trs := p.Stats.podTotalResources
-	totalLimitExceeded := trs.cpu > uint64(p.Resources.CPU) || trs.memory > uint64(p.Resources.Memory) || trs.ephemeralStorage > uint64(p.Resources.EphemeralStorage)
+	nodeStats := p.Stats.statsSummary.Node
+
+	totalLimitExceeded := *nodeStats.CPU.UsageNanoCores > uint64(p.Resources.CPU) ||
+		*nodeStats.Memory.UsageBytes > uint64(p.Resources.Memory) ||
+		*nodeStats.Fs.UsedBytes > uint64(p.Resources.EphemeralStorage)
 
 	return podExceedsPodLimit || totalLimitExceeded, nil
 }

@@ -99,10 +99,10 @@ func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenar
 	}
 
 	(*store).AddPodListener(events.PodResources, func(obj interface{}) {
-		p.updateAggregatePodStats()
+		p.updateStatsSummary()
 	})
 
-	p.updateAggregatePodStats()
+	p.updateStatsSummary()
 
 	return p
 }
