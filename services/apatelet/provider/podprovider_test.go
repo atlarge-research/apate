@@ -6,13 +6,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/virtual-kubelet/node-cli/provider"
+	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -104,17 +109,6 @@ func TestGetPodLabelByNameFail(t *testing.T) {
 	res := prov.getPodLabelByName(namespace, name)
 
 	assert.Equal(t, "", res)
-}
-
-func TestPodStatusToPhase(t *testing.T) {
-	t.Parallel()
-
-	assert.Equal(t, corev1.PodPending, podStatusToPhase(scenario.PodStatusPending))
-	assert.Equal(t, corev1.PodRunning, podStatusToPhase(scenario.PodStatusRunning))
-	assert.Equal(t, corev1.PodSucceeded, podStatusToPhase(scenario.PodStatusSucceeded))
-	assert.Equal(t, corev1.PodFailed, podStatusToPhase(scenario.PodStatusFailed))
-	assert.Equal(t, corev1.PodUnknown, podStatusToPhase(scenario.PodStatusUnknown))
-	assert.Equal(t, corev1.PodUnknown, podStatusToPhase(scenario.PodStatus(20)))
 }
 
 func TestRunLatencyError(t *testing.T) {
@@ -213,4 +207,217 @@ func TestCancelContextWhileRunningLatency(t *testing.T) {
 	defer cancel()
 	_, err = p.GetPods(ctx)
 	assert.Error(t, err)
+}
+
+func TestConfigureNodeWithCreate(t *testing.T) {
+	t.Parallel()
+
+	resources := scenario.NodeResources{
+		UUID:    uuid.New(),
+		Memory:  42,
+		CPU:     1337,
+		MaxPods: 1001,
+	}
+
+	ctrl := gomock.NewController(t)
+	st := store.NewStore()
+
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, kubernetes.NodeInfo{}, &st)
+
+	fakeNode := corev1.Node{}
+
+	// Run the method
+	prov.ConfigureNode(context.Background(), &fakeNode)
+
+	assert.EqualValues(t, resources.CPU, fakeNode.Status.Capacity.Cpu().Value())
+	assert.EqualValues(t, resources.Memory, fakeNode.Status.Capacity.Memory().Value())
+	assert.EqualValues(t, resources.MaxPods, fakeNode.Status.Capacity.Pods().Value())
+
+	ctrl.Finish()
+}
+
+func TestCreatePod(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	ms := mock_store.NewMockStore(ctrl)
+
+	/// vars
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string{
+		podconfigv1.PodConfigurationLabel: podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
+	PCPRF := events.PodCreatePodResponse
+
+	// expect
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+
+	// sot
+	var s store.Store = ms
+
+	p := Provider{
+		Store: &s,
+		Pods:  podmanager.New(),
+	}
+
+	err := p.CreatePod(context.Background(), &pod)
+
+	// assert
+	assert.NoError(t, err)
+
+	uid, ok := p.Pods.GetPodByUID(pod.UID)
+	assert.True(t, ok)
+	assert.Equal(t, &pod, uid)
+	ctrl.Finish()
+}
+
+func TestUpdatePod(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	ms := mock_store.NewMockStore(ctrl)
+
+	/// vars
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string{
+		podconfigv1.PodConfigurationLabel: podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
+	PCPRF := events.PodUpdatePodResponse
+
+	// expect
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+
+	// sot
+	var s store.Store = ms
+	p := Provider{
+		Store: &s,
+		Pods:  podmanager.New(),
+	}
+
+	err := p.UpdatePod(context.Background(), &pod)
+
+	// assert
+	assert.NoError(t, err)
+	uid, ok := p.Pods.GetPodByUID(pod.UID)
+	assert.True(t, ok)
+	assert.Equal(t, &pod, uid)
+	ctrl.Finish()
+}
+
+func TestDeletePod(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	ms := mock_store.NewMockStore(ctrl)
+
+	/// vars
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string{
+		podconfigv1.PodConfigurationLabel: podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
+	PCPRF := events.PodDeletePodResponse
+
+	// expect
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+
+	// sot
+	var s store.Store = ms
+	p := Provider{
+		Store: &s,
+		Pods:  podmanager.New(),
+	}
+
+	err := p.DeletePod(context.Background(), &pod)
+
+	// assert
+	assert.NoError(t, err)
+	assert.NotContains(t, p.Pods.GetAllPods(), &pod)
+	ctrl.Finish()
+}
+
+func TestGetPod(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	ms := mock_store.NewMockStore(ctrl)
+
+	/// vars
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string{
+		podconfigv1.PodConfigurationLabel: podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
+	PCPRF := events.PodGetPodResponse
+
+	// expect
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+
+	// sot
+	var s store.Store = ms
+	prov := Provider{
+		Store: &s,
+		Pods:  podmanager.New(),
+	}
+
+	prov.Pods.AddPod(&pod)
+
+	np, err := prov.GetPod(context.Background(), podNamespace, podName)
+
+	// assert
+	assert.NoError(t, err)
+	assert.Equal(t, &pod, np)
+	ctrl.Finish()
+}
+
+func TestGetPods(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	ms := mock_store.NewMockStore(ctrl)
+
+	/// vars
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string{
+		podconfigv1.PodConfigurationLabel: podLabel,
+	}
+	pod.UID = types.UID(uuid.New().String())
+	PCPRF := events.NodeGetPodsResponse
+
+	// expect
+	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
+
+	// sot
+	var s store.Store = ms
+	prov := Provider{
+		Store: &s,
+		Pods:  podmanager.New(),
+	}
+	prov.Pods.AddPod(&pod)
+
+	ps, err := prov.GetPods(context.Background())
+
+	// assert
+	assert.NoError(t, err)
+	uid, ok := prov.Pods.GetPodByUID(pod.UID)
+	assert.True(t, ok)
+	assert.Contains(t, ps, uid)
+	ctrl.Finish()
 }
