@@ -19,7 +19,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
-	v1 "k8s.io/client-go/informers/core/v1"
+	informersv1 "k8s.io/client-go/informers/core/v1"
 	"os"
 	"path"
 	"sync"
@@ -43,35 +43,35 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-func RunRootCommand(ctx context.Context, s *provider.Store, c *opts.Opts) error {
+func RunRootCommand(originalCtx context.Context, ctx context.Context, s *provider.Store, c *opts.Opts) (int, int, error) {
 	pInit := s.Get(c.Provider)
 	if pInit == nil {
-		return errors.Errorf("provider %q not found", c.Provider)
+		return 0, 0, errors.Errorf("provider %q not found", c.Provider)
 	}
 
 	client, err := newClient(c.KubeConfigPath, c.KubeAPIQPS, c.KubeAPIBurst)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	return runRootCommandWithProviderAndClient(ctx, pInit, client, c)
+	return runRootCommandWithProviderAndClient(originalCtx, ctx, pInit, client, c)
 }
 
 var once sync.Once
-var secretInformer v1.SecretInformer
-var configMapInformer v1.ConfigMapInformer
-var serviceInformer v1.ServiceInformer
+var secretInformer informersv1.SecretInformer
+var configMapInformer informersv1.ConfigMapInformer
+var serviceInformer informersv1.ServiceInformer
 
-func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.InitFunc, client kubernetes.Interface, c *opts.Opts) error {
+func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx context.Context, pInit provider.InitFunc, client kubernetes.Interface, c *opts.Opts) (int, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	if ok := provider.ValidOperatingSystems[c.OperatingSystem]; !ok {
-		return errdefs.InvalidInputf("operating system %q is not supported", c.OperatingSystem)
+		return 0, 0, errdefs.InvalidInputf("operating system %q is not supported", c.OperatingSystem)
 	}
 
 	if c.PodSyncWorkers == 0 {
-		return errdefs.InvalidInput("pod sync workers must be greater than 0")
+		return 0, 0, errdefs.InvalidInput("pod sync workers must be greater than 0")
 	}
 
 	var taint *corev1.Taint
@@ -79,7 +79,7 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 		var err error
 		taint, err = getTaint(c)
 		if err != nil {
-			return err
+			return 0, 0, err
 		}
 	}
 
@@ -91,6 +91,7 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 			options.FieldSelector = fields.OneTermEqualSelector("spec.nodeName", c.NodeName).String()
 		}))
 	podInformer := podInformerFactory.Core().V1().Pods()
+	podInformerFactory.Start(ctx.Done())
 
 	once.Do(func() {
 		// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
@@ -102,18 +103,17 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 
 		// Start the informers now, so the provider will get a functional resource
 		// manager.
-		podInformerFactory.Start(ctx.Done())
-		scmInformerFactory.Start(ctx.Done())
+		scmInformerFactory.Start(originalCtx.Done())
 	})
 
 	rm, err := manager.NewResourceManager(podInformer.Lister(), secretInformer.Lister(), configMapInformer.Lister(), serviceInformer.Lister())
 	if err != nil {
-		return errors.Wrap(err, "could not create resource manager")
+		return 0, 0, errors.Wrap(err, "could not create resource manager")
 	}
 
 	apiConfig, err := getAPIConfig(c)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	initConfig := provider.InitConfig{
@@ -128,7 +128,7 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 
 	p, err := pInit(initConfig)
 	if err != nil {
-		return errors.Wrapf(err, "error initializing provider %s", c.Provider)
+		return 0, 0, errors.Wrapf(err, "error initializing provider %s", c.Provider)
 	}
 
 	ctx = log.WithLogger(ctx, log.G(ctx).WithFields(log.Fields{
@@ -187,12 +187,12 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 		ServiceInformer:   serviceInformer,
 	})
 	if err != nil {
-		return errors.Wrap(err, "error setting up pod controller")
+		return 0, 0, errors.Wrap(err, "error setting up pod controller")
 	}
 
-	cancelHTTP, err := setupHTTPServer(ctx, p, apiConfig)
+	cancelHTTP, metricsPort, k8sPort, err := setupHTTPServer(ctx, p, apiConfig)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	defer cancelHTTP()
 
@@ -208,7 +208,7 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 		// 2. It prevents node advertisement from happening until we're in an operational state
 		err = waitFor(ctx, c.StartupTimeout, pc.Ready())
 		if err != nil {
-			return err
+			return 0, 0, err
 		}
 	}
 
@@ -220,8 +220,7 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 
 	log.G(ctx).Info("Initialized")
 
-	<-ctx.Done()
-	return nil
+	return metricsPort, k8sPort, nil
 }
 
 func waitFor(ctx context.Context, time time.Duration, ready <-chan struct{}) error {

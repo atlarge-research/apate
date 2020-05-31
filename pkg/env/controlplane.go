@@ -31,7 +31,7 @@ const (
 	CPApateletRunTypeDefault = Routine
 
 	// CPPrometheusStackEnabledDefault is the default for PrometheusStackEnabled
-	CPPrometheusStackEnabledDefault = false
+	CPPrometheusStackEnabledDefault = true
 
 	// CPNodeCRDLocationDefault CRD default location
 	CPNodeCRDLocationDefault = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
