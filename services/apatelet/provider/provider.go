@@ -48,8 +48,15 @@ type VK struct {
 	opts *opts.Opts
 }
 
-func (vk *VK) Run(ctx context.Context) error {
-	return errors.Wrap(root.RunRootCommand(ctx, vk.st, vk.opts), "error while running virtual kubelet")
+func (vk *VK) Run(originalCtx context.Context, ctx context.Context) (int, int, error) {
+	metricsPort, k8sPort, err := root.RunRootCommand(originalCtx, ctx, vk.st, vk.opts)
+
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "error while running virtual kubelet")
+
+	}
+
+	return metricsPort, k8sPort, nil
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command

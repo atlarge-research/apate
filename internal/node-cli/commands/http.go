@@ -58,7 +58,7 @@ func loadTLSConfig(certPath, keyPath string) (*tls.Config, error) {
 	}, nil
 }
 
-func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerConfig) (_ func(), retErr error) {
+func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerConfig) (_ func(), metricsPort, k8sPort int, retErr error) {
 	var closers []io.Closer
 	cancel := func() {
 		for _, c := range closers {
@@ -79,11 +79,11 @@ func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerCon
 	} else {
 		tlsCfg, err := loadTLSConfig(cfg.CertPath, cfg.KeyPath)
 		if err != nil {
-			return nil, err
+			return nil, 0, 0, err
 		}
 		l, err := tls.Listen("tcp", cfg.Addr, tlsCfg)
 		if err != nil {
-			return nil, errors.Wrap(err, "error setting up listener for pod http server")
+			return nil, 0, 0, errors.Wrap(err, "error setting up listener for pod http server")
 		}
 
 		mux := http.NewServeMux()
@@ -101,6 +101,7 @@ func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerCon
 		}
 		go serveHTTP(ctx, s, l, "pods")
 		closers = append(closers, s)
+		k8sPort = l.Addr().(*net.TCPAddr).Port
 	}
 
 	if cfg.MetricsAddr == "" {
@@ -108,7 +109,7 @@ func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerCon
 	} else {
 		l, err := net.Listen("tcp", cfg.MetricsAddr)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not setup listener for pod metrics http server")
+			return nil, 0, 0, errors.Wrap(err, "could not setup listener for pod metrics http server")
 		}
 
 		mux := http.NewServeMux()
@@ -126,9 +127,11 @@ func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerCon
 		}
 		go serveHTTP(ctx, s, l, "pod metrics")
 		closers = append(closers, s)
+		metricsPort = l.Addr().(*net.TCPAddr).Port
+		fmt.Printf("metrics port: %v\n", metricsPort)
 	}
 
-	return cancel, nil
+	return cancel, metricsPort, k8sPort, nil
 }
 
 func serveHTTP(ctx context.Context, s *http.Server, l net.Listener, name string) {

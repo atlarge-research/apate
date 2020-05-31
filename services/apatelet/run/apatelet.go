@@ -22,12 +22,12 @@ import (
 )
 
 // StartApatelet starts the apatelet
-func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
+func StartApatelet(orignalCtx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
 	connectionInfo := service.NewConnectionInfo(apateletEnv.ControlPlaneAddress, apateletEnv.ControlPlanePort, false)
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(orignalCtx)
 	defer cancel()
 
 	// Create stop channels
@@ -74,11 +74,10 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 	// Create virtual kubelet
 	log.Println("Joining kubernetes cluster")
 	ech := make(chan error)
-	go func() {
-		if err = nc.Run(ctx); err != nil {
-			ech <- errors.Wrap(err, "failed to run node controller")
-		}
-	}()
+	apateletEnv.MetricsPort, apateletEnv.KubernetesPort, err = nc.Run(orignalCtx, ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to run node controller")
+	}
 
 	// Update status
 	hc.SetStatus(healthpb.Status_HEALTHY)
@@ -88,7 +87,7 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 	// Handle stop
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start serving request
+	// Start serving requests
 	go func() {
 		if err := server.Serve(); err != nil {
 			ech <- errors.Wrap(err, "apatelet server failed")
