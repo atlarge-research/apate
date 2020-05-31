@@ -23,7 +23,7 @@ func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress stri
 	connectionInfo := service.NewConnectionInfo(listenAddress, 0, false)
 
 	// Create gRPC server
-	server, err := service.NewGRPCServer(connectionInfo)
+	server, err := service.NewGRPCServer(true, connectionInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new GRPC server")
 	}

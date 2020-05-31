@@ -19,8 +19,10 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
+	v1 "k8s.io/client-go/informers/core/v1"
 	"os"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -55,6 +57,11 @@ func RunRootCommand(ctx context.Context, s *provider.Store, c *opts.Opts) error 
 	return runRootCommandWithProviderAndClient(ctx, pInit, client, c)
 }
 
+var once sync.Once
+var secretInformer v1.SecretInformer
+var configMapInformer v1.ConfigMapInformer
+var serviceInformer v1.ServiceInformer
+
 func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.InitFunc, client kubernetes.Interface, c *opts.Opts) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -80,28 +87,29 @@ func runRootCommandWithProviderAndClient(ctx context.Context, pInit provider.Ini
 	podInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
 		client,
 		c.InformerResyncPeriod,
-		kubeinformers.WithNamespace(c.KubeNamespace),
 		kubeinformers.WithTweakListOptions(func(options *metav1.ListOptions) {
 			options.FieldSelector = fields.OneTermEqualSelector("spec.nodeName", c.NodeName).String()
 		}))
 	podInformer := podInformerFactory.Core().V1().Pods()
 
-	// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
-	scmInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(client, c.InformerResyncPeriod)
-	// Create a secret informer and a config map informer so we can pass their listers to the resource manager.
-	secretInformer := scmInformerFactory.Core().V1().Secrets()
-	configMapInformer := scmInformerFactory.Core().V1().ConfigMaps()
-	serviceInformer := scmInformerFactory.Core().V1().Services()
+	once.Do(func() {
+		// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
+		scmInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(client, c.InformerResyncPeriod)
+		// Create a secret informer and a config map informer so we can pass their listers to the resource manager.
+		secretInformer = scmInformerFactory.Core().V1().Secrets()
+		configMapInformer = scmInformerFactory.Core().V1().ConfigMaps()
+		serviceInformer = scmInformerFactory.Core().V1().Services()
+
+		// Start the informers now, so the provider will get a functional resource
+		// manager.
+		podInformerFactory.Start(ctx.Done())
+		scmInformerFactory.Start(ctx.Done())
+	})
 
 	rm, err := manager.NewResourceManager(podInformer.Lister(), secretInformer.Lister(), configMapInformer.Lister(), serviceInformer.Lister())
 	if err != nil {
 		return errors.Wrap(err, "could not create resource manager")
 	}
-
-	// Start the informers now, so the provider will get a functional resource
-	// manager.
-	podInformerFactory.Start(ctx.Done())
-	scmInformerFactory.Start(ctx.Done())
 
 	apiConfig, err := getAPIConfig(c)
 	if err != nil {
