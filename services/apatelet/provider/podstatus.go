@@ -26,15 +26,20 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		return nil, err
 	}
 
-	label := p.getPodLabelByName(ns, name)
+	pod, err := p.getPodByName(ns, name)
+	if err != nil {
+		return nil, errors.Wrap(err, "pod not found")
+	}
 
-	pod, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
-		status, err := (*p.Store).GetPodFlag(label, events.PodStatus)
+	label := getPodLabelByPod(pod)
+
+	podStatus, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
+		status, err := (*p.Store).GetPodFlag(label, pod, events.PodStatus)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get pod status flag while getting pod status")
 		}
 
-		limitExceeded, err := p.doesPodExceedLimit(ns, name, label)
+		limitExceeded, err := p.doesPodExceedLimit(pod, label)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to determine if limit is exceeded while getting pod status")
 		}
@@ -61,6 +66,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		}
 	}},
 		label,
+		pod,
 		events.PodGetPodStatusResponse,
 		events.NodeGetPodStatusResponse,
 	)
@@ -74,7 +80,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		return nil, errors.Wrap(err, "failed to execute pod and node response (Get Pod Status)")
 	}
 
-	if status, ok := pod.(*corev1.PodStatus); ok {
+	if status, ok := podStatus.(*corev1.PodStatus); ok {
 		return status, nil
 	}
 
@@ -147,13 +153,13 @@ func (p *Provider) podFailed(ns string, name string, reason string) *corev1.PodS
 	}
 }
 
-func (p *Provider) doesPodExceedLimit(ns string, name string, label string) (bool, error) {
-	limits, err := p.getPodResourceLimits(ns, name)
+func (p *Provider) doesPodExceedLimit(pod *corev1.Pod, label string) (bool, error) {
+	limits, err := p.getPodResourceLimits(pod)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get resource limits while getting pod status")
 	}
 
-	podResourcesFlag, err := (*p.Store).GetPodFlag(label, events.PodResources)
+	podResourcesFlag, err := (*p.Store).GetPodFlag(label, pod, events.PodResources)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get pod resources flag while getting pod status")
 	}
@@ -180,12 +186,7 @@ func (p *Provider) doesPodExceedLimit(ns string, name string, label string) (boo
 	return podExceedsPodLimit || totalLimitExceeded, nil
 }
 
-func (p *Provider) getPodResourceLimits(ns string, name string) (resources, error) {
-	pod, ok := p.Pods.GetPodByName(ns, name)
-	if !ok {
-		return resources{}, errors.Errorf("unable to find pod with namespace %v and name %v", ns, name)
-	}
-
+func (p *Provider) getPodResourceLimits(pod *corev1.Pod) (resources, error) {
 	totalCPU := uint64(0)
 	totalMem := uint64(0)
 	totalEphemeralStorage := uint64(0)

@@ -3,6 +3,7 @@ package store
 
 import (
 	"container/heap"
+	corev1 "k8s.io/api/core/v1"
 	"sync"
 	"time"
 
@@ -23,6 +24,9 @@ type Store interface {
 	// Existing pod tasks will be removed if not in the list of tasks
 	SetPodTasks(string, []*Task) error
 
+	// SetNodeFlag sets the value of the given pod flag for a configuration
+	SetPodTimeFlags(string, []*TimeFlags)
+
 	// RemovePodTasks removes pod CRD tasks from the queue based on their label (<namespace>/<name>)
 	RemovePodTasks(string) error
 
@@ -42,29 +46,39 @@ type Store interface {
 	SetNodeFlag(events.NodeEventFlag, interface{})
 
 	// GetPodFlag returns the value of the given pod flag for a configuration
-	GetPodFlag(string, events.PodEventFlag) (interface{}, error)
+	GetPodFlag(string, *corev1.Pod, events.PodEventFlag) (interface{}, error)
 
 	// SetNodeFlag sets the value of the given pod flag for a configuration
-	SetPodFlag(string, events.PodEventFlag, interface{})
+	SetPodFlags(string, Flags)
 
 	// AddPodListener adds a listener which is called when the given flag is updated
 	AddPodListener(events.PodEventFlag, func(interface{}))
 }
 
-type flags map[events.EventFlag]interface{}
-type podFlags map[string]flags
+type Flags map[events.EventFlag]interface{}
+type podFlags map[string]Flags
 type podListeners map[events.EventFlag][]func(interface{})
+
+type TimeFlags struct {
+	TimeSincePodStart time.Duration
+	Flags             Flags
+}
+type podTimeFlags map[string][]*TimeFlags
+type podTimeIndexCache map[*corev1.Pod]map[events.EventFlag]int
 
 type store struct {
 	queue     *taskQueue
 	queueLock sync.RWMutex
 
-	nodeFlags    flags
+	nodeFlags    Flags
 	nodeFlagLock sync.RWMutex
 
 	podFlags     podFlags
 	podListeners podListeners
 	podFlagLock  sync.RWMutex
+
+	podTimeFlags      podTimeFlags
+	podTimeIndexCache podTimeIndexCache
 }
 
 // NewStore returns an empty store
@@ -74,9 +88,12 @@ func NewStore() Store {
 
 	return &store{
 		queue:        q,
-		nodeFlags:    make(flags),
+		nodeFlags:    make(Flags),
 		podListeners: make(podListeners),
 		podFlags:     make(podFlags),
+
+		podTimeFlags:      make(podTimeFlags),
+		podTimeIndexCache: make(podTimeIndexCache),
 	}
 }
 
@@ -133,6 +150,10 @@ func (s *store) SetPodTasks(label string, tasks []*Task) error {
 
 		return isPod && task.PodTask.Label == label, nil
 	})
+}
+
+func (s *store) SetPodTimeFlags(label string, flags []*TimeFlags) {
+	s.podTimeFlags[label] = flags
 }
 
 func (s *store) RemovePodTasks(label string) error {
@@ -216,12 +237,42 @@ func (s *store) SetNodeFlag(id events.NodeEventFlag, val interface{}) {
 	s.nodeFlags[id] = val
 }
 
-func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{}, error) {
+func (s *store) GetPodFlag(label string, pod *corev1.Pod, flag events.PodEventFlag) (interface{}, error) {
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
 	if val, ok := s.podFlags[label][flag]; ok {
 		return val, nil
+	}
+
+	if _, ok := s.podTimeIndexCache[pod]; !ok {
+		s.podTimeIndexCache[pod] = make(map[events.EventFlag]int)
+	}
+
+	podTimeIndex := 0
+	if val, ok := s.podTimeIndexCache[pod][flag]; ok {
+		podTimeIndex = val
+	}
+
+	podStartTime := time.Now()
+	if pod.Status.StartTime != nil {
+		podStartTime = pod.Status.StartTime.Time
+	}
+
+	timeFlags := s.podTimeFlags[label]
+	lastIndexWithFlag := podTimeIndex
+	for i := podTimeIndex; i < len(timeFlags); i++ {
+		flags := timeFlags[i]
+
+		if podStartTime.Add(flags.TimeSincePodStart).Before(time.Now()) {
+			currentPodFlags := timeFlags[lastIndexWithFlag]
+			s.podTimeIndexCache[pod][flag] = lastIndexWithFlag
+			return currentPodFlags.Flags[flag], nil
+		}
+
+		if _, ok := flags.Flags[flag]; ok {
+			lastIndexWithFlag = i
+		}
 	}
 
 	if dv, ok := defaultPodValues[flag]; ok {
@@ -231,20 +282,17 @@ func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{},
 	return nil, errors.New("flag not found in get pod flag")
 }
 
-func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface{}) {
+func (s *store) SetPodFlags(label string, flags Flags) {
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
-	if conf, ok := s.podFlags[label]; ok {
-		conf[flag] = val
-	} else {
-		s.podFlags[label] = make(flags)
-		s.podFlags[label][flag] = val
-	}
+	s.podFlags[label] = flags
 
-	if listeners, ok := s.podListeners[flag]; ok {
-		for _, listener := range listeners {
-			listener(val)
+	for flag, val := range flags {
+		if listeners, ok := s.podListeners[flag]; ok {
+			for _, listener := range listeners {
+				listener(val)
+			}
 		}
 	}
 }

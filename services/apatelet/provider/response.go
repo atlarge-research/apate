@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/pkg/errors"
 
@@ -28,8 +29,8 @@ type responseArgs struct {
 	action   func() (interface{}, error)
 }
 
-func podResponse(args responseArgs, label string, responseFlag events.PodEventFlag) (interface{}, bool, error) {
-	iflag, err := (*args.provider.Store).GetPodFlag(label, responseFlag)
+func podResponse(args responseArgs, label string, pod *corev1.Pod, responseFlag events.PodEventFlag) (interface{}, bool, error) {
+	iflag, err := (*args.provider.Store).GetPodFlag(label, pod, responseFlag)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get pod flag")
 	}
@@ -84,8 +85,8 @@ func nodeResponse(args responseArgs, responseFlag events.NodeEventFlag) (interfa
 }
 
 // podAndNodeResponse first calls podResponse and if pod response is not set calls nodeResponse
-func podAndNodeResponse(args responseArgs, podLabel string, podResponseFlag events.PodEventFlag, nodeResponseFlag events.NodeEventFlag) (interface{}, error) {
-	pod, performedAction, err := podResponse(args, podLabel, podResponseFlag)
+func podAndNodeResponse(args responseArgs, podLabel string, pod *corev1.Pod, podResponseFlag events.PodEventFlag, nodeResponseFlag events.NodeEventFlag) (interface{}, error) {
+	podFlag, performedAction, err := podResponse(args, podLabel, pod, podResponseFlag)
 
 	if err != nil {
 		if IsExpected(err) {
@@ -96,7 +97,7 @@ func podAndNodeResponse(args responseArgs, podLabel string, podResponseFlag even
 	}
 
 	if performedAction {
-		return pod, nil
+		return podFlag, nil
 	}
 
 	node, err := nodeResponse(args, nodeResponseFlag)

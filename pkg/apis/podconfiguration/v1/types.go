@@ -48,6 +48,10 @@ type PodConfigurationTask struct {
 	// +kubebuilder:validation:Required
 	Timestamp string `json:"timestamp"`
 
+	// +kubebuilder:default=false
+	// +kubebuilder:validation:Optional
+	RelativeToPod bool `json:"relative_to_pod"`
+
 	// The state to be set
 	// +kubebuilder:validation:Required
 	State PodConfigurationState `json:"state"`

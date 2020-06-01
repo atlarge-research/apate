@@ -98,7 +98,7 @@ func (b *Builder) Create() (ManagedCluster, error) {
 	}
 
 	return ManagedCluster{
-		kubernetesCluster,
+		&kubernetesCluster,
 		b.Manager,
 		b.Name,
 	}, nil
