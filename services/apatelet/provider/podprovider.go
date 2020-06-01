@@ -29,7 +29,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 		return errors.Wrap(err, "context cancelled in CreatePod")
 	}
 
-	return p.createOrUpdate(ctx, pod, events.PodCreatePodResponse, events.NodeCreatePodResponse)
+	return p.createOrUpdate(ctx, pod, events.PodCreatePodResponse)
 }
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
@@ -38,21 +38,20 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 		return errors.Wrap(err, "context cancelled in UpdatePod")
 	}
 
-	return p.createOrUpdate(ctx, pod, events.PodUpdatePodResponse, events.NodeUpdatePodResponse)
+	return p.createOrUpdate(ctx, pod, events.PodUpdatePodResponse)
 }
 
-func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf events.PodEventFlag, nf events.NodeEventFlag) error {
+func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf events.PodEventFlag) error {
 	if err := p.runLatency(ctx); err != nil {
 		err = errors.Wrap(err, "failed to run latency (Create or Update)")
 		log.Println(err)
 		return err
 	}
 
-	_, err := podAndNodeResponse(
+	_, err := podResponse(
 		responseArgs{ctx, p, updateMap(p, pod)},
 		getPodLabelByPod(pod),
 		pf,
-		nf,
 	)
 
 	if IsExpected(err) {
@@ -86,14 +85,13 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 		return err
 	}
 
-	_, err := podAndNodeResponse(
+	_, err := podResponse(
 		responseArgs{ctx, p, func() (interface{}, error) {
 			p.Pods.DeletePod(pod)
 			return nil, nil
 		}},
 		getPodLabelByPod(pod),
 		events.PodDeletePodResponse,
-		events.NodeDeletePodResponse,
 	)
 
 	if IsExpected(err) {
@@ -122,14 +120,13 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 
 	label := p.getPodLabelByName(namespace, name)
 
-	pod, err := podAndNodeResponse(
+	pod, err := podResponse(
 		responseArgs{ctx, p, func() (interface{}, error) {
 			pod, _ := p.Pods.GetPodByName(namespace, name)
 			return pod, nil
 		}},
 		label,
 		events.PodGetPodResponse,
-		events.NodeGetPodResponse,
 	)
 
 	if IsExpected(err) {
@@ -163,7 +160,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 
 	label := p.getPodLabelByName(ns, name)
 
-	pod, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
+	pod, err := podResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
 		status, err := (*p.Store).GetPodFlag(label, events.PodStatus)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get pod status flag while getting pod status")
@@ -208,7 +205,6 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 	}},
 		label,
 		events.PodGetPodStatusResponse,
-		events.NodeGetPodStatusResponse,
 	)
 
 	if IsExpected(err) {
