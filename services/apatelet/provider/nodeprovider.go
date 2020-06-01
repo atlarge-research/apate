@@ -166,10 +166,11 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name: p.NodeInfo.Name,
 		Labels: map[string]string{
-			"type":                   p.NodeInfo.NodeType,
-			"kubernetes.io/role":     p.NodeInfo.Role,
-			"kubernetes.io/hostname": p.NodeInfo.Name,
-			"metrics_port":           strconv.Itoa(p.NodeInfo.MetricsPort),
+			"type":                     p.NodeInfo.NodeType,
+			"kubernetes.io/role":       p.NodeInfo.Role,
+			"kubernetes.io/hostname":   p.NodeInfo.Name,
+			"metrics_port":             strconv.Itoa(p.NodeInfo.MetricsPort),
+			nodeconfigv1.EmulatedLabel: "yes",
 
 			nodeconfigv1.NodeConfigurationLabelNamespace: p.NodeInfo.Namespace,
 			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Selector,
@@ -178,9 +179,17 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 }
 
 func (p *Provider) spec() corev1.NodeSpec {
-	taints := make([]corev1.Taint, 0)
+	if p.DisableTaints {
+		return corev1.NodeSpec{}
+	}
+
 	return corev1.NodeSpec{
-		Taints: taints,
+		Taints: []corev1.Taint{
+			{
+				Key:    nodeconfigv1.EmulatedLabel,
+				Effect: corev1.TaintEffectNoSchedule,
+			},
+		},
 	}
 }
 

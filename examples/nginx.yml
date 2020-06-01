@@ -5,7 +5,7 @@ metadata:
   labels:
     app: nginx
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       app: nginx
@@ -15,8 +15,14 @@ spec:
         app: nginx
         apate: crd-deployment
     spec:
+      nodeSelector:
+        emulated: "yes"
+      tolerations:
+        -   key: emulated
+            operator: Exists
+            effect: NoSchedule
       containers:
-      - name: nginx
-        image: nginx:1.14.2
-        ports:
-        - containerPort: 80
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+            - containerPort: 80
