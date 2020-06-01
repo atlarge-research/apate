@@ -4,23 +4,17 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"strings"
 	"testing"
 	"time"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/run"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
@@ -48,68 +42,16 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 
 func teardown(t *testing.T) {
 	// #nosec
+	_ = exec.Command("sh", "-c", "docker ps --filter name=apate --format \"{{.ID}}\" | xargs docker kill").Run()
+	// #nosec
+	_ = exec.Command("sh", "-c", "docker ps -a --filter name=apate --format \"{{.ID}}\" | xargs docker rm").Run()
+
+	// #nosec
 	_ = exec.Command("docker", "kill", "apate-cp").Run()
 	time.Sleep(time.Second * 5)
 
 	err := os.Remove(env.ControlPlaneEnv().KubeConfigLocation)
 	assert.NoError(t, err)
-}
-
-func TestSimplePodDeployment(t *testing.T) {
-	testSimplePodDeployment(t, env.Routine)
-	//testSimplePodDeployment(t, env.Docker)
-}
-
-func testSimplePodDeployment(t *testing.T, rt env.RunType) {
-	setup(t, strings.ToLower("testSimplePodDeployment_"+string(rt)), rt)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	go cp.StartControlPlane(ctx, runner.New())
-
-	waitForCP(t)
-
-	kcfg := getKubeConfig(t)
-
-	// Setup some nodes
-	simpleNodeDeployment(t, kcfg)
-	time.Sleep(time.Second * 5)
-
-	// Test pods
-	simpleReplicaSet(t, kcfg)
-
-	cancel()
-
-	teardown(t)
-}
-
-func TestSimpleNodeDeployment(t *testing.T) {
-	testSimpleNodeDeployment(t, env.Routine)
-	//testSimpleNodeDeployment(t, env.Docker)
-}
-
-// To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
-// or the env var CP_MANAGER_CONFIG_LOCATION point to it
-func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
-	setup(t, "TestSimpleNodeDeployment_"+string(rt), rt)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	// Start CP
-	go cp.StartControlPlane(ctx, runner.New())
-
-	// Wait
-	waitForCP(t)
-
-	kcfg := getKubeConfig(t)
-	time.Sleep(time.Second * 5)
-
-	// Test simple deployment
-	simpleNodeDeployment(t, kcfg)
-
-	cancel()
-
-	teardown(t)
 }
 
 func waitForCP(t *testing.T) {
@@ -138,73 +80,15 @@ func getKubeConfig(t *testing.T) *kubeconfig.KubeConfig {
 	return kcfg
 }
 
-func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-	rc := `
-apiVersion: apate.opendc.org/v1
-kind: NodeConfiguration
-metadata:
-    name: e2e-deployment
-spec:
-    replicas: 2
-    resources:
-        memory: 5G
-        cpu: 1000
-        storage: 5T
-        ephemeral_storage: 120G
-        max_pods: 150
-`
+func runScenario(t *testing.T) {
+	args := []string{
+		"apatectl",
+		"run",
+	}
 
-	err := kubectl.Create([]byte(rc), kcfg)
-	assert.NoError(t, err)
-	time.Sleep(time.Second * 15)
+	r, w, _ := os.Pipe()
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
-	assert.NoError(t, err)
-
-	nodes, err := cluster.GetNumberOfNodes()
-	assert.NoError(t, err)
-	assert.Equal(t, 3, nodes)
-}
-
-func simpleReplicaSet(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-	pods := `
-apiVersion: apps/v1
-kind: ReplicaSet
-metadata:
-  name: frontend
-  labels:
-    app: guestbook
-    tier: frontend
-spec:
-  # modify replicas according to your case
-  replicas: 3
-  selector:
-    matchLabels:
-      tier: frontend
-  template:
-    metadata:
-      labels:
-        tier: frontend
-    spec:
-      containers:
-      - name: php-redis
-        image: gcr.io/google_samples/gb-frontend:v3
-`
-
-	namespace := "simple-replica-set"
-
-	err := kubectl.CreateNameSpace(namespace, kcfg)
-	assert.NoError(t, err)
-	time.Sleep(time.Second * 5)
-
-	err = kubectl.CreateWithNameSpace([]byte(pods), kcfg, namespace)
-	assert.NoError(t, err)
-	time.Sleep(time.Second * 5)
-
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
-	assert.NoError(t, err)
-
-	numpods, err := cluster.GetNumberOfPods(namespace)
-	assert.NoError(t, err)
-	assert.Equal(t, 3, numpods)
+	os.Stdin = r
+	go cmd.StartCmd(args)
+	w.Write([]byte("\n"))
 }

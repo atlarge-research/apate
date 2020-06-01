@@ -90,3 +90,13 @@ func (c Cluster) GetNumberOfNodes() (int, error) {
 
 	return len(nodes.Items), nil
 }
+
+// GetNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
+func (c Cluster) GetNodes() (*corev1.NodeList, error) {
+	nodes, err := c.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
+	}
+
+	return nodes, nil
+}
