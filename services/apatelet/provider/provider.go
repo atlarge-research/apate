@@ -59,7 +59,7 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector, metricsPort)
+	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Label, metricsPort)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}

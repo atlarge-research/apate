@@ -91,7 +91,7 @@ func TestConfigureNode(t *testing.T) {
 			Name:        "apate-x",
 			Version:     "42",
 			Namespace:   "my",
-			Selector:    "apate",
+			Label:       "apate",
 			MetricsPort: 123,
 		},
 		Cfg: provider.InitConfig{
@@ -110,7 +110,7 @@ func TestConfigureNode(t *testing.T) {
 			Storage:          2048,
 			EphemeralStorage: 8192,
 			MaxPods:          42,
-			Selector:         "my/apate",
+			Label:            "my/apate",
 		},
 		Conditions: nodeConditions{
 			ready:              condition.New(true, corev1.NodeReady),
@@ -295,7 +295,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 			Storage:          2048,
 			EphemeralStorage: 2048,
 			MaxPods:          42,
-			Selector:         "my/apate",
+			Label:            "my/apate",
 		},
 		Stats: NewStats(),
 		Conditions: nodeConditions{

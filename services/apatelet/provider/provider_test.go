@@ -396,7 +396,7 @@ func TestNewProvider(t *testing.T) {
 		Storage:          0,
 		EphemeralStorage: 0,
 		MaxPods:          0,
-		Selector:         "",
+		Label:            "",
 	}
 
 	cfg := provider.InitConfig{}

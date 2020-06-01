@@ -121,9 +121,9 @@ func TestAddNodeDuplicateUuid(t *testing.T) {
 func TestRemoveNode(t *testing.T) {
 	t.Parallel()
 
-	selector := "1231415"
+	label := "1231415"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, label)
 
 	// Add node
 	err := store.AddNode(node)
@@ -143,8 +143,8 @@ func TestRemoveNode(t *testing.T) {
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
 
-	// Verify it's no longer in the selector
-	nodes, err := store.GetNodesBySelector(selector)
+	// Verify it's no longer in the label
+	nodes, err := store.GetNodesByLabel(label)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nodes))
 }
@@ -175,9 +175,9 @@ func TestDeleteNoNode(t *testing.T) {
 func TestClearNodes(t *testing.T) {
 	t.Parallel()
 
-	selector := "1231145"
+	label := "1231145"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, selector)
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, label)
 
 	// Add node
 	err := store.AddNode(node)
@@ -197,19 +197,19 @@ func TestClearNodes(t *testing.T) {
 	assert.Equal(t, Node{}, res)
 	assert.Error(t, err)
 
-	// Verify it's no longer in the selector
-	nodes, err := store.GetNodesBySelector(selector)
+	// Verify it's no longer in the label
+	nodes, err := store.GetNodesByLabel(label)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nodes))
 }
 
-// TestGetNodesBySelector ensures nodes can be retrieved based on their selector
-func TestGetNodesBySelector(t *testing.T) {
+// TestGetNodesByLabel ensures nodes can be retrieved based on their label
+func TestGetNodesByLabel(t *testing.T) {
 	t.Parallel()
 
-	selector := "awidya8wdya9wd7iyh"
+	label := "awidya8wdya9wd7iyh"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{UUID: uuid.New()}, selector)
+	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{UUID: uuid.New()}, label)
 	node2 := NewNode(*service.NewConnectionInfo("awdadaw", 124, false), &scenario.NodeResources{UUID: uuid.New()}, "123")
 
 	// Add nodes
@@ -218,8 +218,8 @@ func TestGetNodesBySelector(t *testing.T) {
 	err = store.AddNode(node2)
 	assert.NoError(t, err)
 
-	// Verify it gets returned based on its selector
-	nodes, err := store.GetNodesBySelector(selector)
+	// Verify it gets returned based on its label
+	nodes, err := store.GetNodesByLabel(label)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nodes))
 	assert.Equal(t, *node, nodes[0])

@@ -172,7 +172,7 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			"metrics_port":           strconv.Itoa(p.NodeInfo.MetricsPort),
 
 			nodeconfigv1.NodeConfigurationLabelNamespace: p.NodeInfo.Namespace,
-			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Selector,
+			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Label,
 		},
 	}
 }

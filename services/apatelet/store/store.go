@@ -62,9 +62,11 @@ type store struct {
 	nodeFlags    flags
 	nodeFlagLock sync.RWMutex
 
-	podFlags     podFlags
-	podListeners podListeners
-	podFlagLock  sync.RWMutex
+	podFlags    podFlags
+	podFlagLock sync.RWMutex
+
+	podListeners     podListeners
+	podListenersLock sync.RWMutex
 }
 
 // NewStore returns an empty store
@@ -250,8 +252,8 @@ func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface
 }
 
 func (s *store) AddPodListener(flag events.PodEventFlag, cb func(interface{})) {
-	s.podFlagLock.Lock()
-	defer s.podFlagLock.Unlock()
+	s.podListenersLock.Lock()
+	defer s.podListenersLock.Unlock()
 
 	if listeners, ok := s.podListeners[flag]; ok {
 		s.podListeners[flag] = append(listeners, cb)

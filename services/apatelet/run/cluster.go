@@ -48,7 +48,7 @@ func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer
 		return errors.Wrap(err, "failed creating crd pod informer")
 	}
 
-	err = crdNode.CreateNodeInformer(config, &st, res.Selector, stopInformer, sch.WakeScheduler)
+	err = crdNode.CreateNodeInformer(config, &st, res.Label, stopInformer, sch.WakeScheduler)
 	if err != nil {
 		return errors.Wrap(err, "failed creating crd node informer")
 	}
