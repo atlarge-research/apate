@@ -52,5 +52,5 @@ func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
 		return errors.Wrapf(err, "failed to read crd file at %v", cpEnv.PodCRDLocation)
 	}
 
-	return errors.Wrap(kubectl.Update(file, config), "updating pod configuration failed")
+	return errors.Wrap(kubectl.Apply(file, config), "updating pod configuration failed")
 }

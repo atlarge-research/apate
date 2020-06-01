@@ -43,15 +43,13 @@ func (d *RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, e
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("Apatelet failed to start: %v\n", r)
-					readyCh <- struct{}{}
-					i-- // retry
+					readyCh <- struct{}{} // Just continue to next one. Don't retry, as the resources may have been removed from the queue already
 				}
 			}()
 			err := apateRun.StartApatelet(ctx, apateletEnv, readyCh)
 			if err != nil {
 				log.Printf("Apatelet failed to start: %v\n", err)
 				readyCh <- struct{}{}
-				i-- // retry
 			}
 		}()
 
