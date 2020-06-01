@@ -121,23 +121,30 @@ func TestConfigureNode(t *testing.T) {
 			networkUnavailable: condition.New(false, corev1.NodeNetworkUnavailable),
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
 		},
+		DisableTaints: false,
 	}
 
 	node := &corev1.Node{}
 	prov.ConfigureNode(context.Background(), node)
 
 	assert.EqualValues(t, corev1.NodeSpec{
-		Taints: []corev1.Taint{},
+		Taints: []corev1.Taint{
+			{
+				Key:    nodeconfigv1.EmulatedLabel,
+				Effect: corev1.TaintEffectNoSchedule,
+			},
+		},
 	}, node.Spec)
 
 	assert.EqualValues(t, metav1.ObjectMeta{
 		Name: "apate-x",
 		Labels: map[string]string{
-			"type":                              "apate",
-			"kubernetes.io/role":                "worker",
-			"kubernetes.io/hostname":            "apate-x",
-			"metrics_port":                      "123",
-			nodeconfigv1.NodeConfigurationLabel: "apate",
+			"type":                                       "apate",
+			"kubernetes.io/role":                         "worker",
+			"kubernetes.io/hostname":                     "apate-x",
+			"metrics_port":                               "123",
+			nodeconfigv1.EmulatedLabel:                   "yes",
+			nodeconfigv1.NodeConfigurationLabel:          "apate",
 			nodeconfigv1.NodeConfigurationLabelNamespace: "my",
 		},
 	}, node.ObjectMeta)
