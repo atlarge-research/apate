@@ -113,7 +113,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	}()
 
 	// Start watchdog
-	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, &managedKubernetesCluster.Cluster)
+	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, managedKubernetesCluster.Cluster)
 
 	// Stop the server on signal
 	select {
@@ -140,10 +140,10 @@ func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
 }
 
 func registerRunners(registry *runner.Registry) {
-	var dockerRunner runner.ApateletRunner = runner.DockerRunner{}
+	var dockerRunner runner.ApateletRunner = &runner.DockerRunner{}
 	registry.RegisterRunner(env.Docker, &dockerRunner)
 
-	var routineRunner runner.ApateletRunner = runner.RoutineRunner{}
+	var routineRunner runner.ApateletRunner = &runner.RoutineRunner{}
 	registry.RegisterRunner(env.Routine, &routineRunner)
 }
 
@@ -179,7 +179,7 @@ func getExternalAddress() (string, error) {
 	return res, nil
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
+func createGRPC(createdStore *store.Store, kubernetesCluster *kubernetes.Cluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
 	// Retrieve from environment
 	listenAddress := env.ControlPlaneEnv().ListenAddress
 

@@ -16,41 +16,53 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-// SetPodFlags sets all flags for a pod.
 func SetPodFlags(st *store.Store, label string, pt *podconfigv1.PodConfigurationState) error {
+	flags, err := TranslatePodFlags(pt)
+	if err != nil {
+		return errors.Wrap(err, "oopsie")
+	}
+
+	(*st).SetPodFlags(label, flags)
+
+	return nil
+}
+
+// SetPodFlags sets all flags for a pod.
+func TranslatePodFlags(pt *podconfigv1.PodConfigurationState) (store.Flags, error) {
+	flags := make(store.Flags)
 	if !isResponseUnset(pt.CreatePodResponse) {
-		(*st).SetPodFlag(label, events.PodCreatePodResponse, translateResponse(pt.CreatePodResponse))
+		flags[events.PodCreatePodResponse] = translateResponse(pt.CreatePodResponse)
 	}
 
 	if !isResponseUnset(pt.UpdatePodResponse) {
-		(*st).SetPodFlag(label, events.PodUpdatePodResponse, translateResponse(pt.UpdatePodResponse))
+		flags[events.PodUpdatePodResponse] = translateResponse(pt.UpdatePodResponse)
 	}
 
 	if !isResponseUnset(pt.DeletePodResponse) {
-		(*st).SetPodFlag(label, events.PodDeletePodResponse, translateResponse(pt.DeletePodResponse))
+		flags[events.PodDeletePodResponse] = translateResponse(pt.DeletePodResponse)
 	}
 
 	if !isResponseUnset(pt.GetPodResponse) {
-		(*st).SetPodFlag(label, events.PodGetPodResponse, translateResponse(pt.GetPodResponse))
+		flags[events.PodGetPodResponse] = translateResponse(pt.GetPodResponse)
 	}
 
 	if !isResponseUnset(pt.GetPodStatusResponse) {
-		(*st).SetPodFlag(label, events.PodGetPodStatusResponse, translateResponse(pt.GetPodStatusResponse))
+		flags[events.PodGetPodStatusResponse] = translateResponse(pt.GetPodStatusResponse)
 	}
 
 	if pt.PodResources != nil {
 		resources, err := translatePodResources(pt.PodResources)
 		if err != nil {
-			return errors.Wrap(err, "failed to translate pod resources")
+			return nil, errors.Wrap(err, "failed to translate pod resources")
 		}
-		(*st).SetPodFlag(label, events.PodResources, resources)
+		flags[events.PodResources] = resources
 	}
 
 	if !isPodStatusUnset(pt.PodStatus) {
-		(*st).SetPodFlag(label, events.PodStatus, translatePodStatus(pt.PodStatus))
+		flags[events.PodStatus] = translatePodStatus(pt.PodStatus)
 	}
 
-	return nil
+	return flags, nil
 }
 
 func isResponseUnset(response podconfigv1.PodResponse) bool {

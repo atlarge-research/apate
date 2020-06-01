@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"time"
 
@@ -24,7 +25,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 		return errors.Wrap(err, "context cancelled in CreatePod")
 	}
 
-	return p.createOrUpdate(ctx, pod, events.PodCreatePodResponse, events.NodeCreatePodResponse)
+	return p.createOrUpdate(ctx, pod, events.PodCreatePodResponse, events.NodeCreatePodResponse, true)
 }
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
@@ -33,10 +34,10 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 		return errors.Wrap(err, "context cancelled in UpdatePod")
 	}
 
-	return p.createOrUpdate(ctx, pod, events.PodUpdatePodResponse, events.NodeUpdatePodResponse)
+	return p.createOrUpdate(ctx, pod, events.PodUpdatePodResponse, events.NodeUpdatePodResponse, false)
 }
 
-func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf events.PodEventFlag, nf events.NodeEventFlag) error {
+func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf events.PodEventFlag, nf events.NodeEventFlag, updateStartTime bool) error {
 	if err := p.runLatency(ctx); err != nil {
 		err = errors.Wrap(err, "failed to run latency (Create or Update)")
 		log.Println(err)
@@ -44,8 +45,9 @@ func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf event
 	}
 
 	_, err := podAndNodeResponse(
-		responseArgs{ctx, p, updateMap(p, pod)},
+		responseArgs{ctx, p, updateMap(p, pod, updateStartTime)},
 		getPodLabelByPod(pod),
+		pod,
 		pf,
 		nf,
 	)
@@ -62,8 +64,12 @@ func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf event
 	return err
 }
 
-func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
+func updateMap(p *Provider, pod *corev1.Pod, updateStartTime bool) func() (interface{}, error) {
 	return func() (interface{}, error) {
+		if updateStartTime {
+			now := metav1.Now()
+			pod.Status.StartTime = &now
+		}
 		p.Pods.AddPod(pod)
 		return nil, nil
 	}
@@ -87,6 +93,7 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 			return nil, nil
 		}},
 		getPodLabelByPod(pod),
+		pod,
 		events.PodDeletePodResponse,
 		events.NodeDeletePodResponse,
 	)
@@ -115,14 +122,18 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return nil, err
 	}
 
-	label := p.getPodLabelByName(namespace, name)
+	pod, err := p.getPodByName(namespace, name)
+	if err != nil {
+		return nil, errors.Wrap(err, "pod not found")
+	}
+	label := getPodLabelByPod(pod)
 
-	pod, err := podAndNodeResponse(
+	_, err = podAndNodeResponse(
 		responseArgs{ctx, p, func() (interface{}, error) {
-			pod, _ := p.Pods.GetPodByName(namespace, name)
-			return pod, nil
+			return nil, nil
 		}},
 		label,
+		pod,
 		events.PodGetPodResponse,
 		events.NodeGetPodResponse,
 	)
@@ -137,11 +148,7 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return nil, err
 	}
 
-	if p, ok := pod.(*corev1.Pod); ok {
-		return p, nil
-	}
-
-	return nil, errors.Errorf("invalid pod %v", pod)
+	return pod, nil
 }
 
 // GetPods retrieves a list of all pods running.
@@ -211,9 +218,17 @@ func (p *Provider) runLatency(ctx context.Context) error {
 	}
 }
 
-func (p *Provider) getPodLabelByName(ns string, name string) string {
+func (p *Provider) getPodByName(ns string, name string) (*corev1.Pod, error) {
 	pod, ok := p.Pods.GetPodByName(ns, name)
 	if !ok {
+		return nil, errors.New("f")
+	}
+	return pod, nil
+}
+
+func (p *Provider) getPodLabelByName(ns string, name string) string {
+	pod, err := p.getPodByName(ns, name)
+	if err != nil {
 		return ""
 	}
 	return getPodLabelByPod(pod)
