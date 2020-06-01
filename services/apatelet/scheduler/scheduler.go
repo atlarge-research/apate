@@ -54,6 +54,9 @@ func (s *Scheduler) EnableScheduler(ctx context.Context) <-chan error {
 			//
 		}
 
+		timer := time.NewTimer(time.Millisecond)
+		defer timer.Stop()
+
 		for {
 			if err := ctx.Err(); err != nil {
 				ech <- errors.Wrap(err, "scheduler stopped")
@@ -72,10 +75,11 @@ func (s *Scheduler) EnableScheduler(ctx context.Context) <-chan error {
 			}
 
 			if delay > time.Millisecond {
+				timer.Reset(delay)
 				select {
 				case <-ctx.Done():
 					return
-				case <-time.After(delay):
+				case <-timer.C:
 				}
 			}
 		}
