@@ -10,18 +10,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
-// An emulation error is an error occurring because the system is emulating an error. This type of error is completely expected.
-// This error should never be wrapped
-type emulationError string
-
-func (e emulationError) Error() string {
-	return string(e)
-}
-
-func (e emulationError) Expected() bool {
-	return true
-}
-
 type responseArgs struct {
 	ctx      context.Context
 	provider *Provider
@@ -88,11 +76,11 @@ func getCorrespondingNodeEventFlag(podEventFlag events.PodEventFlag) (events.Nod
 	case events.PodDeletePodResponse:
 		return events.NodeDeletePodResponse, nil
 	case events.PodGetPodResponse:
-		return events.NodeGetPodsResponse, nil
+		return events.NodeGetPodResponse, nil
 	case events.PodGetPodStatusResponse:
 		return events.NodeGetPodStatusResponse, nil
 	default:
-		return 0, errors.Errorf("pod event flag %v cannot be translated into node flag", podEventFlag)
+		return -1, errors.Errorf("pod event flag %v cannot be translated into node flag", podEventFlag)
 	}
 }
 
@@ -113,14 +101,15 @@ func podResponse(args responseArgs, podLabel string, podEventFlag events.PodEven
 		return nil, errors.Wrap(err, "failed to retrieve node flag")
 	}
 
-	if podFlag == scenario.ResponseTimeout || nodeFlag == scenario.ResponseTimeout {
+	switch {
+	case podFlag == scenario.ResponseTimeout || nodeFlag == scenario.ResponseTimeout:
 		// first try for timeout
 		<-args.ctx.Done()
 		return nil, nil
-	} else if podFlag == scenario.ResponseError || nodeFlag == scenario.ResponseError {
+	case podFlag == scenario.ResponseError || nodeFlag == scenario.ResponseError:
 		// then error
 		return nil, emulationError("nodeResponse expected error")
-	} else {
+	default:
 		// then normal. Unset is also normal, as is any invalid type (which shouldn't even be possible)
 		res, err := args.action()
 		return res, errors.Wrap(err, "failed to execute node response action")
