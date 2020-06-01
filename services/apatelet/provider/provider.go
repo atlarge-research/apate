@@ -32,15 +32,19 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	Pods      podmanager.PodManager
-	Resources *scenario.NodeResources
-	Cfg       provider.InitConfig
-	NodeInfo  kubernetes.NodeInfo
-	Store     *store.Store
-	Stats     *Stats
+	Pods  podmanager.PodManager // the pods currently used
+	Store *store.Store          // the apatelet store
 
-	Node       *corev1.Node
-	Conditions nodeConditions
+	Cfg           provider.InitConfig // the initial provider config
+	DisableTaints bool                // whether to disable taints
+
+	Stats *Stats // statistics contain static statistics
+
+	Node      *corev1.Node            // the reference to "ourselves"
+	NodeInfo  kubernetes.NodeInfo     // static node information sent to kubernetes
+	Resources *scenario.NodeResources // static resource information sent to kubernetes
+
+	Conditions nodeConditions // a wrapper around kubernetes conditions
 }
 
 // VirtualKubelet is a struct containing everything needed to start virtual kubelet
@@ -83,20 +87,8 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k
 	providerStore := provider.NewStore()
 	providerStore.Register(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
 		cfg.DaemonPort = int32(k8sPort)
-		return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store), nil
+		return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store, env.DisableTaints), nil
 	})
-
-	//node, err := cli.New(ctx,
-	//	cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
-	//		cfg.DaemonPort = int32(k8sPort)
-	//		return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store), nil
-	//	}),
-	//	cli.WithBaseOpts(op),
-	//)
-
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "failed to create new virtual kubelet provider")
-	//}
 
 	return &VirtualKubelet{
 		st:   providerStore,
@@ -105,14 +97,19 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store) provider.Provider {
+func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store, disableTaints bool) provider.Provider {
 	return &Provider{
-		Pods:      pods,
-		Resources: resources,
-		Cfg:       cfg,
+		Pods:  pods,
+		Store: store,
+
+		Cfg:           cfg,
+		DisableTaints: disableTaints,
+
+		Stats: stats,
+
 		NodeInfo:  nodeInfo,
-		Store:     store,
-		Stats:     stats,
+		Resources: resources,
+
 		Conditions: nodeConditions{
 			ready:              condition.New(true, corev1.NodeReady),
 			outOfDisk:          condition.New(false, corev1.NodeOutOfDisk),
