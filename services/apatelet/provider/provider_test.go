@@ -272,6 +272,7 @@ func TestGetPodStatus(t *testing.T) {
 	// expect
 	one := uint64(1)
 
+	ms.EXPECT().GetNodeFlag(events.NodeGetPodStatusResponse).Return(scenario.ResponseUnset, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(stats.PodStats{
 		CPU: &stats.CPUStats{
