@@ -25,13 +25,13 @@ type ConfigurationClient struct {
 	restConfig rest.Config
 }
 
-var once sync.Once
-var onceTwo sync.Once
-var test *cache.SharedIndexInformer
+var schemeLock sync.Once
+var sharedInformerLock sync.Once
+var sharedInformer *cache.SharedIndexInformer
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
-	once.Do(func() {
+	schemeLock.Do(func() {
 		if err := nodeconfigv1.AddToScheme(scheme.Scheme); err != nil {
 			log.Panicf("%+v", errors.Wrap(err, "adding global node scheme failed"))
 		}
@@ -54,30 +54,7 @@ func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 // WatchResources creates an informer which watches for new or updated NodeConfigurations and updates the store accordingly
 // This will also trigger the creation and removal of nodes when applicable
 func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
-	//_, nodeConfigurationController := cache.NewInformer(
-	//	&cache.ListWatch{
-	//		ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-	//			return e.list(lo)
-	//		},
-	//		WatchFunc: e.watch,
-	//	},
-	//	&nodeconfigv1.NodeConfiguration{},
-	//	1*time.Minute,
-	//	cache.ResourceEventHandlerFuncs{
-	//		AddFunc:    addFunc,
-	//		UpdateFunc: updateFunc,
-	//		DeleteFunc: deleteFunc,
-	//	},
-	//)
-	//
-	//go nodeConfigurationController.Run(stopCh)
-
-	//client, err := kubernetes.NewForConfig(&e.restConfig)
-	//if err != nil {
-	//	log.Panicf("crap1: %v", err)
-	//}
-
-	onceTwo.Do(func() {
+	sharedInformerLock.Do(func() {
 		informer := cache.NewSharedIndexInformer(
 			&cache.ListWatch{
 				ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -90,7 +67,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 			cache.Indexers{},
 		)
 
-		test = &informer
+		sharedInformer = &informer
 		go informer.Run(stopCh)
 	})
 
@@ -103,7 +80,7 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 	//
 	//informer := genericInf.Informer()
 
-	(*test).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
+	(*sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
 		AddFunc:    addFunc,
 		UpdateFunc: updateFunc,
 		DeleteFunc: deleteFunc,

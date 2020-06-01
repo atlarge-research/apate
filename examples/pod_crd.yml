@@ -3,6 +3,8 @@ kind: PodConfiguration
 metadata:
     name: crd-deployment
 spec:
-    direct_task:
-        pod_resources:
-            cpu: 1000
+    tasks:
+        - timestamp: 1s
+          state:
+              pod_resources:
+                  cpu: 1000

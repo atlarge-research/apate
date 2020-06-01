@@ -20,9 +20,10 @@ import (
 
 const resource = "podconfigurations"
 
-var once sync.Once
-var onceTwo sync.Once
-var test *cache.SharedIndexInformer
+var schemeLock sync.Once
+
+//var informerLock sync.Once
+//var sharedInformer *cache.SharedIndexInformer
 
 // ConfigurationClient is the client for the PodConfiguration CRD
 type ConfigurationClient struct {
@@ -32,7 +33,7 @@ type ConfigurationClient struct {
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
-	once.Do(func() {
+	schemeLock.Do(func() {
 		if err := podconfigv1.AddToScheme(scheme.Scheme); err != nil {
 			log.Panicf("%+v", errors.Wrap(err, "failed to add crd information to the scheme"))
 		}
@@ -54,42 +55,24 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
 func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
-	//_, podConfigurationController := cache.NewInformer(
-	//	&cache.ListWatch{
-	//		ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-	//			return e.list(lo)
-	//		},
-	//		WatchFunc: e.watch,
-	//	},
-	//	&podconfigv1.PodConfiguration{},
-	//	1*time.Minute,
-	//	cache.ResourceEventHandlerFuncs{
-	//		AddFunc:    addFunc,
-	//		UpdateFunc: updateFunc,
-	//		DeleteFunc: deleteFunc,
-	//	},
-	//)
-	//
-	//go podConfigurationController.Run(stopCh)
-
-	onceTwo.Do(func() {
-		informer := cache.NewSharedIndexInformer(
-			&cache.ListWatch{
-				ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-					return e.list(lo)
-				},
-				WatchFunc: e.watch,
+	//informerLock.Do(func() {
+	informer := cache.NewSharedIndexInformer(
+		&cache.ListWatch{
+			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
+				return e.list(lo)
 			},
-			&podconfigv1.PodConfiguration{},
-			1*time.Minute,
-			cache.Indexers{},
-		)
+			WatchFunc: e.watch,
+		},
+		&podconfigv1.PodConfiguration{},
+		1*time.Minute,
+		cache.Indexers{},
+	)
 
-		test = &informer
-		go informer.Run(stopCh)
-	})
+	sharedInformer := &informer
+	go informer.Run(stopCh)
+	//})
 
-	(*test).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
+	(*sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
 		AddFunc:    addFunc,
 		UpdateFunc: updateFunc,
 		DeleteFunc: deleteFunc,

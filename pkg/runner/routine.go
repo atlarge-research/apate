@@ -25,8 +25,12 @@ func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, en
 		apateletEnv := environment
 		readyCh := make(chan struct{}, 1)
 
+		// Apatelets should figure out their own ports when running in go routines
+		apateletEnv.KubernetesPort = 0
+		apateletEnv.MetricsPort = 0
+		apateletEnv.ListenPort = 0
+
 		go func() {
-			// TODO: Add retry logic
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("Apatelet failed to start: %v\n", r)

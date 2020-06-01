@@ -11,6 +11,10 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
+const (
+	nodeDeletionGracePeriod int64 = 0
+)
+
 // Cluster object can be used to interact with kubernetes clusters.
 // It abstracts away calls to the kubernetes client-go api.
 type Cluster struct {
@@ -61,7 +65,10 @@ func (c Cluster) GetNumberOfPods(namespace string) (int, error) {
 
 // RemoveNodeFromCluster removes a node with a given name from the cluster.
 func (c Cluster) RemoveNodeFromCluster(nodename string) error {
-	return errors.Wrap(c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{}), "failed to remove node from cluster")
+	gracePeriod := nodeDeletionGracePeriod
+	return errors.Wrap(c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+	}), "failed to remove node from cluster")
 }
 
 // GetNumberOfPendingPods will return the number of pods in the pending state.

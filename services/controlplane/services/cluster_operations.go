@@ -41,7 +41,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	// Get connection information
 	p, _ := peer.FromContext(ctx)
 	addr := p.Addr.(*net.TCPAddr)
-	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), int(info.Port), false)
+	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), int(info.Port))
 	log.Printf("Received request to join apate store from %s\n", connectionInfo.Address)
 
 	// Retrieve node resources

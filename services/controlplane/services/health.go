@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"io"
 	"log"
 	"sync/atomic"
 	"time"
@@ -40,17 +41,27 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 	// Sends a heartbeat to the client
 	go h.sendHeartbeat(ctx, server, &cnt)
 
+	timeoutDuration := recvTimeout
+	timeoutDelay := time.NewTimer(timeoutDuration)
+	defer timeoutDelay.Stop()
+
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if atomic.LoadInt32(&cnt) >= maxNetworkErrors {
 			break
 		}
 
-		c := make(chan struct{})
+		c := make(chan struct{}, 1)
 		go func() {
+			timeoutDelay.Reset(timeoutDuration)
+
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(recvTimeout):
+			case <-timeoutDelay.C:
 				atomic.AddInt32(&cnt, 1)
 				_ = (*h.store).SetNodeStatus(id, health.Status_UNKNOWN)
 			case <-c:
@@ -60,6 +71,10 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 		// receive data
 		req, err := server.Recv()
 		c <- struct{}{}
+
+		if err == io.EOF {
+			break
+		}
 
 		if err != nil {
 			log.Printf("Receive error: %v\n", err)
@@ -79,8 +94,8 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 		}
 	}
 
-	// If the loop is broken -> node status unknown
-	if err := (*h.store).SetNodeStatus(id, health.Status_UNKNOWN); err != nil {
+	// If the loop is broken -> node status unhealthy
+	if err := (*h.store).SetNodeStatus(id, health.Status_UNHEALTHY); err != nil {
 		log.Println(errors.Wrap(err, "failed to set node status"))
 		return nil
 	}
@@ -90,6 +105,10 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 }
 
 func (h healthService) sendHeartbeat(ctx context.Context, server health.Health_HealthStreamServer, cnt *int32) {
+	timeoutDuration := sendInterval
+	timeoutDelay := time.NewTimer(timeoutDuration)
+	defer timeoutDelay.Stop()
+
 	for {
 		if atomic.LoadInt32(cnt) >= maxNetworkErrors {
 			break
@@ -100,10 +119,11 @@ func (h healthService) sendHeartbeat(ctx context.Context, server health.Health_H
 			atomic.AddInt32(cnt, 1)
 		}
 
+		timeoutDelay.Reset(timeoutDuration)
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(sendInterval):
+		case <-timeoutDelay.C:
 		}
 	}
 }

@@ -47,7 +47,12 @@ func (s *Scheduler) EnableScheduler(ctx context.Context) <-chan error {
 
 	go func() {
 		// Wait for start
-		<-s.readyCh
+		select {
+		case <-ctx.Done():
+			return
+		case <-s.readyCh:
+			//
+		}
 
 		for {
 			if err := ctx.Err(); err != nil {

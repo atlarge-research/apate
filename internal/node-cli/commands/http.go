@@ -128,7 +128,6 @@ func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerCon
 		go serveHTTP(ctx, s, l, "pod metrics")
 		closers = append(closers, s)
 		metricsPort = l.Addr().(*net.TCPAddr).Port
-		fmt.Printf("metrics port: %v\n", metricsPort)
 	}
 
 	return cancel, metricsPort, k8sPort, nil
@@ -138,11 +137,12 @@ func serveHTTP(ctx context.Context, s *http.Server, l net.Listener, name string)
 	if err := s.Serve(l); err != nil {
 		select {
 		case <-ctx.Done():
+			//
 		default:
 			log.G(ctx).WithError(err).Errorf("Error setting up %s http server", name)
 		}
 	}
-	l.Close()
+	_ = l.Close()
 }
 
 type apiServerConfig struct {

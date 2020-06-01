@@ -4,6 +4,7 @@ package run
 import (
 	"context"
 	"fmt"
+	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"log"
 	"os"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
@@ -22,12 +22,12 @@ import (
 )
 
 // StartApatelet starts the apatelet
-func StartApatelet(orignalCtx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
+func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
-	connectionInfo := service.NewConnectionInfo(apateletEnv.ControlPlaneAddress, apateletEnv.ControlPlanePort, false)
-	ctx, cancel := context.WithCancel(orignalCtx)
+	connectionInfo := service.NewConnectionInfo(apateletEnv.ControlPlaneAddress, apateletEnv.ControlPlanePort)
+	ctx, cancel := context.WithCancel(originalCtx)
 	defer cancel()
 
 	// Create stop channels
@@ -41,7 +41,7 @@ func StartApatelet(orignalCtx context.Context, apateletEnv env.ApateletEnvironme
 	sch := createScheduler(ctx, st)
 
 	// Start gRPC server
-	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, stop)
+	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, apateletEnv.ListenPort, stop)
 	if err != nil {
 		return errors.Wrap(err, "failed to set up GRPC endpoints")
 	}
@@ -74,7 +74,7 @@ func StartApatelet(orignalCtx context.Context, apateletEnv env.ApateletEnvironme
 	// Create virtual kubelet
 	log.Println("Joining kubernetes cluster")
 	ech := make(chan error)
-	apateletEnv.MetricsPort, apateletEnv.KubernetesPort, err = nc.Run(orignalCtx, ctx)
+	apateletEnv.MetricsPort, apateletEnv.KubernetesPort, err = nc.Run(originalCtx, ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to run node controller")
 	}

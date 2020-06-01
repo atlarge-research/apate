@@ -68,8 +68,8 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k
 
 	name := baseName + "-" + res.UUID.String()
 	op.KubeConfigPath = env.KubeConfigLocation
-	op.ListenPort = 0                      //int32(k8sPort)
-	op.MetricsAddr = ":" + strconv.Itoa(0) //metricsPort)
+	op.ListenPort = int32(k8sPort)
+	op.MetricsAddr = ":" + strconv.Itoa(metricsPort)
 	op.Provider = baseName
 	op.NodeName = name
 
