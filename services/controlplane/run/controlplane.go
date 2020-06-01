@@ -142,10 +142,10 @@ func createCRDs(cluster *kubernetes.Cluster) error {
 }
 
 func registerRunners(registry *runner.Registry) {
-	var dockerRunner runner.ApateletRunner = runner.DockerRunner{}
+	var dockerRunner runner.ApateletRunner = &runner.DockerRunner{}
 	registry.RegisterRunner(env.Docker, &dockerRunner)
 
-	var routineRunner runner.ApateletRunner = runner.RoutineRunner{}
+	var routineRunner runner.ApateletRunner = &runner.RoutineRunner{}
 	registry.RegisterRunner(env.Routine, &routineRunner)
 }
 
@@ -220,7 +220,7 @@ func createCluster() (*kubernetes.Cluster, error) {
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)
 
-	return &c, nil
+	return c, nil
 }
 
 func createExternalConnectionInformation() (*service.ConnectionInfo, error) {

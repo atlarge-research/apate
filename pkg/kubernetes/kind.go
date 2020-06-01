@@ -20,7 +20,7 @@ import (
 type KinDClusterManager struct{}
 
 // GetKubeConfig validates the cluster name, creates the Kind cluster and returns its kubeconfig.
-func (k KinDClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
+func (k *KinDClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
 	if env.ControlPlaneEnv().KinDClusterName == "" {
 		return nil, errors.New("trying to create a KinDClusterManager cluster with an empty name")
 	}
@@ -51,11 +51,11 @@ func (k KinDClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
 }
 
 // Shutdown deletes the KinD cluster.
-func (k KinDClusterManager) Shutdown() error {
+func (k *KinDClusterManager) Shutdown(*Cluster) error {
 	return errors.Wrap(k.deleteCluster(), "failed to delete kind cluster")
 }
 
-func (k KinDClusterManager) writeKubeConfig() error {
+func (k *KinDClusterManager) writeKubeConfig() error {
 	kubeConfigLocation := env.ControlPlaneEnv().KubeConfigLocation
 	if env.ControlPlaneEnv().UseDockerHostname {
 		// Replace any https address by the "docker" hostname.
@@ -70,7 +70,7 @@ func (k KinDClusterManager) writeKubeConfig() error {
 	return errors.Wrapf(k.useInternalKubeConfig(env.ControlPlaneEnv().KinDClusterName, kubeConfigLocation), "failed to use internal Kubeconfig")
 }
 
-func (k KinDClusterManager) prepareCluster() error {
+func (k *KinDClusterManager) prepareCluster() error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 
@@ -91,7 +91,7 @@ func (k KinDClusterManager) prepareCluster() error {
 	return errors.Wrapf(c.Execute(), "failed to create kind cluster with kind %v", strings.Join(args, " "))
 }
 
-func (k KinDClusterManager) useInternalKubeConfig(name string, kubeConfigLocation string) error {
+func (k *KinDClusterManager) useInternalKubeConfig(name string, kubeConfigLocation string) error {
 	logger := cmd.NewLogger()
 
 	args := []string{
@@ -117,7 +117,7 @@ func (k KinDClusterManager) useInternalKubeConfig(name string, kubeConfigLocatio
 	return errors.Wrapf(c.Execute(), "failed run kind %v to retrieve internal Kubeconfig", strings.Join(args, " "))
 }
 
-func (k KinDClusterManager) deleteCluster() error {
+func (k *KinDClusterManager) deleteCluster() error {
 	// TODO: use our own/a global logger?
 	logger := cmd.NewLogger()
 

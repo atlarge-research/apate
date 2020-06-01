@@ -16,7 +16,7 @@ import (
 type RoutineRunner struct{}
 
 // SpawnApatelets spawns apatelets using go routines
-func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, environment env.ApateletEnvironment) error {
+func (d *RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, environment env.ApateletEnvironment) error {
 	if err := apateRun.SetCerts(); err != nil {
 		return errors.Wrap(err, "failed to set certificates")
 	}

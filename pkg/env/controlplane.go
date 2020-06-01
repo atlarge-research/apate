@@ -15,8 +15,8 @@ const (
 	// CPListenPortDefault is the default value for ControlPlaneListenPort
 	CPListenPortDefault = 8085
 
-	// CPKubeConifg is the default value for KubeConfig
-	CPKubeConifg = ""
+	// CPKubeConfigDefault is the default value for KubeConfig
+	CPKubeConfigDefault = ""
 
 	// CPManagedClusterConfigLocationDefault is the default value for ManagedClusterConfigLocation
 	CPManagedClusterConfigLocationDefault = "config/kind.yml"
@@ -109,7 +109,7 @@ func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 
 		ManagerConfigLocation: CPManagedClusterConfigLocationDefault,
 
-		KubeConfig:         CPKubeConifg,
+		KubeConfig:         CPKubeConfigDefault,
 		KubeConfigLocation: CPKubeConfigLocationDefault,
 
 		DockerPolicy:    CPDockerPolicyDefault,

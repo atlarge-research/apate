@@ -198,7 +198,7 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	err = kubectl.CreateWithNameSpace([]byte(pods), kcfg, namespace)
+	err = kubectl.ExecuteWithNamespace("create", []byte(pods), kcfg, namespace)
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
