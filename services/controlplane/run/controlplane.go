@@ -185,10 +185,10 @@ func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster,
 	listenAddress := env.ControlPlaneEnv().ListenAddress
 
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port, false)
+	connectionInfo := service.NewConnectionInfo(listenAddress, info.Port)
 
 	// Create gRPC server
-	server, err := service.NewGRPCServer(false, connectionInfo)
+	server, err := service.NewGRPCServer(connectionInfo)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create new GRPC server with connection info %v", connectionInfo)
 	}
@@ -235,5 +235,5 @@ func createExternalConnectionInformation() (*service.ConnectionInfo, error) {
 	// Create external information
 	log.Printf("external IP for control plane: %s", externalIP)
 
-	return service.NewConnectionInfo(externalIP, listenPort, false), nil
+	return service.NewConnectionInfo(externalIP, listenPort), nil
 }

@@ -114,7 +114,7 @@ func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
 
 func waitForCP(t *testing.T) {
 	cpEnv := env.DefaultControlPlaneEnvironment()
-	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.ListenAddress, cpEnv.ListenPort, false))
+	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.ListenAddress, cpEnv.ListenPort))
 	ctx := context.Background()
 	err := statusClient.WaitForControlPlane(ctx, time.Duration(5)*time.Minute)
 	assert.NoError(t, err)

@@ -18,12 +18,12 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress string, stopChannel chan<- os.Signal) (*service.GRPCServer, error) {
+func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress string, listenPort int, stopChannel chan<- os.Signal) (*service.GRPCServer, error) {
 	// Connection settings
-	connectionInfo := service.NewConnectionInfo(listenAddress, 0, false)
+	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort)
 
 	// Create gRPC server
-	server, err := service.NewGRPCServer(true, connectionInfo)
+	server, err := service.NewGRPCServer(connectionInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new GRPC server")
 	}
@@ -42,15 +42,21 @@ func startHealth(ctx context.Context, connectionInfo *service.ConnectionInfo, uu
 	}
 	hc.SetStatus(healthpb.Status_UNKNOWN)
 	var retries int32 = 3
-	hc.StartStream(ctx, func(err error) {
+	hc.StartStream(ctx, func(err error) bool {
 		if atomic.LoadInt32(&retries) < 1 {
 			// Stop after retries amount of errors
-			log.Printf("stopping apatelet because of health stream failure")
-			stop <- syscall.SIGTERM
-			return
+			select {
+			case stop <- syscall.SIGTERM:
+				log.Printf("stopping apatelet because of health stream failure")
+			default:
+				//
+			}
+
+			return true
 		}
 		log.Println(err)
 		atomic.AddInt32(&retries, -1)
+		return false
 	})
 	return hc, nil
 }

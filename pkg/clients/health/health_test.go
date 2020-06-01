@@ -49,8 +49,9 @@ func TestHealthClient(t *testing.T) {
 		uuid:   tuuid,
 	}
 
-	c.StartStream(ctx, func(r error) {
+	c.StartStream(ctx, func(r error) bool {
 		cancel()
+		return true
 	})
 	time.Sleep(time.Second)
 }

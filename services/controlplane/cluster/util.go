@@ -12,16 +12,19 @@ import (
 )
 
 // RemoveNodeWithUUID removes the apatelet with the given uuid from the cluster (both apate and k8s)
-func RemoveNodeWithUUID(uuid uuid.UUID, st *store.Store, cl *kubernetes.Cluster) error {
+func RemoveNodeWithUUID(uuid uuid.UUID, st *store.Store, cl *kubernetes.Cluster) (err error) {
 	log.Printf("Removing %s from the cluster", uuid)
 
-	if err := (*st).RemoveNode(uuid); err != nil {
-		return errors.Wrapf(err, "removing node with uuid %v failed", uuid)
+	if apateErr := (*st).RemoveNode(uuid); apateErr != nil {
+		err = errors.Wrapf(err, "removing node with uuid %v failed", uuid)
 	}
 
-	if err := cl.RemoveNodeFromCluster("apatelet-" + uuid.String()); err != nil {
-		return errors.Wrapf(err, "removing node with uuid from cluster %v failed", uuid)
-	}
+	// TODO: Err handling
+	go func() {
+		if kubernetesErr := cl.RemoveNodeFromCluster("apatelet-" + uuid.String()); kubernetesErr != nil {
+			err = errors.Wrapf(err, "removing node with uuid from cluster %v failed", uuid)
+		}
+	}()
 
-	return nil
+	return
 }

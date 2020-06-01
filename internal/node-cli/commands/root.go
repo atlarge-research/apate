@@ -19,10 +19,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
-	informersv1 "k8s.io/client-go/informers/core/v1"
 	"os"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -57,15 +55,7 @@ func RunRootCommand(originalCtx context.Context, ctx context.Context, s *provide
 	return runRootCommandWithProviderAndClient(originalCtx, ctx, pInit, client, c)
 }
 
-var once sync.Once
-var secretInformer informersv1.SecretInformer
-var configMapInformer informersv1.ConfigMapInformer
-var serviceInformer informersv1.ServiceInformer
-
 func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx context.Context, pInit provider.InitFunc, client kubernetes.Interface, c *opts.Opts) (int, int, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	if ok := provider.ValidOperatingSystems[c.OperatingSystem]; !ok {
 		return 0, 0, errdefs.InvalidInputf("operating system %q is not supported", c.OperatingSystem)
 	}
@@ -93,18 +83,17 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 	podInformer := podInformerFactory.Core().V1().Pods()
 	podInformerFactory.Start(ctx.Done())
 
-	once.Do(func() {
-		// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
-		scmInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(client, c.InformerResyncPeriod)
-		// Create a secret informer and a config map informer so we can pass their listers to the resource manager.
-		secretInformer = scmInformerFactory.Core().V1().Secrets()
-		configMapInformer = scmInformerFactory.Core().V1().ConfigMaps()
-		serviceInformer = scmInformerFactory.Core().V1().Services()
+	// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
+	sharedFactory := kubeinformers.NewSharedInformerFactoryWithOptions(client, c.InformerResyncPeriod)
 
-		// Start the informers now, so the provider will get a functional resource
-		// manager.
-		scmInformerFactory.Start(originalCtx.Done())
-	})
+	// Start the informers now, so the provider will get a functional resource
+	// manager.
+	sharedFactory.Start(originalCtx.Done())
+
+	// Create a secret informer and a config map informer so we can pass their listers to the resource manager.
+	secretInformer := sharedFactory.Core().V1().Secrets()
+	configMapInformer := sharedFactory.Core().V1().ConfigMaps()
+	serviceInformer := sharedFactory.Core().V1().Services()
 
 	rm, err := manager.NewResourceManager(podInformer.Lister(), secretInformer.Lister(), configMapInformer.Lister(), serviceInformer.Lister())
 	if err != nil {
@@ -170,7 +159,7 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 		}),
 	)
 	if err != nil {
-		log.G(ctx).Fatal(err)
+		return 0, 0, errors.Wrap(err, "unable to create node controller")
 	}
 
 	eb := record.NewBroadcaster()
@@ -194,7 +183,11 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 	if err != nil {
 		return 0, 0, err
 	}
-	defer cancelHTTP()
+	go func() {
+		defer cancelHTTP()
+
+		<-ctx.Done()
+	}()
 
 	go func() {
 		if err := pc.Run(ctx, c.PodSyncWorkers); err != nil && errors.Cause(err) != context.Canceled {

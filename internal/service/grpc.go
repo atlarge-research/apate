@@ -18,8 +18,8 @@ type GRPCServer struct {
 }
 
 // NewGRPCServer creates new gGRP server based on connection information
-func NewGRPCServer(findPort bool, info *ConnectionInfo) (*GRPCServer, error) {
-	lis, server, err := createListenerAndServer(findPort, info)
+func NewGRPCServer(info *ConnectionInfo) (*GRPCServer, error) {
+	lis, server, err := createListenerAndServer(info)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create GRPC listener and server")
 	}
@@ -36,23 +36,13 @@ func (s *GRPCServer) Serve() error {
 	return errors.Wrap(s.Server.Serve(s.listener), "error while serving gRPC")
 }
 
-func createListenerAndServer(findPort bool, info *ConnectionInfo) (listener net.Listener, server *grpc.Server, err error) {
-	for {
-		if findPort {
-			listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", info.Address, 0))
-		} else {
-			listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", info.Address, info.Port))
-		}
-		//if err != nil {
-		//	err = errors.Wrapf(err, "failed to listen on %s:%d", info.Address, info.Port)
-		//	return
-		//}
-
-		if err == nil {
-			info.Port = listener.Addr().(*net.TCPAddr).Port
-			break
-		}
+func createListenerAndServer(info *ConnectionInfo) (listener net.Listener, server *grpc.Server, err error) {
+	listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", info.Address, info.Port))
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to listen on %s:%d", info.Address, info.Port)
 	}
+
+	info.Port = listener.Addr().(*net.TCPAddr).Port
 
 	server = grpc.NewServer()
 	return
