@@ -119,6 +119,24 @@ test:
     paths:
       - cover.cov
 
+test_e2e:
+  stage: test
+  needs: [build]
+  allow_failure: false
+  variables:
+    CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
+    CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
+    CP_MANAGER_CONFIG_LOCATION: "$CI_PROJECT_DIR/config/gitlab-kind.yml"
+    CP_DOCKER_HOSTNAME: "true"
+  services:
+    - docker:dind
+    - python:3.8
+  coverage: /^total:.+\)\s+(\d+.?\d*)%$/
+  before_script:
+    - go mod download
+  script:
+    - python -m unittest test/pye2e/e2e.py
+
 race:
   stage: test
   needs: [build]
