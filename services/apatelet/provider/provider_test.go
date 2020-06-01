@@ -42,7 +42,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
 
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, kubernetes.NodeInfo{}, &st)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, kubernetes.NodeInfo{}, &st, true)
 
 	fakeNode := corev1.Node{}
 
@@ -70,11 +70,11 @@ func TestCreatePod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodCreatePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -109,11 +109,11 @@ func TestUpdatePod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodUpdatePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodUpdatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeUpdatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -146,11 +146,11 @@ func TestDeletePod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodDeletePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodDeletePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeDeletePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -181,11 +181,11 @@ func TestGetPod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodGetPodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeGetPodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -357,6 +357,7 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 	}, nil).Times(2)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeGetPodStatusResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -407,7 +408,7 @@ func TestNewProvider(t *testing.T) {
 
 	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	p, ok := NewProvider(pm, stats, &resources, cfg, ni, &s).(*Provider)
+	p, ok := NewProvider(pm, stats, &resources, cfg, ni, &s, true).(*Provider)
 
 	assert.True(t, ok)
 

@@ -44,7 +44,7 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (*Provider, *gomock.Contro
 
 	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s)
+	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s, true)
 	p := prov.(*Provider)
 	return p, ctrl, ms, pm
 }
