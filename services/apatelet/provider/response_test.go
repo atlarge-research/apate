@@ -1,88 +1,35 @@
 package provider
 
 import (
-	"context"
 	"testing"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
-func TestMagicPodAndNodePod(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	tStr := "test"
-	podName := "madjik"
-	PCPRF := events.PodCreatePodResponse
-
-	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseNormal, nil)
-
-	// SOT
-	var s store.Store = ms
-
-	out, err := podAndNodeResponse(responseArgs{
-		ctx:      context.Background(),
-		provider: &Provider{Store: &s},
-		action: func() (i interface{}, err error) {
-			return tStr, nil
-		}},
-		podName,
-		PCPRF,
-		events.NodeCreatePodResponse,
-	)
-
-	// Assert
+func TestGetCorrespondingNodeEventFlag(t *testing.T) {
+	nodeFlag, err := getCorrespondingNodeEventFlag(events.PodCreatePodResponse)
+	assert.Equal(t, events.NodeCreatePodResponse, nodeFlag)
 	assert.NoError(t, err)
-	assert.Equal(t, tStr, out)
-}
 
-func TestMagicPodAndNodeNode(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-
-	ms := mock_store.NewMockStore(ctrl)
-
-	// vars
-	tStr := "test"
-	podName := "madjik"
-	PCPRF := events.PodCreatePodResponse
-
-	NCPRF := events.PodCreatePodResponse
-
-	// Expectations
-	ms.EXPECT().GetPodFlag(podName, PCPRF).Return(scenario.ResponseNormal, nil)
-	ms.EXPECT().GetNodeFlag(NCPRF).Return(scenario.ResponseNormal, nil)
-
-	// SOT
-	var s store.Store = ms
-
-	out, err := podAndNodeResponse(
-		responseArgs{
-			ctx:      context.Background(),
-			provider: &Provider{Store: &s},
-			action: func() (i interface{}, err error) {
-				return tStr, nil
-			},
-		},
-		podName,
-		PCPRF,
-		NCPRF,
-	)
-
-	// Assert
+	nodeFlag, err = getCorrespondingNodeEventFlag(events.PodUpdatePodResponse)
+	assert.Equal(t, events.NodeUpdatePodResponse, nodeFlag)
 	assert.NoError(t, err)
-	assert.Equal(t, tStr, out)
+
+	nodeFlag, err = getCorrespondingNodeEventFlag(events.PodDeletePodResponse)
+	assert.Equal(t, events.NodeDeletePodResponse, nodeFlag)
+	assert.NoError(t, err)
+
+	nodeFlag, err = getCorrespondingNodeEventFlag(events.PodGetPodResponse)
+	assert.Equal(t, events.NodeGetPodResponse, nodeFlag)
+	assert.NoError(t, err)
+
+	nodeFlag, err = getCorrespondingNodeEventFlag(events.PodGetPodStatusResponse)
+	assert.Equal(t, events.NodeGetPodStatusResponse, nodeFlag)
+	assert.NoError(t, err)
+
+	unsetFlag, err := getCorrespondingNodeEventFlag(events.PodResources)
+	assert.Error(t, err)
+	assert.Equal(t, int32(-1), unsetFlag)
 }
