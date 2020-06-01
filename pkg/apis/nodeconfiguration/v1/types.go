@@ -10,16 +10,6 @@ const (
 	NodeConfigurationLabelNamespace = "apate-namespace"
 )
 
-const (
-	GroupName string = "apate.opendc.org"
-	Kind      string = "NodeConfiguration"
-	Version   string = "v1"
-	Plural    string = "NodeConfigurations"
-	Singular  string = "NodeConfiguration"
-	ShortName string = "nc"
-	Name      string = Plural + "." + GroupName
-)
-
 // NodeConfiguration is a definition of a NodeConfiguration resource
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:path=nodeconfigurations,shortName=nc,singular=nodeconfiguration

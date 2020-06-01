@@ -4,6 +4,7 @@ package health
 import (
 	"context"
 	"io"
+	"log"
 	"sync"
 	"time"
 
@@ -23,6 +24,14 @@ type Client struct {
 	uuid       string
 	status     health.Status
 	statusLock sync.RWMutex
+}
+
+func (c *Client) close() error {
+	if c.Conn != nil {
+		return c.Conn.Close()
+	}
+
+	return nil
 }
 
 const (
@@ -53,6 +62,12 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error) bool) 
 		errCallback(errors.Wrap(err, "failed to set up health stream"))
 	}
 
+	c.sendLoop(ctx, errCallback, stream)
+
+	c.recvLoop(ctx, errCallback, stream)
+}
+
+func (c *Client) sendLoop(ctx context.Context, errCallback func(error) bool, stream health.Health_HealthStreamClient) {
 	// Send health status
 	go func() {
 		timeoutDuration := sendInterval
@@ -61,15 +76,14 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error) bool) 
 
 		for {
 			c.statusLock.RLock()
-			err = stream.Send(&health.NodeStatus{
+			err := stream.Send(&health.NodeStatus{
 				NodeUuid: c.uuid,
 				Status:   c.status,
 			})
 			c.statusLock.RUnlock()
 
 			if err != nil {
-				if errCallback(errors.Wrap(err, "failed to send health status message over stream")) {
-					_ = stream.CloseSend()
+				if c.cancelSend(errCallback, err, stream, "failed to send health status message over stream") {
 					return
 				}
 			}
@@ -77,15 +91,26 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error) bool) 
 			timeoutDelay.Reset(timeoutDuration)
 			select {
 			case <-ctx.Done():
-				if errCallback(errors.Wrap(ctx.Err(), "context cancelled")) {
-					_ = stream.CloseSend()
+				if c.cancelSend(errCallback, err, stream, "unable to send heartbeat to server") {
 					return
 				}
 			case <-timeoutDelay.C:
 			}
 		}
 	}()
+}
 
+func (c *Client) cancelSend(errCallback func(error) bool, err error, stream health.Health_HealthStreamClient, msg string) bool {
+	if errCallback(errors.Wrap(err, msg)) {
+		if err := stream.CloseSend(); err != nil {
+			log.Printf("%v\n", errors.Wrap(err, "error while closing health stream client (send)"))
+		}
+		return true
+	}
+	return false
+}
+
+func (c *Client) recvLoop(ctx context.Context, errCallback func(error) bool, stream health.Health_HealthStreamClient) {
 	// Receive heartbeat from server
 	go func() {
 		timeoutDuration := time.Second * recvTimeout
@@ -94,45 +119,56 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error) bool) 
 
 		for {
 			r := make(chan struct{}, 1)
-
-			go func() {
-				_, err := stream.Recv()
-
-				if err == io.EOF {
-					return
-				}
-
-				if err != nil {
-					if errCallback(errors.Wrap(err, "health stream timed out")) {
-						return
-					}
-				}
-
-				select {
-				case <-ctx.Done():
-					if errCallback(errors.Wrap(ctx.Err(), "unable to receive heartbeat from server")) {
-						return
-					}
-				case r <- struct{}{}:
-					//
-				}
-			}()
+			c.recv(ctx, stream, errCallback, r)
 
 			timeoutDelay.Reset(timeoutDuration)
 			select {
 			case <-ctx.Done():
 				// On context cancel stop
-				if errCallback(errors.Wrap(ctx.Err(), "unable to receive heartbeat from server")) {
-					_ = c.Conn.Close()
+				if c.cancelRecv(ctx, errCallback, "unable to receive heartbeat from server") {
 					return
 				}
 			case <-timeoutDelay.C:
-				if errCallback(errors.Errorf("health stream died")) {
-					_ = c.Conn.Close()
+				if c.cancelRecv(ctx, errCallback, "health stream died") {
 					return
 				}
 			case <-r:
 			}
+		}
+	}()
+}
+
+func (c *Client) cancelRecv(ctx context.Context, errCallback func(error) bool, msg string) bool {
+	if errCallback(errors.Wrap(ctx.Err(), msg)) {
+		if err := c.close(); err != nil {
+			log.Printf("%v\n", errors.Wrap(err, "error while closing health stream client (recv)"))
+		}
+		return true
+	}
+	return false
+}
+
+func (c *Client) recv(ctx context.Context, stream health.Health_HealthStreamClient, errCallback func(error) bool, r chan struct{}) {
+	go func() {
+		_, err := stream.Recv()
+
+		if err == io.EOF {
+			return
+		}
+
+		if err != nil {
+			if errCallback(errors.Wrap(err, "health stream timed out")) {
+				return
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			if errCallback(errors.Wrap(ctx.Err(), "unable to receive heartbeat from server")) {
+				return
+			}
+		case r <- struct{}{}:
+			//
 		}
 	}()
 }

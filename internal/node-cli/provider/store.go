@@ -1,8 +1,9 @@
 package provider
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
 	"sync"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
 )
 
 // Store is used for registering/fetching providers
@@ -54,7 +55,7 @@ func (s *Store) Exists(name string) bool {
 	return ok
 }
 
-// InitConfig is the config passed to initialize a registered provider.
+// InitConfig is the config passed to initialise a registered provider.
 type InitConfig struct {
 	ConfigPath        string
 	NodeName          string

@@ -16,9 +16,10 @@ package root
 
 import (
 	"context"
+	"strings"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
-	"strings"
 
 	"github.com/virtual-kubelet/virtual-kubelet/errdefs"
 	corev1 "k8s.io/api/core/v1"

@@ -18,12 +18,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 	"io"
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 
 	"github.com/pkg/errors"
 	"github.com/virtual-kubelet/virtual-kubelet/log"

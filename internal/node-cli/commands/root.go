@@ -16,12 +16,13 @@ package root
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 	"os"
 	"path"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 
 	"github.com/pkg/errors"
 	"github.com/virtual-kubelet/virtual-kubelet/errdefs"
@@ -117,7 +118,7 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 
 	p, err := pInit(initConfig)
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "error initializing provider %s", c.Provider)
+		return 0, 0, errors.Wrapf(err, "error initialising provider %s", c.Provider)
 	}
 
 	ctx = log.WithLogger(ctx, log.G(ctx).WithFields(log.Fields{
@@ -197,7 +198,7 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 
 	if c.StartupTimeout > 0 {
 		// If there is a startup timeout, it does two things:
-		// 1. It causes the VK to shutdown if we haven't gotten into an operational state in a time period
+		// 1. It causes the VirtualKubelet to shutdown if we haven't gotten into an operational state in a time period
 		// 2. It prevents node advertisement from happening until we're in an operational state
 		err = waitFor(ctx, c.StartupTimeout, pc.Ready())
 		if err != nil {
@@ -211,7 +212,7 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 		}
 	}()
 
-	log.G(ctx).Info("Initialized")
+	log.G(ctx).Info("Initialised")
 
 	return metricsPort, k8sPort, nil
 }
@@ -220,14 +221,14 @@ func waitFor(ctx context.Context, time time.Duration, ready <-chan struct{}) err
 	ctx, cancel := context.WithTimeout(ctx, time)
 	defer cancel()
 
-	// Wait for the VK / PC close the the ready channel, or time out and return
-	log.G(ctx).Info("Waiting for pod controller / VK to be ready")
+	// Wait for the VirtualKubelet / PC close the the ready channel, or time out and return
+	log.G(ctx).Info("Waiting for pod controller / VirtualKubelet to be ready")
 
 	select {
 	case <-ready:
 		return nil
 	case <-ctx.Done():
-		return errors.Wrap(ctx.Err(), "Error while starting up VK")
+		return errors.Wrap(ctx.Err(), "Error while starting up VirtualKubelet")
 	}
 }
 

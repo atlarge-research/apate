@@ -15,12 +15,13 @@
 package opts
 
 import (
-	"github.com/mitchellh/go-homedir"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/mitchellh/go-homedir"
+	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -119,12 +120,6 @@ func FromEnv() (*Opts, error) {
 	o.TaintEffect = getEnv("VKUBELET_TAINT_EFFECT", o.TaintEffect)
 
 	return o, nil
-}
-
-func New() *Opts {
-	o := &Opts{}
-	setDefaults(o)
-	return o
 }
 
 func setDefaults(o *Opts) {

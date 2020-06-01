@@ -3,10 +3,11 @@ package provider
 
 import (
 	"context"
+	"strconv"
+
 	root "github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/commands"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
-	"strconv"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
@@ -42,25 +43,26 @@ type Provider struct {
 	Conditions nodeConditions
 }
 
-// TODO: Move
-type VK struct {
+// VirtualKubelet is a struct containing everything needed to start virtual kubelet
+type VirtualKubelet struct {
 	st   *provider.Store
 	opts *opts.Opts
 }
 
-func (vk *VK) Run(originalCtx context.Context, ctx context.Context) (int, int, error) {
+//nolint as lint does not recognise the first context is indeed the correct context
+// Run starts the virtual kubelet
+func (vk *VirtualKubelet) Run(ctx context.Context, originalCtx context.Context) (int, int, error) {
 	metricsPort, k8sPort, err := root.RunRootCommand(originalCtx, ctx, vk.st, vk.opts)
 
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "error while running virtual kubelet")
-
 	}
 
 	return metricsPort, k8sPort, nil
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*VK, error) {
+func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*VirtualKubelet, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get options from env")
@@ -96,7 +98,7 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k
 	//	return nil, errors.Wrap(err, "failed to create new virtual kubelet provider")
 	//}
 
-	return &VK{
+	return &VirtualKubelet{
 		st:   providerStore,
 		opts: op,
 	}, nil

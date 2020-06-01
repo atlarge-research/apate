@@ -1,9 +1,10 @@
 package pod
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
 	"log"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
 
 	"github.com/pkg/errors"
 
