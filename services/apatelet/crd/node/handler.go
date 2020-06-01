@@ -1,9 +1,10 @@
 package node
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
 	"log"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
 
 	"github.com/pkg/errors"
 

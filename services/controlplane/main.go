@@ -2,17 +2,27 @@ package main
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 	"log"
 	"net/http"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
+	// #nosec exposing debug statistics is not a problem for this application
 	_ "net/http/pprof"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
 func main() {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+	cpEnv := env.ControlPlaneEnv()
+
+	// Start debug server if debug is enabled
+	if cpEnv.DebugEnabled {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
 
 	ctx := context.Background()
 	run.StartControlPlane(ctx, runner.New())

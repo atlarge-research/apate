@@ -2,11 +2,12 @@
 package pod
 
 import (
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 

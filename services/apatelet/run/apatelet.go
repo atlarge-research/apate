@@ -4,12 +4,13 @@ package run
 import (
 	"context"
 	"fmt"
-	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
 
@@ -74,7 +75,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 	// Create virtual kubelet
 	log.Println("Joining kubernetes cluster")
 	ech := make(chan error)
-	apateletEnv.MetricsPort, apateletEnv.KubernetesPort, err = nc.Run(originalCtx, ctx)
+	apateletEnv.MetricsPort, apateletEnv.KubernetesPort, err = nc.Run(ctx, originalCtx)
 	if err != nil {
 		return errors.Wrap(err, "failed to run node controller")
 	}
@@ -89,7 +90,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 
 	// Start serving requests
 	go func() {
-		if err := server.Serve(); err != nil {
+		if err = server.Serve(); err != nil {
 			ech <- errors.Wrap(err, "apatelet server failed")
 		}
 	}()
@@ -120,7 +121,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 		//
 	}
 	close(stopInformer)
-	if err := shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
+	if err = shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
 		log.Println(err)
 	}
 	return err
@@ -157,7 +158,7 @@ func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *s
 		return errors.Wrap(err, "failed to get cluster operation client")
 	}
 
-	if err := client.LeaveCluster(ctx, uuid); err != nil {
+	if err = client.LeaveCluster(ctx, uuid); err != nil {
 		log.Printf("An error occurred while leaving the clusters (apate & k8s): %v\n", err)
 	}
 

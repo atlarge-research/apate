@@ -4,9 +4,10 @@ package watchdog
 
 import (
 	"context"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"log"
 	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster"
 

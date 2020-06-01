@@ -30,7 +30,7 @@ type ResourceManager struct {
 	serviceLister   corev1listers.ServiceLister
 }
 
-// NewResourceManager returns a ResourceManager with the internal maps initialized.
+// NewResourceManager returns a ResourceManager with the internal maps initialised.
 func NewResourceManager(podLister corev1listers.PodLister, secretLister corev1listers.SecretLister, configMapLister corev1listers.ConfigMapLister, serviceLister corev1listers.ServiceLister) (*ResourceManager, error) {
 	rm := ResourceManager{
 		podLister:       podLister,
