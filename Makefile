@@ -92,4 +92,7 @@ run_e2e:
 	docker build -f ./test/e2e/Dockerfile -t apate_e2e .
 	docker run -iv /var/run/docker.sock:/var/run/docker.sock apate_e2e
 
+	docker build -f ./test/pye2e/Dockerfile -t apate_e2e_py .
+	docker run -iv /var/run/docker.sock:/var/run/docker.sock apate_e2e_py
+
 FORCE:
