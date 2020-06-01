@@ -4,6 +4,7 @@ package node
 import (
 	"context"
 	"log"
+	"runtime"
 	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
@@ -83,6 +84,9 @@ func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconf
 			return errors.Wrap(err, "error while stopping apatelets")
 		}
 	}
+
+	// TODO: Do we want this?
+	runtime.GC()
 
 	return nil
 }

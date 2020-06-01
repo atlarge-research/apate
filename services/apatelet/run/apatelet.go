@@ -156,15 +156,13 @@ func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *s
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster operation client")
 	}
-	defer func() {
-		err := client.Conn.Close()
-		if err != nil {
-			log.Printf("could not close connection: %v\n", err)
-		}
-	}()
 
 	if err := client.LeaveCluster(ctx, uuid); err != nil {
 		log.Printf("An error occurred while leaving the clusters (apate & k8s): %v\n", err)
+	}
+
+	if err = client.Conn.Close(); err != nil {
+		log.Printf("could not close connection: %v\n", err)
 	}
 
 	log.Println("Stopped Apatelet")
