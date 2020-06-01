@@ -48,7 +48,7 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 		// Delete function
 		podCfg := obj.(*podconfigv1.PodConfiguration)
 
-		crdLabel := getCRDAndLabel(podCfg)
+		crdLabel := getCrdLabel(podCfg)
 		err := (*st).RemovePodTasks(crdLabel)
 		if err != nil {
 			log.Printf("error while removing pod tasks: %v\n", err)
@@ -69,7 +69,7 @@ func setPodTasks(podCfg *podconfigv1.PodConfiguration, st *store.Store) error {
 		durations[i] = duration
 	}
 
-	crdLabel := getCRDAndLabel(podCfg)
+	crdLabel := getCrdLabel(podCfg)
 
 	empty := podconfigv1.PodConfigurationState{}
 	if podCfg.Spec.PodConfigurationState != empty {
@@ -87,7 +87,7 @@ func setPodTasks(podCfg *podconfigv1.PodConfiguration, st *store.Store) error {
 	return errors.Wrap((*st).SetPodTasks(crdLabel, tasks), "failed to set pod tasks")
 }
 
-func getCRDAndLabel(podCfg *podconfigv1.PodConfiguration) string {
+func getCrdLabel(podCfg *podconfigv1.PodConfiguration) string {
 	crdLabel := podCfg.Namespace + "/" + podCfg.Name
 	return crdLabel
 }
