@@ -51,7 +51,7 @@ func FromPath(path string) (*KubeConfig, error) {
 }
 
 // GetConfig returns a kubernetes rest configuration from the KubeConfig.
-func (k KubeConfig) GetConfig() (*rest.Config, error) {
+func (k *KubeConfig) GetConfig() (*rest.Config, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig(k.Bytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rest config")

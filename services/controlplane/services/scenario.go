@@ -12,7 +12,6 @@ import (
 
 	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
@@ -35,7 +34,7 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store, inf
 	})
 }
 
-func (s *scenarioService) StartScenario(ctx context.Context, config *controlplane.StartScenarioConfig) (*empty.Empty, error) {
+func (s *scenarioService) StartScenario(ctx context.Context, _ *controlplane.StartScenarioConfig) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		log.Println(err)
@@ -54,21 +53,6 @@ func (s *scenarioService) StartScenario(ctx context.Context, config *controlplan
 
 	if err = startOnNodes(ctx, nodes, apateletScenario); err != nil {
 		err = errors.Wrap(err, "failed to get start scenario on nodes")
-		log.Println(err)
-		return nil, err
-	}
-
-	cfg, err := (*s.store).GetKubeConfig()
-	if err != nil {
-		err = errors.Wrap(err, "failed to get get Kubeconfig")
-		log.Println(err)
-		return nil, err
-	}
-
-	// TODO: This is probably very flaky
-	err = kubectl.Create(config.ResourceConfig, &cfg)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create resource config")
 		log.Println(err)
 		return nil, err
 	}

@@ -48,7 +48,7 @@ func TestForceCreateCluster(t *testing.T) {
 	clusterInterface := KinDClusterManager{}
 
 	// Delete it before to be safe
-	assert.NoError(t, clusterInterface.Shutdown())
+	assert.NoError(t, clusterInterface.Shutdown(nil))
 
 	clusterBuilder := NewClusterManagerHandler()
 

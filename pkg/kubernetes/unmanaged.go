@@ -11,7 +11,7 @@ import (
 type UnmanagedClusterManager struct{}
 
 // GetKubeConfig writes the given kubeconfig and returns it as a struct.
-func (u UnmanagedClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
+func (u *UnmanagedClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
 	kubeConfig, err := kubeconfig.FromBytes([]byte(env.ControlPlaneEnv().KubeConfig), env.ControlPlaneEnv().KubeConfigLocation, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kube config from env variable")
@@ -20,6 +20,6 @@ func (u UnmanagedClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error)
 }
 
 // Shutdown currently does nothing.
-func (u UnmanagedClusterManager) Shutdown() error {
-	return nil // noop, we want the cluster to still live afterwards
+func (u *UnmanagedClusterManager) Shutdown(cluster *Cluster) error {
+	return errors.Wrap(cluster.RemoveAllApateletsFromCluster(), "failed to remove all apatelets from cluster")
 }

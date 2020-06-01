@@ -23,8 +23,7 @@ import (
 )
 
 type commandLineArgs struct {
-	kubeConfigFileLocation       string
-	k8sConfigurationFileLocation string
+	kubeConfigFileLocation string
 
 	controlPlaneAddress string
 	controlPlanePort    int
@@ -69,15 +68,6 @@ func StartCmd(cmdArgs []string) {
 						Destination: &args.controlPlaneAddress,
 						Value:       defaultControlPlaneAddress,
 						Required:    false,
-					},
-					&cli.StringFlag{
-						Name:        "k8s-config",
-						Usage:       "The location of the kubernetes configuration for the resources to be created",
-						EnvVars:     []string{"K8S_CONFIG_LOCATION"},
-						Required:    false,
-						TakesFile:   true,
-						Value:       "",
-						Destination: &args.k8sConfigurationFileLocation,
 					},
 					&cli.IntFlag{
 						Name:        "port",
@@ -266,18 +256,6 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 }
 
 func runScenario(ctx context.Context, args *commandLineArgs) error {
-	k8sConfig, err := func() ([]byte, error) {
-		if len(args.k8sConfigurationFileLocation) > 0 {
-			// #nosec
-			k8sConfig, err := ioutil.ReadFile(args.k8sConfigurationFileLocation)
-			if err != nil {
-				return nil, errors.Wrap(err, "reading k8sconfig failed")
-			}
-			return k8sConfig, nil
-		}
-		return []byte{}, nil
-	}()
-
 	// The connectionInfo that will be used to connect to the control plane
 	info := &service.ConnectionInfo{
 		Address: args.controlPlaneAddress,
@@ -316,7 +294,7 @@ func runScenario(ctx context.Context, args *commandLineArgs) error {
 	fmt.Printf("Starting scenario ")
 
 	//Finally: actually start the scenario
-	if _, err = scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
+	if _, err = scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{}); err != nil {
 		return errors.Wrap(err, "couldn't start scenario")
 	}
 	err = scenarioClient.Conn.Close()
