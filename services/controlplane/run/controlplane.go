@@ -162,7 +162,7 @@ func shutdown(store *store.Store, cluster *kubernetes.Cluster, server *service.G
 
 	log.Println("stopping kubernetes control plane")
 	if err := cluster.Shutdown(); err != nil {
-		log.Printf("an error occurred while deleting the kubernetes store: %s", err.Error())
+		log.Printf("an error occurred while deleting the kubernetes cluster: %s", err.Error())
 	}
 }
 

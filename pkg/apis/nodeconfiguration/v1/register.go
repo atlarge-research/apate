@@ -50,5 +50,5 @@ func CreateInKubernetes(config *kubeconfig.KubeConfig) error {
 		return errors.Wrapf(err, "reading file '%v' failed", cpEnv.NodeCRDLocation)
 	}
 
-	return errors.Wrap(kubectl.Update(file, config), "updating node configuration failed")
+	return errors.Wrap(kubectl.Apply(file, config), "updating node configuration failed")
 }
