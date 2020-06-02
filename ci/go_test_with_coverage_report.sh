@@ -111,7 +111,30 @@ prepareTestCommands() {
 
 	# Randomize order
 	shuf ${testsDefinitions} > ${testsDefinitions}.tmp
-    mv ${testsDefinitions}.tmp ${testsDefinitions} 
+    mv ${testsDefinitions}.tmp ${testsDefinitions}
+
+	readarray -t e2e <<<$(cat ${testsDefinitions} | grep e2e)
+	readarray -t non_e2e <<<$(cat ${testsDefinitions} | grep -v e2e)
+	
+	non_e2e_length=${#non_e2e[@]}
+	e2e_length=${#e2e[@]}
+	div=$((non_e2e_length/e2e_length))
+	res=${div%.*}
+
+	local out=()
+
+	for i in ${!non_e2e[@]}; do
+
+		out+=("${non_e2e[$i]}")
+		if [[ $((i % res)) -eq 0 ]]; then 
+			out+=("${e2e[$(($i/$res))]}")
+		fi
+	done
+
+	rm ${testsDefinitions}
+	for i in ${!out[@]}; do
+		echo ${out[i]} >> ${testsDefinitions}
+	done
 }
 
 executeTestCommand() {

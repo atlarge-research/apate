@@ -50,8 +50,8 @@ type ApateletEnvironment struct {
 	ControlPlanePort int `env:"CP_PORT"`
 }
 
-// DefaultApateletEnvironment returns the default apate environment
-func DefaultApateletEnvironment() ApateletEnvironment {
+// defaultApateletEnvironment returns the default apate environment
+func defaultApateletEnvironment() ApateletEnvironment {
 	return ApateletEnvironment{
 		ListenAddress: ApateletListenAddressDefault,
 		ListenPort:    ApateletListenPortDefault,
@@ -68,7 +68,7 @@ func DefaultApateletEnvironment() ApateletEnvironment {
 
 // ApateletEnv builds an ApateletEnvironment based on the actual environment
 func ApateletEnv() (ApateletEnvironment, error) {
-	c := DefaultApateletEnvironment()
+	c := defaultApateletEnvironment()
 	if err := env.Bind(&c); err != nil {
 		return ApateletEnvironment{}, errors.Wrap(err, "invalid environment variables")
 	}
