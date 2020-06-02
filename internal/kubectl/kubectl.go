@@ -85,3 +85,9 @@ func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
 func Apply(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
 	return errors.Wrapf(ExecuteWithNamespace("apply", resourceConfig, kubeConfig, ""), "failed to create resource in default namespace")
 }
+
+// Delete calls `kubectl delete` with the given resourceConfig
+// When this config is empty, it will not be called
+func Delete(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
+	return errors.Wrapf(ExecuteWithNamespace("delete", resourceConfig, kubeConfig, ""), "failed to create resource in default namespace")
+}

@@ -106,18 +106,6 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 	return wi, nil
 }
 
-// Delete deletes all node configurations.
-func (e *ConfigurationClient) Delete() error {
-	return errors.Wrap(e.restClient.
-		Delete().
-		Namespace(e.namespace).
-		Resource(resource).
-		VersionedParams(&metav1.ListOptions{}, scheme.ParameterCodec).
-		Do().
-		Error(),
-		"failed to delete node configurations")
-}
-
 // GetSelector concatenates the namespace and name to create a unique selector
 func GetSelector(cfg *nodeconfigv1.NodeConfiguration) string {
 	return cfg.Namespace + "/" + cfg.Name
