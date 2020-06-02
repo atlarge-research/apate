@@ -33,13 +33,13 @@ test_race:
 
 .PHONY: test_cover
 test_cover:
-	go test -coverprofile cover.out ./...
-	go tool cover -html=cover.out
+	go test -v -coverpkg=./... -coverprofile=cover.cov ./...
+	go tool cover -func=cover.cov
 
 .PHONY: test_cover_short
 test_cover_short:
-	go test -short -coverprofile cover.out ./...
-	go tool cover -html=cover.out
+	go test -short -coverprofile cover.cov ./...
+	go tool cover -func=cover.cov
 
 .PHONY: docker_build_apatelet
 docker_build_apatelet:

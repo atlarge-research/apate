@@ -18,6 +18,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
+const enableDockerApatelets = true
+
 // Please set the `$CI_PROJECT_DIR` to the root of the project
 func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	if testing.Short() {
@@ -37,6 +39,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
 	initEnv.KinDClusterName = kindClusterName
 	initEnv.ApateletRunType = runType
+	initEnv.PrometheusStackEnabled = false
 	env.SetEnv(initEnv)
 }
 
