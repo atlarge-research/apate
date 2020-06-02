@@ -1,0 +1,83 @@
+tests definitions:
+  stage: prepare
+  variables:
+    PARALLEL_TESTS_LIMIT: 1
+  before_script:
+    - source ./ci/env.sh
+  script:
+    - ./ci/go_test_with_coverage_report.sh prepare
+  artifacts:
+    paths:
+      - testsdefinitions.txt
+    expire_in: 7d
+
+test suite:
+  stage: test
+  parallel: 20
+  variables:
+    # CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
+    # CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
+    # CP_MANAGER_CONFIG_LOCATION: "$CI_PROJECT_DIR/config/gitlab-kind.yml"
+    CP_DOCKER_HOSTNAME: "true"
+    FF_NETWORK_PER_BUILD: "true"
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker pull $VK_IMAGE
+    - docker tag $VK_IMAGE apatelet
+    - source ./ci/env.sh
+  script:
+    - ./ci/go_test_with_coverage_report.sh execute
+  artifacts:
+    paths:
+      - .cover/*
+      - .testoutput/*
+    when: always
+    expire_in: 7d
+
+test coverage report:
+  stage: verify
+  coverage: /regular total:\s+\(statements\)\s+\d+.\d+\%/
+  # needs:
+  #   - unit test
+  before_script:
+    - source ./ci/env.sh
+  script:
+    - ./ci/go_test_with_coverage_report.sh coverage
+  artifacts:
+    paths:
+      - out/coverage/*
+    expire_in: 7d
+
+race:
+  stage: test
+  needs: [build]
+  image: golang:1.14
+  before_script:
+    - go mod download
+  script: # Test for race conditions in small tests as race condition testing is slow
+    - go test -race -short ./...
+
+# test:
+#   stage: test
+#   needs: [build]
+#   allow_failure: true
+#   variables:
+#     CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
+#     CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
+#     CP_MANAGER_CONFIG_LOCATION: "$CI_PROJECT_DIR/config/gitlab-kind.yml"
+#     CP_DOCKER_HOSTNAME: "true"
+#   services:
+#     - docker:dind
+#   coverage: /^total:.+\)\s+(\d+.?\d*)%$/
+#   before_script:
+#     - go mod download
+#   script:
+#     - go test -v -p 24 -covermode=atomic -coverprofile=cover.cov ./... 2>&1 | go-junit-report > report.xml
+#     - go tool cover -func=cover.cov
+#   artifacts:
+#     reports:
+#       junit: report.xml
+#     paths:
+#       - cover.cov

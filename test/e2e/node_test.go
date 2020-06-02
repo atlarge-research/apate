@@ -19,7 +19,9 @@ import (
 
 func TestSimpleNodeDeployment(t *testing.T) {
 	testSimpleNodeDeployment(t, env.Routine)
-	testSimpleNodeDeployment(t, env.Docker)
+	if enableDockerApatelets {
+		testSimpleNodeDeployment(t, env.Docker)
+	}
 }
 
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
@@ -76,7 +78,9 @@ spec:
 
 func TestNodeFailure(t *testing.T) {
 	testNodeFailure(t, env.Routine)
-	// testNodeFailure(t, env.Docker)
+	if enableDockerApatelets {
+		testNodeFailure(t, env.Docker)
+	}
 }
 
 func testNodeFailure(t *testing.T, rt env.RunType) {

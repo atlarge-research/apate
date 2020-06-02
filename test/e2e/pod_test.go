@@ -2,6 +2,10 @@ package e2e
 
 import (
 	"context"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
@@ -9,14 +13,13 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestSimplePodDeployment(t *testing.T) {
 	testSimplePodDeployment(t, env.Routine)
-	testSimplePodDeployment(t, env.Docker)
+	if enableDockerApatelets {
+		testSimplePodDeployment(t, env.Docker)
+	}
 }
 
 func testSimplePodDeployment(t *testing.T, rt env.RunType) {
@@ -41,7 +44,6 @@ func testSimplePodDeployment(t *testing.T, rt env.RunType) {
 
 	teardown(t)
 }
-
 
 func simpleReplicaSet(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	pods := `
