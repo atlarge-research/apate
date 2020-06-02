@@ -105,15 +105,3 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 
 	return wi, nil
 }
-
-// Delete deletes all pod configurations.
-func (e *ConfigurationClient) Delete() error {
-	return errors.Wrap(e.restClient.
-		Delete().
-		Namespace(e.namespace).
-		Resource(resource).
-		VersionedParams(&metav1.ListOptions{}, scheme.ParameterCodec).
-		Do().
-		Error(),
-		"failed to delete pod configurations")
-}

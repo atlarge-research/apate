@@ -130,11 +130,11 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 }
 
 func createCRDs(cluster *kubernetes.Cluster) error {
-	if err := podconfigv1.CreateInKubernetes(cluster.KubeConfig); err != nil {
+	if err := podconfigv1.UpdateInKubernetes(cluster.KubeConfig, false); err != nil {
 		return errors.Wrap(err, "failed to register pod CRD spec")
 	}
 
-	if err := nodeconfigv1.CreateInKubernetes(cluster.KubeConfig); err != nil {
+	if err := nodeconfigv1.UpdateInKubernetes(cluster.KubeConfig, false); err != nil {
 		return errors.Wrap(err, "failed to register node CRD spec")
 	}
 

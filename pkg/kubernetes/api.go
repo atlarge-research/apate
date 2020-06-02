@@ -46,6 +46,7 @@ func (c *Cluster) GetAllApatelets() ([]*corev1.Node, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
 	}
+
 	apatelets := make([]*corev1.Node, 0)
 	for i, node := range nodes.Items {
 		if strings.HasPrefix(node.Name, "apatelet-") {
