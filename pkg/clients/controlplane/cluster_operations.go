@@ -68,7 +68,7 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 		Storage:          res.Hardware.Storage,
 		EphemeralStorage: res.Hardware.EphemeralStorage,
 		MaxPods:          res.Hardware.MaxPods,
-		Selector:         res.NodeSelector,
+		Label:            res.NodeLabel,
 	}, res.StartTime, nil
 }
 

@@ -173,7 +173,7 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			nodeconfigv1.EmulatedLabel: nodeconfigv1.EmulatedLabelValue,
 
 			nodeconfigv1.NodeConfigurationLabelNamespace: p.NodeInfo.Namespace,
-			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Selector,
+			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Label,
 		},
 	}
 }

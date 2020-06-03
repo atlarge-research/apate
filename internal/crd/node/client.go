@@ -106,7 +106,7 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 	return wi, nil
 }
 
-// GetSelector concatenates the namespace and name to create a unique selector
-func GetSelector(cfg *nodeconfigv1.NodeConfiguration) string {
+// GetCrdLabel concatenates the namespace and name to create a unique label
+func GetCrdLabel(cfg *nodeconfigv1.NodeConfiguration) string {
 	return cfg.Namespace + "/" + cfg.Name
 }
