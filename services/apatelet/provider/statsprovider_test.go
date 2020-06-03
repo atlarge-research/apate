@@ -41,7 +41,7 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	info, err := kubernetes.NewNodeInfo("", "", name, "", "a/b", port)
 	assert.NoError(t, err)
 
-	prov := NewProvider(pm, NewStats(), &res, provider.InitConfig{}, info, &s, true)
+	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, info, &s, true)
 
 	return prov.(provider.PodMetricsProvider), ctrl, ms, pm
 }

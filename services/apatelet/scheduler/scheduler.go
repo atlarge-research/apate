@@ -78,6 +78,7 @@ func (s *Scheduler) scheduleLoop(ctx context.Context, ech chan<- error) {
 			case <-ctx.Done():
 				return
 			case <-s.updateCh:
+				//
 			}
 		}
 
@@ -87,6 +88,9 @@ func (s *Scheduler) scheduleLoop(ctx context.Context, ech chan<- error) {
 			case <-ctx.Done():
 				return
 			case <-timer.C:
+				//
+			case <-s.updateCh:
+				//
 			}
 		}
 	}

@@ -95,7 +95,7 @@ func TestConfigureNode(t *testing.T) {
 			Selector:    "apate",
 			MetricsPort: 123,
 		},
-		Cfg: provider.InitConfig{
+		Cfg: &provider.InitConfig{
 			ConfigPath:        "",
 			NodeName:          "apate-x",
 			OperatingSystem:   "not windows",

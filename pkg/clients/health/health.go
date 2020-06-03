@@ -35,8 +35,8 @@ func (c *Client) close() error {
 }
 
 const (
-	sendInterval = 1 * time.Second
-	recvTimeout  = 5 * time.Second
+	sendInterval = 20 * time.Second
+	recvTimeout  = 30 * time.Second
 )
 
 // GetClient creates a new health client
@@ -62,42 +62,38 @@ func (c *Client) StartStream(ctx context.Context, errCallback func(error) bool) 
 		errCallback(errors.Wrap(err, "failed to set up health stream"))
 	}
 
-	c.sendLoop(ctx, errCallback, stream)
-
-	c.recvLoop(ctx, errCallback, stream)
+	go c.sendLoop(ctx, errCallback, stream)
+	go c.recvLoop(ctx, errCallback, stream)
 }
 
 func (c *Client) sendLoop(ctx context.Context, errCallback func(error) bool, stream health.Health_HealthStreamClient) {
 	// Send health status
-	go func() {
-		timeoutDuration := sendInterval
-		timeoutDelay := time.NewTimer(timeoutDuration)
-		defer timeoutDelay.Stop()
+	timeoutDelay := time.NewTimer(sendInterval)
+	defer timeoutDelay.Stop()
 
-		for {
-			c.statusLock.RLock()
-			err := stream.Send(&health.NodeStatus{
-				NodeUuid: c.uuid,
-				Status:   c.status,
-			})
-			c.statusLock.RUnlock()
+	for {
+		c.statusLock.RLock()
+		err := stream.Send(&health.NodeStatus{
+			NodeUuid: c.uuid,
+			Status:   c.status,
+		})
+		c.statusLock.RUnlock()
 
-			if err != nil {
-				if c.cancelSend(errCallback, err, stream, "failed to send health status message over stream") {
-					return
-				}
-			}
-
-			timeoutDelay.Reset(timeoutDuration)
-			select {
-			case <-ctx.Done():
-				if c.cancelSend(errCallback, err, stream, "unable to send heartbeat to server") {
-					return
-				}
-			case <-timeoutDelay.C:
+		if err != nil {
+			if c.cancelSend(errCallback, err, stream, "failed to send health status message over stream") {
+				return
 			}
 		}
-	}()
+
+		timeoutDelay.Reset(sendInterval)
+		select {
+		case <-ctx.Done():
+			if c.cancelSend(errCallback, err, stream, "unable to send heartbeat to server") {
+				return
+			}
+		case <-timeoutDelay.C:
+		}
+	}
 }
 
 func (c *Client) cancelSend(errCallback func(error) bool, err error, stream health.Health_HealthStreamClient, msg string) bool {
@@ -112,30 +108,27 @@ func (c *Client) cancelSend(errCallback func(error) bool, err error, stream heal
 
 func (c *Client) recvLoop(ctx context.Context, errCallback func(error) bool, stream health.Health_HealthStreamClient) {
 	// Receive heartbeat from server
-	go func() {
-		timeoutDuration := time.Second * recvTimeout
-		timeoutDelay := time.NewTimer(timeoutDuration)
-		defer timeoutDelay.Stop()
+	timeoutDelay := time.NewTimer(recvTimeout)
+	defer timeoutDelay.Stop()
 
-		for {
-			r := make(chan struct{}, 1)
-			c.recv(ctx, stream, errCallback, r)
+	for {
+		r := make(chan struct{}, 1)
+		c.recv(ctx, stream, errCallback, r)
 
-			timeoutDelay.Reset(timeoutDuration)
-			select {
-			case <-ctx.Done():
-				// On context cancel stop
-				if c.cancelRecv(ctx, errCallback, "unable to receive heartbeat from server") {
-					return
-				}
-			case <-timeoutDelay.C:
-				if c.cancelRecv(ctx, errCallback, "health stream died") {
-					return
-				}
-			case <-r:
+		timeoutDelay.Reset(recvTimeout)
+		select {
+		case <-ctx.Done():
+			// On context cancel stop
+			if c.cancelRecv(ctx, errCallback, "unable to receive heartbeat from server") {
+				return
 			}
+		case <-timeoutDelay.C:
+			if c.cancelRecv(ctx, errCallback, "health stream died") {
+				return
+			}
+		case <-r:
 		}
-	}()
+	}
 }
 
 func (c *Client) cancelRecv(ctx context.Context, errCallback func(error) bool, msg string) bool {
