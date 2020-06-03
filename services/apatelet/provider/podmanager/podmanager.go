@@ -12,12 +12,19 @@ import (
 type PodManager interface {
 	// GetPodByName returns the pod identified by the namespace and name given in the parameters.
 	GetPodByName(namespace string, name string) (*corev1.Pod, bool)
+
 	// GetPodByUID returns the pod identified by the uid given in the `uid` parameter.
 	GetPodByUID(uid types.UID) (*corev1.Pod, bool)
+
 	// AddPod adds the pod specified in the `pod` parameter.
-	AddPod(pod corev1.Pod)
+	AddPod(pod *corev1.Pod)
+
 	// DeletePod deletes the pod specified in the `pod` parameter.
 	DeletePod(pod *corev1.Pod)
+
+	// DeletePod deletes the pod identified by the namespace and name given in the parameters.
+	DeletePodByName(namespace string, name string)
+
 	// GetAllPods returns an array of all pods.
 	GetAllPods() (ret []*corev1.Pod)
 }
@@ -53,12 +60,12 @@ func (m *podManager) GetPodByUID(uid types.UID) (*corev1.Pod, bool) {
 	return pod, ok
 }
 
-func (m *podManager) AddPod(pod corev1.Pod) {
+func (m *podManager) AddPod(pod *corev1.Pod) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.uidToPod[pod.UID] = &pod
-	m.nameToPod[getInternalPodName(pod.Namespace, pod.Name)] = &pod
+	m.uidToPod[pod.UID] = pod
+	m.nameToPod[getInternalPodName(pod.Namespace, pod.Name)] = pod
 }
 
 func (m *podManager) DeletePod(pod *corev1.Pod) {
@@ -66,6 +73,17 @@ func (m *podManager) DeletePod(pod *corev1.Pod) {
 	defer m.lock.Unlock()
 
 	delete(m.nameToPod, getInternalPodName(pod.Namespace, pod.Name))
+	delete(m.uidToPod, pod.UID)
+}
+
+func (m *podManager) DeletePodByName(namespace string, name string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	internalPodName := getInternalPodName(namespace, name)
+	pod := m.nameToPod[internalPodName]
+
+	delete(m.nameToPod, internalPodName)
 	delete(m.uidToPod, pod.UID)
 }
 
@@ -83,5 +101,5 @@ func (m *podManager) GetAllPods() (ret []*corev1.Pod) {
 // getInternalPodName returns the concatenation of namespace and name which is used as an index inside the
 // 	nameToPod map
 func getInternalPodName(namespace string, name string) string {
-	return namespace + name
+	return namespace + "/" + name
 }

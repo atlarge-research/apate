@@ -91,7 +91,7 @@ func TestConfigureNode(t *testing.T) {
 			Name:        "apate-x",
 			Version:     "42",
 			Namespace:   "my",
-			Selector:    "apate",
+			Label:       "apate",
 			MetricsPort: 123,
 		},
 		Cfg: provider.InitConfig{
@@ -110,7 +110,7 @@ func TestConfigureNode(t *testing.T) {
 			Storage:          2048,
 			EphemeralStorage: 8192,
 			MaxPods:          42,
-			Selector:         "my/apate",
+			Label:            "my/apate",
 		},
 		Conditions: nodeConditions{
 			ready:              condition.New(true, corev1.NodeReady),
@@ -264,7 +264,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	lbl[podconfigv1.PodConfigurationLabel] = "pod1"
 	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{Labels: lbl},
+		ObjectMeta: metav1.ObjectMeta{Labels: lbl, Namespace: "a"},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
@@ -273,7 +273,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	cores := uint64(podCPU)
 	memory := uint64(podMemory)
 	storage := uint64(podStorage)
-	ms.EXPECT().GetPodFlag("pod1", events.PodResources).Return(stats.PodStats{
+	ms.EXPECT().GetPodFlag("a/pod1", events.PodResources).Return(&stats.PodStats{
 		CPU: &stats.CPUStats{
 			Time:           metav1.Time{},
 			UsageNanoCores: &cores,
@@ -302,7 +302,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 			Storage:          2048,
 			EphemeralStorage: 2048,
 			MaxPods:          42,
-			Selector:         "my/apate",
+			Label:            "my/apate",
 		},
 		Stats: NewStats(),
 		Conditions: nodeConditions{
@@ -314,6 +314,9 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
 		},
 	}
+
+	prov.updateStatsSummary()
+
 	return prov, ctrl
 }
 
