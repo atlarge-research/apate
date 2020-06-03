@@ -3,7 +3,6 @@ package health
 
 import (
 	"context"
-	"io"
 	"log"
 	"sync"
 	"time"
@@ -113,7 +112,7 @@ func (c *Client) recvLoop(ctx context.Context, errCallback func(error) bool, str
 
 	for {
 		r := make(chan struct{}, 1)
-		c.recv(ctx, stream, errCallback, r)
+		go c.recv(ctx, stream, errCallback, r)
 
 		timeoutDelay.Reset(recvTimeout)
 		select {
@@ -142,28 +141,22 @@ func (c *Client) cancelRecv(ctx context.Context, errCallback func(error) bool, m
 }
 
 func (c *Client) recv(ctx context.Context, stream health.Health_HealthStreamClient, errCallback func(error) bool, r chan struct{}) {
-	go func() {
-		_, err := stream.Recv()
+	_, err := stream.Recv()
 
-		if err == io.EOF {
+	if err != nil {
+		if errCallback(errors.Wrap(err, "health stream timed out")) {
 			return
 		}
+	}
 
-		if err != nil {
-			if errCallback(errors.Wrap(err, "health stream timed out")) {
-				return
-			}
+	select {
+	case <-ctx.Done():
+		if errCallback(errors.Wrap(ctx.Err(), "unable to receive heartbeat from server")) {
+			return
 		}
-
-		select {
-		case <-ctx.Done():
-			if errCallback(errors.Wrap(ctx.Err(), "unable to receive heartbeat from server")) {
-				return
-			}
-		case r <- struct{}{}:
-			//
-		}
-	}()
+	case r <- struct{}{}:
+		//
+	}
 }
 
 // SetStatus sets the internal health status which is reported back to the control plane

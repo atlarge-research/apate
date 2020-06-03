@@ -107,7 +107,6 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 
 	// Start the informers now, so the provider will get a functional resource
 	// manager.
-	sharedFactory.Start(originalCtx.Done())
 	podInformerFactory.Start(ctx.Done())
 
 	apiConfig, err := getAPIConfig(c)

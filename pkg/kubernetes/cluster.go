@@ -3,7 +3,6 @@
 package kubernetes
 
 import (
-	"log"
 	"sort"
 	"strings"
 
@@ -82,7 +81,7 @@ func (c Cluster) RemoveNodesFromCluster(uuids []uuid.UUID) error {
 	// Sort for determinism.
 	sort.StringSlice(lbl).Sort()
 	labelSelector := nodeconfigv1.NodeIDLabel + " in (" + strings.Join(lbl, ",") + ")"
-	log.Printf("deleting %s\n", labelSelector)
+
 	return errors.Wrap(c.clientSet.CoreV1().Nodes().DeleteCollection(&metav1.DeleteOptions{
 		GracePeriodSeconds: &gracePeriod,
 	}, metav1.ListOptions{

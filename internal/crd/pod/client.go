@@ -23,13 +23,20 @@ const resource = "podconfigurations"
 
 var schemeLock sync.Once
 
-var informerLock sync.Once
+var sharedInformerLock sync.Once
 var sharedInformer *cache.SharedIndexInformer
 
 // ConfigurationClient is the client for the PodConfiguration CRD
 type ConfigurationClient struct {
 	restClient rest.Interface
 	nameSpace  string
+}
+
+// Reset will reset the sharedInformerLock, resulting in a new informer being created the next time resources are
+// being watched. This is mostly for tests.
+// Warning: Calling this during normal runtime will result in unpredictable behaviour, and possibly memory + routine leaks
+func Reset() {
+	sharedInformerLock = sync.Once{}
 }
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
@@ -56,7 +63,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
 func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
-	informerLock.Do(func() {
+	sharedInformerLock.Do(func() {
 		informer := cache.NewSharedIndexInformer(
 			&cache.ListWatch{
 				ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
