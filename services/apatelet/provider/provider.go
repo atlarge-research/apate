@@ -35,8 +35,8 @@ type Provider struct {
 	Pods  podmanager.PodManager // the pods currently used
 	Store *store.Store          // the apatelet store
 
-	Cfg           provider.InitConfig // the initial provider config
-	DisableTaints bool                // whether to disable taints
+	Cfg           *provider.InitConfig // the initial provider config
+	DisableTaints bool                 // whether to disable taints
 
 	Stats *Stats // statistics contain static statistics
 
@@ -85,8 +85,7 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k
 	}
 
 	providerStore := provider.NewStore()
-	providerStore.Register(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
-		cfg.DaemonPort = int32(k8sPort)
+	providerStore.Register(baseName, func(cfg *provider.InitConfig) (provider.Provider, error) {
 		return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store, env.DisableTaints), nil
 	})
 
@@ -97,7 +96,7 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store, disableTaints bool) provider.Provider {
+func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store, disableTaints bool) provider.Provider {
 	return &Provider{
 		Pods:  pods,
 		Store: store,

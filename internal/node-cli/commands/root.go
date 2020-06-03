@@ -16,8 +16,11 @@ package root
 
 import (
 	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"os"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/manager"
@@ -30,8 +33,6 @@ import (
 	"github.com/virtual-kubelet/virtual-kubelet/node"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -41,6 +42,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 )
+
+var sharedFactory kubeinformers.SharedInformerFactory
+var once sync.Once
 
 func RunRootCommand(originalCtx context.Context, ctx context.Context, s *provider.Store, c *opts.Opts) (int, int, error) {
 	pInit := s.Get(c.Provider)
@@ -82,14 +86,11 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 			options.FieldSelector = fields.OneTermEqualSelector("spec.nodeName", c.NodeName).String()
 		}))
 	podInformer := podInformerFactory.Core().V1().Pods()
-	podInformerFactory.Start(ctx.Done())
 
 	// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
-	sharedFactory := kubeinformers.NewSharedInformerFactoryWithOptions(client, c.InformerResyncPeriod)
-
-	// Start the informers now, so the provider will get a functional resource
-	// manager.
-	sharedFactory.Start(originalCtx.Done())
+	once.Do(func() {
+		sharedFactory = kubeinformers.NewSharedInformerFactoryWithOptions(client, c.InformerResyncPeriod)
+	})
 
 	// Create a secret informer and a config map informer so we can pass their listers to the resource manager.
 	secretInformer := sharedFactory.Core().V1().Secrets()
@@ -100,6 +101,11 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "could not create resource manager")
 	}
+
+	// Start the informers now, so the provider will get a functional resource
+	// manager.
+	sharedFactory.Start(originalCtx.Done())
+	podInformerFactory.Start(ctx.Done())
 
 	apiConfig, err := getAPIConfig(c)
 	if err != nil {
@@ -116,10 +122,23 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 		KubeClusterDomain: c.KubeClusterDomain,
 	}
 
-	p, err := pInit(initConfig)
+	p, err := pInit(&initConfig)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "error initialising provider %s", c.Provider)
 	}
+
+	cancelHTTP, metricsPort, k8sPort, err := setupHTTPServer(ctx, p, apiConfig)
+	if err != nil {
+		return 0, 0, err
+	}
+	c.ListenPort = int32(k8sPort)
+	initConfig.DaemonPort = int32(k8sPort)
+
+	go func() {
+		defer cancelHTTP()
+
+		<-ctx.Done()
+	}()
 
 	ctx = log.WithLogger(ctx, log.G(ctx).WithFields(log.Fields{
 		"provider":         c.Provider,
@@ -179,16 +198,6 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "error setting up pod controller")
 	}
-
-	cancelHTTP, metricsPort, k8sPort, err := setupHTTPServer(ctx, p, apiConfig)
-	if err != nil {
-		return 0, 0, err
-	}
-	go func() {
-		defer cancelHTTP()
-
-		<-ctx.Done()
-	}()
 
 	go func() {
 		if err := pc.Run(ctx, c.PodSyncWorkers); err != nil && errors.Cause(err) != context.Canceled {
