@@ -23,7 +23,11 @@ type Cluster struct {
 
 // Shutdown performs clean up on the cluster before shutdown.
 func (c *Cluster) Shutdown() error {
-	return errors.Wrap((*c.manager).Shutdown(c), "shutting down cluster failed")
+	manager := c.manager
+	if manager == nil {
+		return errors.New("cluster has no manager")
+	}
+	return errors.Wrap((*manager).Shutdown(c), "shutting down cluster failed")
 }
 
 // ClusterManager contains utilities to handle connecting / creating a cluster and shutting it down if necessary.
@@ -51,8 +55,9 @@ func NewClusterManagerHandler() ClusterManagerHandler {
 // NewCluster creates a new cluster object by calling GetKubeConfig on its manager
 func (cmh *ClusterManagerHandler) NewCluster() (*Cluster, error) {
 	if _, err := os.Stat(env.ControlPlaneEnv().KubeConfigLocation); os.IsNotExist(err) {
-		if err := os.MkdirAll(path.Dir(env.ControlPlaneEnv().KubeConfigLocation), os.ModePerm); err != nil {
-			return nil, errors.Wrapf(err, "failed to create directory for kubeconfig (%v)", path.Dir(env.ControlPlaneEnv().KubeConfigLocation))
+		kubeConfigDir := path.Dir(env.ControlPlaneEnv().KubeConfigLocation)
+		if err := os.MkdirAll(kubeConfigDir, os.ModePerm); err != nil {
+			return nil, errors.Wrapf(err, "failed to create directory for kubeconfig (%v)", kubeConfigDir)
 		}
 	}
 

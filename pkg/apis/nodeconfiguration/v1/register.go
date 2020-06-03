@@ -42,7 +42,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 }
 
 // UpdateInKubernetes registers or deletes the generated CRD YAML to Kubernetes
-func UpdateInKubernetes(config *kubeconfig.KubeConfig, delete bool) error {
+func UpdateInKubernetes(config *kubeconfig.KubeConfig, deleteCRD bool) error {
 	cpEnv := env.ControlPlaneEnv()
 
 	file, err := ioutil.ReadFile(cpEnv.NodeCRDLocation)
@@ -50,7 +50,7 @@ func UpdateInKubernetes(config *kubeconfig.KubeConfig, delete bool) error {
 		return errors.Wrapf(err, "failed to read crd file at %v", cpEnv.NodeCRDLocation)
 	}
 
-	if delete {
+	if deleteCRD {
 		return errors.Wrap(kubectl.Delete(file, config), "deleting node configuration failed")
 	}
 	return errors.Wrap(kubectl.Apply(file, config), "applying node configuration failed")
