@@ -66,8 +66,7 @@ func TestEmpty(t *testing.T) {
 	assert.Equal(t, uint64(mem), *result.Node.Memory.AvailableBytes)
 
 	// Verify pods
-	var statistics []stats.PodStats
-	assert.EqualValues(t, statistics, result.Pods)
+	assert.Empty(t, result.Pods)
 
 	ctrl.Finish()
 }
@@ -93,7 +92,7 @@ func TestSinglePod(t *testing.T) {
 	pm.AddPod(&pod) //TODO mock?
 
 	// Create stats
-	statistics := stats.PodStats{
+	statistics := &stats.PodStats{
 		PodRef:           stats.PodReference{Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
@@ -120,7 +119,7 @@ func TestSinglePod(t *testing.T) {
 	assert.Equal(t, left, *result.Node.Memory.AvailableBytes)
 
 	// Verify pod
-	podStats := []stats.PodStats{statistics}
+	podStats := []stats.PodStats{*statistics}
 	assert.EqualValues(t, podStats, result.Pods)
 
 	ctrl.Finish()
@@ -180,7 +179,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	pm.AddPod(&pod4) //TODO mock?
 
 	// Create stats
-	statistics := stats.PodStats{
+	statistics := &stats.PodStats{
 		PodRef:           stats.PodReference{UID: label, Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
@@ -191,7 +190,7 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: nil,
 	}
 
-	statistics2 := stats.PodStats{
+	statistics2 := &stats.PodStats{
 		PodRef:           stats.PodReference{UID: label + "2", Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
@@ -202,7 +201,7 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: &stats.FsStats{UsedBytes: &fsUsage},
 	}
 
-	statistics3 := stats.PodStats{
+	statistics3 := &stats.PodStats{
 		PodRef:           stats.PodReference{UID: label + "3", Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
@@ -213,7 +212,7 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: nil,
 	}
 
-	statistics4 := stats.PodStats{
+	statistics4 := &stats.PodStats{
 		PodRef:           stats.PodReference{UID: label + "4", Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
@@ -224,7 +223,7 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: nil,
 	}
 
-	statMap := make(map[string]stats.PodStats)
+	statMap := make(map[string]*stats.PodStats)
 	statMap[label] = statistics
 	statMap[label+"2"] = statistics2
 	statMap[label+"3"] = statistics3
@@ -253,6 +252,6 @@ func TestUnspecifiedPods(t *testing.T) {
 
 	// Verify pod
 	for _, podStat := range result.Pods {
-		assert.Equal(t, statMap[podStat.PodRef.UID], podStat)
+		assert.Equal(t, *statMap[podStat.PodRef.UID], podStat)
 	}
 }

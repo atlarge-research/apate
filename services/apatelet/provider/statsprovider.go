@@ -48,12 +48,12 @@ func (p *Provider) updateStatsSummary() {
 
 	p.Stats.statsSummary = &stats.Summary{
 		Node: p.getNodeStats(pods),
-		Pods: *pods,
+		Pods: pods,
 	}
 }
 
 // Node statistics
-func (p *Provider) getNodeStats(pods *[]stats.PodStats) stats.NodeStats {
+func (p *Provider) getNodeStats(pods []stats.PodStats) stats.NodeStats {
 	return stats.NodeStats{
 		NodeName:         p.NodeInfo.Name,
 		SystemContainers: []stats.ContainerStats{},
@@ -64,11 +64,11 @@ func (p *Provider) getNodeStats(pods *[]stats.PodStats) stats.NodeStats {
 	}
 }
 
-func (p *Provider) cpuStats(pods *[]stats.PodStats) *stats.CPUStats {
+func (p *Provider) cpuStats(pods []stats.PodStats) *stats.CPUStats {
 	zero := uint64(0)
 	usage := uint64(0)
 
-	for _, pod := range *pods {
+	for _, pod := range pods {
 		if pod.CPU != nil && pod.CPU.UsageNanoCores != nil {
 			usage += *pod.CPU.UsageNanoCores
 		}
@@ -81,11 +81,11 @@ func (p *Provider) cpuStats(pods *[]stats.PodStats) *stats.CPUStats {
 	}
 }
 
-func (p *Provider) memoryStats(pods *[]stats.PodStats) *stats.MemoryStats {
+func (p *Provider) memoryStats(pods []stats.PodStats) *stats.MemoryStats {
 	zero := uint64(0)
 	usage := uint64(0)
 
-	for _, pod := range *pods {
+	for _, pod := range pods {
 		if pod.Memory != nil && pod.Memory.UsageBytes != nil {
 			usage += *pod.Memory.UsageBytes
 		}
@@ -104,12 +104,12 @@ func (p *Provider) memoryStats(pods *[]stats.PodStats) *stats.MemoryStats {
 	}
 }
 
-func (p *Provider) filesystemStats(pods *[]stats.PodStats) *stats.FsStats {
+func (p *Provider) filesystemStats(pods []stats.PodStats) *stats.FsStats {
 	zero := uint64(0)
 	capacity := uint64(p.Resources.EphemeralStorage)
 	usage := uint64(0)
 
-	for _, pod := range *pods {
+	for _, pod := range pods {
 		if pod.EphemeralStorage != nil && pod.EphemeralStorage.UsedBytes != nil {
 			usage += *pod.EphemeralStorage.UsedBytes
 		}
@@ -127,14 +127,14 @@ func (p *Provider) filesystemStats(pods *[]stats.PodStats) *stats.FsStats {
 	}
 }
 
-func (p *Provider) getAggregatePodStats() *[]stats.PodStats {
+func (p *Provider) getAggregatePodStats() []stats.PodStats {
 	var statistics []stats.PodStats
 
 	for _, pod := range p.Pods.GetAllPods() {
 		statistics = append(statistics, *p.getPodStats(pod))
 	}
 
-	return &statistics
+	return statistics
 }
 
 func (p *Provider) getPodStats(pod *corev1.Pod) *stats.PodStats {
@@ -145,13 +145,13 @@ func (p *Provider) getPodStats(pod *corev1.Pod) *stats.PodStats {
 		return addPodSpecificStats(pod, &stats.PodStats{})
 	}
 
-	statistics, ok := unconvertedStats.(stats.PodStats)
+	statistics, ok := unconvertedStats.(*stats.PodStats)
 	if !ok {
 		log.Printf("unable to convert '%v' to PodStats\n", unconvertedStats)
 		return addPodSpecificStats(pod, &stats.PodStats{})
 	}
 
-	return addPodSpecificStats(pod, &statistics)
+	return addPodSpecificStats(pod, statistics)
 }
 
 func addPodSpecificStats(pod *corev1.Pod, statistics *stats.PodStats) *stats.PodStats {

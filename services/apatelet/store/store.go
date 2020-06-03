@@ -240,23 +240,21 @@ func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{},
 
 func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface{}) {
 	s.podFlagLock.Lock()
-	defer s.podFlagLock.Unlock()
-
 	if conf, ok := s.podFlags[label]; ok {
 		conf[flag] = val
 	} else {
 		s.podFlags[label] = make(flags)
 		s.podFlags[label][flag] = val
 	}
+	s.podFlagLock.Unlock()
 
-	s.podListenersLock.Lock()
-	defer s.podListenersLock.Unlock()
-
+	s.podListenersLock.RLock()
 	if listeners, ok := s.podListeners[flag]; ok {
 		for _, listener := range listeners {
 			listener(val)
 		}
 	}
+	s.podListenersLock.RUnlock()
 }
 
 func (s *store) AddPodListener(flag events.PodEventFlag, cb func(interface{})) {
@@ -289,7 +287,7 @@ var defaultPodValues = map[events.PodEventFlag]interface{}{
 	events.PodGetPodResponse:       scenario.ResponseUnset,
 	events.PodGetPodStatusResponse: scenario.ResponseUnset,
 
-	events.PodResources: stats.PodStats{},
+	events.PodResources: &stats.PodStats{},
 
 	events.PodStatus: scenario.PodStatusUnset,
 }

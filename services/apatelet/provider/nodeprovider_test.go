@@ -273,7 +273,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	cores := uint64(podCPU)
 	memory := uint64(podMemory)
 	storage := uint64(podStorage)
-	ms.EXPECT().GetPodFlag("a/pod1", events.PodResources).Return(stats.PodStats{
+	ms.EXPECT().GetPodFlag("a/pod1", events.PodResources).Return(&stats.PodStats{
 		CPU: &stats.CPUStats{
 			Time:           metav1.Time{},
 			UsageNanoCores: &cores,
