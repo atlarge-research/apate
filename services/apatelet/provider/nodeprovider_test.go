@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
@@ -17,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/condition"
@@ -85,7 +86,7 @@ func TestConfigureNode(t *testing.T) {
 	prov := Provider{
 		Pods:  pm,
 		Store: &st,
-		NodeInfo: kubernetes.NodeInfo{
+		NodeInfo: node.Info{
 			NodeType:    "apate",
 			Role:        "worker",
 			Name:        "apate-x",
@@ -94,7 +95,7 @@ func TestConfigureNode(t *testing.T) {
 			Label:       "apate",
 			MetricsPort: 123,
 		},
-		Cfg: provider.InitConfig{
+		Cfg: &provider.InitConfig{
 			ConfigPath:        "",
 			NodeName:          "apate-x",
 			OperatingSystem:   "not windows",
@@ -123,8 +124,8 @@ func TestConfigureNode(t *testing.T) {
 		DisableTaints: false,
 	}
 
-	node := &corev1.Node{}
-	prov.ConfigureNode(context.Background(), node)
+	newNode := &corev1.Node{}
+	prov.ConfigureNode(context.Background(), newNode)
 
 	assert.EqualValues(t, corev1.NodeSpec{
 		Taints: []corev1.Taint{
@@ -133,7 +134,7 @@ func TestConfigureNode(t *testing.T) {
 				Effect: corev1.TaintEffectNoSchedule,
 			},
 		},
-	}, node.Spec)
+	}, newNode.Spec)
 
 	assert.EqualValues(t, metav1.ObjectMeta{
 		Name: "apate-x",
@@ -146,7 +147,7 @@ func TestConfigureNode(t *testing.T) {
 			nodeconfigv1.NodeConfigurationLabel:          "apate",
 			nodeconfigv1.NodeConfigurationLabelNamespace: "my",
 		},
-	}, node.ObjectMeta)
+	}, newNode.ObjectMeta)
 
 	assert.EqualValues(t, corev1.ResourceList{
 		corev1.ResourceCPU:              *resource.NewQuantity(1000, ""),
@@ -154,20 +155,20 @@ func TestConfigureNode(t *testing.T) {
 		corev1.ResourceStorage:          *resource.NewQuantity(2048, ""),
 		corev1.ResourceEphemeralStorage: *resource.NewQuantity(8192, ""),
 		corev1.ResourcePods:             *resource.NewQuantity(42, ""),
-	}, node.Status.Capacity)
+	}, newNode.Status.Capacity)
 
-	assert.EqualValues(t, 2, len(node.Status.Addresses))
+	assert.EqualValues(t, 2, len(newNode.Status.Addresses))
 
 	assert.EqualValues(t, corev1.NodeDaemonEndpoints{
 		KubeletEndpoint: corev1.DaemonEndpoint{
 			Port: 4242,
 		},
-	}, node.Status.DaemonEndpoints)
+	}, newNode.Status.DaemonEndpoints)
 
 	assert.EqualValues(t, corev1.NodeSystemInfo{
 		KubeletVersion: "42",
 		Architecture:   "amd64",
-	}, node.Status.NodeInfo)
+	}, newNode.Status.NodeInfo)
 }
 
 func TestUpdateConditionNoPressure(t *testing.T) {

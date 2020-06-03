@@ -19,7 +19,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, label st
 		return errors.Wrap(err, "couldn't get kubeconfig")
 	}
 
-	client, err := node.NewForConfig(cfg)
+	client, err := node.NewForConfig(cfg, "default")
 	if err != nil {
 		return errors.Wrap(err, "couldn't create client from config for node informer")
 	}
