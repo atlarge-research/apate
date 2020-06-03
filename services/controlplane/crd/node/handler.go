@@ -142,26 +142,16 @@ func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, sele
 	ids := make([]uuid.UUID, 0, diff)
 
 	// Send them the signal to stop
-	var wg sync.WaitGroup
-	wg.Add(diff)
-
 	for i, node := range nodes {
 		if i >= diff {
 			break
 		}
 
-		ids = append(ids, node.UUID)
-
 		node := node
-
-		go func() {
-			defer wg.Done()
-
-			stopApatelet(ctx, &node)
-		}()
+		if stopApatelet(ctx, &node) {
+			ids = append(ids, node.UUID)
+		}
 	}
-
-	wg.Wait()
 
 	// TODO: Have a proper wait function
 	// Stop all apatelets before removing them from the cluster (VK might add them)
@@ -174,20 +164,27 @@ func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, sele
 	return nil
 }
 
-func stopApatelet(ctx context.Context, node *store.Node) {
+func stopApatelet(ctx context.Context, node *store.Node) (ok bool) {
 	log.Printf("stopping %v (%v)\n", node.UUID, node.ConnectionInfo)
+	ok = true
 	client, err := apatelet.GetApateletClient(&node.ConnectionInfo)
+
 	if err != nil {
 		log.Printf("%v", errors.Wrap(err, "failed getting apatelet client"))
+		ok = false
 	}
 
 	_, err = client.Client.StopApatelet(ctx, new(empty.Empty))
 	if err != nil {
 		log.Printf("%v", errors.Wrap(err, "failed stopping apatelet"))
+		ok = false
 	}
 
 	err = client.Conn.Close()
 	if err != nil {
 		log.Printf("%v", errors.Wrap(err, "failed closing apatelet client connection"))
+		ok = false
 	}
+
+	return
 }

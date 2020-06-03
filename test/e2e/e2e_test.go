@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
@@ -53,6 +56,9 @@ func teardown(t *testing.T) {
 
 	err := os.Remove(env.ControlPlaneEnv().KubeConfigLocation)
 	assert.NoError(t, err)
+
+	node.Reset()
+	pod.Reset()
 }
 
 func TestSimplePodDeployment(t *testing.T) {

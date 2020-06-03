@@ -40,16 +40,19 @@ func checkUnhealthyApatelets(st *store.Store, cl *kubernetes.Cluster) {
 
 	for _, kubelet := range apatelets {
 		if kubelet.Status == health.Status_UNHEALTHY {
-			err := (*st).AddResourcesToQueue([]scenario.NodeResources{*kubelet.Resources})
-			if err != nil {
-				log.Printf("error while readding resources to queue: %v", err)
-			}
-
-			err = cluster.RemoveNodeWithUUID(kubelet.UUID, st, cl)
+			apate, _, err := cluster.RemoveNodeWithUUID(kubelet.UUID, st, cl)
 			if err != nil {
 				log.Printf("error while removing apatelet from cluster: %v", err)
 			} else {
 				log.Printf("removed apatelet: %v from cluster", kubelet.UUID)
+			}
+
+			// If the node was removed from the store, add the resources back to the queue
+			if apate {
+				err := (*st).AddResourcesToQueue([]scenario.NodeResources{*kubelet.Resources})
+				if err != nil {
+					log.Printf("error while readding resources to queue: %v", err)
+				}
 			}
 		}
 	}

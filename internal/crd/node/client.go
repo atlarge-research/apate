@@ -31,6 +31,13 @@ var schemeLock sync.Once
 var sharedInformerLock sync.Once
 var sharedInformer *cache.SharedIndexInformer
 
+// Reset will reset the sharedInformerLock, resulting in a new informer being created the next time resources are
+// being watched. This is mostly for tests.
+// Warning: Calling this during normal runtime will result in unpredictable behaviour, and possibly memory + routine leaks
+func Reset() {
+	sharedInformerLock = sync.Once{}
+}
+
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 	schemeLock.Do(func() {
