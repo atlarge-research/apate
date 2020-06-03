@@ -33,7 +33,7 @@ func capture() capturer {
 	}
 }
 
-func (c capturer) stop() string {
+func (c *capturer) stop() string {
 	_ = c.w.Close()
 	os.Stdout = c.oldStdout
 	return <-c.contents

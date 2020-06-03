@@ -30,9 +30,9 @@ func CreateNameSpace(namespace string, kubeConfig *kubeconfig.KubeConfig) error 
 	return errors.Wrapf(cmd.Run(), "failed to create namespace with kubectl %v", strings.Join(args, " "))
 }
 
-// CreateWithNameSpace calls `kubectl create` with the given resourceConfig in the given namespace
+// ExecuteWithNamespace calls `kubectl <command>` with the given resourceConfig in the given namespace
 // When this config is empty, it will not be called
-func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig, namespace string) error {
+func ExecuteWithNamespace(command string, resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig, namespace string) error {
 	if len(resourceConfig) > 0 {
 		cfgFile, err := ioutil.TempFile("", "apate-kubectl-")
 		if err != nil {
@@ -51,7 +51,7 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 		}()
 
 		args := []string{
-			"create",
+			command,
 		}
 
 		// specify config
@@ -77,5 +77,17 @@ func CreateWithNameSpace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfi
 // Create calls `kubectl create` with the given resourceConfig
 // When this config is empty, it will not be called
 func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
-	return errors.Wrapf(CreateWithNameSpace(resourceConfig, kubeConfig, ""), "failed to create resource in default namespace")
+	return errors.Wrapf(ExecuteWithNamespace("create", resourceConfig, kubeConfig, ""), "failed to create resource in default namespace")
+}
+
+// Apply calls `kubectl apply` with the given resourceConfig
+// When this config is empty, it will not be called
+func Apply(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
+	return errors.Wrapf(ExecuteWithNamespace("apply", resourceConfig, kubeConfig, ""), "failed to apply resource in default namespace")
+}
+
+// Delete calls `kubectl delete` with the given resourceConfig
+// When this config is empty, it will not be called
+func Delete(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
+	return errors.Wrapf(ExecuteWithNamespace("delete", resourceConfig, kubeConfig, ""), "failed to delete resource in default namespace")
 }

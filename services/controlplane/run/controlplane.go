@@ -24,6 +24,8 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth" // Needed to connect with different providers, such as GKE
 )
 
 func init() {
@@ -52,7 +54,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	registerRunners(registry)
 
 	// Create kubernetes cluster
-	managedKubernetesCluster, err := createCluster()
+	cluster, err := createCluster()
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
@@ -61,12 +63,12 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	createdStore := store.NewStore()
 
 	// Save the kubeconfig in the store
-	if err = createdStore.SetKubeConfig(*managedKubernetesCluster.KubeConfig); err != nil {
+	if err = createdStore.SetKubeConfig(*cluster.KubeConfig); err != nil {
 		panicf(errors.Wrap(err, "failed to set Kubeconfig"))
 	}
 
 	// Create CRDs
-	if err = createCRDs(managedKubernetesCluster); err != nil {
+	if err = createCRDs(cluster); err != nil {
 		panicf(errors.Wrap(err, "failed to create CRDs"))
 	}
 
@@ -76,18 +78,18 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	// Create node informer
 	stopInformer := make(chan struct{})
 	handler := node.NewHandler(&createdStore, registry, externalInformation)
-	if err = node.WatchHandler(ctx, managedKubernetesCluster.KubeConfig, handler, stopInformer); err != nil {
+	if err = node.WatchHandler(ctx, cluster.KubeConfig, handler, stopInformer); err != nil {
 		panicf(errors.Wrap(err, "failed to watch node handler"))
 	}
 
 	// Create prometheus stack
 	createPrometheus := cpEnv.PrometheusStackEnabled
 	if createPrometheus {
-		go kubectl.CreatePrometheusStack(managedKubernetesCluster.KubeConfig)
+		go kubectl.CreatePrometheusStack(cluster.KubeConfig)
 	}
 
 	// Start gRPC server
-	server, err := createGRPC(&createdStore, managedKubernetesCluster.Cluster, externalInformation)
+	server, err := createGRPC(&createdStore, cluster, externalInformation)
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to start GRPC server"))
 	}
@@ -95,7 +97,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	log.Printf("now accepting requests on %s:%d\n", server.Conn.Address, server.Conn.Port)
 
 	kubeConfigLocation := cpEnv.KubeConfigLocation
-	if err = ioutil.WriteFile(kubeConfigLocation, managedKubernetesCluster.Cluster.KubeConfig.Bytes, 0600); err != nil {
+	if err = ioutil.WriteFile(kubeConfigLocation, cluster.KubeConfig.Bytes, 0600); err != nil {
 		panicf(errors.Wrap(err, "failed to write Kubeconfig to tempfile"))
 	}
 
@@ -113,7 +115,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	}()
 
 	// Start watchdog
-	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, &managedKubernetesCluster.Cluster)
+	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, cluster)
 
 	// Stop the server on signal
 	select {
@@ -123,16 +125,16 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 		//
 	}
 	close(stopInformer)
-	shutdown(&createdStore, &managedKubernetesCluster, server)
+	shutdown(&createdStore, cluster, server)
 	log.Printf("apate control plane stopped")
 }
 
-func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
-	if err := podconfigv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+func createCRDs(cluster *kubernetes.Cluster) error {
+	if err := podconfigv1.UpdateInKubernetes(cluster.KubeConfig, false); err != nil {
 		return errors.Wrap(err, "failed to register pod CRD spec")
 	}
 
-	if err := nodeconfigv1.CreateInKubernetes(managedKubernetesCluster.KubeConfig); err != nil {
+	if err := nodeconfigv1.UpdateInKubernetes(cluster.KubeConfig, false); err != nil {
 		return errors.Wrap(err, "failed to register node CRD spec")
 	}
 
@@ -140,14 +142,14 @@ func createCRDs(managedKubernetesCluster kubernetes.ManagedCluster) error {
 }
 
 func registerRunners(registry *runner.Registry) {
-	var dockerRunner runner.ApateletRunner = runner.DockerRunner{}
+	var dockerRunner runner.ApateletRunner = &runner.DockerRunner{}
 	registry.RegisterRunner(env.Docker, &dockerRunner)
 
-	var routineRunner runner.ApateletRunner = runner.RoutineRunner{}
+	var routineRunner runner.ApateletRunner = &runner.RoutineRunner{}
 	registry.RegisterRunner(env.Routine, &routineRunner)
 }
 
-func shutdown(store *store.Store, kubernetesCluster *kubernetes.ManagedCluster, server *service.GRPCServer) {
+func shutdown(store *store.Store, cluster *kubernetes.Cluster, server *service.GRPCServer) {
 	log.Println("stopping Apate control plane")
 
 	log.Println("stopping API")
@@ -159,8 +161,8 @@ func shutdown(store *store.Store, kubernetesCluster *kubernetes.ManagedCluster, 
 	}
 
 	log.Println("stopping kubernetes control plane")
-	if err := kubernetesCluster.Delete(); err != nil {
-		log.Printf("an error occurred while deleting the kubernetes store: %s", err.Error())
+	if err := cluster.Shutdown(); err != nil {
+		log.Printf("an error occurred while deleting the kubernetes cluster: %s", err.Error())
 	}
 }
 
@@ -179,7 +181,7 @@ func getExternalAddress() (string, error) {
 	return res, nil
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
+func createGRPC(createdStore *store.Store, kubernetesCluster *kubernetes.Cluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
 	// Retrieve from environment
 	listenAddress := env.ControlPlaneEnv().ListenAddress
 
@@ -201,18 +203,19 @@ func createGRPC(createdStore *store.Store, kubernetesCluster kubernetes.Cluster,
 	return server, nil
 }
 
-func createCluster() (kubernetes.ManagedCluster, error) {
+func createCluster() (*kubernetes.Cluster, error) {
 	log.Println("starting kubernetes control plane")
 
-	cb := kubernetes.Default()
-	c, err := cb.ForceCreate()
+	cmh := kubernetes.NewClusterManagerHandler()
+
+	c, err := cmh.NewCluster()
 	if err != nil {
-		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to create new cluster")
+		return nil, errors.Wrap(err, "failed to get cluster")
 	}
 
 	numberOfPods, err := c.GetNumberOfPods("kube-system")
 	if err != nil {
-		return kubernetes.ManagedCluster{}, errors.Wrap(err, "failed to get number of pods from kubernetes")
+		return nil, errors.Wrap(err, "failed to get number of pods from kubernetes")
 	}
 
 	log.Printf("There are %d pods in the cluster", numberOfPods)
