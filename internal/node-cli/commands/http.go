@@ -87,6 +87,8 @@ func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerCon
 			return nil, 0, 0, errors.Wrap(err, "error setting up listener for pod http server")
 		}
 
+		cfg.Addr = l.Addr().String()
+
 		mux := http.NewServeMux()
 
 		podRoutes := api.PodHandlerConfig{
@@ -112,7 +114,7 @@ func setupHTTPServer(ctx context.Context, p provider.Provider, cfg *apiServerCon
 		if err != nil {
 			return nil, 0, 0, errors.Wrap(err, "could not setup listener for pod metrics http server")
 		}
-
+		cfg.MetricsAddr = l.Addr().String()
 		mux := http.NewServeMux()
 
 		var summaryHandlerFunc api.PodStatsSummaryHandlerFunc

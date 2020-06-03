@@ -73,15 +73,6 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 		go informer.Run(stopCh)
 	})
 
-	//factory := informers.NewSharedInformerFactory(client, time.Minute)
-	//
-	//genericInf, err := factory.ForResource(nodeconfigv1.SchemeGroupVersionResource)
-	//if err != nil {
-	//	log.Panicf("crap2: %v", err)
-	//}
-	//
-	//informer := genericInf.Informer()
-
 	(*sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
 		AddFunc:    addFunc,
 		UpdateFunc: updateFunc,

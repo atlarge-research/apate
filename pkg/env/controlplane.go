@@ -45,7 +45,7 @@ const (
 	CPUseDockerHostnameDefault = false
 
 	// CPDebugEnabledDefault default for DebugEnabled
-	CPDebugEnabledDefault = false
+	CPDebugEnabledDefault = true
 )
 
 // RunType is the runner strategy used by the control plane to run apalets

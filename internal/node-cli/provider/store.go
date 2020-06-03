@@ -66,4 +66,4 @@ type InitConfig struct {
 	ResourceManager   *manager.ResourceManager
 }
 
-type InitFunc func(InitConfig) (Provider, error)
+type InitFunc func(*InitConfig) (Provider, error)

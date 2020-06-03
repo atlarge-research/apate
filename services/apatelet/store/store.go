@@ -3,6 +3,7 @@ package store
 
 import (
 	"container/heap"
+	"k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 	"sync"
 	"time"
 
@@ -258,7 +259,7 @@ var defaultPodValues = map[events.PodEventFlag]interface{}{
 	events.PodGetPodResponse:       scenario.ResponseUnset,
 	events.PodGetPodStatusResponse: scenario.ResponseUnset,
 
-	events.PodResources: nil,
+	events.PodResources: v1alpha1.PodStats{},
 
 	events.PodStatus: scenario.PodStatusUnset,
 }

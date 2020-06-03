@@ -23,6 +23,8 @@ import (
 
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
+	log.Printf("CreatePod %s/%s\n", pod.Namespace, pod.Name)
+
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context cancelled in CreatePod")
 	}
@@ -32,6 +34,8 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
+	log.Printf("UpdatePod %s/%s\n", pod.Namespace, pod.Name)
+
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context cancelled in UpdatePod")
 	}
@@ -73,6 +77,8 @@ func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
+	log.Printf("DeletePod %s/%s\n", pod.Namespace, pod.Name)
+
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context cancelled in DeletePod")
 	}
@@ -106,6 +112,7 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 // GetPod retrieves a pod by label.
 func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	log.Printf("GetPod %s/%s\n", namespace, name)
 	if err := ctx.Err(); err != nil {
 		return nil, errors.Wrap(err, "context cancelled in GetPod")
 	}
@@ -165,6 +172,8 @@ func podStatusToPhase(status interface{}) corev1.PodPhase {
 
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
+	log.Printf("GetPodStatus for %s/%s\n", ns, name)
+
 	if err := ctx.Err(); err != nil {
 		return nil, errors.Wrap(err, "context cancelled in GetPodStatus")
 	}
@@ -195,6 +204,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 					Message:            "Emulating pod...",
 				},
 			},
+			ContainerStatuses: []corev1.ContainerStatus{}, //TODO: Implement this properly
 		}, nil
 	}},
 		label,
@@ -220,6 +230,8 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 
 // GetPods retrieves a list of all pods running.
 func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
+	log.Printf("GetPods called\n")
+
 	if err := ctx.Err(); err != nil {
 		return nil, errors.Wrap(err, "context cancelled in GetPods")
 	}
@@ -254,13 +266,17 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 }
 
 // GetContainerLogs retrieves the log of a specific container.
-func (p *Provider) GetContainerLogs(context.Context, string, string, string, api.ContainerLogOpts) (io.ReadCloser, error) {
+func (p *Provider) GetContainerLogs(_ context.Context, ns, name, _ string, _ api.ContainerLogOpts) (io.ReadCloser, error) {
+	log.Printf("GetContainerLogs for %s/%s\n", ns, name)
+
 	// We return empty string as the emulated containers don't have a log.
 	return ioutil.NopCloser(bytes.NewReader([]byte("This container is emulated by Apate\n"))), nil
 }
 
 // RunInContainer retrieves the log of a specific container.
-func (p *Provider) RunInContainer(context.Context, string, string, string, []string, api.AttachIO) error {
+func (p *Provider) RunInContainer(_ context.Context, ns, name, _ string, _ []string, _ api.AttachIO) error {
+	log.Printf("RunInContainer for %s/%s\n", ns, name)
+
 	// There is no actual process running in the containers, so we can't do anything.
 	return nil
 }

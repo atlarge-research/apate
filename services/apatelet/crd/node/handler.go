@@ -28,6 +28,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	client.WatchResources(func(obj interface{}) {
 		// Add function
 		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
+		log.Printf("Received new node CRD on Apatelet\n")
 
 		if node.GetSelector(nodeCfg) == selector {
 			err := setNodeTasks(nodeCfg, st)
@@ -40,6 +41,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 	}, func(_, obj interface{}) {
 		// Update function
 		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
+		log.Printf("Received updated node CRD on Apatelet\n")
 
 		if node.GetSelector(nodeCfg) == selector {
 			err := setNodeTasks(nodeCfg, st)
@@ -51,6 +53,8 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 		wakeScheduler()
 	}, func(obj interface{}) {
 		// Delete function
+		log.Printf("Received deleted node CRD on Apatelet\n")
+
 		// Do nothing here, as control plane will determine which, if any, apatelets should stop
 	}, stopch)
 

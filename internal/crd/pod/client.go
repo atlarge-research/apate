@@ -23,8 +23,8 @@ const resource = "podconfigurations"
 
 var schemeLock sync.Once
 
-//var informerLock sync.Once
-//var sharedInformer *cache.SharedIndexInformer
+var informerLock sync.Once
+var sharedInformer *cache.SharedIndexInformer
 
 // ConfigurationClient is the client for the PodConfiguration CRD
 type ConfigurationClient struct {
@@ -56,22 +56,22 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
 func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
-	//informerLock.Do(func() {
-	informer := cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-				return e.list(lo)
+	informerLock.Do(func() {
+		informer := cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
+					return e.list(lo)
+				},
+				WatchFunc: e.watch,
 			},
-			WatchFunc: e.watch,
-		},
-		&podconfigv1.PodConfiguration{},
-		1*time.Minute,
-		cache.Indexers{},
-	)
+			&podconfigv1.PodConfiguration{},
+			1*time.Minute,
+			cache.Indexers{},
+		)
 
-	sharedInformer := &informer
-	go informer.Run(stopCh)
-	//})
+		sharedInformer = &informer
+		go informer.Run(stopCh)
+	})
 
 	(*sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
 		AddFunc:    addFunc,

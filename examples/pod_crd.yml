@@ -3,8 +3,16 @@ kind: PodConfiguration
 metadata:
     name: crd-deployment
 spec:
-    tasks:
-        - timestamp: 1s
-          state:
-              pod_resources:
-                  cpu: 1000
+  inline:
+    pod_resources:
+      cpu: 1000
+      memory: 1G
+  tasks:
+      - timestamp: 1s
+        state:
+          pod_resources:
+            cpu: 1000
+            memory: 5G
+      - timestamp: 5s
+        state:
+            pod_status: FAILED
