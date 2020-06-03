@@ -9,17 +9,17 @@ import (
 
 // Info contains all information used for creating an equivalent kubernetes node
 type Info struct {
-	NodeType, Role, Name, Version, Namespace, Selector string
+	NodeType, Role, Name, Version, Namespace, Label string
 
 	MetricsPort int
 }
 
 // NewInfo creates a new Info
-func NewInfo(nodeType string, role string, name string, version string, selector string, metricsPort int) (Info, error) {
-	selectorParts := strings.Split(selector, "/")
+func NewInfo(nodeType string, role string, name string, version string, label string, metricsPort int) (Info, error) {
+	labelParts := strings.Split(label, "/")
 
-	if len(selectorParts) != 2 {
-		return Info{}, errors.Errorf("invalid selector %s", selector)
+	if len(labelParts) != 2 {
+		return Info{}, errors.Errorf("invalid label %s", labelParts)
 	}
 
 	return Info{
@@ -28,7 +28,7 @@ func NewInfo(nodeType string, role string, name string, version string, selector
 		Name:        name,
 		Version:     version,
 		MetricsPort: metricsPort,
-		Namespace:   selectorParts[0],
-		Selector:    selectorParts[1],
+		Namespace:   labelParts[0],
+		Label:       labelParts[1],
 	}, nil
 }
