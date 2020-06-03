@@ -6,8 +6,5 @@ package apate.controlplane;
 import "google/protobuf/empty.proto";
 
 service Scenario {
-    rpc startScenario (StartScenarioConfig) returns (google.protobuf.Empty) {}
+    rpc startScenario (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
-
-// StartScenarioConfig represents the data passed when starting a previously loaded scenario
-message StartScenarioConfig {}

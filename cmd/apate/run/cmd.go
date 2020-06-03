@@ -11,11 +11,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
-	api "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
@@ -294,7 +295,7 @@ func runScenario(ctx context.Context, args *commandLineArgs) error {
 	fmt.Printf("Starting scenario ")
 
 	//Finally: actually start the scenario
-	if _, err = scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{}); err != nil {
+	if _, err = scenarioClient.Client.StartScenario(ctx, &empty.Empty{}); err != nil {
 		return errors.Wrap(err, "couldn't start scenario")
 	}
 	err = scenarioClient.Conn.Close()

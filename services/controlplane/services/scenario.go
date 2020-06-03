@@ -34,7 +34,7 @@ func RegisterScenarioService(server *service.GRPCServer, store *store.Store, inf
 	})
 }
 
-func (s *scenarioService) StartScenario(ctx context.Context, _ *controlplane.StartScenarioConfig) (*empty.Empty, error) {
+func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		log.Println(err)
