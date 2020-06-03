@@ -40,7 +40,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
 
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, kubernetes.NodeInfo{}, &st, true)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, &kubernetes.NodeInfo{}, &st, true)
 
 	fakeNode := corev1.Node{}
 
@@ -297,12 +297,12 @@ func TestNewProvider(t *testing.T) {
 	}
 
 	cfg := provider.InitConfig{}
-	ni, err := kubernetes.NewNodeInfo("a", "b", "c", "d", "e/f", 4242)
+	ni, err := kubernetes.NewNodeInfo("a", "b", "c", "d", "e/f")
 	assert.NoError(t, err)
 
 	var s store.Store = ms
 
-	p, ok := NewProvider(pm, stats, &resources, &cfg, ni, &s, true).(*Provider)
+	p, ok := NewProvider(pm, stats, &resources, &cfg, &ni, &s, true).(*Provider)
 
 	assert.True(t, ok)
 

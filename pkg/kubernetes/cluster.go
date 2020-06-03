@@ -3,10 +3,17 @@
 package kubernetes
 
 import (
+	"log"
+	"sort"
+	"strings"
+
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
@@ -61,6 +68,27 @@ func (c Cluster) GetNumberOfPods(namespace string) (int, error) {
 	}
 
 	return len(pods.Items), nil
+}
+
+// RemoveNodesFromCluster removes all apatelet nodes with the given uuids from the cluster.
+func (c Cluster) RemoveNodesFromCluster(uuids []uuid.UUID) error {
+	gracePeriod := nodeDeletionGracePeriod
+
+	lbl := make([]string, 0, len(uuids))
+
+	for _, id := range uuids {
+		lbl = append(lbl, id.String())
+	}
+	// Sort for determinism.
+	sort.StringSlice(lbl).Sort()
+	labelSelector := nodeconfigv1.NodeIDLabel + " in (" + strings.Join(lbl, ",") + ")"
+	log.Printf("deleting %s\n", labelSelector)
+	return errors.Wrap(c.clientSet.CoreV1().Nodes().DeleteCollection(&metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+	}, metav1.ListOptions{
+		LabelSelector: labelSelector,
+		Limit:         10000,
+	}), "failed to remove nodes from cluster")
 }
 
 // RemoveNodeFromCluster removes a node with a given name from the cluster.

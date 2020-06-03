@@ -6,6 +6,12 @@ import (
 	"log"
 	"runtime"
 	"sync"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 
@@ -38,16 +44,18 @@ type ApateletHandler interface {
 type apateletHandler struct {
 	lock           sync.Mutex
 	store          *store.Store
+	cluster        *kubernetes.Cluster
 	connectionInfo *service.ConnectionInfo
 	runnerRegistry *runner.Registry
 }
 
 // NewHandler creates a new ApateletHandler
-func NewHandler(st *store.Store, runnerRegistry *runner.Registry, info *service.ConnectionInfo) *ApateletHandler {
+func NewHandler(st *store.Store, runnerRegistry *runner.Registry, info *service.ConnectionInfo, cl *kubernetes.Cluster) *ApateletHandler {
 	var handler ApateletHandler = &apateletHandler{
 		store:          st,
 		connectionInfo: info,
 		runnerRegistry: runnerRegistry,
+		cluster:        cl,
 	}
 
 	return &handler
@@ -130,6 +138,10 @@ func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, sele
 
 	log.Printf("Stopping %v apatelets", diff)
 
+	// Delete apatelets from kubernetes and apate
+	ids := make([]uuid.UUID, 0, diff)
+
+	// Send them the signal to stop
 	var wg sync.WaitGroup
 	wg.Add(diff)
 
@@ -138,28 +150,44 @@ func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, sele
 			break
 		}
 
+		ids = append(ids, node.UUID)
+
 		node := node
 
 		go func() {
 			defer wg.Done()
 
-			client, err := apatelet.GetApateletClient(&node.ConnectionInfo)
-			if err != nil {
-				log.Printf("%v", errors.Wrap(err, "failed getting apatelet client"))
-			}
-
-			_, err = client.Client.StopApatelet(ctx, new(empty.Empty))
-			if err != nil {
-				log.Printf("%v", errors.Wrap(err, "failed stopping apatelet"))
-			}
-
-			err = client.Conn.Close()
-			if err != nil {
-				log.Printf("%v", errors.Wrap(err, "failed closing apatelet client connection"))
-			}
+			stopApatelet(ctx, &node)
 		}()
 	}
 
 	wg.Wait()
+
+	// TODO: Have a proper wait function
+	// Stop all apatelets before removing them from the cluster (VK might add them)
+	time.Sleep(2 * time.Second)
+
+	err = cluster.RemoveNodesWithUUID(ids, a.store, a.cluster)
+	if err != nil {
+		log.Printf("error while stopping apatelets: %v", err)
+	}
 	return nil
+}
+
+func stopApatelet(ctx context.Context, node *store.Node) {
+	log.Printf("stopping %v (%v)\n", node.UUID, node.ConnectionInfo)
+	client, err := apatelet.GetApateletClient(&node.ConnectionInfo)
+	if err != nil {
+		log.Printf("%v", errors.Wrap(err, "failed getting apatelet client"))
+	}
+
+	_, err = client.Client.StopApatelet(ctx, new(empty.Empty))
+	if err != nil {
+		log.Printf("%v", errors.Wrap(err, "failed stopping apatelet"))
+	}
+
+	err = client.Conn.Close()
+	if err != nil {
+		log.Printf("%v", errors.Wrap(err, "failed closing apatelet client connection"))
+	}
 }

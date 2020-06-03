@@ -10,6 +10,8 @@ import (
 	"syscall"
 
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
@@ -17,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
@@ -33,6 +34,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 
 	// Create stop channels
 	stop := make(chan os.Signal, 1)
+	forcedStop := make(chan struct{}, 1)
 	stopInformer := make(chan struct{})
 
 	// Create store
@@ -42,7 +44,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 	sch := createScheduler(ctx, st)
 
 	// Start gRPC server
-	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, apateletEnv.ListenPort, stop)
+	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, apateletEnv.ListenPort, forcedStop)
 	if err != nil {
 		return errors.Wrap(err, "failed to set up GRPC endpoints")
 	}
@@ -67,7 +69,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 	}
 
 	// Start the Apatelet
-	nc, err := vkProvider.CreateProvider(&apateletEnv, res, apateletEnv.KubernetesPort, apateletEnv.MetricsPort, &st)
+	nc, err := vkProvider.CreateProvider(&apateletEnv, res, &st)
 	if err != nil {
 		return errors.Wrap(err, "failed to create provider")
 	}
@@ -100,17 +102,10 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 		sch.StartScheduler(startTime)
 	}
 
-	select {
-	case read := <-ech:
-		hc.SetStatus(healthpb.Status_UNHEALTHY)
-		err = errors.Wrap(read, "apatelet stopped because of an error")
-	default:
-		//
-	}
-
 	readyCh <- struct{}{}
 
 	// Stop the server on signal or error
+	leaveCluster := true
 	select {
 	case read := <-ech:
 		hc.SetStatus(healthpb.Status_UNHEALTHY)
@@ -119,9 +114,11 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 		//
 	case <-stop:
 		//
+	case <-forcedStop:
+		leaveCluster = false
 	}
 	close(stopInformer)
-	if err = shutdown(ctx, server, connectionInfo, res.UUID.String()); err != nil {
+	if err = shutdown(ctx, server, connectionInfo, res.UUID.String(), leaveCluster); err != nil {
 		log.Println(err)
 	}
 	return err
@@ -145,25 +142,27 @@ func createScheduler(ctx context.Context, st store.Store) *scheduler.Scheduler {
 	return &sch
 }
 
-func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *service.ConnectionInfo, uuid string) error {
+func shutdown(ctx context.Context, server *service.GRPCServer, connectionInfo *service.ConnectionInfo, uuid string, leave bool) error {
 	log.Println("Stopping Apatelet")
 
 	log.Println("Stopping API")
 	server.Server.Stop()
 
-	log.Println("Leaving clusters (apate & k8s)")
+	if leave {
+		log.Println("Leaving clusters (apate & k8s)")
 
-	client, err := controlplane.GetClusterOperationClient(connectionInfo)
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster operation client")
-	}
+		client, err := controlplane.GetClusterOperationClient(connectionInfo)
+		if err != nil {
+			return errors.Wrap(err, "failed to get cluster operation client")
+		}
 
-	if err = client.LeaveCluster(ctx, uuid); err != nil {
-		log.Printf("An error occurred while leaving the clusters (apate & k8s): %v\n", err)
-	}
+		if err = client.LeaveCluster(ctx, uuid); err != nil {
+			log.Printf("An error occurred while leaving the clusters (apate & k8s): %v\n", err)
+		}
 
-	if err = client.Conn.Close(); err != nil {
-		log.Printf("could not close connection: %v\n", err)
+		if err = client.Conn.Close(); err != nil {
+			log.Printf("could not close connection: %v\n", err)
+		}
 	}
 
 	log.Println("Stopped Apatelet")

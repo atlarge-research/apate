@@ -46,6 +46,9 @@ import (
 var sharedFactory kubeinformers.SharedInformerFactory
 var once sync.Once
 
+// MetricsPortKey determines the key of the value in the context, which can be used to retrieve the metrics port
+const MetricsPortKey = "metrics-port"
+
 func RunRootCommand(originalCtx context.Context, ctx context.Context, s *provider.Store, c *opts.Opts) (int, int, error) {
 	pInit := s.Get(c.Provider)
 	if pInit == nil {
@@ -133,6 +136,7 @@ func runRootCommandWithProviderAndClient(originalCtx context.Context, ctx contex
 	}
 	c.ListenPort = int32(k8sPort)
 	initConfig.DaemonPort = int32(k8sPort)
+	ctx = context.WithValue(ctx, MetricsPortKey, metricsPort)
 
 	go func() {
 		defer cancelHTTP()

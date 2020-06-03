@@ -5,11 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner/mock_runner"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner/mock_run"
 )
 
 const MyRunType env.RunType = "newRunType"
@@ -28,7 +29,7 @@ func TestRegisterRunner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mar := mock_run.NewMockApateletRunner(ctrl)
+	mar := mock_runner.NewMockApateletRunner(ctrl)
 	var r ApateletRunner = mar
 
 	registry := New()
@@ -60,7 +61,7 @@ func TestRegisterRunnerReturnsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mar := mock_run.NewMockApateletRunner(ctrl)
+	mar := mock_runner.NewMockApateletRunner(ctrl)
 	var r ApateletRunner = mar
 
 	registry := New()

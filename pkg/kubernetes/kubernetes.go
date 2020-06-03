@@ -14,7 +14,7 @@ type NodeInfo struct {
 }
 
 // NewNodeInfo creates a new NodeInfo
-func NewNodeInfo(nodeType string, role string, name string, version string, selector string, metricsPort int) (NodeInfo, error) {
+func NewNodeInfo(nodeType, role, name, version, selector string) (NodeInfo, error) {
 	selectorParts := strings.Split(selector, "/")
 
 	if len(selectorParts) != 2 {
@@ -22,12 +22,11 @@ func NewNodeInfo(nodeType string, role string, name string, version string, sele
 	}
 
 	return NodeInfo{
-		NodeType:    nodeType,
-		Role:        role,
-		Name:        name,
-		Version:     version,
-		MetricsPort: metricsPort,
-		Namespace:   selectorParts[0],
-		Selector:    selectorParts[1],
+		NodeType:  nodeType,
+		Role:      role,
+		Name:      name,
+		Version:   version,
+		Namespace: selectorParts[0],
+		Selector:  selectorParts[1],
 	}, nil
 }

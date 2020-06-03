@@ -75,7 +75,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 
 	// Create node informer
 	stopInformer := make(chan struct{})
-	handler := node.NewHandler(&createdStore, registry, externalInformation)
+	handler := node.NewHandler(&createdStore, registry, externalInformation, &managedKubernetesCluster.Cluster)
 	if err = node.WatchHandler(ctx, managedKubernetesCluster.KubeConfig, handler, stopInformer); err != nil {
 		panicf(errors.Wrap(err, "failed to watch node handler"))
 	}

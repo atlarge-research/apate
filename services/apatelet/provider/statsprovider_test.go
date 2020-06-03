@@ -38,10 +38,10 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	pm := podmanager.New() // TODO mock?
 
 	res := scenario.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
-	info, err := kubernetes.NewNodeInfo("", "", name, "", "a/b", port)
+	info, err := kubernetes.NewNodeInfo("", "", name, "", "a/b")
 	assert.NoError(t, err)
 
-	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, info, &s, true)
+	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, &info, &s, true)
 
 	return prov.(provider.PodMetricsProvider), ctrl, ms, pm
 }
