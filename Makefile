@@ -80,7 +80,7 @@ mock_gen: ./pkg/runner/mock_run/mock_runner.go ./api/health/mock_health/health_m
 	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager PodManager > $@
 
 ./pkg/runner/mock_run/mock_runner.go:
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/pkg/run ApateletRunner > $@
+	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner ApateletRunner > $@
 
 crd_gen:
 	controller-gen object paths=./pkg/apis/...

@@ -11,6 +11,23 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 )
 
+// RemoveNodesWithUUID removes the apatelets with the given uuids from the cluster (both apate and k8s)
+func RemoveNodesWithUUID(uuids []uuid.UUID, st *store.Store, cl *kubernetes.Cluster) (err error) {
+	if apateErr := (*st).RemoveNodes(uuids); apateErr != nil {
+		err = errors.Wrapf(err, "removing node with uuids %v failed", uuids)
+	}
+
+	if kubernetesErr := cl.RemoveNodesFromCluster(uuids); kubernetesErr != nil {
+		if err != nil {
+			err = errors.Wrapf(err, "removing node with uuids from cluster %v failed (remove from apate also failed with '%v')", uuids, err)
+		} else {
+			err = errors.Wrapf(err, "removing node with uuids from cluster %v failed", uuids)
+		}
+	}
+
+	return
+}
+
 // RemoveNodeWithUUID removes the apatelet with the given uuid from the cluster (both apate and k8s)
 func RemoveNodeWithUUID(uuid uuid.UUID, st *store.Store, cl *kubernetes.Cluster) (err error) {
 	log.Printf("Removing %s from the cluster", uuid)
@@ -19,12 +36,13 @@ func RemoveNodeWithUUID(uuid uuid.UUID, st *store.Store, cl *kubernetes.Cluster)
 		err = errors.Wrapf(err, "removing node with uuid %v failed", uuid)
 	}
 
-	// TODO: Err handling
-	go func() {
-		if kubernetesErr := cl.RemoveNodeFromCluster("apatelet-" + uuid.String()); kubernetesErr != nil {
+	if kubernetesErr := cl.RemoveNodeFromCluster("apatelet-" + uuid.String()); kubernetesErr != nil {
+		if err != nil {
+			err = errors.Wrapf(err, "removing node with uuid from cluster %v failed (remove from apate also failed with '%v')", uuid, err)
+		} else {
 			err = errors.Wrapf(err, "removing node with uuid from cluster %v failed", uuid)
 		}
-	}()
+	}
 
 	return
 }

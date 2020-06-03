@@ -10,6 +10,8 @@ const (
 	NodeConfigurationLabelNamespace = "apate-namespace"
 	// EmulatedLabel is used by taints and node labels
 	EmulatedLabel = "emulated"
+	// NodeIDLabel defines the label which can be used to get the uuid of the node
+	NodeIDLabel = "apate-uuid"
 )
 
 // NodeConfiguration is a definition of a NodeConfiguration resource

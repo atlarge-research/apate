@@ -41,7 +41,7 @@ type Provider struct {
 	Stats *Stats // statistics contain static statistics
 
 	Node      *corev1.Node            // the reference to "ourselves"
-	NodeInfo  kubernetes.NodeInfo     // static node information sent to kubernetes
+	NodeInfo  *kubernetes.NodeInfo    // static node information sent to kubernetes
 	Resources *scenario.NodeResources // static resource information sent to kubernetes
 
 	Conditions nodeConditions // a wrapper around kubernetes conditions
@@ -51,6 +51,8 @@ type Provider struct {
 type VirtualKubelet struct {
 	st   *provider.Store
 	opts *opts.Opts
+
+	info *kubernetes.NodeInfo
 }
 
 //nolint as lint does not recognise the first context is indeed the correct context
@@ -62,11 +64,14 @@ func (vk *VirtualKubelet) Run(ctx context.Context, originalCtx context.Context) 
 		return 0, 0, errors.Wrap(err, "error while running virtual kubelet")
 	}
 
+	// Update metrics port
+	vk.info.MetricsPort = metricsPort
+
 	return metricsPort, k8sPort, nil
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*VirtualKubelet, error) {
+func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, store *store.Store) (*VirtualKubelet, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get options from env")
@@ -74,29 +79,30 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, k
 
 	name := baseName + "-" + res.UUID.String()
 	op.KubeConfigPath = env.KubeConfigLocation
-	op.ListenPort = int32(k8sPort)
-	op.MetricsAddr = ":" + strconv.Itoa(metricsPort)
+	op.ListenPort = int32(0)
+	op.MetricsAddr = ":" + strconv.Itoa(0)
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector, metricsPort)
+	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}
 
 	providerStore := provider.NewStore()
 	providerStore.Register(baseName, func(cfg *provider.InitConfig) (provider.Provider, error) {
-		return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store, env.DisableTaints), nil
+		return NewProvider(podmanager.New(), NewStats(), res, cfg, &nodeInfo, store, env.DisableTaints), nil
 	})
 
 	return &VirtualKubelet{
 		st:   providerStore,
 		opts: op,
+		info: &nodeInfo,
 	}, nil
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store, disableTaints bool) provider.Provider {
+func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo *kubernetes.NodeInfo, store *store.Store, disableTaints bool) provider.Provider {
 	return &Provider{
 		Pods:  pods,
 		Store: store,

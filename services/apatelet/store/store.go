@@ -3,9 +3,10 @@ package store
 
 import (
 	"container/heap"
-	"k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 	"sync"
 	"time"
+
+	"k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/pkg/errors"
 

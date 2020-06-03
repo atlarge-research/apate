@@ -86,7 +86,7 @@ func TestConfigureNode(t *testing.T) {
 	prov := Provider{
 		Pods:  pm,
 		Store: &st,
-		NodeInfo: kubernetes.NodeInfo{
+		NodeInfo: &kubernetes.NodeInfo{
 			NodeType:    "apate",
 			Role:        "worker",
 			Name:        "apate-x",
@@ -146,6 +146,7 @@ func TestConfigureNode(t *testing.T) {
 			nodeconfigv1.EmulatedLabel:                   "yes",
 			nodeconfigv1.NodeConfigurationLabel:          "apate",
 			nodeconfigv1.NodeConfigurationLabelNamespace: "my",
+			nodeconfigv1.NodeIDLabel:                     u.String(),
 		},
 	}, node.ObjectMeta)
 
@@ -304,6 +305,15 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 			EphemeralStorage: 2048,
 			MaxPods:          42,
 			Selector:         "my/apate",
+		},
+		NodeInfo: &kubernetes.NodeInfo{
+			NodeType:    "",
+			Role:        "",
+			Name:        "",
+			Version:     "",
+			Namespace:   "",
+			Selector:    "",
+			MetricsPort: 0,
 		},
 		Stats: NewStats(),
 		Conditions: nodeConditions{
