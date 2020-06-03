@@ -28,7 +28,6 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 	podClient.WatchResources(func(obj interface{}) {
 		// Add function
 		podCfg := obj.(*podconfigv1.PodConfiguration)
-		log.Printf("Received new pod CRD\n")
 		err := setPodTasks(podCfg, st)
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)
@@ -38,7 +37,6 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 	}, func(_, obj interface{}) {
 		// Update function
 		podCfg := obj.(*podconfigv1.PodConfiguration)
-		log.Printf("Received updated pod CRD\n")
 
 		err := setPodTasks(podCfg, st) // just replace all tasks with the <namespace>/<name>
 		if err != nil {
@@ -49,7 +47,6 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 	}, func(obj interface{}) {
 		// Delete function
 		podCfg := obj.(*podconfigv1.PodConfiguration)
-		log.Printf("Received deleted pod CRD\n")
 
 		crdLabel := getCRDAndLabel(podCfg)
 		err := (*st).RemovePodTasks(crdLabel)

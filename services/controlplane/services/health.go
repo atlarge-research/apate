@@ -22,9 +22,9 @@ type healthService struct {
 }
 
 const (
-	sendInterval     = 1 * time.Second
-	recvTimeout      = 5 * time.Second
-	maxNetworkErrors = 3
+	sendInterval     = 20 * time.Second
+	recvTimeout      = 30 * time.Second
+	maxNetworkErrors = 2
 )
 
 func (h healthService) HealthStream(server health.Health_HealthStreamServer) error {
@@ -108,13 +108,14 @@ func (h healthService) sendHeartbeat(ctx context.Context, server health.Health_H
 	timeoutDuration := sendInterval
 	timeoutDelay := time.NewTimer(timeoutDuration)
 	defer timeoutDelay.Stop()
+	e := empty.Empty{}
 
 	for {
 		if atomic.LoadInt32(cnt) >= maxNetworkErrors {
 			break
 		}
 
-		if err := server.Send(&empty.Empty{}); err != nil {
+		if err := server.Send(&e); err != nil {
 			log.Println("send error")
 			atomic.AddInt32(cnt, 1)
 		}
