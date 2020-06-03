@@ -345,7 +345,7 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 	moreThan64 := uint64(128)
 
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(stats.PodStats{
+	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(&stats.PodStats{
 		CPU: &stats.CPUStats{
 			UsageNanoCores: &moreThan64,
 		},

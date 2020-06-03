@@ -308,26 +308,13 @@ func getPodLabelByPod(pod *corev1.Pod) string {
 }
 
 func (p *Provider) doesPodExceedLimit(ctx context.Context, ns string, name string, label string) (bool, error) {
-	limits, err := p.getPodResourceLimits(ns, name)
+	currentResources, err := p.getCurrentPodResources(label)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get resource limits while getting pod status")
+		return false, errors.Wrap(err, "unable to determine current pod resources")
 	}
 
-	podResourcesFlag, err := (*p.Store).GetPodFlag(label, events.PodResources)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get pod resources flag while getting pod status")
-	}
-
-	podResources, ok := podResourcesFlag.(stats.PodStats)
-	if !ok {
-		return false, errors.Wrapf(err, "unable to convert '%v' to PodStats", podResourcesFlag)
-	}
-
-	usageCores := podResources.CPU.UsageNanoCores
-	usageMemory := podResources.Memory.UsageBytes
-	usageEphemeralStorage := podResources.EphemeralStorage.UsedBytes
-
-	podExceedsPodLimit := *usageCores > limits.cpu || *usageMemory > limits.memory || *usageEphemeralStorage > limits.ephemeralStorage
+	limits := p.getPodResourceLimits(ns, name)
+	podExceedsPodLimit := currentResources.cpu > limits.cpu || currentResources.memory > limits.memory || currentResources.ephemeralStorage > limits.ephemeralStorage
 
 	// If the total amount of all pods resources exceed the resources on the node, just kill the current one
 	// TODO implement k8s OOM handling (much more complicated)
@@ -344,10 +331,43 @@ func (p *Provider) doesPodExceedLimit(ctx context.Context, ns string, name strin
 	return podExceedsPodLimit || totalLimitExceeded, nil
 }
 
-func (p *Provider) getPodResourceLimits(ns string, name string) (resources, error) {
+func (p *Provider) getCurrentPodResources(label string) (resources, error) {
+	podResourcesFlag, err := (*p.Store).GetPodFlag(label, events.PodResources)
+	if err != nil {
+		return resources{}, errors.Wrap(err, "failed to get pod resources flag while getting pod status")
+	}
+
+	podResources, ok := podResourcesFlag.(*stats.PodStats)
+	if !ok {
+		return resources{}, errors.Wrapf(err, "unable to convert '%v' to PodStats", podResourcesFlag)
+	}
+
+	usageCores := uint64(0)
+	if podResources.CPU != nil && podResources.CPU.UsageNanoCores != nil {
+		usageCores = *podResources.CPU.UsageNanoCores
+	}
+
+	usageMemory := uint64(0)
+	if podResources.Memory != nil && podResources.Memory.UsageBytes != nil {
+		usageMemory = *podResources.Memory.UsageBytes
+	}
+
+	usageEphemeralStorage := uint64(0)
+	if podResources.EphemeralStorage != nil && podResources.EphemeralStorage.UsedBytes != nil {
+		usageEphemeralStorage = *podResources.EphemeralStorage.UsedBytes
+	}
+
+	return resources{
+		cpu:              usageCores,
+		memory:           usageMemory,
+		ephemeralStorage: usageEphemeralStorage,
+	}, nil
+}
+
+func (p *Provider) getPodResourceLimits(ns string, name string) resources {
 	pod, ok := p.Pods.GetPodByName(ns, name)
 	if !ok {
-		return resources{}, errors.Errorf("unable to find pod with namespace %v and name %v", ns, name)
+		return resources{}
 	}
 
 	totalCPU := uint64(0)
@@ -365,7 +385,7 @@ func (p *Provider) getPodResourceLimits(ns string, name string) (resources, erro
 		totalCPU,
 		totalMem,
 		totalEphemeralStorage,
-	}, nil
+	}
 }
 
 func podStatusToPhase(status interface{}) corev1.PodPhase {
