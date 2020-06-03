@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -222,10 +224,13 @@ func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{},
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
-	if val, ok := s.podFlags[label][flag]; ok {
-		return val, nil
+	if label != "" {
+		if val, ok := s.podFlags[label][flag]; ok {
+			return val, nil
+		}
 	}
 
+	// If the label is empty or the flag is not set, just return the default
 	if dv, ok := defaultPodValues[flag]; ok {
 		return dv, nil
 	}
@@ -243,6 +248,9 @@ func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface
 		s.podFlags[label] = make(flags)
 		s.podFlags[label][flag] = val
 	}
+
+	s.podListenersLock.Lock()
+	defer s.podListenersLock.Unlock()
 
 	if listeners, ok := s.podListeners[flag]; ok {
 		for _, listener := range listeners {
@@ -281,7 +289,7 @@ var defaultPodValues = map[events.PodEventFlag]interface{}{
 	events.PodGetPodResponse:       scenario.ResponseUnset,
 	events.PodGetPodStatusResponse: scenario.ResponseUnset,
 
-	events.PodResources: nil,
+	events.PodResources: stats.PodStats{},
 
 	events.PodStatus: scenario.PodStatusUnset,
 }
