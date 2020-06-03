@@ -34,7 +34,7 @@ type PodConfigurationList struct {
 type PodConfigurationSpec struct {
 	// A direct way to update state, this will circumvent the timestamps / scenario
 	// +kubebuilder:validation:Optional
-	PodConfigurationState `json:"inline,omitempty"`
+	PodConfigurationState `json:",inline,omitempty"`
 
 	// The tasks to be executed
 	// +kubebuilder:validation:Optional

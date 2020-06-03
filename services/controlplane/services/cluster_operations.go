@@ -56,7 +56,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	}
 
 	// Get connection information and create node
-	node := store.NewNode(connectionInfo, nodeResources, nodeResources.Selector)
+	node := store.NewNode(connectionInfo, nodeResources, nodeResources.Label)
 
 	// Add to apate store
 	err = st.AddNode(node)
@@ -77,10 +77,10 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	}
 
 	return &controlplane.JoinInformation{
-		KubeConfig:   s.kubernetesCluster.KubeConfig.Bytes,
-		NodeUuid:     node.UUID.String(),
-		NodeSelector: nodeResources.Selector,
-		StartTime:    time,
+		KubeConfig: s.kubernetesCluster.KubeConfig.Bytes,
+		NodeUuid:   node.UUID.String(),
+		NodeLabel:  nodeResources.Label,
+		StartTime:  time,
 
 		Hardware: &controlplane.NodeHardware{
 			Memory:           nodeResources.Memory,

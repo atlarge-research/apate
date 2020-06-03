@@ -7,6 +7,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	corev1 "k8s.io/api/core/v1"
@@ -62,7 +64,7 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo, err := node.NewInfo("apatelet", "agent", name, k8sVersion, res.Selector, metricsPort)
+	nodeInfo, err := node.NewInfo("apatelet", "agent", name, k8sVersion, res.Label, metricsPort)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}
@@ -83,15 +85,15 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo node.Info, store *store.Store, disableTaints bool) provider.Provider {
-	return &Provider{
+func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo node.Info, store *store.Store, disableTaints bool) provider.Provider {
+	p := &Provider{
 		Pods:  pods,
 		Store: store,
 
 		Cfg:           cfg,
 		DisableTaints: disableTaints,
 
-		Stats: stats,
+		Stats: nodeStats,
 
 		NodeInfo:  nodeInfo,
 		Resources: resources,
@@ -105,4 +107,12 @@ func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.N
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
 		},
 	}
+
+	(*store).AddPodListener(events.PodResources, func(obj interface{}) {
+		p.updateStatsSummary()
+	})
+
+	p.updateStatsSummary()
+
+	return p
 }
