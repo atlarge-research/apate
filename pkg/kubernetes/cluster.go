@@ -27,6 +27,9 @@ func ClusterFromKubeConfig(kubeConfig *kubeconfig.KubeConfig) (Cluster, error) {
 	}
 
 	clientSet, err := kubernetes.NewForConfig(restconfig)
+	if err != nil {
+		return Cluster{}, err
+	}
 
 	return Cluster{
 		clientSet,

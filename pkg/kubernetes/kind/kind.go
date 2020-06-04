@@ -7,8 +7,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/pkg/errors"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"sigs.k8s.io/kind/cmd/kind/app"
 	"sigs.k8s.io/kind/pkg/cmd"

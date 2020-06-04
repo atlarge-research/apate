@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -33,17 +32,17 @@ func main() {
 
 	k8sAddr := environment.KubernetesAddress
 	if k8sAddr != "" {
-		f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			log.Println(err)
 		}
-		if _, err := f.WriteString("\n" + k8sAddr + " docker"); err != nil {
+		if _, err = f.WriteString("\n" + k8sAddr + " docker"); err != nil {
 			log.Println(err)
 		}
-		f.Close()
-
-		fc, _ := ioutil.ReadFile("/etc/hosts")
-		log.Print(string(fc))
+		err = f.Close()
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	// Set the certificates to communicate with the kubelet API

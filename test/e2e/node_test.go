@@ -7,15 +7,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
-	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestSimpleNodeDeploymentDocker(t *testing.T) {
@@ -117,7 +118,6 @@ func testNodeFailure(t *testing.T, rt env.RunType) {
 }
 
 func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-
 	ncfg := `
     apiVersion: apate.opendc.org/v1
     kind: NodeConfiguration
@@ -144,7 +144,7 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
-	ready, node := getApatelet(t, cluster, corev1.ConditionTrue)
+	ready, node := getApateletAndCheckCondition(t, cluster, corev1.ConditionTrue)
 
 	assert.True(t, ready)
 
@@ -167,11 +167,11 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.Equal(t, int64(5*1024*1024*1024*1024), v)
 	runScenario(t)
 
-	stopped, node := getApatelet(t, cluster, corev1.ConditionUnknown)
+	stopped, _ := getApateletAndCheckCondition(t, cluster, corev1.ConditionUnknown)
 	assert.True(t, stopped)
 }
 
-func getApatelet(t *testing.T, cluster kubernetes.Cluster, expected corev1.ConditionStatus) (bool, *corev1.Node) {
+func getApateletAndCheckCondition(t *testing.T, cluster kubernetes.Cluster, expected corev1.ConditionStatus) (bool, *corev1.Node) {
 	reached := false
 	var node *corev1.Node
 
@@ -181,18 +181,7 @@ func getApatelet(t *testing.T, cluster kubernetes.Cluster, expected corev1.Condi
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(nodes.Items))
 
-		// assert one is named "apatelet"
-		node = nil
-		for _, v := range nodes.Items {
-			v := v
-			if strings.HasPrefix(v.Name, "apatelet-") {
-				if node == nil {
-					node = &v
-				} else {
-					t.Errorf("Multiple nodes started with apatelet-")
-				}
-			}
-		}
+		node = getApatelet(t, nodes)
 
 		for _, c := range node.Status.Conditions {
 			if c.Type == corev1.NodeReady && c.Status == expected {
@@ -207,4 +196,19 @@ func getApatelet(t *testing.T, cluster kubernetes.Cluster, expected corev1.Condi
 		time.Sleep(time.Second * 10)
 	}
 	return reached, node
+}
+
+func getApatelet(t *testing.T, nodes *corev1.NodeList) (node *corev1.Node) {
+	for _, v := range nodes.Items {
+		v := v
+		if strings.HasPrefix(v.Name, "apatelet-") {
+			if node == nil {
+				node = &v
+			} else {
+				// assert only one is named "apatelet"
+				t.Errorf("Multiple nodes started with apatelet-")
+			}
+		}
+	}
+	return
 }
