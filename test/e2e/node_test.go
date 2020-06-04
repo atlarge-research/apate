@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -144,11 +143,23 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
-	ready, node := getApateletAndCheckCondition(t, cluster, corev1.ConditionTrue)
+	// Check if everything is ready
+	ready, apatelets := getApateletWaitForCondition(t, cluster, func(apatelets []*corev1.Node) bool {
+		assert.Equal(t, 1, len(apatelets))
+		apatelet := apatelets[0]
+
+		for _, c := range apatelet.Status.Conditions {
+			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
+				return true
+			}
+		}
+
+		return false
+	})
 
 	assert.True(t, ready)
 
-	resource.NewQuantity(1000, "")
+	node := apatelets[0]
 
 	cpu := node.Status.Capacity[corev1.ResourceCPU]
 	v, _ := cpu.AsInt64()
@@ -165,49 +176,50 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	storage := node.Status.Capacity[corev1.ResourceStorage]
 	v, _ = storage.AsInt64()
 	assert.Equal(t, int64(5*1024*1024*1024*1024), v)
+
+	// Check if they stopped
 	runScenario(t)
 
-	stopped, _ := getApateletAndCheckCondition(t, cluster, corev1.ConditionUnknown)
+	stopped, _ := getApateletWaitForCondition(t, cluster, func(apatelets []*corev1.Node) bool {
+		assert.Equal(t, 1, len(apatelets))
+		apatelet := apatelets[0]
+
+		for _, c := range apatelet.Status.Conditions {
+			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionUnknown {
+				return true
+			}
+		}
+
+		return false
+	})
 	assert.True(t, stopped)
 }
 
-func getApateletAndCheckCondition(t *testing.T, cluster kubernetes.Cluster, expected corev1.ConditionStatus) (bool, *corev1.Node) {
-	reached := false
-	var node *corev1.Node
-
+func getApateletWaitForCondition(t *testing.T, cluster kubernetes.Cluster, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
 	for i := 0; i <= 10; i++ {
 		// get nodes and check that there are 2
 		nodes, err := cluster.GetNodes()
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(nodes.Items))
 
-		node = getApatelet(t, nodes)
+		apatelets := getApatelets(t, nodes)
+		assert.Equal(t, 1, len(apatelets))
 
-		for _, c := range node.Status.Conditions {
-			if c.Type == corev1.NodeReady && c.Status == expected {
-				reached = true
-			}
-		}
-
-		if reached {
-			break
+		if check(apatelets) {
+			return true, apatelets
 		}
 
 		time.Sleep(time.Second * 10)
 	}
-	return reached, node
+
+	return false, nil
 }
 
-func getApatelet(t *testing.T, nodes *corev1.NodeList) (node *corev1.Node) {
+func getApatelets(t *testing.T, nodes *corev1.NodeList) (node []*corev1.Node) {
 	for _, v := range nodes.Items {
 		v := v
 		if strings.HasPrefix(v.Name, "apatelet-") {
-			if node == nil {
-				node = &v
-			} else {
-				// assert only one is named "apatelet"
-				t.Errorf("Multiple nodes started with apatelet-")
-			}
+			node = append(node, &v)
 		}
 	}
 	return

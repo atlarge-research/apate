@@ -19,7 +19,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
-const enableDockerApatelets = true
+const enableDockerApatelets = false
 
 // Please set the `$CI_PROJECT_DIR` to the root of the project
 func setup(t *testing.T, kindClusterName string, runType env.RunType) {

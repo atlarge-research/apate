@@ -92,3 +92,59 @@ spec:
 	assert.NoError(t, err)
 	assert.Equal(t, 3, numpods)
 }
+
+// func podFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
+// 	ncfg := `
+// apiVersion: apate.opendc.org/v1
+// kind: NodeConfiguration
+// metadata:
+// 	name: test-node1
+// spec:
+// 	replicas: 3
+// 	resources:
+// 		memory: 5G
+// 		cpu: 1000
+// 		storage: 5T
+// 		ephemeral_storage: 120G
+// 		max_pods: 150
+// `
+
+// 	pcfg := `
+// apiVersion: apate.opendc.org/v1
+// kind: PodConfiguration
+// metadata:
+// 	name: test-pod1
+// spec:
+// 	inline:
+// 		pod_status: FAILED
+// `
+
+// 	err := kubectl.Create([]byte(ncfg), kcfg)
+// 	assert.NoError(t, err)
+// 	time.Sleep(time.Second * 60)
+
+// 	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+// 	assert.NoError(t, err)
+
+// 	// Check if everything is ready
+// 	ready, _ := getApateletWaitForCondition(t, cluster, func(apatelets []*corev1.Node) bool {
+// 		assert.Equal(t, 1, len(apatelets))
+// 		apatelet := apatelets[0]
+
+// 		for _, c := range apatelet.Status.Conditions {
+// 			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
+// 				return true
+// 			}
+// 		}
+
+// 		return false
+// 	})
+
+// 	assert.True(t, ready)
+
+// 	// Deploy pods
+
+// 	// run scenario
+
+// 	// assert state
+// }
