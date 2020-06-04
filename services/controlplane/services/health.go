@@ -22,9 +22,10 @@ type healthService struct {
 }
 
 const (
-	sendInterval     = 20 * time.Second
-	recvTimeout      = 30 * time.Second
-	maxNetworkErrors = 2
+	base             = time.Second
+	sendInterval     = 20 * base
+	recvTimeout      = 30 * base
+	maxNetworkErrors = 3
 )
 
 func (h *healthService) HealthStream(server health.Health_HealthStreamServer) error {
@@ -41,10 +42,6 @@ func (h *healthService) HealthStream(server health.Health_HealthStreamServer) er
 	// Sends a heartbeat to the client
 	go h.sendHeartbeat(ctx, server, &cnt)
 
-	timeoutDuration := recvTimeout
-	timeoutDelay := time.NewTimer(timeoutDuration)
-	defer timeoutDelay.Stop()
-
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -56,8 +53,10 @@ func (h *healthService) HealthStream(server health.Health_HealthStreamServer) er
 
 		c := make(chan struct{}, 1)
 		go func() {
-			timeoutDelay.Reset(timeoutDuration)
+			timeoutDelay := time.NewTimer(recvTimeout)
+			defer timeoutDelay.Stop()
 
+			timeoutDelay.Reset(recvTimeout)
 			select {
 			case <-ctx.Done():
 				return

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
@@ -44,7 +46,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
 
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, &node.Info{}, &st, true)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, &node.Info{}, &st, true, env.DefaultApateletEnvironment())
 
 	fakeNode := corev1.Node{}
 
@@ -394,7 +396,7 @@ func TestNewProvider(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	pm := podmanager.New()
-	stats := NewStats()
+	sts := NewStats()
 	resources := scenario.NodeResources{
 		UUID:             uuid.New(),
 		Memory:           0,
@@ -413,7 +415,7 @@ func TestNewProvider(t *testing.T) {
 
 	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	p, ok := NewProvider(pm, stats, &resources, &cfg, &ni, &s, true).(*Provider)
+	p, ok := NewProvider(pm, sts, &resources, &cfg, &ni, &s, true, env.DefaultApateletEnvironment()).(*Provider)
 
 	assert.True(t, ok)
 
