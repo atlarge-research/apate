@@ -127,29 +127,29 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	storage := uint64(5 * units.KiB)
 	ephStorage := uint64(100 * units.MiB)
 
-	gomock.InOrder(
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodCreatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodUpdatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodDeletePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodStatusResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodResources, gomock.Any()).Do(func(label string, flag events.EventFlag, f interface{}) {
-			stat := f.(*stats.PodStats)
+	ms.EXPECT().SetPodFlags("TestNamespace/TestName", gomock.Any()).Do(func(flags store.Flags) {
+		assert.Equal(t, events.PodCreatePodResponse, translateResponse(podconfigv1.ResponseNormal))
+		assert.Equal(t, events.PodUpdatePodResponse, translateResponse(podconfigv1.ResponseNormal))
+		assert.Equal(t, events.PodDeletePodResponse, translateResponse(podconfigv1.ResponseNormal))
+		assert.Equal(t, events.PodGetPodResponse, translateResponse(podconfigv1.ResponseNormal))
+		assert.Equal(t, events.PodGetPodStatusResponse, translateResponse(podconfigv1.ResponseNormal))
 
-			assert.EqualValues(t, cores, *stat.CPU.UsageNanoCores)
-			assert.WithinDuration(t, time.Now(), stat.CPU.Time.Time, 1*time.Minute)
+		stat := flags[events.PodResources].(*stats.PodStats)
 
-			assert.EqualValues(t, memory, *stat.Memory.UsageBytes)
-			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
+		assert.EqualValues(t, cores, *stat.CPU.UsageNanoCores)
+		assert.WithinDuration(t, time.Now(), stat.CPU.Time.Time, 1*time.Minute)
 
-			assert.EqualValues(t, storage, *stat.VolumeStats[0].UsedBytes)
-			assert.WithinDuration(t, time.Now(), stat.VolumeStats[0].Time.Time, 1*time.Minute)
+		assert.EqualValues(t, memory, *stat.Memory.UsageBytes)
+		assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
 
-			assert.EqualValues(t, ephStorage, *stat.EphemeralStorage.UsedBytes)
-			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
-		}),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(podconfigv1.PodStatusRunning)),
-	)
+		assert.EqualValues(t, storage, *stat.VolumeStats[0].UsedBytes)
+		assert.WithinDuration(t, time.Now(), stat.VolumeStats[0].Time.Time, 1*time.Minute)
+
+		assert.EqualValues(t, ephStorage, *stat.EphemeralStorage.UsedBytes)
+		assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
+
+		assert.Equal(t, events.PodStatus, translatePodStatus(podconfigv1.PodStatusRunning))
+	})
 
 	ms.EXPECT().SetPodTasks(
 		"TestNamespace/TestName",

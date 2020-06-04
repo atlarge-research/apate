@@ -17,8 +17,8 @@ type responseArgs struct {
 	action   func() (interface{}, error)
 }
 
-func getPodResponseFlag(args responseArgs, label string, podEventFlag events.PodEventFlag) (scenario.Response, error) {
-	iflag, err := (*args.provider.Store).GetPodFlag(label, podEventFlag)
+func getPodResponseFlag(args responseArgs, pod *corev1.Pod, podEventFlag events.PodEventFlag) (scenario.Response, error) {
+	iflag, err := (*args.provider.Store).GetPodFlag(pod, podEventFlag)
 	if err != nil {
 		return scenario.ResponseUnset, errors.Wrapf(err, "failed to get pod flag %v", podEventFlag)
 	}
@@ -86,8 +86,8 @@ func getCorrespondingNodeEventFlag(podEventFlag events.PodEventFlag) (events.Nod
 }
 
 // podResponse determines how a pod action should respond, also based on flags on node level
-func podResponse(args responseArgs, podLabel string, podEventFlag events.PodEventFlag) (interface{}, error) {
-	podFlag, err := getPodResponseFlag(args, podLabel, podEventFlag)
+func podResponse(args responseArgs, pod *corev1.Pod, podEventFlag events.PodEventFlag) (interface{}, error) {
+	podFlag, err := getPodResponseFlag(args, pod, podEventFlag)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve pod flag")
 	}

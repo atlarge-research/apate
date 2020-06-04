@@ -9,8 +9,6 @@ import (
 	"log"
 	"time"
 
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-
 	"github.com/pkg/errors"
 
 	"github.com/virtual-kubelet/virtual-kubelet/node/api"
@@ -46,7 +44,6 @@ func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf event
 
 	_, err := podResponse(
 		responseArgs{ctx, p, updateMap(p, pod, updateStartTime)},
-		getPodLabelByPod(pod),
 		pod,
 		pf,
 	)
@@ -91,7 +88,6 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 			p.Pods.DeletePod(pod)
 			return nil, nil
 		}},
-		getPodLabelByPod(pod),
 		pod,
 		events.PodDeletePodResponse,
 	)
@@ -120,17 +116,15 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return nil, err
 	}
 
-	pod, err := p.getPodByName(namespace, name)
-	if err != nil {
-		return nil, errors.Wrap(err, "pod not found")
+	pod, ok := p.Pods.GetPodByName(namespace, name)
+	if !ok {
+		return nil, nil
 	}
-	label := getPodLabelByPod(pod)
 
-	pod, err := podResponse(
+	_, err := podResponse(
 		responseArgs{ctx, p, func() (interface{}, error) {
 			return nil, nil
 		}},
-		label,
 		pod,
 		events.PodGetPodResponse,
 	)
@@ -145,7 +139,7 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 		return nil, err
 	}
 
-	return pod, nil
+	return pod.DeepCopy(), nil
 }
 
 // GetPods retrieves a list of all pods running.
@@ -213,28 +207,4 @@ func (p *Provider) runLatency(ctx context.Context) error {
 		// Do the actual latency
 		return nil
 	}
-}
-
-func (p *Provider) getPodByName(ns string, name string) (*corev1.Pod, error) {
-	pod, ok := p.Pods.GetPodByName(ns, name)
-	if !ok {
-		return nil, errors.New("f")
-	}
-	return pod, nil
-}
-
-func (p *Provider) getPodLabelByName(ns string, name string) string {
-	pod, err := p.getPodByName(ns, name)
-	if err != nil {
-		return ""
-	}
-	return getPodLabelByPod(pod)
-}
-
-func getPodLabelByPod(pod *corev1.Pod) string {
-	label, ok := pod.Labels[podconfigv1.PodConfigurationLabel]
-	if !ok {
-		return ""
-	}
-	return pod.Namespace + "/" + label
 }
