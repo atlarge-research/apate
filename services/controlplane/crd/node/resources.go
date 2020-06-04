@@ -45,6 +45,6 @@ func getNodeResources(nodeCfg *nodeconfigv1.NodeConfiguration) (scenario.NodeRes
 		Storage:          storage,
 		EphemeralStorage: ephemeralStorage,
 		MaxPods:          res.MaxPods,
-		Selector:         node.GetSelector(nodeCfg),
+		Label:            node.GetCrdLabel(nodeCfg),
 	}, nil
 }

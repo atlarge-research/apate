@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"math/rand"
 	"testing"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -25,11 +24,8 @@ func TestNodeNormal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseNormal, nil)
 
 	var s store.Store = ms
 
@@ -40,7 +36,7 @@ func TestNodeNormal(t *testing.T) {
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
-		PCPRF,
+		events.NodeCreatePodResponse,
 	)
 
 	// Assert
@@ -57,11 +53,10 @@ func TestNodeStoreError1(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
-	PCPRF := events.NodeCreatePodResponse
 	genericError := errors.New("some error")
 
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(nil, genericError)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(nil, genericError)
 
 	var s store.Store = ms
 
@@ -72,7 +67,7 @@ func TestNodeStoreError1(t *testing.T) {
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
-		PCPRF,
+		events.NodeCreatePodResponse,
 	)
 
 	// Assert
@@ -88,11 +83,8 @@ func TestNodeErrorAction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseNormal, nil)
 
 	var s store.Store = ms
 
@@ -103,7 +95,7 @@ func TestNodeErrorAction(t *testing.T) {
 		action: func() (i interface{}, err error) {
 			return nil, errors.New("some error")
 		}},
-		PCPRF,
+		events.NodeCreatePodResponse,
 	)
 
 	// Assert
@@ -119,11 +111,8 @@ func TestNodeInvalidResponseType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(42, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(42, nil)
 
 	var s store.Store = ms
 
@@ -134,7 +123,7 @@ func TestNodeInvalidResponseType(t *testing.T) {
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
-		PCPRF,
+		events.NodeCreatePodResponse,
 	)
 
 	// Assert
@@ -150,13 +139,8 @@ func TestNodeInvalidResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
-	rand.Seed(42)
-
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.Response(42), nil)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.Response(42), nil)
 
 	var s store.Store = ms
 
@@ -167,12 +151,12 @@ func TestNodeInvalidResponse(t *testing.T) {
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
-		PCPRF,
+		events.NodeCreatePodResponse,
 	)
 
 	// Assert
-	assert.Error(t, err)
-	assert.Nil(t, out)
+	assert.NoError(t, err)
+	assert.Equal(t, tStr, out)
 
 	ctrl.Finish()
 }
@@ -186,13 +170,8 @@ func TestNodeTimeOut(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(ctx, t)
 	ms := mock_store.NewMockStore(ctrl)
 
-	// vars
-	PCPRF := events.NodeCreatePodResponse
-
-	rand.Seed(42)
-
 	// Expectations
-	ms.EXPECT().GetNodeFlag(PCPRF).Return(scenario.ResponseTimeout, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseTimeout, nil)
 
 	var s store.Store = ms
 
@@ -203,7 +182,7 @@ func TestNodeTimeOut(t *testing.T) {
 		action: func() (i interface{}, err error) {
 			return tStr, nil
 		}},
-		PCPRF,
+		events.NodeCreatePodResponse,
 	)
 
 	// Assert
