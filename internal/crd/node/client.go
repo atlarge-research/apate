@@ -28,20 +28,24 @@ type ConfigurationClient struct {
 	namespace  string
 }
 
-var schemeLock sync.Once
-var sharedInformerLock sync.Once
-var sharedInformer *cache.SharedIndexInformer
+type nodeClient struct {
+	schemeLock         sync.Once
+	sharedInformerLock sync.Once
+	sharedInformer     *cache.SharedIndexInformer
+}
+
+var client nodeClient
 
 // Reset will reset the sharedInformerLock, resulting in a new informer being created the next time resources are
 // being watched. This is mostly for tests.
 // Warning: Calling this during normal runtime will result in unpredictable behaviour, and possibly memory + routine leaks
 func Reset() {
-	sharedInformerLock = sync.Once{}
+	client.sharedInformerLock = sync.Once{}
 }
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
-	schemeLock.Do(func() {
+	client.schemeLock.Do(func() {
 		if err := nodeconfigv1.AddToScheme(scheme.Scheme); err != nil {
 			log.Panicf("%+v", errors.Wrap(err, "adding global node scheme failed"))
 		}
@@ -64,7 +68,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 // WatchResources creates an informer which watches for new or updated NodeConfigurations and updates the store accordingly
 // This will also trigger the creation and removal of nodes when applicable
 func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
-	sharedInformerLock.Do(func() {
+	client.sharedInformerLock.Do(func() {
 		informer := cache.NewSharedIndexInformer(
 			&cache.ListWatch{
 				ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
@@ -77,11 +81,11 @@ func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), upda
 			cache.Indexers{},
 		)
 
-		sharedInformer = &informer
+		client.sharedInformer = &informer
 		go informer.Run(stopCh)
 	})
 
-	(*sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
+	(*client.sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
 		AddFunc:    addFunc,
 		UpdateFunc: updateFunc,
 		DeleteFunc: deleteFunc,
