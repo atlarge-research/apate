@@ -26,26 +26,24 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		return nil, err
 	}
 
-	pod, err := p.getPodByName(ns, name)
-	if err != nil {
-		return nil, errors.Wrap(err, "pod not found")
+	pod, ok := p.Pods.GetPodByName(ns, name)
+	if !ok {
+		return nil, nil
 	}
 
-	label := getPodLabelByPod(pod)
-
-	podStatus, err := podAndNodeResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
-		status, err := (*p.Store).GetPodFlag(label, pod, events.PodStatus)
+	podStatus, err := podResponse(responseArgs{ctx: ctx, provider: p, action: func() (interface{}, error) {
+		status, err := (*p.Store).GetPodFlag(pod, events.PodStatus)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get pod status flag while getting pod status")
 		}
 
-		limitExceeded, err := p.doesPodExceedLimit(pod, label)
+		limitExceeded, err := p.doesPodExceedLimit(pod)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to determine if limit is exceeded while getting pod status")
 		}
 
 		if limitExceeded {
-			return p.podFailed(ns, name, "Pod used too many resources and was then killed"), nil
+			return p.podFailed("Pod used too many resources and was then killed"), nil
 		}
 
 		switch status {
@@ -56,19 +54,17 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 		case scenario.PodStatusRunning:
 			return p.podRunning(), nil
 		case scenario.PodStatusSucceeded:
-			return p.podSucceeded(ns, name), nil
+			return p.podSucceeded(), nil
 		case scenario.PodStatusFailed:
-			return p.podFailed(ns, name, "Emulated pod has failed"), nil
+			return p.podFailed("Emulated pod has failed"), nil
 		case scenario.PodStatusUnknown:
 			fallthrough
 		default:
 			return p.podUnknown(), nil
 		}
 	}},
-		label,
 		pod,
 		events.PodGetPodStatusResponse,
-		events.NodeGetPodStatusResponse,
 	)
 
 	if IsExpected(err) {
@@ -81,7 +77,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 	}
 
 	if status, ok := podStatus.(*corev1.PodStatus); ok {
-		return status, nil
+		return status.DeepCopy(), nil
 	}
 
 	return nil, errors.Errorf("invalid podstatus %v", pod)
@@ -126,18 +122,14 @@ func (p *Provider) podRunning() *corev1.PodStatus {
 	}
 }
 
-func (p *Provider) podSucceeded(ns string, name string) *corev1.PodStatus {
-	p.Pods.DeletePodByName(ns, name)
-
+func (p *Provider) podSucceeded() *corev1.PodStatus {
 	return &corev1.PodStatus{
 		Phase:   corev1.PodSucceeded,
 		Message: "Pod has completed successfully",
 	}
 }
 
-func (p *Provider) podFailed(ns string, name string, reason string) *corev1.PodStatus {
-	p.Pods.DeletePodByName(ns, name)
-
+func (p *Provider) podFailed(reason string) *corev1.PodStatus {
 	return &corev1.PodStatus{
 		Phase:   corev1.PodFailed,
 		Message: reason,
@@ -153,13 +145,13 @@ func (p *Provider) podFailed(ns string, name string, reason string) *corev1.PodS
 	}
 }
 
-func (p *Provider) doesPodExceedLimit(pod *corev1.Pod, label string) (bool, error) {
+func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 	limits, err := p.getPodResourceLimits(pod)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get resource limits while getting pod status")
 	}
 
-	podResourcesFlag, err := (*p.Store).GetPodFlag(label, pod, events.PodResources)
+	podResourcesFlag, err := (*p.Store).GetPodFlag(pod, events.PodResources)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get pod resources flag while getting pod status")
 	}

@@ -39,90 +39,75 @@ spec:
             description: PodConfigurationSpec is the spec which belongs to the PodConfiguration
               CRD
             properties:
-              inline:
-                description: A direct way to update state, this will circumvent the
-                  timestamps / scenario
+              create_pod_response:
+                default: UNSET
+                description: CreatePodResponse determines how to respond to the CreatePod
+                  request
+                enum:
+                - NORMAL
+                - TIMEOUT
+                - ERROR
+                - UNSET
+                type: string
+              delete_pod_response:
+                default: UNSET
+                description: DeletePodResponse determines how to respond to the DeletePod
+                  request
+                enum:
+                - NORMAL
+                - TIMEOUT
+                - ERROR
+                - UNSET
+                type: string
+              get_pod_response:
+                default: UNSET
+                description: PodGetPodResponse determines how to respond to the GetPod
+                  request
+                enum:
+                - NORMAL
+                - TIMEOUT
+                - ERROR
+                - UNSET
+                type: string
+              get_pod_status_response:
+                default: UNSET
+                description: GetPodStatusResponse determines how to respond to the
+                  GetPodStatus request
+                enum:
+                - NORMAL
+                - TIMEOUT
+                - ERROR
+                - UNSET
+                type: string
+              pod_resources:
+                description: PodResources sets the amount of resources the related
+                  pods are using
                 properties:
-                  create_pod_response:
-                    default: UNSET
-                    description: CreatePodResponse determines how to respond to the
-                      CreatePod request
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    - UNSET
+                  cpu:
+                    default: 0
+                    format: int64
+                    type: integer
+                  ephemeral_storage:
+                    default: 0B
                     type: string
-                  delete_pod_response:
-                    default: UNSET
-                    description: DeletePodResponse determines how to respond to the
-                      DeletePod request
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    - UNSET
+                  memory:
+                    default: 0B
                     type: string
-                  get_pod_response:
-                    default: UNSET
-                    description: PodGetPodResponse determines how to respond to the
-                      GetPod request
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    - UNSET
-                    type: string
-                  get_pod_status_response:
-                    default: UNSET
-                    description: GetPodStatusResponse determines how to respond to
-                      the GetPodStatus request
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    - UNSET
-                    type: string
-                  pod_resources:
-                    description: PodResources sets the amount of resources the related
-                      pods are using
-                    properties:
-                      cpu:
-                        default: 0
-                        format: int64
-                        type: integer
-                      ephemeral_storage:
-                        default: 0B
-                        type: string
-                      memory:
-                        default: 0B
-                        type: string
-                      storage:
-                        default: 0B
-                        type: string
-                    type: object
-                  pod_status:
-                    default: UNSET
-                    description: PodStatus updates the current pod status
-                    enum:
-                    - PENDING
-                    - RUNNING
-                    - SUCCEEDED
-                    - FAILED
-                    - UNKNOWN
-                    - UNSET
-                    type: string
-                  update_pod_response:
-                    default: UNSET
-                    description: UpdatePodResponse determines how to respond to the
-                      UpdatePod request
-                    enum:
-                    - NORMAL
-                    - TIMEOUT
-                    - ERROR
-                    - UNSET
+                  storage:
+                    default: 0B
                     type: string
                 type: object
+              pod_status:
+                default: UNSET
+                description: PodStatus updates the current pod status
+                enum:
+                - PENDING
+                - RUNNING
+                - SUCCEEDED
+                - FAILED
+                - UNKNOWN
+                - UNSET
+                type: string
               tasks:
                 description: The tasks to be executed
                 items:
@@ -224,6 +209,16 @@ spec:
                   - timestamp
                   type: object
                 type: array
+              update_pod_response:
+                default: UNSET
+                description: UpdatePodResponse determines how to respond to the UpdatePod
+                  request
+                enum:
+                - NORMAL
+                - TIMEOUT
+                - ERROR
+                - UNSET
+                type: string
             type: object
         required:
         - metadata

@@ -122,16 +122,16 @@ func TestSetPodFlags(t *testing.T) {
 
 	var s store.Store = ms
 
-	gomock.InOrder(
-		ms.EXPECT().SetPodFlag("test", events.PodCreatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("test", events.PodUpdatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("test", events.PodDeletePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("test", events.PodGetPodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("test", events.PodGetPodStatusResponse, translateResponse(podconfigv1.ResponseNormal)),
+	ms.EXPECT().SetPodFlags("test", store.Flags{
+		events.PodCreatePodResponse:    translateResponse(podconfigv1.ResponseNormal),
+		events.PodUpdatePodResponse:    translateResponse(podconfigv1.ResponseNormal),
+		events.PodDeletePodResponse:    translateResponse(podconfigv1.ResponseNormal),
+		events.PodGetPodResponse:       translateResponse(podconfigv1.ResponseNormal),
+		events.PodGetPodStatusResponse: translateResponse(podconfigv1.ResponseNormal),
 		// Any here because the resource usage has times which can't be compared. This is tested better in TestTranslatePodResources
-		ms.EXPECT().SetPodFlag("test", events.PodResources, gomock.Any()),
-		ms.EXPECT().SetPodFlag("test", events.PodStatus, translatePodStatus(podconfigv1.PodStatusRunning)),
-	)
+		events.PodResources: gomock.Any(),
+		events.PodStatus:    translatePodStatus(podconfigv1.PodStatusRunning),
+	})
 
 	err := SetPodFlags(&s, "test", &podconfigv1.PodConfigurationState{
 		CreatePodResponse:    podconfigv1.ResponseNormal,
@@ -160,7 +160,7 @@ func TestSetPodFlagsErr(t *testing.T) {
 
 	var s store.Store = ms
 
-	ms.EXPECT().SetPodFlag(gomock.Any(), gomock.Any(), gomock.Any()).MinTimes(0)
+	ms.EXPECT().SetPodFlags(gomock.Any(), gomock.Any()).MinTimes(0)
 
 	err := SetPodFlags(&s, "test", &podconfigv1.PodConfigurationState{
 		CreatePodResponse:    podconfigv1.ResponseNormal,
