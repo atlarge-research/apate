@@ -15,6 +15,11 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 )
 
+const (
+	sendInterval = 20 * time.Second
+	recvTimeout  = 30 * time.Second
+)
+
 // Client holds all the information used to communicate with the server
 type Client struct {
 	Conn   *grpc.ClientConn
@@ -32,11 +37,6 @@ func (c *Client) close() error {
 
 	return nil
 }
-
-const (
-	sendInterval = 20 * time.Second
-	recvTimeout  = 30 * time.Second
-)
 
 // GetClient creates a new health client
 func GetClient(info *service.ConnectionInfo, uuid string) (*Client, error) {

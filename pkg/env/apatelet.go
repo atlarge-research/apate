@@ -30,6 +30,9 @@ const (
 
 	// ApateletDisableTaintsDefault is the default for DisableTaints
 	ApateletDisableTaintsDefault = false
+
+	// ApateletDebugEnabledDefault default for DebugEnabled
+	ApateletDebugEnabledDefault = false
 )
 
 // ApateletEnvironment represents the environment variables of the apatelet
@@ -54,6 +57,9 @@ type ApateletEnvironment struct {
 
 	// DisableTaints determines whether to disable taints on this node or not
 	DisableTaints bool `env:"APATELET_DISABLE_TAINTS"`
+
+	// DebugEnabled determines if extra messages and profiling tools should be enabled
+	DebugEnabled bool `env:"APATELET_ENABLE_DEBUG"`
 }
 
 // DefaultApateletEnvironment returns the default apate environment
@@ -71,6 +77,8 @@ func DefaultApateletEnvironment() ApateletEnvironment {
 		ControlPlanePort:    ApateletControlPlanePortDefault,
 
 		DisableTaints: ApateletDisableTaintsDefault,
+
+		DebugEnabled: ApateletDebugEnabledDefault,
 	}
 }
 

@@ -34,8 +34,9 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	Pods  podmanager.PodManager // the pods currently used
-	Store *store.Store          // the apatelet store
+	Pods        podmanager.PodManager // the pods currently used
+	Store       *store.Store          // the apatelet store
+	Environment env.ApateletEnvironment
 
 	Cfg           *provider.InitConfig // the initial provider config
 	DisableTaints bool                 // whether to disable taints
@@ -93,7 +94,7 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, s
 
 	providerStore := provider.NewStore()
 	providerStore.Register(baseName, func(cfg *provider.InitConfig) (provider.Provider, error) {
-		return NewProvider(podmanager.New(), NewStats(), res, cfg, &nodeInfo, store, env.DisableTaints), nil
+		return NewProvider(podmanager.New(), NewStats(), res, cfg, &nodeInfo, store, env.DisableTaints, *env), nil
 	})
 
 	return &VirtualKubelet{
@@ -104,10 +105,11 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, s
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo *node.Info, store *store.Store, disableTaints bool) provider.Provider {
+func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo *node.Info, store *store.Store, disableTaints bool, environment env.ApateletEnvironment) provider.Provider {
 	p := &Provider{
-		Pods:  pods,
-		Store: store,
+		Pods:        pods,
+		Store:       store,
+		Environment: environment,
 
 		Cfg:           cfg,
 		DisableTaints: disableTaints,

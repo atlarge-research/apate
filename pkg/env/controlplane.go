@@ -48,7 +48,7 @@ const (
 	CPUseDockerHostnameDefault = false
 
 	// CPDebugEnabledDefault default for DebugEnabled
-	CPDebugEnabledDefault = true
+	CPDebugEnabledDefault = false
 )
 
 // RunType is the runner strategy used by the control plane to run apalets
@@ -99,6 +99,7 @@ type ControlPlaneEnvironment struct {
 	// UseDockerHostname specifies if we should rewrite the KinD address to 'docker'
 	UseDockerHostname bool `env:"CP_DOCKER_HOSTNAME"`
 
+	// DebugEnabled determines if extra messages and profiling tools should be enabled
 	DebugEnabled bool `env:"CP_ENABLE_DEBUG"`
 }
 
