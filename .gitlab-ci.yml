@@ -29,15 +29,18 @@ sast:
     paths: []
 
 variables:
-  DIND_GO_IMAGE: "$CI_REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
-  VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet"
-  CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane"
+  REGISTRY_URL: "registry.planning.nl"
+  REGISTRY_IMAGE: "registry.planning.nl/emulating-k8s/emulating-k8s"
+  DIND_GO_IMAGE: "$REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
+  VK_IMAGE: "$REGISTRY_IMAGE/apatelet"
+  CP_IMAGE: "$REGISTRY_IMAGE/controlplane"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans (doesn't work for now, https://gitlab.com/gitlab-org/gitlab/-/issues/10030)
   SAST_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans (doesn't work for now, https://gitlab.com/gitlab-org/gitlab/-/issues/10030)
   # Taken from the following minus kubesec (because SCAN_KUBERNETES_MANIFESTS was somehow always set to true)
   # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml#L15
   SAST_DEFAULT_ANALYZERS: "bandit, brakeman, gosec, flawfinder, security-code-scan, secrets, sobelow"
+  DOCKER_BUILDKIT: 1
 
 default:
   image: $DIND_GO_IMAGE
@@ -58,7 +61,7 @@ prepare-build-image:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
     - cd ./ci/build-image
   script:
     - docker build --pull -t "$DIND_GO_IMAGE" .
@@ -135,7 +138,7 @@ deploy-apatelet:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
     - docker build -f services/apatelet/Dockerfile -t $VK_IMAGE .
     - docker push "$VK_IMAGE"
@@ -147,7 +150,7 @@ deploy-cp:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
     - docker build -f services/controlplane/Dockerfile -t $CP_IMAGE .
     - docker push "$CP_IMAGE"
