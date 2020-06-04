@@ -240,7 +240,7 @@ func TestDefaultNodeFlag(t *testing.T) {
 
 	// Retrieve default value
 	val, err := st.GetNodeFlag(events.NodeCreatePodResponse)
-	assert.Equal(t, scenario.ResponseNormal, val)
+	assert.Equal(t, scenario.ResponseUnset, val)
 	assert.NoError(t, err)
 }
 
@@ -452,4 +452,45 @@ func TestSetPodFlag(t *testing.T) {
 
 	_, err = st.GetPodFlag("b", 44)
 	assert.Error(t, err, "flag not set")
+}
+
+func TestAddPodListener(t *testing.T) {
+	t.Parallel()
+
+	st := NewStore()
+
+	cb1Called := false
+	st.AddPodListener(events.PodCreatePodResponse, func(obj interface{}) {
+		assert.Equal(t, scenario.ResponseTimeout, obj)
+		cb1Called = true
+	})
+
+	cb2Called := false
+	st.AddPodListener(events.PodCreatePodResponse, func(obj interface{}) {
+		assert.Equal(t, scenario.ResponseTimeout, obj)
+		cb2Called = true
+	})
+
+	cb3Called := false
+	st.AddPodListener(events.PodUpdatePodResponse, func(obj interface{}) {
+		assert.Equal(t, scenario.ResponseError, obj)
+		cb3Called = true
+	})
+
+	// Set flag
+	st.SetPodFlag("a", events.PodCreatePodResponse, scenario.ResponseTimeout)
+	st.SetPodFlag("b", events.PodUpdatePodResponse, scenario.ResponseError)
+
+	// Retrieve unset flag and verify default value and err
+	val, err := st.GetPodFlag("a", events.PodCreatePodResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, scenario.ResponseTimeout, val)
+
+	val, err = st.GetPodFlag("b", events.PodUpdatePodResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, scenario.ResponseError, val)
+
+	assert.True(t, cb1Called)
+	assert.True(t, cb2Called)
+	assert.True(t, cb3Called)
 }

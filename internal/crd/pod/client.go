@@ -29,7 +29,7 @@ var sharedInformer *cache.SharedIndexInformer
 // ConfigurationClient is the client for the PodConfiguration CRD
 type ConfigurationClient struct {
 	restClient rest.Interface
-	nameSpace  string
+	namespace  string
 }
 
 // Reset will reset the sharedInformerLock, resulting in a new informer being created the next time resources are
@@ -58,7 +58,7 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 		return nil, errors.Wrap(err, "failed to create new pod crd client for config")
 	}
 
-	return &ConfigurationClient{restClient: client, nameSpace: namespace}, nil
+	return &ConfigurationClient{restClient: client, namespace: namespace}, nil
 }
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
@@ -91,7 +91,7 @@ func (e *ConfigurationClient) list(opts metav1.ListOptions) (*podconfigv1.PodCon
 	result := podconfigv1.PodConfigurationList{}
 
 	err := e.restClient.Get().
-		Namespace(e.nameSpace).
+		Namespace(e.namespace).
 		Resource(resource).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
@@ -109,7 +109,7 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 
 	wi, err := e.restClient.
 		Get().
-		Namespace(e.nameSpace).
+		Namespace(e.namespace).
 		Resource(resource).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()

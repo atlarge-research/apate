@@ -6,6 +6,8 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -16,7 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -24,13 +25,14 @@ import (
 )
 
 const (
-	name  = "name"
-	port  = 42
-	flag  = "yes"
-	event = events.PodResources
+	name      = "name"
+	port      = 42
+	label     = "label"
+	namespace = "namespace"
+	event     = events.PodResources
 )
 
-func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvider, *gomock.Controller, *mock_store.MockStore, podmanager.PodManager) {
+func createProvider(t *testing.T, cpu, mem, fs int64) (*Provider, *gomock.Controller, *mock_store.MockStore, podmanager.PodManager) {
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
@@ -38,12 +40,14 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (provider.PodMetricsProvid
 	pm := podmanager.New() // TODO mock?
 
 	res := scenario.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
-	info, err := kubernetes.NewNodeInfo("", "", name, "", "a/b")
+	info, err := node.NewInfo("", "", name, "", "a/b")
 	assert.NoError(t, err)
 
-	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, &info, &s, true)
+	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	return prov.(provider.PodMetricsProvider), ctrl, ms, pm
+	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, &info, &s, true)
+	p := prov.(*Provider)
+	return p, ctrl, ms, pm
 }
 
 func TestEmpty(t *testing.T) {
@@ -63,8 +67,7 @@ func TestEmpty(t *testing.T) {
 	assert.Equal(t, uint64(mem), *result.Node.Memory.AvailableBytes)
 
 	// Verify pods
-	var statistics []stats.PodStats
-	assert.EqualValues(t, statistics, result.Pods)
+	assert.Empty(t, result.Pods)
 
 	ctrl.Finish()
 }
@@ -80,18 +83,18 @@ func TestSinglePod(t *testing.T) {
 
 	// Create pod
 	lbl := make(map[string]string)
-	lbl[podconfigv1.PodConfigurationLabel] = flag
+	lbl[podconfigv1.PodConfigurationLabel] = label
 	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{Labels: lbl},
+		ObjectMeta: metav1.ObjectMeta{Labels: lbl, Namespace: namespace},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod) //TODO mock?
+	pm.AddPod(&pod) //TODO mock?
 
 	// Create stats
-	statistics := stats.PodStats{
-		PodRef:           stats.PodReference{},
+	statistics := &stats.PodStats{
+		PodRef:           stats.PodReference{Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              &stats.CPUStats{UsageNanoCores: &cpuUsage},
@@ -102,7 +105,9 @@ func TestSinglePod(t *testing.T) {
 	}
 
 	// Setup store
-	ms.EXPECT().GetPodFlag(flag, event).Return(statistics, nil)
+	ms.EXPECT().GetPodFlag(namespace+"/"+label, event).Return(statistics, nil)
+
+	prov.updateStatsSummary()
 
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
@@ -115,7 +120,7 @@ func TestSinglePod(t *testing.T) {
 	assert.Equal(t, left, *result.Node.Memory.AvailableBytes)
 
 	// Verify pod
-	podStats := []stats.PodStats{statistics}
+	podStats := []stats.PodStats{*statistics}
 	assert.EqualValues(t, podStats, result.Pods)
 
 	ctrl.Finish()
@@ -131,48 +136,52 @@ func TestUnspecifiedPods(t *testing.T) {
 	cpuUsage := uint64(1)
 	fsUsage := uint64(12)
 	prov, ctrl, ms, pm := createProvider(t, cpu, mem, fs)
+	defer ctrl.Finish()
 
 	// Create pods
 	lbl := make(map[string]string)
-	lbl[podconfigv1.PodConfigurationLabel] = flag
+	lbl[podconfigv1.PodConfigurationLabel] = label
 	pod := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{Labels: lbl, UID: flag},
+		ObjectMeta: metav1.ObjectMeta{Labels: lbl, UID: label, Namespace: namespace},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod) //TODO mock?
+	pm.AddPod(&pod) //TODO mock?
 
 	lbl2 := make(map[string]string)
-	lbl2[podconfigv1.PodConfigurationLabel] = flag + "2"
+	lbl2[podconfigv1.PodConfigurationLabel] = label + "2"
 	pod2 := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{Labels: lbl2, UID: flag + "2"},
+		ObjectMeta: metav1.ObjectMeta{Labels: lbl2, UID: label + "2", Namespace: namespace},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod2) //TODO mock?
+	pm.AddPod(&pod2) //TODO mock?
 
 	lbl3 := make(map[string]string)
-	lbl3[podconfigv1.PodConfigurationLabel] = flag + "3"
+	lbl3[podconfigv1.PodConfigurationLabel] = label + "3"
 	pod3 := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{Labels: lbl3, UID: flag + "3"},
+		ObjectMeta: metav1.ObjectMeta{Labels: lbl3, UID: label + "3", Namespace: namespace},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod3) //TODO mock?
+	pm.AddPod(&pod3) //TODO mock?
+
+	lbl4 := make(map[string]string)
+	lbl4[podconfigv1.PodConfigurationLabel] = label + "4"
 	pod4 := corev1.Pod{
 		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{UID: flag + "4"},
+		ObjectMeta: metav1.ObjectMeta{Labels: lbl4, UID: label + "4", Namespace: namespace},
 		Spec:       corev1.PodSpec{},
 		Status:     corev1.PodStatus{},
 	}
-	pm.AddPod(pod4) //TODO mock?
+	pm.AddPod(&pod4) //TODO mock?
 
 	// Create stats
-	statistics := stats.PodStats{
-		PodRef:           stats.PodReference{UID: flag},
+	statistics := &stats.PodStats{
+		PodRef:           stats.PodReference{UID: label, Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              nil,
@@ -182,8 +191,8 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: nil,
 	}
 
-	statistics2 := stats.PodStats{
-		PodRef:           stats.PodReference{UID: flag + "2"},
+	statistics2 := &stats.PodStats{
+		PodRef:           stats.PodReference{UID: label + "2", Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              &stats.CPUStats{},
@@ -193,8 +202,8 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: &stats.FsStats{UsedBytes: &fsUsage},
 	}
 
-	statistics3 := stats.PodStats{
-		PodRef:           stats.PodReference{UID: flag + "3"},
+	statistics3 := &stats.PodStats{
+		PodRef:           stats.PodReference{UID: label + "3", Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              &stats.CPUStats{UsageNanoCores: &cpuUsage},
@@ -204,8 +213,8 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: nil,
 	}
 
-	statistics4 := stats.PodStats{
-		PodRef:           stats.PodReference{UID: flag + "4"},
+	statistics4 := &stats.PodStats{
+		PodRef:           stats.PodReference{UID: label + "4", Namespace: namespace},
 		StartTime:        metav1.Time{},
 		Containers:       nil,
 		CPU:              nil,
@@ -215,17 +224,19 @@ func TestUnspecifiedPods(t *testing.T) {
 		EphemeralStorage: nil,
 	}
 
-	statMap := make(map[string]stats.PodStats)
-	statMap[flag] = statistics
-	statMap[flag+"2"] = statistics2
-	statMap[flag+"3"] = statistics3
-	statMap[flag+"4"] = statistics4
+	statMap := make(map[string]*stats.PodStats)
+	statMap[label] = statistics
+	statMap[label+"2"] = statistics2
+	statMap[label+"3"] = statistics3
+	statMap[label+"4"] = statistics4
 
 	// Setup store
-	ms.EXPECT().GetPodFlag(flag, event).Return(statistics, nil)
-	ms.EXPECT().GetPodFlag(flag+"2", event).Return(statistics2, nil)
-	ms.EXPECT().GetPodFlag(flag+"3", event).Return(statistics3, nil)
+	ms.EXPECT().GetPodFlag(namespace+"/"+label, event).Return(statistics, nil)
+	ms.EXPECT().GetPodFlag(namespace+"/"+label+"2", event).Return(statistics2, nil)
+	ms.EXPECT().GetPodFlag(namespace+"/"+label+"3", event).Return(statistics3, nil)
+	ms.EXPECT().GetPodFlag(namespace+"/"+label+"4", event).Return(statistics4, nil)
 
+	prov.updateStatsSummary()
 	result, err := prov.GetStatsSummary(context.Background())
 	assert.NoError(t, err)
 
@@ -242,8 +253,6 @@ func TestUnspecifiedPods(t *testing.T) {
 
 	// Verify pod
 	for _, podStat := range result.Pods {
-		assert.Equal(t, statMap[podStat.PodRef.UID], podStat)
+		assert.Equal(t, *statMap[podStat.PodRef.UID], podStat)
 	}
-
-	ctrl.Finish()
 }

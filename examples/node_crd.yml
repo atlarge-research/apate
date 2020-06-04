@@ -3,7 +3,7 @@ kind: NodeConfiguration
 metadata:
     name: test-deployment1
 spec:
-    replicas: 0
+    replicas: 1
     resources:
         memory: 5G
         cpu: 5000
@@ -11,6 +11,6 @@ spec:
         ephemeral_storage: 120G
         max_pods: 150
     tasks:
-        - timestamp: 9s
+        - timestamp: 1s
           state:
               node_failed: true

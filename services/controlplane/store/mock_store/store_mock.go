@@ -140,19 +140,19 @@ func (mr *MockStoreMockRecorder) GetNodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodes", reflect.TypeOf((*MockStore)(nil).GetNodes))
 }
 
-// GetNodesBySelector mocks base method
-func (m *MockStore) GetNodesBySelector(arg0 string) ([]store.Node, error) {
+// GetNodesByLabel mocks base method
+func (m *MockStore) GetNodesByLabel(arg0 string) ([]store.Node, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodesBySelector", arg0)
+	ret := m.ctrl.Call(m, "GetNodesByLabel", arg0)
 	ret0, _ := ret[0].([]store.Node)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetNodesBySelector indicates an expected call of GetNodesBySelector
-func (mr *MockStoreMockRecorder) GetNodesBySelector(arg0 interface{}) *gomock.Call {
+// GetNodesByLabel indicates an expected call of GetNodesByLabel
+func (mr *MockStoreMockRecorder) GetNodesByLabel(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodesBySelector", reflect.TypeOf((*MockStore)(nil).GetNodesBySelector), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodesByLabel", reflect.TypeOf((*MockStore)(nil).GetNodesByLabel), arg0)
 }
 
 // GetResourceFromQueue mocks base method

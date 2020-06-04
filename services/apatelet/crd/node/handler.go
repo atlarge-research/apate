@@ -14,13 +14,13 @@ import (
 )
 
 // CreateNodeInformer creates a new node informer
-func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector string, stopch <-chan struct{}, wakeScheduler func()) error {
+func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, label string, stopch <-chan struct{}, wakeScheduler func()) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get kubeconfig")
 	}
 
-	client, err := node.NewForConfig(cfg)
+	client, err := node.NewForConfig(cfg, "default")
 	if err != nil {
 		return errors.Wrap(err, "couldn't create client from config for node informer")
 	}
@@ -29,7 +29,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 		// Add function
 		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
 
-		if node.GetSelector(nodeCfg) == selector {
+		if node.GetCrdLabel(nodeCfg) == label {
 			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)
@@ -41,7 +41,7 @@ func CreateNodeInformer(config *kubeconfig.KubeConfig, st *store.Store, selector
 		// Update function
 		nodeCfg := obj.(*nodeconfigv1.NodeConfiguration)
 
-		if node.GetSelector(nodeCfg) == selector {
+		if node.GetCrdLabel(nodeCfg) == label {
 			err := setNodeTasks(nodeCfg, st)
 			if err != nil {
 				log.Printf("error while adding node tasks: %v\n", err)

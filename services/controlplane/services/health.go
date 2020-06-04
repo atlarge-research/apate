@@ -27,7 +27,7 @@ const (
 	maxNetworkErrors = 2
 )
 
-func (h healthService) HealthStream(server health.Health_HealthStreamServer) error {
+func (h *healthService) HealthStream(server health.Health_HealthStreamServer) error {
 	log.Println("Starting new health stream")
 
 	// Outer/Original context
@@ -104,7 +104,7 @@ func (h healthService) HealthStream(server health.Health_HealthStreamServer) err
 	return nil
 }
 
-func (h healthService) sendHeartbeat(ctx context.Context, server health.Health_HealthStreamServer, cnt *int32) {
+func (h *healthService) sendHeartbeat(ctx context.Context, server health.Health_HealthStreamServer, cnt *int32) {
 	timeoutDuration := sendInterval
 	timeoutDelay := time.NewTimer(timeoutDuration)
 	defer timeoutDelay.Stop()
