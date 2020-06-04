@@ -2,9 +2,11 @@ package store
 
 import (
 	"container/heap"
+
 	"github.com/pkg/errors"
 )
 
+// TaskSetter defines function aiding in setting tasks
 type TaskSetter interface {
 	// SetNodeTasks adds or updates node tasks
 	// Existing node tasks will be removed if not in the list of tasks

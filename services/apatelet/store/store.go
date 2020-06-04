@@ -3,10 +3,12 @@ package store
 
 import (
 	"container/heap"
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-	corev1 "k8s.io/api/core/v1"
 	"sync"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
@@ -36,10 +38,13 @@ type Store interface {
 	AddPodFlagListener(events.PodEventFlag, func(interface{}))
 }
 
+// Flags is a map from event flags to their interface value
 type Flags map[events.EventFlag]interface{}
+
 type podFlags map[string]Flags
 type podListeners map[events.EventFlag][]func(interface{})
 
+// TimeFlags contains Flags at a certain timestamp relative to the starting time of a pod
 type TimeFlags struct {
 	TimeSincePodStart time.Duration
 	Flags             Flags
@@ -132,7 +137,6 @@ func (s *store) PopTask() (*Task, error) {
 	return nil, errors.New("array in pq magically changed to a different type")
 }
 
-
 func (s *store) AddPodFlagListener(flag events.PodEventFlag, cb func(interface{})) {
 	s.podListenersLock.Lock()
 	defer s.podListenersLock.Unlock()
@@ -144,12 +148,12 @@ func (s *store) AddPodFlagListener(flag events.PodEventFlag, cb func(interface{}
 	}
 }
 
-func getPodLabelByPod(pod *corev1.Pod) string {
+func getPodLabelByPod(pod *corev1.Pod) (string, bool) {
 	label, ok := pod.Labels[podconfigv1.PodConfigurationLabel]
 	if !ok {
-		return ""
+		return "", false
 	}
-	return pod.Namespace + "/" + label
+	return pod.Namespace + "/" + label, true
 }
 
 var defaultNodeValues = map[events.EventFlag]interface{}{

@@ -146,10 +146,7 @@ func (p *Provider) podFailed(reason string) *corev1.PodStatus {
 }
 
 func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
-	limits, err := p.getPodResourceLimits(pod)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get resource limits while getting pod status")
-	}
+	limits := p.getPodResourceLimits(pod)
 
 	podResourcesFlag, err := (*p.Store).GetPodFlag(pod, events.PodResources)
 	if err != nil {
@@ -178,7 +175,7 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 	return podExceedsPodLimit || totalLimitExceeded, nil
 }
 
-func (p *Provider) getPodResourceLimits(pod *corev1.Pod) (resources, error) {
+func (p *Provider) getPodResourceLimits(pod *corev1.Pod) resources {
 	totalCPU := uint64(0)
 	totalMem := uint64(0)
 	totalEphemeralStorage := uint64(0)
@@ -194,5 +191,5 @@ func (p *Provider) getPodResourceLimits(pod *corev1.Pod) (resources, error) {
 		totalCPU,
 		totalMem,
 		totalEphemeralStorage,
-	}, nil
+	}
 }

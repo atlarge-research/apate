@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -13,14 +16,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetPodLabelByPod(t *testing.T) {
+	t.Parallel()
+
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "TestNamespace",
+			Labels: map[string]string{
+				podconfigv1.PodConfigurationLabel: "TestLabel",
+			},
+		},
+	}
+
+	label, ok := getPodLabelByPod(&pod)
+	assert.Equal(t, "TestNamespace/TestLabel", label)
+	assert.True(t, ok)
+}
+
+func TestGetPodLabelByPodApateNotFound(t *testing.T) {
+	t.Parallel()
+
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "TestNamespace",
+			Labels: map[string]string{
+				podconfigv1.PodConfigurationLabel + "xxx": "TestLabel",
+			},
+		},
+	}
+
+	label, ok := getPodLabelByPod(&pod)
+	assert.Equal(t, "", label)
+	assert.False(t, ok)
+}
+
 // TestEmptyQueue ensures the store starts with an empty queue
 func TestEmptyQueue(t *testing.T) {
 	t.Parallel()
 
-	st := NewStore()
+	newStore := NewStore()
+	st := newStore.(*store)
 
 	// Make sure the amount of tasks starts at zero
-	assert.Equal(t, 0, st.LenTasks())
+	assert.Equal(t, 0, st.queue.Len())
 
 	// Make sure both poll and get return an error
 	_, _, pollErr := st.PeekTask()
@@ -34,7 +72,8 @@ func TestGetSingleTask(t *testing.T) {
 	t.Parallel()
 
 	task := &nodeconfigv1.NodeConfigurationState{}
-	st := NewStore()
+	newStore := NewStore()
+	st := newStore.(*store)
 
 	// Enqueue single task
 	err := st.SetNodeTasks([]*Task{NewNodeTask(0, task)})
@@ -46,7 +85,7 @@ func TestGetSingleTask(t *testing.T) {
 	assert.Equal(t, NewNodeTask(0, task), retrieved)
 
 	// Also verify it was removed
-	assert.Equal(t, 0, st.LenTasks())
+	assert.Equal(t, 0, st.queue.Len())
 }
 
 // TestGetSingleTask ensures a polled task is not deleted
@@ -55,7 +94,8 @@ func TestPollSingleTask(t *testing.T) {
 
 	timestamp := time.Duration(424242)
 	task := &nodeconfigv1.NodeConfigurationState{}
-	st := NewStore()
+	newStore := NewStore()
+	st := newStore.(*store)
 
 	// Enqueue single task
 	err := st.SetNodeTasks([]*Task{NewNodeTask(timestamp, task)})
@@ -68,7 +108,7 @@ func TestPollSingleTask(t *testing.T) {
 	assert.True(t, found)
 
 	// Also verify it was not removed
-	assert.Equal(t, 1, st.LenTasks())
+	assert.Equal(t, 1, st.queue.Len())
 }
 
 // TestMultipleTasks ensures the priority queue actually sorts the tasks properly (earliest task first)
@@ -82,7 +122,8 @@ func TestMultipleTasks(t *testing.T) {
 	task2 := &nodeconfigv1.NodeConfigurationState{}
 	task3 := &nodeconfigv1.NodeConfigurationState{}
 
-	st := NewStore()
+	newStore := NewStore()
+	st := newStore.(*store)
 
 	// Enqueue tasks
 	err := st.SetNodeTasks([]*Task{
@@ -115,7 +156,7 @@ func TestMultipleTasks(t *testing.T) {
 	// Verify there is still one task left
 	lastTaskTime, found, err := st.PeekTask()
 	assert.NoError(t, err)
-	assert.Equal(t, 1, st.LenTasks())
+	assert.Equal(t, 1, st.queue.Len())
 	assert.Equal(t, task3Time, lastTaskTime)
 	assert.True(t, found)
 }
@@ -126,14 +167,15 @@ func TestArrayWithNil(t *testing.T) {
 
 	task1 := NewNodeTask(213123, &nodeconfigv1.NodeConfigurationState{})
 	task2 := NewNodeTask(4242, &nodeconfigv1.NodeConfigurationState{})
-	st := NewStore()
+	newStore := NewStore()
+	st := newStore.(*store)
 
 	// Enqueue tasks
 	err := st.SetNodeTasks([]*Task{nil, task1, task2, nil, nil})
 	assert.NoError(t, err)
 
 	// Ensure there are two tasks
-	assert.Equal(t, 2, st.LenTasks())
+	assert.Equal(t, 2, st.queue.Len())
 
 	// Peek first task, which should be task 2
 	firstTaskTime, found, err := st.PeekTask()
@@ -147,7 +189,7 @@ func TestArrayWithNil(t *testing.T) {
 	assert.Equal(t, task2, firstTask)
 
 	// Ensure task 1 is still in the queue
-	assert.Equal(t, 1, st.LenTasks())
+	assert.Equal(t, 1, st.queue.Len())
 }
 
 // TestReplaceNodeTask tests tasks are indeed replaced
@@ -157,21 +199,22 @@ func TestReplaceNodeTask(t *testing.T) {
 	task1 := NewNodeTask(213123, &nodeconfigv1.NodeConfigurationState{})
 	task2 := NewNodeTask(4242, &nodeconfigv1.NodeConfigurationState{})
 	task3 := NewNodeTask(53156, &nodeconfigv1.NodeConfigurationState{})
-	st := NewStore()
+	newStore := NewStore()
+	st := newStore.(*store)
 
 	// Enqueue tasks
 	err := st.SetNodeTasks([]*Task{nil, task1, task2, nil, nil})
 	assert.NoError(t, err)
 
 	// Ensure there are two tasks
-	assert.Equal(t, 2, st.LenTasks())
+	assert.Equal(t, 2, st.queue.Len())
 
 	// Set new tasks
 	err = st.SetNodeTasks([]*Task{task3})
 	assert.NoError(t, err)
 
 	// Ensure there is one task
-	assert.Equal(t, 1, st.LenTasks())
+	assert.Equal(t, 1, st.queue.Len())
 
 	// Peek first task, which should be task 3
 	firstTaskTime, found, err := st.PeekTask()
@@ -263,9 +306,9 @@ func TestSetNodeFlag(t *testing.T) {
 	st := NewStore()
 
 	// Set flag
-	st.SetNodeFlag(42, 15)
-	st.SetNodeFlag(42, false)
-	st.SetNodeFlag(42, "k8s")
+	st.SetNodeFlags(Flags{
+		42: "k82",
+	})
 
 	// Retrieve unset flag and verify default value and err
 	val, err := st.GetNodeFlag(42)
@@ -406,18 +449,6 @@ func testPeekAndPop(t *testing.T, st *Store, relTime time.Duration, shouldBePod 
 
 // pods
 
-// TestDefaultPodFlag ensure the default pod flags are working properly
-func TestDefaultPodFlag(t *testing.T) {
-	t.Parallel()
-
-	st := NewStore()
-
-	// Retrieve default value
-	val, err := st.GetPodFlag("", events.PodCreatePodResponse)
-	assert.Equal(t, scenario.ResponseUnset, val)
-	assert.NoError(t, err)
-}
-
 // TestUnsetPodFlag ensures the correct default value is returned for an unset flag (0), and an error is also returned
 func TestUnsetPodFlag(t *testing.T) {
 	t.Parallel()
@@ -425,7 +456,7 @@ func TestUnsetPodFlag(t *testing.T) {
 	st := NewStore()
 
 	// Retrieve unset flag and verify default value and err
-	val, err := st.GetPodFlag("a", 42)
+	val, err := st.GetPodFlag(createPodWithLabel("a", "b"), 42)
 	assert.Nil(t, val)
 	assert.Error(t, err)
 }
@@ -437,20 +468,23 @@ func TestSetPodFlag(t *testing.T) {
 	st := NewStore()
 
 	// Set flag
-	st.SetPodFlag("a", 42, 15)
-	st.SetPodFlag("a", 42, false)
-	st.SetPodFlag("b", 42, "k8s")
+	st.SetPodFlags("a/b", Flags{
+		42: false,
+	})
+	st.SetPodFlags("b/c", Flags{
+		42: "k8s",
+	})
 
 	// Retrieve unset flag and verify default value and err
-	val, err := st.GetPodFlag("a", 42)
+	val, err := st.GetPodFlag(createPodWithLabel("a", "b"), 42)
 	assert.Equal(t, false, val)
 	assert.NoError(t, err)
 
-	val, err = st.GetPodFlag("b", 42)
+	val, err = st.GetPodFlag(createPodWithLabel("b", "c"), 42)
 	assert.Equal(t, "k8s", val)
 	assert.NoError(t, err)
 
-	_, err = st.GetPodFlag("b", 44)
+	_, err = st.GetPodFlag(createPodWithLabel("b", "c"), 44)
 	assert.Error(t, err, "flag not set")
 }
 
@@ -460,37 +494,48 @@ func TestAddPodListener(t *testing.T) {
 	st := NewStore()
 
 	cb1Called := false
-	st.AddPodListener(events.PodCreatePodResponse, func(obj interface{}) {
+	st.AddPodFlagListener(events.PodCreatePodResponse, func(obj interface{}) {
 		assert.Equal(t, scenario.ResponseTimeout, obj)
 		cb1Called = true
 	})
 
 	cb2Called := false
-	st.AddPodListener(events.PodCreatePodResponse, func(obj interface{}) {
+	st.AddPodFlagListener(events.PodCreatePodResponse, func(obj interface{}) {
 		assert.Equal(t, scenario.ResponseTimeout, obj)
 		cb2Called = true
 	})
 
 	cb3Called := false
-	st.AddPodListener(events.PodUpdatePodResponse, func(obj interface{}) {
+	st.AddPodFlagListener(events.PodUpdatePodResponse, func(obj interface{}) {
 		assert.Equal(t, scenario.ResponseError, obj)
 		cb3Called = true
 	})
 
 	// Set flag
-	st.SetPodFlag("a", events.PodCreatePodResponse, scenario.ResponseTimeout)
-	st.SetPodFlag("b", events.PodUpdatePodResponse, scenario.ResponseError)
+	st.SetPodFlags("a/b", Flags{events.PodCreatePodResponse: scenario.ResponseTimeout})
+	st.SetPodFlags("b/c", Flags{events.PodUpdatePodResponse: scenario.ResponseError})
 
 	// Retrieve unset flag and verify default value and err
-	val, err := st.GetPodFlag("a", events.PodCreatePodResponse)
+	val, err := st.GetPodFlag(createPodWithLabel("a", "b"), events.PodCreatePodResponse)
 	assert.NoError(t, err)
 	assert.Equal(t, scenario.ResponseTimeout, val)
 
-	val, err = st.GetPodFlag("b", events.PodUpdatePodResponse)
+	val, err = st.GetPodFlag(createPodWithLabel("b", "c"), events.PodUpdatePodResponse)
 	assert.NoError(t, err)
 	assert.Equal(t, scenario.ResponseError, val)
 
 	assert.True(t, cb1Called)
 	assert.True(t, cb2Called)
 	assert.True(t, cb3Called)
+}
+
+func createPodWithLabel(ns string, label string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				podconfigv1.PodConfigurationLabel: label,
+			},
+			Namespace: ns,
+		},
+	}
 }

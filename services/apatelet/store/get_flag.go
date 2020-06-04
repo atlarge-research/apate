@@ -1,12 +1,15 @@
 package store
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"time"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"time"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
+// FlagGetter defines function aiding in retrieving flags
 type FlagGetter interface {
 	// GetNodeFlag returns the value of the given node flag
 	GetNodeFlag(events.NodeEventFlag) (interface{}, error)
@@ -34,8 +37,8 @@ func (s *store) GetPodFlag(pod *corev1.Pod, flag events.PodEventFlag) (interface
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
-	label := getPodLabelByPod(pod)
-	if label != "" {
+	label, ok := getPodLabelByPod(pod)
+	if ok {
 		if val, ok := s.podFlags[label][flag]; ok {
 			return val, nil
 		}
