@@ -25,7 +25,7 @@ func WatchHandler(ctx context.Context, config *kubeconfig.KubeConfig, handler *A
 
 	client.WatchResources(func(obj interface{}) {
 		go func() {
-			log.Printf("Received new node CRD on CP\n")
+			log.Printf("Received new node CRD on controlplane\n")
 
 			if err := (*handler).GetDesiredApatelets(ctx, obj.(*nodeconfigv1.NodeConfiguration)); err != nil {
 				log.Printf("error while starting apatelets %v", err)
@@ -33,7 +33,7 @@ func WatchHandler(ctx context.Context, config *kubeconfig.KubeConfig, handler *A
 		}()
 	}, func(_, obj interface{}) {
 		go func() {
-			log.Printf("Received updated node CRD on CP\n")
+			log.Printf("Received updated node CRD on controlplane\n")
 
 			if err := (*handler).GetDesiredApatelets(ctx, obj.(*nodeconfigv1.NodeConfiguration)); err != nil {
 				log.Printf("error while updating apatelets %v", err)
@@ -43,7 +43,7 @@ func WatchHandler(ctx context.Context, config *kubeconfig.KubeConfig, handler *A
 		cfg := obj.(*nodeconfigv1.NodeConfiguration)
 		cfg.Spec.Replicas = 0
 		go func() {
-			log.Printf("Received deleted node CRD on CP\n")
+			log.Printf("Received deleted node CRD on controlplane\n")
 
 			if err := (*handler).GetDesiredApatelets(ctx, cfg); err != nil {
 				log.Printf("error while stopping apatelets %v", err)

@@ -3,7 +3,6 @@ package provider
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
@@ -83,7 +82,7 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, s
 	name := baseName + "-" + res.UUID.String()
 	op.KubeConfigPath = env.KubeConfigLocation
 	op.ListenPort = int32(0)
-	op.MetricsAddr = ":" + strconv.Itoa(0)
+	op.MetricsAddr = ":0"
 	op.Provider = baseName
 	op.NodeName = name
 
