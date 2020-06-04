@@ -5,6 +5,10 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
 	root "github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/commands"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
@@ -21,7 +25,6 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -41,7 +44,7 @@ type Provider struct {
 	Stats *Stats // statistics contain static statistics
 
 	Node      *corev1.Node            // the reference to "ourselves"
-	NodeInfo  *kubernetes.NodeInfo    // static node information sent to kubernetes
+	NodeInfo  *node.Info              // static node information sent to kubernetes
 	Resources *scenario.NodeResources // static resource information sent to kubernetes
 
 	Conditions nodeConditions // a wrapper around kubernetes conditions
@@ -52,7 +55,7 @@ type VirtualKubelet struct {
 	st   *provider.Store
 	opts *opts.Opts
 
-	info *kubernetes.NodeInfo
+	info *node.Info
 }
 
 //nolint as lint does not recognise the first context is indeed the correct context
@@ -84,7 +87,7 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, s
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector)
+	nodeInfo, err := node.NewInfo("apatelet", "agent", name, k8sVersion, res.Label)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}
@@ -102,15 +105,15 @@ func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, s
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo *kubernetes.NodeInfo, store *store.Store, disableTaints bool) provider.Provider {
-	return &Provider{
+func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo *node.Info, store *store.Store, disableTaints bool) provider.Provider {
+	p := &Provider{
 		Pods:  pods,
 		Store: store,
 
 		Cfg:           cfg,
 		DisableTaints: disableTaints,
 
-		Stats: stats,
+		Stats: nodeStats,
 
 		NodeInfo:  nodeInfo,
 		Resources: resources,
@@ -124,4 +127,12 @@ func NewProvider(pods podmanager.PodManager, stats *Stats, resources *scenario.N
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
 		},
 	}
+
+	(*store).AddPodListener(events.PodResources, func(obj interface{}) {
+		p.updateStatsSummary()
+	})
+
+	p.updateStatsSummary()
+
+	return p
 }

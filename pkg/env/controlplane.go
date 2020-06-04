@@ -15,6 +15,9 @@ const (
 	// CPListenPortDefault is the default value for ControlPlaneListenPort
 	CPListenPortDefault = 8085
 
+	// CPKubeConfigDefault is the default value for KubeConfig
+	CPKubeConfigDefault = ""
+
 	// CPManagedClusterConfigLocationDefault is the default value for ManagedClusterConfigLocation
 	CPManagedClusterConfigLocationDefault = "config/kind.yml"
 
@@ -71,6 +74,10 @@ type ControlPlaneEnvironment struct {
 
 	// ManagerConfigLocation is the path to the config of the cluster manager, if applicable
 	ManagerConfigLocation string `env:"CP_MANAGER_CONFIG_LOCATION"`
+
+	// KubeConfig is the initial kubeconfig.
+	// When this is set, the managed cluster is disabled
+	KubeConfig string `env:"CP_KUBE_CONFIG"`
 	// KubeConfigLocation is the path to the kube config
 	KubeConfigLocation string `env:"CP_KUBE_CONFIG_LOCATION"`
 
@@ -100,19 +107,29 @@ var controlPlaneEnvironment *ControlPlaneEnvironment
 // DefaultControlPlaneEnvironment returns the default control plane environment
 func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 	return ControlPlaneEnvironment{
-		ListenAddress:          CPListenAddressDefault,
-		ListenPort:             CPListenPortDefault,
-		ManagerConfigLocation:  CPManagedClusterConfigLocationDefault,
-		KubeConfigLocation:     CPKubeConfigLocationDefault,
-		ExternalIP:             CPExternalIPDefault,
-		DockerPolicy:           CPDockerPolicyDefault,
-		ApateletRunType:        CPApateletRunTypeDefault,
+		ListenAddress: CPListenAddressDefault,
+		ListenPort:    CPListenPortDefault,
+
+		ExternalIP: CPExternalIPDefault,
+
+		ManagerConfigLocation: CPManagedClusterConfigLocationDefault,
+
+		KubeConfig:         CPKubeConfigDefault,
+		KubeConfigLocation: CPKubeConfigLocationDefault,
+
+		DockerPolicy:    CPDockerPolicyDefault,
+		ApateletRunType: CPApateletRunTypeDefault,
+
 		PrometheusStackEnabled: CPPrometheusStackEnabledDefault,
-		NodeCRDLocation:        CPNodeCRDLocationDefault,
-		PodCRDLocation:         CPPodCRDLocationDefault,
-		KinDClusterName:        CPKinDClusterNameDefault,
-		UseDockerHostname:      CPUseDockerHostnameDefault,
-		DebugEnabled:           CPDebugEnabledDefault,
+
+		NodeCRDLocation: CPNodeCRDLocationDefault,
+		PodCRDLocation:  CPPodCRDLocationDefault,
+
+		KinDClusterName: CPKinDClusterNameDefault,
+
+		UseDockerHostname: CPUseDockerHostnameDefault,
+
+		DebugEnabled: CPDebugEnabledDefault,
 	}
 }
 

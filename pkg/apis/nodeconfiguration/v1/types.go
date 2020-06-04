@@ -8,8 +8,11 @@ const (
 	NodeConfigurationLabel = "apate-name"
 	// NodeConfigurationLabelNamespace defines the namespace of the above label
 	NodeConfigurationLabelNamespace = "apate-namespace"
+
 	// EmulatedLabel is used by taints and node labels
 	EmulatedLabel = "emulated"
+	// EmulatedLabelValue is the value associated with the EmulatedLabel
+	EmulatedLabelValue = "yes"
 	// NodeIDLabel defines the label which can be used to get the uuid of the node
 	NodeIDLabel = "apate-uuid"
 )
@@ -37,7 +40,7 @@ type NodeConfigurationList struct {
 type NodeConfigurationSpec struct {
 	// A way to directly update the node state
 	// +kubebuilder:validation:Optional
-	NodeConfigurationState `json:"inline,omitempty"`
+	NodeConfigurationState `json:",inline,omitempty"`
 
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Required

@@ -24,5 +24,5 @@ type NodeResources struct {
 	MaxPods int64
 
 	// Identifier for type of node
-	Selector string
+	Label string
 }

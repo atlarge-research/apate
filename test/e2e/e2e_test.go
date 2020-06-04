@@ -41,6 +41,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	}
 
 	initEnv := env.ControlPlaneEnv()
+	initEnv.KubeConfigLocation = "/tmp/apate/test-" + uuid.New().String()
 	initEnv.PodCRDLocation = dir + "/config/crd/apate.opendc.org_podconfigurations.yaml"
 	initEnv.NodeCRDLocation = dir + "/config/crd/apate.opendc.org_nodeconfigurations.yaml"
 	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
@@ -138,7 +139,7 @@ func getKubeConfig(t *testing.T) *kubeconfig.KubeConfig {
 	cfg := c.stop()
 	println(cfg)
 
-	kcfg, err := kubeconfig.FromBytes([]byte(cfg), os.TempDir()+"/apate-e2e-kubeconfig-"+uuid.New().String())
+	kcfg, err := kubeconfig.FromBytes([]byte(cfg), os.TempDir()+"/apate-e2e-kubeconfig-"+uuid.New().String(), true)
 	assert.NoError(t, err)
 
 	return kcfg
@@ -164,7 +165,8 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 15)
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
 	nodes, err := cluster.GetNumberOfNodes()
@@ -203,11 +205,12 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	err = kubectl.CreateWithNameSpace([]byte(pods), kcfg, namespace)
+	err = kubectl.ExecuteWithNamespace("create", []byte(pods), kcfg, namespace)
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
 	numpods, err := cluster.GetNumberOfPods(namespace)

@@ -8,13 +8,15 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
-	api "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
@@ -22,7 +24,7 @@ import (
 )
 
 type commandLineArgs struct {
-	k8sConfigurationFileLocation string
+	kubeConfigFileLocation string
 
 	controlPlaneAddress string
 	controlPlanePort    int
@@ -68,14 +70,6 @@ func StartCmd(cmdArgs []string) {
 						Value:       defaultControlPlaneAddress,
 						Required:    false,
 					},
-					&cli.StringFlag{
-						Name:        "k8s-config",
-						Usage:       "The location of the kubernetes configuration for the resources to be created",
-						EnvVars:     []string{"K8S_CONFIG_LOCATION"},
-						Required:    false,
-						Value:       "",
-						Destination: &args.k8sConfigurationFileLocation,
-					},
 					&cli.IntFlag{
 						Name:        "port",
 						Usage:       "The port of the control plane",
@@ -107,10 +101,19 @@ func StartCmd(cmdArgs []string) {
 						Required:    false,
 					},
 					&cli.StringFlag{
-						Name:        "config",
+						Name:        "manager-location",
 						Usage:       "Manager config of cluster manager",
+						TakesFile:   true,
 						Destination: &cpEnv.ManagerConfigLocation,
 						Value:       cpEnv.ManagerConfigLocation,
+						Required:    false,
+					},
+					&cli.StringFlag{
+						Name:        "kubeconfig-location",
+						Usage:       "Location of the kubeconfig. If set, the managed cluster will be disabled",
+						TakesFile:   true,
+						Value:       args.kubeConfigFileLocation,
+						Destination: &args.kubeConfigFileLocation,
 						Required:    false,
 					},
 					&cli.StringFlag{
@@ -225,6 +228,14 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 
 	cpEnv.ApateletRunType = env.RunType(args.apateletRunType)
 
+	if len(args.kubeConfigFileLocation) != 0 {
+		bytes, err := ioutil.ReadFile(filepath.Clean(args.kubeConfigFileLocation))
+		if err != nil {
+			return errors.Wrapf(err, "failed to read kubeconfig from file at %v", args.kubeConfigFileLocation)
+		}
+		cpEnv.KubeConfig = string(bytes)
+	}
+
 	err := container.SpawnControlPlaneContainer(ctx, pp, cpEnv)
 	if err != nil {
 		return errors.Wrap(err, "couldn't spawn control plane container")
@@ -246,18 +257,6 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 }
 
 func runScenario(ctx context.Context, args *commandLineArgs) error {
-	k8sConfig, err := func() ([]byte, error) {
-		if len(args.k8sConfigurationFileLocation) > 0 {
-			// #nosec
-			k8sConfig, err := ioutil.ReadFile(args.k8sConfigurationFileLocation)
-			if err != nil {
-				return nil, errors.Wrap(err, "reading k8sconfig failed")
-			}
-			return k8sConfig, nil
-		}
-		return []byte{}, nil
-	}()
-
 	// The connectionInfo that will be used to connect to the control plane
 	info := &service.ConnectionInfo{
 		Address: args.controlPlaneAddress,
@@ -295,7 +294,7 @@ func runScenario(ctx context.Context, args *commandLineArgs) error {
 	fmt.Printf("Starting scenario ")
 
 	//Finally: actually start the scenario
-	if _, err = scenarioClient.Client.StartScenario(ctx, &api.StartScenarioConfig{ResourceConfig: k8sConfig}); err != nil {
+	if _, err = scenarioClient.Client.StartScenario(ctx, &empty.Empty{}); err != nil {
 		return errors.Wrap(err, "couldn't start scenario")
 	}
 	err = scenarioClient.Conn.Close()

@@ -25,11 +25,11 @@ import (
 
 type clusterOperationService struct {
 	store             *store.Store
-	kubernetesCluster kubernetes.Cluster
+	kubernetesCluster *kubernetes.Cluster
 }
 
 // RegisterClusterOperationService registers a new clusterOperationService with the given gRPC server
-func RegisterClusterOperationService(server *service.GRPCServer, store *store.Store, kubernetesCluster kubernetes.Cluster) {
+func RegisterClusterOperationService(server *service.GRPCServer, store *store.Store, kubernetesCluster *kubernetes.Cluster) {
 	controlplane.RegisterClusterOperationsServer(server.Server, &clusterOperationService{
 		store:             store,
 		kubernetesCluster: kubernetesCluster,
@@ -56,7 +56,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	}
 
 	// Get connection information and create node
-	node := store.NewNode(connectionInfo, nodeResources, nodeResources.Selector)
+	node := store.NewNode(connectionInfo, nodeResources, nodeResources.Label)
 
 	// Add to apate store
 	err = st.AddNode(node)
@@ -77,10 +77,10 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	}
 
 	return &controlplane.JoinInformation{
-		KubeConfig:   s.kubernetesCluster.KubeConfig.Bytes,
-		NodeUuid:     node.UUID.String(),
-		NodeSelector: nodeResources.Selector,
-		StartTime:    time,
+		KubeConfig: s.kubernetesCluster.KubeConfig.Bytes,
+		NodeUuid:   node.UUID.String(),
+		NodeLabel:  nodeResources.Label,
+		StartTime:  time,
 
 		Hardware: &controlplane.NodeHardware{
 			Memory:           nodeResources.Memory,
@@ -102,7 +102,7 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 		return nil, errors.Wrap(err, "failed to remove node from cluster")
 	}
 
-	_, _, err = cluster.RemoveNodeWithUUID(id, s.store, &s.kubernetesCluster)
+	_, _, err = cluster.RemoveNodeWithUUID(id, s.store, s.kubernetesCluster)
 	if err != nil {
 		return nil, errors.Wrap(err, "removing node with uuid during leave cluster failed")
 	}
