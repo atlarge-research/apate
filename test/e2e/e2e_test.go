@@ -94,7 +94,8 @@ func runScenario(t *testing.T) {
 		"run",
 	}
 
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	assert.NoError(t, err)
 
 	os.Stdin = r
 	go cmd.StartCmd(args)

@@ -13,7 +13,7 @@ tests definitions:
 
 test suite:
   stage: test
-  parallel: 20
+  parallel: 30
   variables:
     # CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
     # CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
