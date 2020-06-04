@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"log"
 	"os"
 	"os/exec"
 	"testing"
@@ -26,6 +27,10 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 		t.Skip("Skipping E2E")
 	}
 
+	if !enableDockerApatelets {
+		log.Println("WARNING: Docker tests disabled!")
+	}
+
 	os.Args = []string{"apate-cp"}
 
 	dir := os.Getenv("CI_PROJECT_DIR")
@@ -47,7 +52,7 @@ func teardown(t *testing.T) {
 	// #nosec
 	_ = exec.Command("sh", "-c", "docker ps --filter name=apate --format \"{{.ID}}\" | xargs docker kill").Run()
 	// #nosec
-	_ = exec.Command("sh", "-c", "docker ps -a --filter name=apate --format \"{{.ID}}\" | xargs docker rm").Run()
+	// _ = exec.Command("sh", "-c", "docker ps -a --filter name=apate --format \"{{.ID}}\" | xargs docker rm").Run()
 
 	// #nosec
 	_ = exec.Command("docker", "kill", "apate-cp").Run()

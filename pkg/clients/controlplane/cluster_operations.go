@@ -3,6 +3,7 @@ package controlplane
 
 import (
 	"context"
+	"log"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
@@ -55,6 +56,8 @@ func (c *ClusterOperationClient) JoinCluster(ctx context.Context, listenPort int
 		return nil, nil, -1, errors.Wrapf(err, "failed to parse node uuid (%v)", res.NodeUuid)
 	}
 
+	log.Println("Printing kubeconfig")
+	log.Println(string(res.KubeConfig))
 	cfg, err := kubeconfig.FromBytes(res.KubeConfig, kubeConfigPath)
 	if err != nil {
 		return nil, nil, -1, errors.Wrap(err, "failed to load kubeconfig")

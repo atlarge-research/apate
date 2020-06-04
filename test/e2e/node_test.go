@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -17,11 +18,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestSimpleNodeDeployment(t *testing.T) {
-	testSimpleNodeDeployment(t, env.Routine)
-	if enableDockerApatelets {
-		testSimpleNodeDeployment(t, env.Docker)
+func TestSimpleNodeDeploymentDocker(t *testing.T) {
+	if !enableDockerApatelets {
+		t.Skip()
 	}
+	testSimpleNodeDeployment(t, env.Docker)
+}
+
+func TestSimpleNodeDeploymentRoutine(t *testing.T) {
+	testSimpleNodeDeployment(t, env.Routine)
 }
 
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
@@ -66,21 +71,27 @@ spec:
 
 	err := kubectl.Create([]byte(rc), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(time.Second * 15)
+	log.Println("Waiting before querying k8s")
+	time.Sleep(time.Second * 60)
 
 	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
+	log.Println("Getting number of nodes from k8s")
 	nodes, err := cluster.GetNumberOfNodes()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, nodes)
 }
 
-func TestNodeFailure(t *testing.T) {
-	testNodeFailure(t, env.Routine)
-	if enableDockerApatelets {
-		testNodeFailure(t, env.Docker)
+func TestNodeFailureDocker(t *testing.T) {
+	if !enableDockerApatelets {
+		t.Skip()
 	}
+	testNodeFailure(t, env.Docker)
+}
+
+func TestNodeFailureRoutine(t *testing.T) {
+	testNodeFailure(t, env.Routine)
 }
 
 func testNodeFailure(t *testing.T, rt env.RunType) {
@@ -128,7 +139,7 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 
 	err := kubectl.Create([]byte(ncfg), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(time.Second * 15)
+	time.Sleep(time.Second * 60)
 
 	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)

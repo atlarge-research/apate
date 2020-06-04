@@ -211,6 +211,9 @@ computeCoverageReport() {
 	sed -i '/pb/d' ${sourceFile}
 	sed -i '/deepcopy/d' ${sourceFile}
 
+	# Exclude docker code from CI coverage, it is expected to be run locally
+	sed -i '/docker/d' ${sourceFile}
+
     printMessage "Generating HTML coverage report"
     go tool cover -o ${htmlReportFile} -html=${sourceFile}
     printMessage "Generating TXT coverage report"

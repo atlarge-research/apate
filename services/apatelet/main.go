@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/pkg/errors"
 
@@ -27,6 +29,21 @@ func main() {
 	environment, err := env.ApateletEnv()
 	if err != nil {
 		panicf(errors.Wrap(err, "error while creating apatelet environment"))
+	}
+
+	k8sAddr := environment.KubernetesAddress
+	if k8sAddr != "" {
+		f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+		}
+		if _, err := f.WriteString("\n" + k8sAddr + " docker"); err != nil {
+			log.Println(err)
+		}
+		f.Close()
+
+		fc, _ := ioutil.ReadFile("/etc/hosts")
+		log.Print(string(fc))
 	}
 
 	// Set the certificates to communicate with the kubelet API

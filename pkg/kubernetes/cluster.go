@@ -28,10 +28,6 @@ func ClusterFromKubeConfig(kubeConfig *kubeconfig.KubeConfig) (Cluster, error) {
 
 	clientSet, err := kubernetes.NewForConfig(restconfig)
 
-	if err != nil {
-		return Cluster{}, errors.Wrap(err, "failed to create kubernetes cluster from config")
-	}
-
 	return Cluster{
 		clientSet,
 		kubeConfig,
