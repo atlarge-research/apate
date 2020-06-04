@@ -117,6 +117,7 @@ func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res
 	// Create environment for apatelets
 	environment := env.DefaultApateletEnvironment()
 	environment.AddConnectionInfo(a.connectionInfo.Address, a.connectionInfo.Port)
+	environment.DebugEnabled = env.ControlPlaneEnv().DebugEnabled
 
 	// Start the apatelets
 	if err = a.runnerRegistry.Run(ctx, int(diff), environment); err != nil {

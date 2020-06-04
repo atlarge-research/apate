@@ -23,11 +23,9 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 )
 
-const requestLoggingEnabled = false
-
 // CreatePod takes a Kubernetes Pod and deploys it within the provider.
 func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("CreatePod %s/%s\n", pod.Namespace, pod.Name)
 	}
 
@@ -40,7 +38,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 
 // UpdatePod takes a Kubernetes Pod and updates it within the provider.
 func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("UpdatePod %s/%s\n", pod.Namespace, pod.Name)
 	}
 
@@ -85,7 +83,7 @@ func updateMap(p *Provider, pod *corev1.Pod) func() (interface{}, error) {
 
 // DeletePod takes a Kubernetes Pod and deletes it from the provider.
 func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("DeletePod %s/%s\n", pod.Namespace, pod.Name)
 	}
 
@@ -122,7 +120,7 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 // GetPod retrieves a pod by label.
 func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("GetPod %s/%s\n", namespace, name)
 	}
 	if err := ctx.Err(); err != nil {
@@ -165,7 +163,7 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("GetPodStatus for %s/%s\n", ns, name)
 	}
 
@@ -248,7 +246,7 @@ func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*c
 
 // GetPods retrieves a list of all pods running.
 func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("GetPods called\n")
 	}
 
@@ -287,7 +285,7 @@ func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
 
 // GetContainerLogs retrieves the log of a specific container.
 func (p *Provider) GetContainerLogs(_ context.Context, ns, name, _ string, _ api.ContainerLogOpts) (io.ReadCloser, error) {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("GetContainerLogs for %s/%s\n", ns, name)
 	}
 
@@ -297,7 +295,7 @@ func (p *Provider) GetContainerLogs(_ context.Context, ns, name, _ string, _ api
 
 // RunInContainer runs a command in a specific container.
 func (p *Provider) RunInContainer(_ context.Context, ns, name, _ string, _ []string, _ api.AttachIO) error {
-	if requestLoggingEnabled {
+	if p.Environment.DebugEnabled {
 		log.Printf("RunInContainer for %s/%s\n", ns, name)
 	}
 
