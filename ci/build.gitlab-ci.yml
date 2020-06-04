@@ -14,24 +14,30 @@ build:
   script:
     - go install ./...
 
-build apatelet:
+build apatelet container:
   stage: build
   image: docker:latest
+  variables:
+    DOCKER_DRIVER: overlay
   services:
     - docker:dind
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
+    - docker pull $VK_IMAGE
     - docker build -f services/apatelet/Dockerfile -t $VK_IMAGE .
     - docker push "$VK_IMAGE"
 
-build cp:
+build cp container:
   stage: build
   image: docker:latest
+  variables:
+    DOCKER_DRIVER: overlay
   services:
     - docker:dind
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
+    - docker pull $CP_IMAGE
     - docker build -f services/controlplane/Dockerfile -t $CP_IMAGE .
     - docker push "$CP_IMAGE"

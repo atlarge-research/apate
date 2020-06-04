@@ -16,10 +16,14 @@ import (
 )
 
 func TestSimplePodDeployment(t *testing.T) {
-	testSimplePodDeployment(t, env.Routine)
-	if enableDockerApatelets {
-		testSimplePodDeployment(t, env.Docker)
+	if !enableDockerApatelets {
+		t.Skip()
 	}
+	testSimplePodDeployment(t, env.Docker)
+}
+
+func TestSimplePodDeploymentRoutine(t *testing.T) {
+	testSimplePodDeployment(t, env.Routine)
 }
 
 func testSimplePodDeployment(t *testing.T, rt env.RunType) {

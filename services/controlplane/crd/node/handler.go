@@ -4,6 +4,7 @@ package node
 import (
 	"context"
 	"log"
+	"net"
 	"sync"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
@@ -107,6 +108,12 @@ func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res
 	if err != nil {
 		return errors.Wrap(err, "getting apatelet environment failed")
 	}
+
+	addr, err := net.ResolveIPAddr("ip", "docker")
+	if err != nil {
+		log.Fatalf("Resolving ip of docker failed: %v", err)
+	}
+	environment.KubernetesAddress = addr.String()
 
 	environment.AddConnectionInfo(a.connectionInfo.Address, a.connectionInfo.Port)
 

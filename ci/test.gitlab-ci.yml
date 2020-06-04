@@ -1,5 +1,5 @@
 tests definitions:
-  stage: prepare
+  stage: build
   variables:
     PARALLEL_TESTS_LIMIT: 1
   before_script:
@@ -18,7 +18,8 @@ test suite:
     # CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
     # CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
     # CP_MANAGER_CONFIG_LOCATION: "$CI_PROJECT_DIR/config/gitlab-kind.yml"
-    CP_ADDRESS: "build"
+    # CP_ADDRESS: "build"
+    # CP_EXTERNAL_IP: "build"
     CP_DOCKER_HOSTNAME: "true"
     FF_NETWORK_PER_BUILD: "true"
   services:
@@ -27,9 +28,14 @@ test suite:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - docker pull $VK_IMAGE
     - docker tag $VK_IMAGE apatelet
+    - ip a
     - source ./ci/env.sh
   script:
     - ./ci/go_test_with_coverage_report.sh execute
+  after_script:
+    - cat /etc/hosts
+    - docker ps -a
+    - docker logs apatelet-0
   artifacts:
     paths:
       - .cover/*

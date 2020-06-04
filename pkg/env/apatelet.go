@@ -43,6 +43,7 @@ type ApateletEnvironment struct {
 
 	// KubeConfigLocation is the path to the kube config
 	KubeConfigLocation string `env:"APATELET_KUBE_CONFIG"`
+	KubernetesAddress  string `env:"APATELET_K8S_ADDRESS"`
 
 	// ControlPlaneAddress is the address of the control plane which will be used to connect to
 	ControlPlaneAddress string `env:"CP_ADDRESS"`
@@ -60,6 +61,7 @@ func defaultApateletEnvironment() ApateletEnvironment {
 		MetricsPort:    ApateletMetricsPortDefault,
 
 		KubeConfigLocation: ApateletKubeConfigLocationDefault,
+		KubernetesAddress:  "",
 
 		ControlPlaneAddress: ControlPlaneAddressDefault,
 		ControlPlanePort:    ControlPlanePortDefault,
