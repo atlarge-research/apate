@@ -79,7 +79,7 @@ func setPodTasks(podCfg *podconfigv1.PodConfiguration, st *store.Store) error {
 	}
 
 	var tasks []*store.Task
-	var podTasks []*store.TimeFlags
+	var timeFlags []*store.TimeFlags
 
 	for i, task := range podCfg.Spec.Tasks {
 		state := task.State
@@ -87,10 +87,10 @@ func setPodTasks(podCfg *podconfigv1.PodConfiguration, st *store.Store) error {
 		if task.RelativeToPod {
 			flags, err := TranslatePodFlags(&state)
 			if err != nil {
-				return errors.Wrap(err, "klappe")
+				return errors.Wrap(err, "failed to translate pod state into flags")
 			}
 
-			podTasks = append(podTasks, &store.TimeFlags{
+			timeFlags = append(timeFlags, &store.TimeFlags{
 				TimeSincePodStart: durations[i],
 				Flags:             flags,
 			})
@@ -99,7 +99,7 @@ func setPodTasks(podCfg *podconfigv1.PodConfiguration, st *store.Store) error {
 		}
 	}
 
-	(*st).SetPodTimeFlags(crdLabel, podTasks)
+	(*st).SetPodTimeFlags(crdLabel, timeFlags)
 	return errors.Wrap((*st).SetPodTasks(crdLabel, tasks), "failed to set pod tasks")
 }
 

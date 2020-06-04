@@ -7,10 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/virtual-kubelet/node-cli/provider"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
@@ -22,94 +20,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager/mock_podmanager"
 )
-
-func TestGetPodLabelByPod(t *testing.T) {
-	t.Parallel()
-
-	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "TestNamespace",
-			Labels: map[string]string{
-				podconfigv1.PodConfigurationLabel: "TestLabel",
-			},
-		},
-	}
-
-	assert.Equal(t, "TestNamespace/TestLabel", getPodLabelByPod(&pod))
-}
-
-func TestGetPodLabelByPodApateNotFound(t *testing.T) {
-	t.Parallel()
-
-	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "TestNamespace",
-			Labels: map[string]string{
-				podconfigv1.PodConfigurationLabel + "xxx": "TestLabel",
-			},
-		},
-	}
-
-	assert.Equal(t, "", getPodLabelByPod(&pod))
-}
-
-func TestGetPodLabelByNameOk(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	pmm := mock_podmanager.NewMockPodManager(ctrl)
-	var pm podmanager.PodManager = pmm
-
-	prov := Provider{
-		Pods: pm,
-	}
-	name := "Apate"
-	namespace := "TestNamespace"
-
-	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "TestNamespace",
-			Labels: map[string]string{
-				podconfigv1.PodConfigurationLabel: "TestLabel",
-			},
-		},
-	}
-
-	pmm.EXPECT().GetPodByName(namespace, name).Return(&pod, true)
-
-	res := prov.getPodLabelByName(namespace, name)
-
-	assert.Equal(t, "TestNamespace/TestLabel", res)
-}
-
-func TestGetPodLabelByNameFail(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	pmm := mock_podmanager.NewMockPodManager(ctrl)
-	var pm podmanager.PodManager = pmm
-
-	prov := Provider{
-		Pods: pm,
-	}
-	name := "Apate"
-	namespace := "TestNamespace"
-
-	pmm.EXPECT().GetPodByName(namespace, name).Return(nil, false)
-
-	res := prov.getPodLabelByName(namespace, name)
-
-	assert.Equal(t, "", res)
-}
 
 func TestRunLatencyError(t *testing.T) {
 	t.Parallel()
@@ -207,33 +120,6 @@ func TestCancelContextWhileRunningLatency(t *testing.T) {
 	defer cancel()
 	_, err = p.GetPods(ctx)
 	assert.Error(t, err)
-}
-
-func TestConfigureNodeWithCreate(t *testing.T) {
-	t.Parallel()
-
-	resources := scenario.NodeResources{
-		UUID:    uuid.New(),
-		Memory:  42,
-		CPU:     1337,
-		MaxPods: 1001,
-	}
-
-	ctrl := gomock.NewController(t)
-	st := store.NewStore()
-
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, provider.InitConfig{}, kubernetes.NodeInfo{}, &st)
-
-	fakeNode := corev1.Node{}
-
-	// Run the method
-	prov.ConfigureNode(context.Background(), &fakeNode)
-
-	assert.EqualValues(t, resources.CPU, fakeNode.Status.Capacity.Cpu().Value())
-	assert.EqualValues(t, resources.Memory, fakeNode.Status.Capacity.Memory().Value())
-	assert.EqualValues(t, resources.MaxPods, fakeNode.Status.Capacity.Pods().Value())
-
-	ctrl.Finish()
 }
 
 func TestCreatePod(t *testing.T) {

@@ -1,5 +1,8 @@
 package store
 
+import "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
+// FlagSetter defines function aiding in setting flags
 type FlagSetter interface {
 	// SetNodeFlag sets the value of the given node flag
 	SetNodeFlags(Flags)
@@ -15,12 +18,16 @@ func (s *store) SetNodeFlags(flags Flags) {
 	s.nodeFlagLock.Lock()
 	defer s.nodeFlagLock.Unlock()
 
-	s.nodeFlags = flags
+	for k, v := range flags {
+		s.nodeFlags[k] = v
+	}
 }
 
 func (s *store) SetPodFlags(label string, flags Flags) {
 	s.podFlagLock.Lock()
-	s.podFlags[label] = flags
+	for k, v := range flags {
+		s.podFlags[label][k] = v
+	}
 	s.podFlagLock.Unlock()
 
 	s.podListenersLock.RLock()
@@ -35,5 +42,16 @@ func (s *store) SetPodFlags(label string, flags Flags) {
 }
 
 func (s *store) SetPodTimeFlags(label string, flags []*TimeFlags) {
+	s.podFlagLock.Lock()
+	defer s.podFlagLock.Unlock()
+
 	s.podTimeFlags[label] = flags
+
+	for pod := range s.podTimeIndexCache {
+		if pl, ok := getPodLabelByPod(pod); ok {
+			if pl == label {
+				s.podTimeIndexCache[pod] = make(map[events.EventFlag]int)
+			}
+		}
+	}
 }

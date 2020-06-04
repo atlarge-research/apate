@@ -127,7 +127,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	storage := uint64(5 * units.KiB)
 	ephStorage := uint64(100 * units.MiB)
 
-	ms.EXPECT().SetPodFlags("TestNamespace/TestName", gomock.Any()).Do(func(flags store.Flags) {
+	ms.EXPECT().SetPodFlags("TestNamespace/TestName", gomock.Any()).Do(func(_ string, flags store.Flags) {
 		assert.Equal(t, events.PodCreatePodResponse, translateResponse(podconfigv1.ResponseNormal))
 		assert.Equal(t, events.PodUpdatePodResponse, translateResponse(podconfigv1.ResponseNormal))
 		assert.Equal(t, events.PodDeletePodResponse, translateResponse(podconfigv1.ResponseNormal))

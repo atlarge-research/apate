@@ -99,15 +99,15 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		},
 	}
 
-	gomock.InOrder(
-		ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeDeletePodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodeGetPodsResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
-		ms.EXPECT().SetNodeFlag(events.NodePingResponse, translateResponse(nodeconfigv1.ResponseTimeout)),
-	)
+	ms.EXPECT().SetNodeFlags(gomock.Any()).Do(func(flags store.Flags) {
+		assert.Equal(t, events.NodeCreatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+		assert.Equal(t, events.NodeUpdatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+		assert.Equal(t, events.NodeDeletePodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+		assert.Equal(t, events.NodeGetPodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+		assert.Equal(t, events.NodeGetPodStatusResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+		assert.Equal(t, events.NodeGetPodsResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+		assert.Equal(t, events.NodePingResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+	})
 
 	ms.EXPECT().SetNodeTasks(gomock.Any()).Do(func(arr []*store.Task) {
 		// Test if the array is empty when no spec tasks are given

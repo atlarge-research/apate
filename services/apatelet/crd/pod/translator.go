@@ -16,10 +16,11 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
+// SetPodFlags sets all flags for a pod.
 func SetPodFlags(st *store.Store, label string, pt *podconfigv1.PodConfigurationState) error {
 	flags, err := TranslatePodFlags(pt)
 	if err != nil {
-		return errors.Wrap(err, "oopsie")
+		return errors.Wrap(err, "failed to translate pod state into flags")
 	}
 
 	(*st).SetPodFlags(label, flags)
@@ -27,7 +28,7 @@ func SetPodFlags(st *store.Store, label string, pt *podconfigv1.PodConfiguration
 	return nil
 }
 
-// SetPodFlags sets all flags for a pod.
+// TranslatePodFlags translates a pod configuration into a map of flags.
 func TranslatePodFlags(pt *podconfigv1.PodConfigurationState) (store.Flags, error) {
 	flags := make(store.Flags)
 	if !isResponseUnset(pt.CreatePodResponse) {

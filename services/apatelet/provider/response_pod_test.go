@@ -5,6 +5,11 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/pkg/errors"
@@ -31,9 +36,20 @@ func setup(t *testing.T) (*mock_store.MockStore, *gomock.Controller, func(podFla
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			}},
-			podName,
+			createPodWithLabel(podNamespace, podLabel),
 			podFlag,
 		)
+	}
+}
+
+func createPodWithLabel(ns string, label string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				podconfigv1.PodConfigurationLabel: label,
+			},
+			Namespace: ns,
+		},
 	}
 }
 
@@ -162,7 +178,7 @@ func TestPodTimeOut(t *testing.T) {
 			return tStr, nil
 		},
 	},
-		podName,
+		createPodWithLabel(podNamespace, podLabel),
 		events.PodCreatePodResponse,
 	)
 
@@ -200,7 +216,7 @@ func TestTimeoutMostImportant(t *testing.T) {
 			return tStr, nil
 		},
 	},
-		podName,
+		createPodWithLabel(podNamespace, podLabel),
 		podFlag,
 	)
 
