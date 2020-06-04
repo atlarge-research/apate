@@ -5,6 +5,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -23,7 +25,6 @@ import (
 	"github.com/virtual-kubelet/node-cli/opts"
 	"github.com/virtual-kubelet/node-cli/provider"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -34,15 +35,19 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	Pods      podmanager.PodManager
-	Resources *scenario.NodeResources
-	Cfg       provider.InitConfig
-	NodeInfo  kubernetes.NodeInfo
-	Store     *store.Store
-	Stats     *Stats
+	Pods  podmanager.PodManager // the pods currently used
+	Store *store.Store          // the apatelet store
 
-	Node       *corev1.Node
-	Conditions nodeConditions
+	Cfg           *provider.InitConfig // the initial provider config
+	DisableTaints bool                 // whether to disable taints
+
+	Stats *Stats // statistics contain static statistics
+
+	Node      *corev1.Node            // the reference to "ourselves"
+	NodeInfo  node.Info               // static node information sent to kubernetes
+	Resources *scenario.NodeResources // static resource information sent to kubernetes
+
+	Conditions nodeConditions // a wrapper around kubernetes conditions
 }
 
 // CreateProvider creates the node-cli (virtual kubelet) command
@@ -59,7 +64,7 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo, err := kubernetes.NewNodeInfo("apatelet", "agent", name, k8sVersion, res.Selector, metricsPort)
+	nodeInfo, err := node.NewInfo("apatelet", "agent", name, k8sVersion, res.Label, metricsPort)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}
@@ -67,7 +72,7 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 	node, err := cli.New(ctx,
 		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
 			cfg.DaemonPort = int32(k8sPort)
-			return NewProvider(podmanager.New(), NewStats(), res, cfg, nodeInfo, store), nil
+			return NewProvider(podmanager.New(), NewStats(), res, &cfg, nodeInfo, store, env.DisableTaints), nil
 		}),
 		cli.WithBaseOpts(op),
 	)
@@ -80,14 +85,19 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg provider.InitConfig, nodeInfo kubernetes.NodeInfo, store *store.Store) provider.Provider {
+func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo node.Info, store *store.Store, disableTaints bool) provider.Provider {
 	p := &Provider{
-		Pods:      pods,
-		Resources: resources,
-		Cfg:       cfg,
+		Pods:  pods,
+		Store: store,
+
+		Cfg:           cfg,
+		DisableTaints: disableTaints,
+
+		Stats: nodeStats,
+
 		NodeInfo:  nodeInfo,
-		Store:     store,
-		Stats:     nodeStats,
+		Resources: resources,
+
 		Conditions: nodeConditions{
 			ready:              condition.New(true, corev1.NodeReady),
 			outOfDisk:          condition.New(false, corev1.NodeOutOfDisk),

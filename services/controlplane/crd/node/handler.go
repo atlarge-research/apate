@@ -27,10 +27,10 @@ type ApateletHandler interface {
 	// Updates the amount of apatelets based on a given node configuration
 	GetDesiredApatelets(context.Context, *nodeconfigv1.NodeConfiguration) error
 
-	// Spawns n apatelets with resources and selector
+	// Spawns n apatelets with resources and label
 	SpawnApatelets(context.Context, int64, scenario.NodeResources, string) error
 
-	// Stops n apatelets with selector
+	// Stops n apatelets with label
 	StopApatelets(context.Context, int64, string) error
 }
 
@@ -61,10 +61,10 @@ func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconf
 		return errors.Wrap(err, "error while retrieving node resources from CRD")
 	}
 
-	selector := nodev1.GetSelector(cfg)
-	nodes, err := (*a.store).GetNodesBySelector(selector)
+	label := nodev1.GetCrdLabel(cfg)
+	nodes, err := (*a.store).GetNodesByLabel(label)
 	if err != nil {
-		return errors.Wrapf(err, "error while retrieving nodes with selector %s", nodev1.GetSelector(cfg))
+		return errors.Wrapf(err, "error while retrieving nodes with label %s", nodev1.GetCrdLabel(cfg))
 	}
 
 	current := int64(len(nodes))
@@ -72,13 +72,13 @@ func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconf
 
 	if current < desired {
 		// Not enough apatelets, spawn extra
-		err := a.SpawnApatelets(ctx, desired, res, selector)
+		err := a.SpawnApatelets(ctx, desired, res, label)
 		if err != nil {
 			return errors.Wrap(err, "error while spawning apatelets")
 		}
 	} else if current > desired {
 		// Too many apatelets, stop a few
-		err := a.StopApatelets(ctx, desired, selector)
+		err := a.StopApatelets(ctx, desired, label)
 		if err != nil {
 			return errors.Wrap(err, "error while stopping apatelets")
 		}
@@ -87,10 +87,10 @@ func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconf
 	return nil
 }
 
-func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res scenario.NodeResources, selector string) error {
-	nodes, err := (*a.store).GetNodesBySelector(selector)
+func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res scenario.NodeResources, label string) error {
+	nodes, err := (*a.store).GetNodesByLabel(label)
 	if err != nil {
-		return errors.Wrap(err, "failed getting nodes using selector")
+		return errors.Wrap(err, "failed getting nodes using label")
 	}
 
 	current := int64(len(nodes))
@@ -115,10 +115,10 @@ func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res
 	return nil
 }
 
-func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, selector string) error {
-	nodes, err := (*a.store).GetNodesBySelector(selector)
+func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, label string) error {
+	nodes, err := (*a.store).GetNodesByLabel(label)
 	if err != nil {
-		return errors.Wrapf(err, "error while retrieving nodes with selector %s\n", selector)
+		return errors.Wrapf(err, "error while retrieving nodes with label %s\n", label)
 	}
 
 	current := int64(len(nodes))

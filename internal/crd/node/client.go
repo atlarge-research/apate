@@ -25,12 +25,13 @@ const resource = "nodeconfigurations"
 // ConfigurationClient is the client for the NodeConfiguration CRD
 type ConfigurationClient struct {
 	restClient rest.Interface
+	namespace  string
 }
 
 var once sync.Once
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
-func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
+func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
 	once.Do(func() {
 		if err := nodeconfigv1.AddToScheme(scheme.Scheme); err != nil {
 			log.Panicf("%+v", errors.Wrap(err, "adding global node scheme failed"))
@@ -48,7 +49,7 @@ func NewForConfig(c *rest.Config) (*ConfigurationClient, error) {
 		return nil, errors.Wrap(err, "failed to create new node crd client for config")
 	}
 
-	return &ConfigurationClient{restClient: client}, nil
+	return &ConfigurationClient{restClient: client, namespace: namespace}, nil
 }
 
 // WatchResources creates an informer which watches for new or updated NodeConfigurations and updates the store accordingly
@@ -105,7 +106,7 @@ func (e *ConfigurationClient) watch(opts metav1.ListOptions) (watch.Interface, e
 	return wi, nil
 }
 
-// GetSelector concatenates the namespace and name to create a unique selector
-func GetSelector(cfg *nodeconfigv1.NodeConfiguration) string {
+// GetCrdLabel concatenates the namespace and name to create a unique label
+func GetCrdLabel(cfg *nodeconfigv1.NodeConfiguration) string {
 	return cfg.Namespace + "/" + cfg.Name
 }

@@ -8,6 +8,11 @@ const (
 	NodeConfigurationLabel = "apate-name"
 	// NodeConfigurationLabelNamespace defines the namespace of the above label
 	NodeConfigurationLabelNamespace = "apate-namespace"
+
+	// EmulatedLabel is used by taints and node labels
+	EmulatedLabel = "emulated"
+	// EmulatedLabelValue is the value associated with the EmulatedLabel
+	EmulatedLabelValue = "yes"
 )
 
 // NodeConfiguration is a definition of a NodeConfiguration resource
@@ -33,7 +38,7 @@ type NodeConfigurationList struct {
 type NodeConfigurationSpec struct {
 	// A way to directly update the node state
 	// +kubebuilder:validation:Optional
-	NodeConfigurationState `json:"inline,omitempty"`
+	NodeConfigurationState `json:",inline,omitempty"`
 
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Required

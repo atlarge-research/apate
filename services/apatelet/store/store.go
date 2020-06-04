@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -73,9 +75,11 @@ type store struct {
 	nodeFlags    Flags
 	nodeFlagLock sync.RWMutex
 
-	podFlags     podFlags
-	podListeners podListeners
-	podFlagLock  sync.RWMutex
+	podFlags    podFlags
+	podFlagLock sync.RWMutex
+
+	podListeners     podListeners
+	podListenersLock sync.RWMutex
 
 	podTimeFlags      podTimeFlags
 	podTimeIndexCache podTimeIndexCache
@@ -241,8 +245,10 @@ func (s *store) GetPodFlag(label string, pod *corev1.Pod, flag events.PodEventFl
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
-	if val, ok := s.podFlags[label][flag]; ok {
-		return val, nil
+	if label != "" {
+		if val, ok := s.podFlags[label][flag]; ok {
+			return val, nil
+		}
 	}
 
 	if _, ok := s.podTimeIndexCache[pod]; !ok {
@@ -284,10 +290,10 @@ func (s *store) GetPodFlag(label string, pod *corev1.Pod, flag events.PodEventFl
 
 func (s *store) SetPodFlags(label string, flags Flags) {
 	s.podFlagLock.Lock()
-	defer s.podFlagLock.Unlock()
-
 	s.podFlags[label] = flags
+	s.podFlagLock.Unlock()
 
+	s.podListenersLock.RLock()
 	for flag, val := range flags {
 		if listeners, ok := s.podListeners[flag]; ok {
 			for _, listener := range listeners {
@@ -295,11 +301,12 @@ func (s *store) SetPodFlags(label string, flags Flags) {
 			}
 		}
 	}
+	s.podListenersLock.RUnlock()
 }
 
 func (s *store) AddPodListener(flag events.PodEventFlag, cb func(interface{})) {
-	s.podFlagLock.Lock()
-	defer s.podFlagLock.Unlock()
+	s.podListenersLock.Lock()
+	defer s.podListenersLock.Unlock()
 
 	if listeners, ok := s.podListeners[flag]; ok {
 		s.podListeners[flag] = append(listeners, cb)
@@ -327,7 +334,7 @@ var defaultPodValues = map[events.PodEventFlag]interface{}{
 	events.PodGetPodResponse:       scenario.ResponseUnset,
 	events.PodGetPodStatusResponse: scenario.ResponseUnset,
 
-	events.PodResources: nil,
+	events.PodResources: &stats.PodStats{},
 
 	events.PodStatus: scenario.PodStatusUnset,
 }
