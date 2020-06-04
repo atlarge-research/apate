@@ -51,7 +51,7 @@ func checkUnhealthyApatelets(st *store.Store, cl *kubernetes.Cluster) {
 			if apate {
 				err := (*st).AddResourcesToQueue([]scenario.NodeResources{*kubelet.Resources})
 				if err != nil {
-					log.Printf("error while readding resources to queue: %v", err)
+					log.Printf("error while reading resources to queue: %v", err)
 				}
 			}
 		}

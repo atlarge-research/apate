@@ -16,10 +16,10 @@ type Info struct {
 
 // NewInfo creates a new Info
 func NewInfo(nodeType, role, name, version, label string) (Info, error) {
-	selectorParts := strings.Split(label, "/")
+	labelParts := strings.Split(label, "/")
 
-	if len(selectorParts) != 2 {
-		return Info{}, errors.Errorf("invalid selector %s", label)
+	if len(labelParts) != 2 {
+		return Info{}, errors.Errorf("invalid label %s", label)
 	}
 
 	return Info{
@@ -27,7 +27,7 @@ func NewInfo(nodeType, role, name, version, label string) (Info, error) {
 		Role:      role,
 		Name:      name,
 		Version:   version,
-		Namespace: selectorParts[0],
-		Label:     selectorParts[1],
+		Namespace: labelParts[0],
+		Label:     labelParts[1],
 	}, nil
 }
