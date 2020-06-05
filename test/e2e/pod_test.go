@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -93,58 +94,124 @@ spec:
 	assert.Equal(t, 3, numpods)
 }
 
-// func podFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-// 	ncfg := `
-// apiVersion: apate.opendc.org/v1
-// kind: NodeConfiguration
-// metadata:
-// 	name: test-node1
-// spec:
-// 	replicas: 3
-// 	resources:
-// 		memory: 5G
-// 		cpu: 1000
-// 		storage: 5T
-// 		ephemeral_storage: 120G
-// 		max_pods: 150
-// `
+func TestPodFailureDocker(t *testing.T) {
+	if !enableDockerApatelets {
+		t.Skip()
+	}
+	testPodFailure(t, env.Docker)
+}
 
-// 	pcfg := `
-// apiVersion: apate.opendc.org/v1
-// kind: PodConfiguration
-// metadata:
-// 	name: test-pod1
-// spec:
-// 	inline:
-// 		pod_status: FAILED
-// `
+func TestPodFailureRoutine(t *testing.T) {
+	testPodFailure(t, env.Routine)
+}
 
-// 	err := kubectl.Create([]byte(ncfg), kcfg)
-// 	assert.NoError(t, err)
-// 	time.Sleep(time.Second * 60)
+func testPodFailure(t *testing.T, rt env.RunType) {
+	setup(t, strings.ToLower("testPodFailure"+string(rt)), rt)
 
-// 	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
-// 	assert.NoError(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
 
-// 	// Check if everything is ready
-// 	ready, _ := getApateletWaitForCondition(t, cluster, func(apatelets []*corev1.Node) bool {
-// 		assert.Equal(t, 1, len(apatelets))
-// 		apatelet := apatelets[0]
+	go cp.StartControlPlane(ctx, runner.New())
 
-// 		for _, c := range apatelet.Status.Conditions {
-// 			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
-// 				return true
-// 			}
-// 		}
+	waitForCP(t)
 
-// 		return false
-// 	})
+	kcfg := getKubeConfig(t)
 
-// 	assert.True(t, ready)
+	// test
+	simpleNodeDeployment(t, kcfg)
+	time.Sleep(time.Second * 5)
 
-// 	// Deploy pods
+	podFailure(t, kcfg)
 
-// 	// run scenario
+	cancel()
 
-// 	// assert state
-// }
+	teardown(t)
+}
+
+func createConditionFunction(t *testing.T, numapatelets int, status corev1.ConditionStatus) func([]*corev1.Node) bool {
+	return func(apatelets []*corev1.Node) bool {
+		assert.Equal(t, numapatelets, len(apatelets))
+
+		for _, apatelet := range apatelets {
+			for _, c := range apatelet.Status.Conditions {
+				if c.Type == corev1.NodeReady && c.Status == status {
+					return true
+				}
+			}
+		}
+
+		return false
+	}
+}
+
+func podFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
+	pcfg := `
+apiVersion: apate.opendc.org/v1
+kind: PodConfiguration
+metadata:
+  name: test-pod1
+spec:
+  inline:
+    pod_status: FAILED
+`
+
+	// Create pod CRDs
+	err := kubectl.Create([]byte(pcfg), kcfg)
+	assert.NoError(t, err)
+	time.Sleep(time.Second * 60)
+
+	// Get cluster object
+	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	assert.NoError(t, err)
+
+	// Check if everything is ready
+	ready, _ := getApateletWaitForCondition(t, cluster, 2, createConditionFunction(t, 2, corev1.ConditionTrue))
+
+	assert.True(t, ready)
+
+	// Deploy pods
+	deployment := `
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: nginx-deployment3
+    labels:
+      app: nginx
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: nginx
+    template:
+      metadata:
+        labels:
+          app: nginx
+          apate: test-pod1
+      spec:
+        containers:
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+          - containerPort: 80
+`
+	err = kubectl.Create([]byte(deployment), kcfg)
+	assert.NoError(t, err)
+	time.Sleep(time.Second * 5)
+
+	// assert state
+	pods, err := cluster.GetPods("default")
+	assert.NoError(t, err)
+
+	numFailed := 0
+
+	for _, pod := range pods.Items {
+		if strings.HasPrefix(pod.Name, "nginx-deployment3") {
+			for _, cond := range pod.Status.Conditions {
+				if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionFalse {
+					numFailed++
+				}
+			}
+		}
+	}
+
+	assert.GreaterOrEqual(t, 1, numFailed)
+}
