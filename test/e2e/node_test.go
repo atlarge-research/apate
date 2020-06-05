@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"testing"
@@ -108,7 +109,7 @@ func testNodeFailure(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 	time.Sleep(time.Second * 5)
 
-	// Test simple deployment
+	// Test node failure
 	nodeFailure(t, kcfg)
 
 	cancel()
@@ -117,13 +118,15 @@ func testNodeFailure(t *testing.T, rt env.RunType) {
 }
 
 func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-	ncfg := `
+	num := 3
+
+	ncfg := fmt.Sprintf(`
     apiVersion: apate.opendc.org/v1
     kind: NodeConfiguration
     metadata:
         name: test-deployment1
     spec:
-        replicas: 1
+        replicas: %d
         resources:
             memory: 5G
             cpu: 1000
@@ -134,7 +137,7 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
             - timestamp: 10s
               state:
                   node_failed: true
-`
+`, num)
 
 	err := kubectl.Create([]byte(ncfg), kcfg)
 	assert.NoError(t, err)
@@ -144,18 +147,7 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.NoError(t, err)
 
 	// Check if everything is ready
-	ready, apatelets := getApateletWaitForCondition(t, cluster, func(apatelets []*corev1.Node) bool {
-		assert.Equal(t, 1, len(apatelets))
-		apatelet := apatelets[0]
-
-		for _, c := range apatelet.Status.Conditions {
-			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
-				return true
-			}
-		}
-
-		return false
-	})
+	ready, apatelets := getApateletWaitForCondition(t, cluster, num, createConditionFunction(t, num, corev1.ConditionTrue))
 
 	assert.True(t, ready)
 
@@ -180,30 +172,19 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	// Check if they stopped
 	runScenario(t)
 
-	stopped, _ := getApateletWaitForCondition(t, cluster, func(apatelets []*corev1.Node) bool {
-		assert.Equal(t, 1, len(apatelets))
-		apatelet := apatelets[0]
-
-		for _, c := range apatelet.Status.Conditions {
-			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionUnknown {
-				return true
-			}
-		}
-
-		return false
-	})
+	stopped, _ := getApateletWaitForCondition(t, cluster, num, createConditionFunction(t, num, corev1.ConditionUnknown))
 	assert.True(t, stopped)
 }
 
-func getApateletWaitForCondition(t *testing.T, cluster kubernetes.Cluster, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
+func getApateletWaitForCondition(t *testing.T, cluster kubernetes.Cluster, numApatelets int, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
 	for i := 0; i <= 10; i++ {
 		// get nodes and check that there are 2
 		nodes, err := cluster.GetNodes()
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(nodes.Items))
+		assert.Equal(t, numApatelets+1, len(nodes.Items))
 
-		apatelets := getApatelets(t, nodes)
-		assert.Equal(t, 1, len(apatelets))
+		apatelets := getApatelets(nodes)
+		assert.Equal(t, numApatelets, len(apatelets))
 
 		if check(apatelets) {
 			return true, apatelets
@@ -215,7 +196,7 @@ func getApateletWaitForCondition(t *testing.T, cluster kubernetes.Cluster, check
 	return false, nil
 }
 
-func getApatelets(t *testing.T, nodes *corev1.NodeList) (node []*corev1.Node) {
+func getApatelets(nodes *corev1.NodeList) (node []*corev1.Node) {
 	for _, v := range nodes.Items {
 		v := v
 		if strings.HasPrefix(v.Name, "apatelet-") {
