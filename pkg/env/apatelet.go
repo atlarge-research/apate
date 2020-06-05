@@ -22,11 +22,14 @@ const (
 	// ApateletKubeConfigLocationDefault is the default value for KubeConfigLocation
 	ApateletKubeConfigLocationDefault = "/tmp/apate/config"
 
-	// ControlPlaneAddressDefault is the default for ControlPlaneAddress
-	ControlPlaneAddressDefault = "localhost"
+	// ApateletControlPlaneAddressDefault is the default for ControlPlaneAddress
+	ApateletControlPlaneAddressDefault = "localhost"
 
-	// ControlPlanePortDefault is the default for ControlPlanePort
-	ControlPlanePortDefault = CPListenPortDefault
+	// ApateletControlPlanePortDefault is the default for ControlPlanePort
+	ApateletControlPlanePortDefault = CPListenPortDefault
+
+	// ApateletDisableTaintsDefault is the default for DisableTaints
+	ApateletDisableTaintsDefault = false
 )
 
 // ApateletEnvironment represents the environment variables of the apatelet
@@ -46,9 +49,12 @@ type ApateletEnvironment struct {
 	KubernetesAddress  string `env:"APATELET_K8S_ADDRESS"`
 
 	// ControlPlaneAddress is the address of the control plane which will be used to connect to
-	ControlPlaneAddress string `env:"CP_ADDRESS"`
+	ControlPlaneAddress string `env:"APATELET_CP_ADDRESS"`
 	// ControlPlanePort is the port of the control plane
-	ControlPlanePort int `env:"CP_PORT"`
+	ControlPlanePort int `env:"APATELET_CP_PORT"`
+
+	// DisableTaints determines whether to disable taints on this node or not
+	DisableTaints bool `env:"APATELET_DISABLE_TAINTS"`
 }
 
 // defaultApateletEnvironment returns the default apate environment
@@ -63,8 +69,10 @@ func defaultApateletEnvironment() ApateletEnvironment {
 		KubeConfigLocation: ApateletKubeConfigLocationDefault,
 		KubernetesAddress:  "",
 
-		ControlPlaneAddress: ControlPlaneAddressDefault,
-		ControlPlanePort:    ControlPlanePortDefault,
+		ControlPlaneAddress: ApateletControlPlaneAddressDefault,
+		ControlPlanePort:    ApateletControlPlanePortDefault,
+
+		DisableTaints: ApateletDisableTaintsDefault,
 	}
 }
 

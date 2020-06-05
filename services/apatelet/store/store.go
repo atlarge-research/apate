@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -46,10 +48,14 @@ type Store interface {
 
 	// SetNodeFlag sets the value of the given pod flag for a configuration
 	SetPodFlag(string, events.PodEventFlag, interface{})
+
+	// AddPodListener adds a listener which is called when the given flag is updated
+	AddPodListener(events.PodEventFlag, func(interface{}))
 }
 
 type flags map[events.EventFlag]interface{}
 type podFlags map[string]flags
+type podListeners map[events.EventFlag][]func(interface{})
 
 type store struct {
 	queue     *taskQueue
@@ -60,6 +66,9 @@ type store struct {
 
 	podFlags    podFlags
 	podFlagLock sync.RWMutex
+
+	podListeners     podListeners
+	podListenersLock sync.RWMutex
 }
 
 // NewStore returns an empty store
@@ -68,9 +77,10 @@ func NewStore() Store {
 	heap.Init(q)
 
 	return &store{
-		queue:     q,
-		nodeFlags: make(flags),
-		podFlags:  make(podFlags),
+		queue:        q,
+		nodeFlags:    make(flags),
+		podListeners: make(podListeners),
+		podFlags:     make(podFlags),
 	}
 }
 
@@ -214,10 +224,13 @@ func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{},
 	s.podFlagLock.Lock()
 	defer s.podFlagLock.Unlock()
 
-	if val, ok := s.podFlags[label][flag]; ok {
-		return val, nil
+	if label != "" {
+		if val, ok := s.podFlags[label][flag]; ok {
+			return val, nil
+		}
 	}
 
+	// If the label is empty or the flag is not set, just return the default
 	if dv, ok := defaultPodValues[flag]; ok {
 		return dv, nil
 	}
@@ -227,38 +240,54 @@ func (s *store) GetPodFlag(label string, flag events.PodEventFlag) (interface{},
 
 func (s *store) SetPodFlag(label string, flag events.PodEventFlag, val interface{}) {
 	s.podFlagLock.Lock()
-	defer s.podFlagLock.Unlock()
-
 	if conf, ok := s.podFlags[label]; ok {
 		conf[flag] = val
 	} else {
 		s.podFlags[label] = make(flags)
 		s.podFlags[label][flag] = val
 	}
+	s.podFlagLock.Unlock()
+
+	s.podListenersLock.RLock()
+	if listeners, ok := s.podListeners[flag]; ok {
+		for _, listener := range listeners {
+			listener(val)
+		}
+	}
+	s.podListenersLock.RUnlock()
+}
+
+func (s *store) AddPodListener(flag events.PodEventFlag, cb func(interface{})) {
+	s.podListenersLock.Lock()
+	defer s.podListenersLock.Unlock()
+
+	if listeners, ok := s.podListeners[flag]; ok {
+		s.podListeners[flag] = append(listeners, cb)
+	} else {
+		s.podListeners[flag] = []func(interface{}){cb}
+	}
 }
 
 var defaultNodeValues = map[events.EventFlag]interface{}{
-	events.NodeCreatePodResponse:    scenario.ResponseNormal,
-	events.NodeUpdatePodResponse:    scenario.ResponseNormal,
-	events.NodeDeletePodResponse:    scenario.ResponseNormal,
-	events.NodeGetPodResponse:       scenario.ResponseNormal,
-	events.NodeGetPodStatusResponse: scenario.ResponseNormal,
-	events.NodeGetPodsResponse:      scenario.ResponseNormal,
-	events.NodePingResponse:         scenario.ResponseNormal,
+	events.NodeCreatePodResponse:    scenario.ResponseUnset,
+	events.NodeUpdatePodResponse:    scenario.ResponseUnset,
+	events.NodeDeletePodResponse:    scenario.ResponseUnset,
+	events.NodeGetPodResponse:       scenario.ResponseUnset,
+	events.NodeGetPodStatusResponse: scenario.ResponseUnset,
+	events.NodeGetPodsResponse:      scenario.ResponseUnset,
+	events.NodePingResponse:         scenario.ResponseUnset,
 
 	events.NodeAddedLatency: time.Duration(0),
 }
 
 var defaultPodValues = map[events.PodEventFlag]interface{}{
-	// Default is unset because then if no option is set we fall back to a node wide response
-
 	events.PodCreatePodResponse:    scenario.ResponseUnset,
 	events.PodUpdatePodResponse:    scenario.ResponseUnset,
 	events.PodDeletePodResponse:    scenario.ResponseUnset,
 	events.PodGetPodResponse:       scenario.ResponseUnset,
 	events.PodGetPodStatusResponse: scenario.ResponseUnset,
 
-	events.PodResources: nil,
+	events.PodResources: &stats.PodStats{},
 
 	events.PodStatus: scenario.PodStatusUnset,
 }
