@@ -22,10 +22,10 @@ build apatelet container:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
-    - docker pull $VK_IMAGE
-    - docker build -f services/apatelet/Dockerfile -t $VK_IMAGE .
+    - docker pull $VK_IMAGE || true
+    - docker build --cache-from $VK_IMAGE -f services/apatelet/Dockerfile -t $VK_IMAGE .
     - docker push "$VK_IMAGE"
 
 build cp container:
@@ -36,8 +36,8 @@ build cp container:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
-    - docker pull $CP_IMAGE
-    - docker build -f services/controlplane/Dockerfile -t $CP_IMAGE .
+    - docker pull $CP_IMAGE || true
+    - docker build --cache-from $CP_IMAGE -f services/controlplane/Dockerfile -t $CP_IMAGE .
     - docker push "$CP_IMAGE"
