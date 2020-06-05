@@ -153,8 +153,7 @@ kind: PodConfiguration
 metadata:
   name: test-pod1
 spec:
-  inline:
-    pod_status: FAILED
+  pod_status: FAILED
 `
 
 	// Create pod CRDs
