@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/phayes/freeport"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -15,7 +16,7 @@ import (
 type RoutineRunner struct{}
 
 // SpawnApatelets spawns apatelets using go routines
-func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, environment env.ApateletEnvironment) error {
+func (d *RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, environment env.ApateletEnvironment) error {
 	if err := apateRun.SetCerts(); err != nil {
 		return errors.Wrap(err, "failed to set certificates")
 	}
@@ -26,9 +27,9 @@ func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, en
 
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
+
 		const numports = 3
 		ports, err := freeport.GetFreePorts(numports)
-
 		if err != nil {
 			return errors.Wrapf(err, "failed to get %v free ports", numports)
 		}
@@ -42,11 +43,13 @@ func (d RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, en
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("Apatelet failed to start: %v\n", r)
+					readyCh <- struct{}{} // Just continue to next one. Don't retry, as the resources may have been removed from the queue already
 				}
 			}()
 			err := apateRun.StartApatelet(ctx, apateletEnv, readyCh)
 			if err != nil {
 				log.Printf("Apatelet failed to start: %v\n", err)
+				readyCh <- struct{}{}
 			}
 		}()
 

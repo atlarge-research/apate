@@ -82,7 +82,7 @@ func getKubeConfig(t *testing.T) *kubeconfig.KubeConfig {
 	cfg := c.stop()
 	println(cfg)
 
-	kcfg, err := kubeconfig.FromBytes([]byte(cfg), os.TempDir()+"/apate-e2e-kubeconfig-"+uuid.New().String())
+	kcfg, err := kubeconfig.FromBytes([]byte(cfg), os.TempDir()+"/apate-e2e-kubeconfig-"+uuid.New().String(), true)
 	assert.NoError(t, err)
 
 	return kcfg

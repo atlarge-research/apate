@@ -82,11 +82,14 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	err = kubectl.CreateWithNameSpace([]byte(pods), kcfg, namespace)
+	err = kubectl.CreateWithNamespace([]byte(pods), kcfg, namespace)
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	// TODO: Is this correct?
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+
 	assert.NoError(t, err)
 
 	numpods, err := cluster.GetNumberOfPods(namespace)
@@ -160,7 +163,10 @@ spec:
 	time.Sleep(time.Second * 60)
 
 	// Get cluster object
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	// TODO: Is this correct?
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+
 	assert.NoError(t, err)
 
 	// Check if everything is ready

@@ -18,7 +18,7 @@ func WatchHandler(ctx context.Context, config *kubeconfig.KubeConfig, handler *A
 		return errors.Wrap(err, "couldn't get kubeconfig for node informer")
 	}
 
-	client, err := node.NewForConfig(cfg)
+	client, err := node.NewForConfig(cfg, "default")
 	if err != nil {
 		return errors.Wrap(err, "couldn't create node client from config")
 	}

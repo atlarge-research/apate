@@ -50,7 +50,7 @@ func TestGetPodLabelByPodApateNotFound(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "TestNamespace/", getPodLabelByPod(&pod))
+	assert.Equal(t, "", getPodLabelByPod(&pod))
 }
 
 func TestGetPodLabelByNameOk(t *testing.T) {

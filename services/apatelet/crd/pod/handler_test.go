@@ -27,7 +27,7 @@ func TestGetCRDAndLabel(t *testing.T) {
 		},
 	}
 
-	lbl := getCRDAndLabel(&ep)
+	lbl := getCrdLabel(&ep)
 
 	assert.Equal(t, lbl, "TestNamespace/TestName")
 }

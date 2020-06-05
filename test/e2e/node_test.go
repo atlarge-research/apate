@@ -75,7 +75,9 @@ spec:
 	log.Println("Waiting before querying k8s")
 	time.Sleep(time.Second * 60)
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	// TODO: Is this correct?
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
 	log.Println("Getting number of nodes from k8s")
@@ -143,7 +145,10 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 60)
 
-	cluster, err := kubernetes.ClusterFromKubeConfig(kcfg)
+	// TODO: Is this correct?
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+
 	assert.NoError(t, err)
 
 	// Check if everything is ready
@@ -176,7 +181,7 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.True(t, stopped)
 }
 
-func getApateletWaitForCondition(t *testing.T, cluster kubernetes.Cluster, numApatelets int, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
+func getApateletWaitForCondition(t *testing.T, cluster *kubernetes.Cluster, numApatelets int, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
 	for i := 0; i <= 10; i++ {
 		// get nodes and check that there are 2
 		nodes, err := cluster.GetNodes()
