@@ -135,6 +135,8 @@ prepareTestCommands() {
 	for i in ${!out[@]}; do
 		echo ${out[i]} >> ${testsDefinitions}
 	done
+
+    sed -i '/^$/d' ${testsDefinitions} 
 }
 
 executeTestCommand() {

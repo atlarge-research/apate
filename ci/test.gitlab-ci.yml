@@ -26,14 +26,9 @@ test suite:
     - docker:dind
   before_script:
     - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
-    - ip a
-    - source ./ci/env.sh
   script:
+    - source ./ci/env.sh
     - ./ci/go_test_with_coverage_report.sh execute
-  after_script:
-    - cat /etc/hosts
-    - docker ps -a
-    - docker logs apatelet-0
   artifacts:
     paths:
       - .cover/*
@@ -46,9 +41,8 @@ test coverage report:
   coverage: /regular total:\s+\(statements\)\s+\d+.\d+\%/
   # needs:
   #   - unit test
-  before_script:
-    - source ./ci/env.sh
   script:
+    - source ./ci/env.sh
     - ./ci/go_test_with_coverage_report.sh coverage
   artifacts:
     paths:
@@ -63,26 +57,3 @@ race:
     - go mod download
   script: # Test for race conditions in small tests as race condition testing is slow
     - go test -race -short ./...
-
-# test:
-#   stage: test
-#   needs: [build]
-#   allow_failure: true
-#   variables:
-#     CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
-#     CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
-#     CP_MANAGER_CONFIG_LOCATION: "$CI_PROJECT_DIR/config/gitlab-kind.yml"
-#     CP_DOCKER_HOSTNAME: "true"
-#   services:
-#     - docker:dind
-#   coverage: /^total:.+\)\s+(\d+.?\d*)%$/
-#   before_script:
-#     - go mod download
-#   script:
-#     - go test -v -p 24 -covermode=atomic -coverprofile=cover.cov ./... 2>&1 | go-junit-report > report.xml
-#     - go tool cover -func=cover.cov
-#   artifacts:
-#     reports:
-#       junit: report.xml
-#     paths:
-#       - cover.cov
