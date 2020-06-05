@@ -41,7 +41,7 @@ func (s *clusterOperationService) JoinCluster(ctx context.Context, info *control
 	// Get connection information
 	p, _ := peer.FromContext(ctx)
 	addr := p.Addr.(*net.TCPAddr)
-	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), int(info.Port), false)
+	connectionInfo := *service.NewConnectionInfo(addr.IP.String(), int(info.Port))
 	log.Printf("Received request to join apate store from %s\n", connectionInfo.Address)
 
 	// Retrieve node resources
@@ -102,9 +102,9 @@ func (s *clusterOperationService) LeaveCluster(_ context.Context, leaveInformati
 		return nil, errors.Wrap(err, "failed to remove node from cluster")
 	}
 
-	err = cluster.RemoveNodeWithUUID(id, s.store, s.kubernetesCluster)
+	_, _, err = cluster.RemoveNodeWithUUID(id, s.store, s.kubernetesCluster)
 	if err != nil {
-		return nil, errors.Wrap(err, "removing node with uuid during leave cluster failed")
+		return nil, errors.Wrapf(err, "removing node with uuid %v during leave cluster failed", id)
 	}
 
 	return &empty.Empty{}, nil

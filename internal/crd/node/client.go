@@ -4,12 +4,12 @@ package node
 import (
 	"log"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-
-	"time"
+	"k8s.io/client-go/tools/cache"
 
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 
@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 )
 
 const resource = "nodeconfigurations"
@@ -25,14 +24,28 @@ const resource = "nodeconfigurations"
 // ConfigurationClient is the client for the NodeConfiguration CRD
 type ConfigurationClient struct {
 	restClient rest.Interface
+	restConfig rest.Config
 	namespace  string
 }
 
-var once sync.Once
+type nodeClient struct {
+	schemeLock         sync.Once
+	sharedInformerLock sync.Once
+	sharedInformer     *cache.SharedIndexInformer
+}
+
+var client nodeClient
+
+// Reset will reset the sharedInformerLock, resulting in a new informer being created the next time resources are
+// being watched. This is mostly for tests.
+// Warning: Calling this during normal runtime will result in unpredictable behaviour, and possibly memory + routine leaks
+func Reset() {
+	client.sharedInformerLock = sync.Once{}
+}
 
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
-	once.Do(func() {
+	client.schemeLock.Do(func() {
 		if err := nodeconfigv1.AddToScheme(scheme.Scheme); err != nil {
 			log.Panicf("%+v", errors.Wrap(err, "adding global node scheme failed"))
 		}
@@ -49,29 +62,34 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 		return nil, errors.Wrap(err, "failed to create new node crd client for config")
 	}
 
-	return &ConfigurationClient{restClient: client, namespace: namespace}, nil
+	return &ConfigurationClient{restClient: client, restConfig: config, namespace: namespace}, nil
 }
 
 // WatchResources creates an informer which watches for new or updated NodeConfigurations and updates the store accordingly
 // This will also trigger the creation and removal of nodes when applicable
 func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
-	_, nodeConfigurationController := cache.NewInformer(
-		&cache.ListWatch{
-			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-				return e.list(lo)
+	client.sharedInformerLock.Do(func() {
+		informer := cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
+					return e.list(lo)
+				},
+				WatchFunc: e.watch,
 			},
-			WatchFunc: e.watch,
-		},
-		&nodeconfigv1.NodeConfiguration{},
-		1*time.Minute,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc:    addFunc,
-			UpdateFunc: updateFunc,
-			DeleteFunc: deleteFunc,
-		},
-	)
+			&nodeconfigv1.NodeConfiguration{},
+			time.Minute,
+			cache.Indexers{},
+		)
 
-	go nodeConfigurationController.Run(stopCh)
+		client.sharedInformer = &informer
+		go informer.Run(stopCh)
+	})
+
+	(*client.sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
+		AddFunc:    addFunc,
+		UpdateFunc: updateFunc,
+		DeleteFunc: deleteFunc,
+	}, time.Minute)
 }
 
 func (e *ConfigurationClient) list(opts metav1.ListOptions) (*nodeconfigv1.NodeConfigurationList, error) {

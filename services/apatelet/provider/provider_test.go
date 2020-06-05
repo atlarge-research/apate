@@ -5,15 +5,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/virtual-kubelet/node-cli/provider"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,7 +46,7 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
 
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, node.Info{}, &st, true)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, &node.Info{}, &st, true, env.DefaultApateletEnvironment())
 
 	fakeNode := corev1.Node{}
 
@@ -299,6 +302,7 @@ func TestGetPodStatus(t *testing.T) {
 			Memory:           1000,
 			EphemeralStorage: 1000,
 		},
+		NodeInfo: &node.Info{},
 		Stats: &Stats{
 			statsSummary: &stats.Summary{},
 		},
@@ -366,6 +370,7 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 	prov := Provider{
 		Store:     &s,
 		Pods:      podmanager.New(),
+		NodeInfo:  &node.Info{},
 		Resources: &scenario.NodeResources{},
 		Stats: &Stats{
 			statsSummary: &stats.Summary{},
@@ -391,7 +396,7 @@ func TestNewProvider(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	pm := podmanager.New()
-	stats := NewStats()
+	sts := NewStats()
 	resources := scenario.NodeResources{
 		UUID:             uuid.New(),
 		Memory:           0,
@@ -403,14 +408,14 @@ func TestNewProvider(t *testing.T) {
 	}
 
 	cfg := provider.InitConfig{}
-	ni, err := node.NewInfo("a", "b", "c", "d", "e/f", 4242)
+	ni, err := node.NewInfo("a", "b", "c", "d", "e/f")
 	assert.NoError(t, err)
 
 	var s store.Store = ms
 
 	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	p, ok := NewProvider(pm, stats, &resources, &cfg, ni, &s, true).(*Provider)
+	p, ok := NewProvider(pm, sts, &resources, &cfg, &ni, &s, true, env.DefaultApateletEnvironment()).(*Provider)
 
 	assert.True(t, ok)
 

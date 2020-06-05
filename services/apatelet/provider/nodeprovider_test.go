@@ -7,13 +7,14 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
+
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/virtual-kubelet/node-cli/provider"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +87,7 @@ func TestConfigureNode(t *testing.T) {
 	prov := Provider{
 		Pods:  pm,
 		Store: &st,
-		NodeInfo: node.Info{
+		NodeInfo: &node.Info{
 			NodeType:    "apate",
 			Role:        "worker",
 			Name:        "apate-x",
@@ -146,6 +147,7 @@ func TestConfigureNode(t *testing.T) {
 			nodeconfigv1.EmulatedLabel:                   "yes",
 			nodeconfigv1.NodeConfigurationLabel:          "apate",
 			nodeconfigv1.NodeConfigurationLabelNamespace: "my",
+			nodeconfigv1.NodeIDLabel:                     u.String(),
 		},
 	}, newNode.ObjectMeta)
 
@@ -304,6 +306,15 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 			EphemeralStorage: 2048,
 			MaxPods:          42,
 			Label:            "my/apate",
+		},
+		NodeInfo: &node.Info{
+			NodeType:    "",
+			Role:        "",
+			Name:        "",
+			Version:     "",
+			Namespace:   "",
+			Label:       "",
+			MetricsPort: 0,
 		},
 		Stats: NewStats(),
 		Conditions: nodeConditions{

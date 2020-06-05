@@ -1,10 +1,10 @@
 package health
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health/mock_health"
-
-	"github.com/pkg/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -34,6 +34,7 @@ func TestHealthClient(t *testing.T) {
 	// Set expectations
 	mClient.EXPECT().HealthStream(gomock.Any()).Return(mStream, nil)
 
+	mStream.EXPECT().CloseSend().AnyTimes()
 	mStream.EXPECT().Send(gomock.Eq(&health.NodeStatus{
 		NodeUuid: tuuid,
 		Status:   tstatus,
@@ -49,8 +50,9 @@ func TestHealthClient(t *testing.T) {
 		uuid:   tuuid,
 	}
 
-	c.StartStream(ctx, func(r error) {
+	c.StartStream(ctx, func(r error) bool {
 		cancel()
+		return true
 	})
 	time.Sleep(time.Second)
 }
