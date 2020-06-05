@@ -3,11 +3,14 @@ package provider
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
+	root "github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/commands"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
@@ -21,10 +24,6 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
 
-	cli "github.com/virtual-kubelet/node-cli"
-	"github.com/virtual-kubelet/node-cli/opts"
-	"github.com/virtual-kubelet/node-cli/provider"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
@@ -35,8 +34,9 @@ var (
 
 // Provider implements the node-cli (virtual kubelet) interface for a virtual kubelet provider
 type Provider struct {
-	Pods  podmanager.PodManager // the pods currently used
-	Store *store.Store          // the apatelet store
+	Pods        podmanager.PodManager // the pods currently used
+	Store       *store.Store          // the apatelet store
+	Environment env.ApateletEnvironment
 
 	Cfg           *provider.InitConfig // the initial provider config
 	DisableTaints bool                 // whether to disable taints
@@ -44,14 +44,37 @@ type Provider struct {
 	Stats *Stats // statistics contain static statistics
 
 	Node      *corev1.Node            // the reference to "ourselves"
-	NodeInfo  node.Info               // static node information sent to kubernetes
+	NodeInfo  *node.Info              // static node information sent to kubernetes
 	Resources *scenario.NodeResources // static resource information sent to kubernetes
 
 	Conditions nodeConditions // a wrapper around kubernetes conditions
 }
 
+// VirtualKubelet is a struct containing everything needed to start virtual kubelet
+type VirtualKubelet struct {
+	st   *provider.Store
+	opts *opts.Opts
+
+	info *node.Info
+}
+
+//nolint as lint does not recognise the first context is indeed the correct context
+// Run starts the virtual kubelet
+func (vk *VirtualKubelet) Run(ctx context.Context, originalCtx context.Context) (int, int, error) {
+	metricsPort, k8sPort, err := root.RunRootCommand(originalCtx, ctx, vk.st, vk.opts)
+
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "error while running virtual kubelet")
+	}
+
+	// Update metrics port
+	vk.info.MetricsPort = metricsPort
+
+	return metricsPort, k8sPort, nil
+}
+
 // CreateProvider creates the node-cli (virtual kubelet) command
-func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scenario.NodeResources, k8sPort int, metricsPort int, store *store.Store) (*cli.Command, error) {
+func CreateProvider(env *env.ApateletEnvironment, res *scenario.NodeResources, store *store.Store) (*VirtualKubelet, error) {
 	op, err := opts.FromEnv()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get options from env")
@@ -59,36 +82,34 @@ func CreateProvider(ctx context.Context, env *env.ApateletEnvironment, res *scen
 
 	name := baseName + "-" + res.UUID.String()
 	op.KubeConfigPath = env.KubeConfigLocation
-	op.ListenPort = int32(k8sPort)
-	op.MetricsAddr = ":" + strconv.Itoa(metricsPort)
+	op.ListenPort = int32(0)
+	op.MetricsAddr = ":0"
 	op.Provider = baseName
 	op.NodeName = name
 
-	nodeInfo, err := node.NewInfo("apatelet", "agent", name, k8sVersion, res.Label, metricsPort)
+	nodeInfo, err := node.NewInfo("apatelet", "agent", name, k8sVersion, res.Label)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes node info")
 	}
 
-	node, err := cli.New(ctx,
-		cli.WithProvider(baseName, func(cfg provider.InitConfig) (provider.Provider, error) {
-			cfg.DaemonPort = int32(k8sPort)
-			return NewProvider(podmanager.New(), NewStats(), res, &cfg, nodeInfo, store, env.DisableTaints), nil
-		}),
-		cli.WithBaseOpts(op),
-	)
+	providerStore := provider.NewStore()
+	providerStore.Register(baseName, func(cfg *provider.InitConfig) (provider.Provider, error) {
+		return NewProvider(podmanager.New(), NewStats(), res, cfg, &nodeInfo, store, env.DisableTaints, *env), nil
+	})
 
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create new virtual kubelet provider")
-	}
-
-	return node, nil
+	return &VirtualKubelet{
+		st:   providerStore,
+		opts: op,
+		info: &nodeInfo,
+	}, nil
 }
 
 // NewProvider returns the provider but with the vk type instead of our own.
-func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo node.Info, store *store.Store, disableTaints bool) provider.Provider {
+func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenario.NodeResources, cfg *provider.InitConfig, nodeInfo *node.Info, store *store.Store, disableTaints bool, environment env.ApateletEnvironment) provider.Provider {
 	p := &Provider{
-		Pods:  pods,
-		Store: store,
+		Pods:        pods,
+		Store:       store,
+		Environment: environment,
 
 		Cfg:           cfg,
 		DisableTaints: disableTaints,

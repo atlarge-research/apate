@@ -62,7 +62,7 @@ func TestAddNodeGet(t *testing.T) {
 
 	// Add created node
 	id := uuid.New()
-	expected := *NewNode(*service.NewConnectionInfo("yeet", 42, false),
+	expected := *NewNode(*service.NewConnectionInfo("yeet", 42),
 		&scenario.NodeResources{UUID: id}, "6")
 	err := store.AddNode(&expected)
 	assert.NoError(t, err)
@@ -78,7 +78,7 @@ func TestAddNodeList(t *testing.T) {
 	t.Parallel()
 
 	store := NewStore()
-	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "5")
+	node := *NewNode(*service.NewConnectionInfo("yeet", 42), &scenario.NodeResources{}, "5")
 
 	err := store.AddNode(&node)
 	assert.NoError(t, err)
@@ -106,7 +106,7 @@ func TestAddNodeDuplicateUuid(t *testing.T) {
 	t.Parallel()
 
 	store := NewStore()
-	expected := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "4")
+	expected := NewNode(*service.NewConnectionInfo("yeet", 42), &scenario.NodeResources{}, "4")
 
 	// Add first time
 	err := store.AddNode(expected)
@@ -123,7 +123,7 @@ func TestRemoveNode(t *testing.T) {
 
 	label := "1231415"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, label)
+	node := NewNode(*service.NewConnectionInfo("yeet", 42), &scenario.NodeResources{}, label)
 
 	// Add node
 	err := store.AddNode(node)
@@ -154,13 +154,13 @@ func TestDeleteNoNode(t *testing.T) {
 	t.Parallel()
 
 	store := NewStore()
-	node := *NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, "3")
+	node := *NewNode(*service.NewConnectionInfo("yeet", 42), &scenario.NodeResources{}, "3")
 
 	err := store.AddNode(&node)
 	assert.NoError(t, err)
 
 	// Remove random node
-	err = store.RemoveNode(NewNode(*service.NewConnectionInfo("yeet", 42, false),
+	err = store.RemoveNode(NewNode(*service.NewConnectionInfo("yeet", 42),
 		&scenario.NodeResources{UUID: uuid.New()}, "awdaw2").UUID)
 	assert.NoError(t, err)
 
@@ -177,7 +177,7 @@ func TestClearNodes(t *testing.T) {
 
 	label := "1231145"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{}, label)
+	node := NewNode(*service.NewConnectionInfo("yeet", 42), &scenario.NodeResources{}, label)
 
 	// Add node
 	err := store.AddNode(node)
@@ -209,8 +209,8 @@ func TestGetNodesByLabel(t *testing.T) {
 
 	label := "awidya8wdya9wd7iyh"
 	store := NewStore()
-	node := NewNode(*service.NewConnectionInfo("yeet", 42, false), &scenario.NodeResources{UUID: uuid.New()}, label)
-	node2 := NewNode(*service.NewConnectionInfo("awdadaw", 124, false), &scenario.NodeResources{UUID: uuid.New()}, "123")
+	node := NewNode(*service.NewConnectionInfo("yeet", 42), &scenario.NodeResources{UUID: uuid.New()}, label)
+	node2 := NewNode(*service.NewConnectionInfo("awdadaw", 124), &scenario.NodeResources{UUID: uuid.New()}, "123")
 
 	// Add nodes
 	err := store.AddNode(node)

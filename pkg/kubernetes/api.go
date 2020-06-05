@@ -1,11 +1,17 @@
 package kubernetes
 
 import (
+	"sort"
+	"strings"
+
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 )
+
+const nodeDeletionGracePeriod int64 = 0
 
 // GetNumberOfPods returns the number of pods in the cluster, or an error if it couldn't get these.
 func (c *Cluster) GetNumberOfPods(namespace string) (int, error) {
@@ -17,14 +23,33 @@ func (c *Cluster) GetNumberOfPods(namespace string) (int, error) {
 	return len(pods.Items), nil
 }
 
+// RemoveNodesFromCluster removes all apatelet nodes with the given uuids from the cluster.
+func (c Cluster) RemoveNodesFromCluster(uuids []uuid.UUID) error {
+	gracePeriod := nodeDeletionGracePeriod
+
+	lbl := make([]string, 0, len(uuids))
+
+	for _, id := range uuids {
+		lbl = append(lbl, id.String())
+	}
+	// Sort for determinism.
+	sort.StringSlice(lbl).Sort()
+	labelSelector := nodeconfigv1.NodeIDLabel + " in (" + strings.Join(lbl, ",") + ")"
+
+	return errors.Wrap(c.clientSet.CoreV1().Nodes().DeleteCollection(&metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+	}, metav1.ListOptions{
+		LabelSelector: labelSelector,
+		Limit:         10000,
+	}), "failed to remove nodes from cluster")
+}
+
 // RemoveNodeFromCluster removes a node with a given name from the cluster.
-func (c *Cluster) RemoveNodeFromCluster(nodename string) error {
-	return errors.Wrap(c.
-		clientSet.
-		CoreV1().
-		Nodes().
-		Delete(nodename, &metav1.DeleteOptions{}),
-		"failed to remove node from cluster")
+func (c Cluster) RemoveNodeFromCluster(nodename string) error {
+	gracePeriod := nodeDeletionGracePeriod
+	return errors.Wrap(c.clientSet.CoreV1().Nodes().Delete(nodename, &metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+	}), "failed to remove node from cluster")
 }
 
 // RemoveAllApateletsFromCluster removes all apatelets from the Kubernetes cluster.

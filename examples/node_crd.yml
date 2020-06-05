@@ -6,12 +6,11 @@ spec:
     replicas: 1
     resources:
         memory: 5G
-        cpu: 1000
+        cpu: 5000
         storage: 5T
         ephemeral_storage: 120G
         max_pods: 150
     tasks:
-        - timestamp: 10s
+        - timestamp: 1s
           state:
               node_failed: true
-              network_latency: 10ms

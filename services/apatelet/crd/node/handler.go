@@ -4,9 +4,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
