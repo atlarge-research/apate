@@ -93,7 +93,7 @@ func (a *apateletHandler) GetDesiredApatelets(ctx context.Context, cfg *nodeconf
 		}
 	}
 
-	// TODO: Do we want this?
+	// Force GC for old connections
 	runtime.GC()
 
 	return nil
