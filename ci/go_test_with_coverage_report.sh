@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# from: https://gitlab.com/gitlab-org/gitlab-runner
+# from: https://gitlab.com/gitlab-org/gitlab-runner/-/blob/ae59da936232513055c5e202e3db48c561cbd5ee/scripts/go_test_with_coverage_report
 
 set -eo pipefail
 
@@ -108,6 +108,8 @@ prepareTestCommands() {
         fi
 
     done
+
+	# Rest of the function is custom added
 
 	# Randomize order
 	shuf ${testsDefinitions} > ${testsDefinitions}.tmp
@@ -208,7 +210,7 @@ computeCoverageReport() {
     echo "mode: ${coverMode}" > ${sourceFile}
     grep -h -v -E -e "^mode:" -e "\/mock_[^\.]+\.go" .cover/*.${coverMode}.cover.txt | grep -e "${srcPkg}" >> ${sourceFile}
 
-	# Exclude generated code from coverage report
+	# Exclude generated code from coverage report specifically for emulating-k8s
 	sed -i '/mock/d' ${sourceFile}
 	sed -i '/pb/d' ${sourceFile}
 	sed -i '/deepcopy/d' ${sourceFile}

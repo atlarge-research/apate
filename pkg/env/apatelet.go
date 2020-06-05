@@ -30,6 +30,9 @@ const (
 
 	// ApateletDisableTaintsDefault is the default for DisableTaints
 	ApateletDisableTaintsDefault = false
+
+	// CIKubernetesAddress is the default for CIKubernetesAddress
+	CIKubernetesAddressDefault = ""
 )
 
 // ApateletEnvironment represents the environment variables of the apatelet
@@ -46,7 +49,10 @@ type ApateletEnvironment struct {
 
 	// KubeConfigLocation is the path to the kube config
 	KubeConfigLocation string `env:"APATELET_KUBE_CONFIG"`
-	KubernetesAddress  string `env:"APATELET_K8S_ADDRESS"`
+
+	// CIKubernetesAddress is to add an entry to the /etc/hosts file of an apatelet to ensure it can find the k8s cluster
+	// this can be used to fix bugs when running apate in a DinD
+	CIKubernetesAddress string `env:"CI_APATELET_K8S_ADDRESS"`
 
 	// ControlPlaneAddress is the address of the control plane which will be used to connect to
 	ControlPlaneAddress string `env:"APATELET_CP_ADDRESS"`
@@ -66,8 +72,8 @@ func defaultApateletEnvironment() ApateletEnvironment {
 		KubernetesPort: ApateletKubernetesPortDefault,
 		MetricsPort:    ApateletMetricsPortDefault,
 
-		KubeConfigLocation: ApateletKubeConfigLocationDefault,
-		KubernetesAddress:  "",
+		KubeConfigLocation:  ApateletKubeConfigLocationDefault,
+		CIKubernetesAddress: CIKubernetesAddressDefault,
 
 		ControlPlaneAddress: ApateletControlPlaneAddressDefault,
 		ControlPlanePort:    ApateletControlPlanePortDefault,

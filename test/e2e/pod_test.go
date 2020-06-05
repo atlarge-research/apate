@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -17,8 +18,20 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
+func arePodsAreRunning(pods *corev1.PodList) bool {
+	for _, pod := range pods.Items {
+		log.Printf("Pod: %v has phase: %v", pod.Name, pod.Status.Phase)
+
+		if pod.Status.Phase != corev1.PodRunning {
+			return false
+		}
+	}
+
+	return true
+}
+
 func TestSimplePodDeployment(t *testing.T) {
-	if !enableDockerApatelets {
+	if detectCI() {
 		t.Skip()
 	}
 	testSimplePodDeployment(t, env.Docker)
@@ -86,7 +99,6 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
-	// TODO: Is this correct?
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 
@@ -95,10 +107,14 @@ spec:
 	numpods, err := cluster.GetNumberOfPods(namespace)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, numpods)
+
+	// TODO: Find out why this fails
+	// podlist, err := cluster.GetPods(namespace)
+	// assert.True(t, arePodsAreRunning(podlist))
 }
 
 func TestPodFailureDocker(t *testing.T) {
-	if !enableDockerApatelets {
+	if detectCI() {
 		t.Skip()
 	}
 	testPodFailure(t, env.Docker)
@@ -130,22 +146,6 @@ func testPodFailure(t *testing.T, rt env.RunType) {
 	teardown(t)
 }
 
-func createConditionFunction(t *testing.T, numapatelets int, status corev1.ConditionStatus) func([]*corev1.Node) bool {
-	return func(apatelets []*corev1.Node) bool {
-		assert.Equal(t, numapatelets, len(apatelets))
-
-		for _, apatelet := range apatelets {
-			for _, c := range apatelet.Status.Conditions {
-				if c.Type == corev1.NodeReady && c.Status == status {
-					return true
-				}
-			}
-		}
-
-		return false
-	}
-}
-
 func podFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	pcfg := `
 apiVersion: apate.opendc.org/v1
@@ -162,14 +162,13 @@ spec:
 	time.Sleep(time.Second * 60)
 
 	// Get cluster object
-	// TODO: Is this correct?
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 
 	assert.NoError(t, err)
 
 	// Check if everything is ready
-	ready, _ := getApateletWaitForCondition(t, cluster, 2, createConditionFunction(t, 2, corev1.ConditionTrue))
+	ready, _ := getApateletWaitForCondition(t, cluster, 2, createApateletConditionFunction(t, 2, corev1.ConditionTrue))
 
 	assert.True(t, ready)
 

@@ -30,18 +30,18 @@ func main() {
 		panicf(errors.Wrap(err, "error while creating apatelet environment"))
 	}
 
-	k8sAddr := environment.KubernetesAddress
+	// This should be only set in ci to fix DinD problems
+	k8sAddr := environment.CIKubernetesAddress
 	if k8sAddr != "" {
 		f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
-			log.Println(err)
+			log.Printf("Error opening hosts file: %v\n", err)
 		}
 		if _, err = f.WriteString("\n" + k8sAddr + " docker"); err != nil {
-			log.Println(err)
+			log.Printf("Error appending hosts file: %v\n", err)
 		}
-		err = f.Close()
-		if err != nil {
-			log.Println(err)
+		if err := f.Close(); err != nil {
+			log.Printf("Error closing hosts file: %v\n", err)
 		}
 	}
 

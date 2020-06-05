@@ -1,5 +1,5 @@
 stages:
-  - prepare_ci_image
+  - prepare-ci-image
   - prepare
   - build
   - test
@@ -21,7 +21,7 @@ variables:
   DOCKER_BUILDKIT: 1
 
 prepare-build-image:
-  stage: prepare_ci_image
+  stage: prepare-ci-image
   image: docker:latest
   only:
     changes:
