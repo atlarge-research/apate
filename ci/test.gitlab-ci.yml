@@ -13,7 +13,7 @@ tests definitions:
 
 test suite:
   stage: test
-  parallel: 30
+  parallel: 8
   variables:
     # CP_POD_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_podconfigurations.yaml"
     # CP_NODE_CRD_LOCATION: "$CI_PROJECT_DIR/config/crd/apate.opendc.org_nodeconfigurations.yaml"
@@ -25,9 +25,7 @@ test suite:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker pull $VK_IMAGE
-    - docker tag $VK_IMAGE apatelet
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
     - ip a
     - source ./ci/env.sh
   script:
