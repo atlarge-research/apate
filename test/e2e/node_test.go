@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 )
 
 func TestSimpleNodeDeploymentDocker(t *testing.T) {
-	if !enableDockerApatelets {
+	if detectCI() {
 		t.Skip()
 	}
 	testSimpleNodeDeployment(t, env.Docker)
@@ -75,7 +74,6 @@ spec:
 	log.Println("Waiting before querying k8s")
 	time.Sleep(time.Second * 60)
 
-	// TODO: Is this correct?
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
@@ -87,7 +85,7 @@ spec:
 }
 
 func TestNodeFailureDocker(t *testing.T) {
-	if !enableDockerApatelets {
+	if detectCI() {
 		t.Skip()
 	}
 	testNodeFailure(t, env.Docker)
@@ -145,14 +143,13 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 60)
 
-	// TODO: Is this correct?
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 
 	assert.NoError(t, err)
 
 	// Check if everything is ready
-	ready, apatelets := getApateletWaitForCondition(t, cluster, num, createConditionFunction(t, num, corev1.ConditionTrue))
+	ready, apatelets := getApateletWaitForCondition(t, cluster, num, createApateletConditionFunction(t, num, corev1.ConditionTrue))
 
 	assert.True(t, ready)
 
@@ -177,36 +174,13 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	// Check if they stopped
 	runScenario(t)
 
-	stopped, _ := getApateletWaitForCondition(t, cluster, num, createConditionFunction(t, num, corev1.ConditionUnknown))
+	// Ideally we would wait 10s but as these tests are quite flaky we use 8 for safety
+	time.Sleep(time.Second * 8)
+	nodes, err := cluster.GetNodes()
+	assert.NoError(t, err)
+
+	assert.True(t, createApateletConditionFunction(t, num, corev1.ConditionTrue)(getApatelets(nodes)))
+
+	stopped, _ := getApateletWaitForCondition(t, cluster, num, createApateletConditionFunction(t, num, corev1.ConditionUnknown))
 	assert.True(t, stopped)
-}
-
-func getApateletWaitForCondition(t *testing.T, cluster *kubernetes.Cluster, numApatelets int, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
-	for i := 0; i <= 10; i++ {
-		// get nodes and check that there are 2
-		nodes, err := cluster.GetNodes()
-		assert.NoError(t, err)
-		assert.Equal(t, numApatelets+1, len(nodes.Items))
-
-		apatelets := getApatelets(nodes)
-		assert.Equal(t, numApatelets, len(apatelets))
-
-		if check(apatelets) {
-			return true, apatelets
-		}
-
-		time.Sleep(time.Second * 10)
-	}
-
-	return false, nil
-}
-
-func getApatelets(nodes *corev1.NodeList) (node []*corev1.Node) {
-	for _, v := range nodes.Items {
-		v := v
-		if strings.HasPrefix(v.Name, "apatelet-") {
-			node = append(node, &v)
-		}
-	}
-	return
 }
