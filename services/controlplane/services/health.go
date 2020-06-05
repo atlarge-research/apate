@@ -22,9 +22,8 @@ type healthService struct {
 }
 
 const (
-	base             = time.Second
-	sendInterval     = 20 * base
-	recvTimeout      = 30 * base
+	sendInterval     = 20 * time.Second
+	recvTimeout      = 30 * time.Second
 	maxNetworkErrors = 3
 )
 

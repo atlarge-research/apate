@@ -143,10 +143,12 @@ func (s *store) RemoveNodes(uuids []uuid.UUID) (err error) {
 	defer s.nodeLock.Unlock()
 
 	for _, id := range uuids {
-		err = s.removeNodeByUUID(id)
+		if remErr := s.removeNodeByUUID(id); err == nil && remErr != nil {
+			err = remErr
+		}
 	}
 
-	return
+	return errors.Wrap(err, "failed to remove nodes")
 }
 
 func (s *store) GetNode(uuid uuid.UUID) (Node, error) {
