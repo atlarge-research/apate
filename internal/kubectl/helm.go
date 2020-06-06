@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
@@ -64,11 +66,13 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
-	
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	println(cmd.String())
+	if env.ControlPlaneEnv().DebugEnabled {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		println(cmd.String())
+	}
+
 	return errors.Wrapf(cmd.Run(), "failed to install Prometheus with helm %v", strings.Join(args, " "))
 }
 
