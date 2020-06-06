@@ -84,6 +84,12 @@ spec:
       labels:
         tier: frontend
     spec:
+      nodeSelector:
+        emulated: "yes"
+      tolerations:
+        -   key: emulated
+            operator: Exists
+            effect: NoSchedule
       containers:
       - name: php-redis
         image: gcr.io/google_samples/gb-frontend:v3
@@ -108,12 +114,18 @@ spec:
 	assert.NoError(t, err)
 	assert.Equal(t, 3, numpods)
 
-	// We just have to wait until the pods updates. Initially there was no delay here,
-	// tested on 20, 40 and 50 seconds. 50 passes, so doing 60 for CI.
-	time.Sleep(1 * time.Minute)
-	podlist, err := cluster.GetPods(namespace)
-	assert.NoError(t, err)
-	assert.True(t, arePodsAreRunning(podlist))
+	running := false
+	for i := 0; i < 10; i++ {
+		podlist, err := cluster.GetPods(namespace)
+		assert.NoError(t, err)
+		if running = arePodsAreRunning(podlist); running {
+			break
+		}
+
+		time.Sleep(time.Second * 30)
+	}
+
+	assert.True(t, running)
 }
 
 func TestPodFailureDocker(t *testing.T) {
