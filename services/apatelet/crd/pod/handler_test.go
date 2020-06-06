@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/docker/go-units"
 	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
@@ -72,6 +74,13 @@ func TestEnqueueCRD(t *testing.T) {
 						PodStatus: podconfigv1.PodStatusPending,
 					},
 				},
+				{
+					Timestamp:     "1s",
+					RelativeToPod: true,
+					State: podconfigv1.PodConfigurationState{
+						PodStatus: podconfigv1.PodStatusRunning,
+					},
+				},
 			},
 		},
 	}
@@ -81,8 +90,21 @@ func TestEnqueueCRD(t *testing.T) {
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
 		assert.Equal(t, 2, len(arr))
-		assert.EqualValues(t, arr[0], et1)
-		assert.EqualValues(t, arr[1], et2)
+		assert.EqualValues(t, et1, arr[0])
+		assert.EqualValues(t, et2, arr[1])
+	})
+
+	ms.EXPECT().SetPodTimeFlags(
+		"TestNamespace/TestName",
+		gomock.Any(),
+	).Do(func(_ string, arr []*store.TimeFlags) {
+		assert.Equal(t, 1, len(arr))
+		assert.EqualValues(t, &store.TimeFlags{
+			TimeSincePodStart: 1 * time.Second,
+			Flags: store.Flags{
+				events.PodStatus: scenario.PodStatusRunning,
+			},
+		}, arr[0])
 	})
 
 	err := setPodTasks(&ep, &s)
