@@ -2,11 +2,10 @@ package provider
 
 import (
 	"context"
+	"github.com/finitum/node-cli/opts"
 	"log"
 	"strconv"
 	"time"
-
-	root "github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/commands"
 
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 
@@ -100,7 +99,7 @@ func (p *Provider) NotifyNodeStatus(ctx context.Context, cb func(*corev1.Node)) 
 // ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
 func (p *Provider) ConfigureNode(ctx context.Context, node *corev1.Node) {
 	// Update metrics port, chosen by VK
-	if port, ok := ctx.Value(root.MetricsPortKey).(int); ok {
+	if port, ok := ctx.Value(opts.MetricsPortKey).(int); ok {
 		p.NodeInfo.MetricsPort = port
 	}
 
