@@ -108,9 +108,12 @@ spec:
 	assert.NoError(t, err)
 	assert.Equal(t, 3, numpods)
 
-	// TODO: Find out why this fails
-	// podlist, err := cluster.GetPods(namespace)
-	// assert.True(t, arePodsAreRunning(podlist))
+	// We just have to wait until the pods updates. Initially there was no delay here,
+	// tested on 20, 40 and 50 seconds. 50 passes, so doing 60 for CI.
+	time.Sleep(1 * time.Minute)
+	podlist, err := cluster.GetPods(namespace)
+	assert.NoError(t, err)
+	assert.True(t, arePodsAreRunning(podlist))
 }
 
 func TestPodFailureDocker(t *testing.T) {

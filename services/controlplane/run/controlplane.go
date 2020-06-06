@@ -62,11 +62,6 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
-	// Save the kubeconfig in the store
-	if err = createdStore.SetKubeConfig(*cluster.KubeConfig); err != nil {
-		panicf(errors.Wrap(err, "failed to set Kubeconfig"))
-	}
-
 	// Create CRDs
 	if err = createCRDs(cluster); err != nil {
 		panicf(errors.Wrap(err, "failed to create CRDs"))

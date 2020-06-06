@@ -21,7 +21,7 @@ lint_fix:
 
 .PHONY: test
 test:
-	go test -p 24 -v ./...
+	go test --timeout 30m -p 24 -v ./...
 
 .PHONY: test_short
 test_short:
@@ -32,8 +32,8 @@ test_race:
 	go test -race -short ./...
 
 .PHONY: test_cover
-test_cover:
-	go test -v -coverpkg=./... -coverprofile=cover.cov ./...
+test_cover: docker_build
+	go test --timeout 30m -v -coverpkg=./... -coverprofile=cover.cov ./...
 	go tool cover -func=cover.cov
 
 .PHONY: test_cover_short
@@ -47,7 +47,7 @@ docker_build_apatelet:
 	docker tag apatelet apatekubernetes/apatelet
 
 .PHONY: docker_build_cp
-docker_build_cp:
+docker_build_cp: 
 	docker build -f ./services/controlplane/Dockerfile -t controlplane .
 	docker tag controlplane apatekubernetes/controlplane
 
@@ -91,7 +91,5 @@ gen: crd_gen mock_gen protobuf
 run_e2e:
 	docker build -f ./test/e2e/Dockerfile -t apate_e2e .
 	docker run -iv /var/run/docker.sock:/var/run/docker.sock apate_e2e
-
-	# python -m unittest test/pye2e/e2e.py
 
 FORCE:

@@ -112,9 +112,9 @@ func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res
 
 	// Part of the fixes for DinD CI
 	if os.Getenv("CI_COMMIT_REF_SLUG") != "" {
-		addr, err := net.ResolveIPAddr("ip", "docker")
-		if err != nil {
-			log.Fatalf("Resolving ip of docker failed: %v", err)
+		addr, resolvError := net.ResolveIPAddr("ip", "docker")
+		if resolvError != nil {
+			log.Fatalf("Resolving ip of docker failed: %v", resolvError)
 		}
 		environment.CIKubernetesAddress = addr.String()
 	}

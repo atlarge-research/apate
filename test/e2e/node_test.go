@@ -18,15 +18,16 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
+
+func TestSimpleNodeDeploymentRoutine(t *testing.T) {
+	testSimpleNodeDeployment(t, env.Routine)
+}
+
 func TestSimpleNodeDeploymentDocker(t *testing.T) {
 	if detectCI() {
 		t.Skip()
 	}
 	testSimpleNodeDeployment(t, env.Docker)
-}
-
-func TestSimpleNodeDeploymentRoutine(t *testing.T) {
-	testSimpleNodeDeployment(t, env.Routine)
 }
 
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
