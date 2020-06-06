@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"log"
-	"os"
-	"syscall"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -14,11 +12,11 @@ import (
 )
 
 type apateletService struct {
-	stopChannel chan<- os.Signal
+	stopChannel chan<- struct{}
 }
 
 // RegisterApateletService registers the apateletService to the given GRPCServer
-func RegisterApateletService(server *service.GRPCServer, stopChannel chan<- os.Signal) {
+func RegisterApateletService(server *service.GRPCServer, stopChannel chan<- struct{}) {
 	apatelet.RegisterApateletServer(server.Server, &apateletService{stopChannel: stopChannel})
 }
 
@@ -29,7 +27,7 @@ func (s *apateletService) StopApatelet(context.Context, *empty.Empty) (*empty.Em
 	go func() {
 		time.Sleep(time.Second) // Wait a bit to properly answer the control plane
 
-		s.stopChannel <- syscall.SIGTERM
+		s.stopChannel <- struct{}{}
 	}()
 
 	return new(empty.Empty), nil

@@ -47,36 +47,53 @@ func (s *Scheduler) EnableScheduler(ctx context.Context) <-chan error {
 
 	go func() {
 		// Wait for start
-		<-s.readyCh
-
-		for {
-			if err := ctx.Err(); err != nil {
-				ech <- errors.Wrap(err, "scheduler stopped")
-				return
-			}
-
-			// Run iteration
-			done, delay := s.runner(ech)
-
-			if done {
-				select {
-				case <-ctx.Done():
-					return
-				case <-s.updateCh:
-				}
-			}
-
-			if delay > time.Millisecond {
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(delay):
-				}
-			}
+		select {
+		case <-ctx.Done():
+			return
+		case <-s.readyCh:
+			//
 		}
+
+		s.scheduleLoop(ctx, ech)
 	}()
 
 	return ech
+}
+
+func (s *Scheduler) scheduleLoop(ctx context.Context, ech chan<- error) {
+	timer := time.NewTimer(time.Millisecond)
+	defer timer.Stop()
+
+	for {
+		if err := ctx.Err(); err != nil {
+			ech <- errors.Wrap(err, "scheduler stopped")
+			return
+		}
+
+		// Run iteration
+		done, delay := s.runner(ech)
+
+		if done {
+			select {
+			case <-ctx.Done():
+				return
+			case <-s.updateCh:
+				//
+			}
+		}
+
+		if delay > time.Millisecond {
+			timer.Reset(delay)
+			select {
+			case <-ctx.Done():
+				return
+			case <-timer.C:
+				//
+			case <-s.updateCh:
+				//
+			}
+		}
+	}
 }
 
 // StartScheduler sets the start time and starts the scheduler

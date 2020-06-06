@@ -194,7 +194,7 @@ func StartCmd(cmdArgs []string) {
 }
 
 func printKubeConfig(ctx context.Context, args *commandLineArgs) error {
-	client, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(args.controlPlaneAddress, args.controlPlanePort, false))
+	client, err := controlplane.GetClusterOperationClient(service.NewConnectionInfo(args.controlPlaneAddress, args.controlPlanePort))
 	if err != nil {
 		return errors.Wrap(err, "couldn't get cluster operation client for kube config")
 	}
@@ -245,7 +245,7 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 	fmt.Print("Waiting for control plane to be up ")
 
 	// Polling control plane until up
-	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.ListenAddress, cpEnv.ListenPort, false))
+	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.ListenAddress, cpEnv.ListenPort))
 	err = statusClient.WaitForControlPlane(ctx, time.Duration(args.controlPlaneTimeout)*time.Second)
 	if err != nil {
 		return errors.Wrap(err, "waiting for control plane on the client failed")
@@ -253,7 +253,7 @@ func createControlPlane(ctx context.Context, cpEnv env.ControlPlaneEnvironment, 
 
 	color.Green("DONE\n")
 	fmt.Printf("Apate control plane created: %v\n", cpEnv)
-	return nil
+	return statusClient.Conn.Close()
 }
 
 func runScenario(ctx context.Context, args *commandLineArgs) error {
@@ -261,7 +261,6 @@ func runScenario(ctx context.Context, args *commandLineArgs) error {
 	info := &service.ConnectionInfo{
 		Address: args.controlPlaneAddress,
 		Port:    args.controlPlanePort,
-		TLS:     false,
 	}
 
 	// Initial call: load the scenario
@@ -304,5 +303,5 @@ func runScenario(ctx context.Context, args *commandLineArgs) error {
 	}
 
 	color.Green("DONE\n")
-	return nil
+	return statusClient.Conn.Close()
 }

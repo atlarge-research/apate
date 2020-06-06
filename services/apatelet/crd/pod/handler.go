@@ -4,9 +4,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
+
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
@@ -27,7 +28,6 @@ func CreatePodInformer(config *kubeconfig.KubeConfig, st *store.Store, stopch <-
 	podClient.WatchResources(func(obj interface{}) {
 		// Add function
 		podCfg := obj.(*podconfigv1.PodConfiguration)
-
 		err := setPodTasks(podCfg, st)
 		if err != nil {
 			log.Printf("error while adding pod tasks: %v\n", err)

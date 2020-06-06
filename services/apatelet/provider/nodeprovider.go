@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	root "github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/commands"
+
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 
 	"github.com/pkg/errors"
@@ -25,7 +27,7 @@ const (
 	memThresh      = 0.85
 	diskThresh     = 0.85
 	diskFullThresh = 0.96
-	updateInterval = 1 * time.Minute
+	updateInterval = 30 * time.Second
 )
 
 type nodeConditions struct {
@@ -96,7 +98,12 @@ func (p *Provider) NotifyNodeStatus(ctx context.Context, cb func(*corev1.Node)) 
 }
 
 // ConfigureNode enables a provider to configure the node object that will be used for Kubernetes.
-func (p *Provider) ConfigureNode(_ context.Context, node *corev1.Node) {
+func (p *Provider) ConfigureNode(ctx context.Context, node *corev1.Node) {
+	// Update metrics port, chosen by VK
+	if port, ok := ctx.Value(root.MetricsPortKey).(int); ok {
+		p.NodeInfo.MetricsPort = port
+	}
+
 	node.Spec = p.spec()
 	node.ObjectMeta = p.objectMeta()
 	node.Status = p.nodeStatus()
@@ -172,6 +179,7 @@ func (p *Provider) objectMeta() metav1.ObjectMeta {
 			"metrics_port":             strconv.Itoa(p.NodeInfo.MetricsPort),
 			nodeconfigv1.EmulatedLabel: nodeconfigv1.EmulatedLabelValue,
 
+			nodeconfigv1.NodeIDLabel:                     p.Resources.UUID.String(),
 			nodeconfigv1.NodeConfigurationLabelNamespace: p.NodeInfo.Namespace,
 			nodeconfigv1.NodeConfigurationLabel:          p.NodeInfo.Label,
 		},

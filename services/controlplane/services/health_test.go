@@ -17,10 +17,13 @@ import (
 	"time"
 )
 
-//go:generate sh -c "cd ../../../ && make mockgen"
+//go:generate sh -c "cd ../../../ && make mock_gen"
 
 func TestHealthStream(t *testing.T) {
 	t.Parallel()
+	if testing.Short() {
+		t.Skip("Skipping health stream test")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

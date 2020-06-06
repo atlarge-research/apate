@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -44,6 +47,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	}
 
 	initEnv := env.ControlPlaneEnv()
+	initEnv.KubeConfigLocation = "/tmp/apate/test-" + uuid.New().String()
 	initEnv.PodCRDLocation = dir + "/config/crd/apate.opendc.org_podconfigurations.yaml"
 	initEnv.NodeCRDLocation = dir + "/config/crd/apate.opendc.org_nodeconfigurations.yaml"
 	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
@@ -65,11 +69,14 @@ func teardown(t *testing.T) {
 
 	err := os.Remove(env.ControlPlaneEnv().KubeConfigLocation)
 	assert.NoError(t, err)
+
+	node.Reset()
+	pod.Reset()
 }
 
 func waitForCP(t *testing.T) {
 	cpEnv := env.DefaultControlPlaneEnvironment()
-	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.ListenAddress, cpEnv.ListenPort, false))
+	statusClient, _ := controlplane.GetStatusClient(service.NewConnectionInfo(cpEnv.ListenAddress, cpEnv.ListenPort))
 	ctx := context.Background()
 	err := statusClient.WaitForControlPlane(ctx, time.Duration(5)*time.Minute)
 	assert.NoError(t, err)

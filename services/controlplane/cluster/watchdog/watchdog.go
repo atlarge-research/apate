@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
@@ -38,11 +40,19 @@ func checkUnhealthyApatelets(st *store.Store, cl *kubernetes.Cluster) {
 
 	for _, kubelet := range apatelets {
 		if kubelet.Status == health.Status_UNHEALTHY {
-			err := cluster.RemoveNodeWithUUID(kubelet.UUID, st, cl)
+			apate, _, err := cluster.RemoveNodeWithUUID(kubelet.UUID, st, cl)
 			if err != nil {
 				log.Printf("error while removing apatelet from cluster: %v", err)
 			} else {
 				log.Printf("removed apatelet: %v from cluster", kubelet.UUID)
+			}
+
+			// If the node was removed from the store, add the resources back to the queue
+			if apate {
+				err := (*st).AddResourcesToQueue([]scenario.NodeResources{*kubelet.Resources})
+				if err != nil {
+					log.Printf("error while reading resources to queue: %v", err)
+				}
 			}
 		}
 	}
