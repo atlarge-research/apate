@@ -6,8 +6,11 @@ spec:
     pod_resources:
         memory: 1G
     tasks:
-        -   timestamp: 1m
-            relative_to_pod: true
-            state:
-                create_pod_response: ERROR
-
+        - timestamp: 1s
+          state:
+              pod_resources:
+                  cpu: 1000
+                  memory: 5G
+        - timestamp: 5s
+          state:
+              pod_status: FAILED

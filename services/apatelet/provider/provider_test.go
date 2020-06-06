@@ -3,12 +3,15 @@ package provider
 import (
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/virtual-kubelet/node-cli/provider"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -30,7 +33,7 @@ func TestNewProvider(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 
 	pm := podmanager.New()
-	stats := NewStats()
+	sts := NewStats()
 	resources := scenario.NodeResources{
 		UUID:             uuid.New(),
 		Memory:           0,
@@ -42,14 +45,14 @@ func TestNewProvider(t *testing.T) {
 	}
 
 	cfg := provider.InitConfig{}
-	ni, err := node.NewInfo("a", "b", "c", "d", "e/f", 4242)
+	ni, err := node.NewInfo("a", "b", "c", "d", "e/f")
 	assert.NoError(t, err)
 
 	var s store.Store = ms
 
 	ms.EXPECT().AddPodFlagListener(events.PodResources, gomock.Any())
 
-	p, ok := NewProvider(pm, stats, &resources, &cfg, ni, &s, true).(*Provider)
+	p, ok := NewProvider(pm, sts, &resources, &cfg, &ni, &s, true, env.DefaultApateletEnvironment()).(*Provider)
 
 	assert.True(t, ok)
 

@@ -15,20 +15,19 @@ type Info struct {
 }
 
 // NewInfo creates a new Info
-func NewInfo(nodeType string, role string, name string, version string, label string, metricsPort int) (Info, error) {
+func NewInfo(nodeType, role, name, version, label string) (Info, error) {
 	labelParts := strings.Split(label, "/")
 
 	if len(labelParts) != 2 {
-		return Info{}, errors.Errorf("invalid label %s", labelParts)
+		return Info{}, errors.Errorf("invalid label %s", label)
 	}
 
 	return Info{
-		NodeType:    nodeType,
-		Role:        role,
-		Name:        name,
-		Version:     version,
-		MetricsPort: metricsPort,
-		Namespace:   labelParts[0],
-		Label:       labelParts[1],
+		NodeType:  nodeType,
+		Role:      role,
+		Name:      name,
+		Version:   version,
+		Namespace: labelParts[0],
+		Label:     labelParts[1],
 	}, nil
 }

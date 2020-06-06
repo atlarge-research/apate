@@ -16,6 +16,10 @@ import (
 
 // GetPodStatus retrieves the status of a pod by label.
 func (p *Provider) GetPodStatus(ctx context.Context, ns string, name string) (*corev1.PodStatus, error) {
+	if p.Environment.DebugEnabled {
+		log.Printf("GetPodStatus for %s/%s\n", ns, name)
+	}
+
 	if err := ctx.Err(); err != nil {
 		return nil, errors.Wrap(err, "context cancelled in GetPodStatus")
 	}

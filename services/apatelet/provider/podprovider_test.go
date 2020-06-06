@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -41,9 +43,9 @@ func TestRunLatencyError(t *testing.T) {
 
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), errors.New("test error")).Times(6)
 
-	assert.Error(t, p.UpdatePod(ctx, nil))
-	assert.Error(t, p.CreatePod(ctx, nil))
-	assert.Error(t, p.DeletePod(ctx, nil))
+	assert.Error(t, p.UpdatePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
+	assert.Error(t, p.CreatePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
+	assert.Error(t, p.DeletePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
 	_, err := p.GetPod(ctx, "", "")
 	assert.Error(t, err)
 	_, err = p.GetPodStatus(ctx, "", "")
@@ -68,9 +70,9 @@ func TestCancelContextEarlyReturn(t *testing.T) {
 		Store: &s,
 	}
 
-	assert.Error(t, p.UpdatePod(ctx, nil))
-	assert.Error(t, p.CreatePod(ctx, nil))
-	assert.Error(t, p.DeletePod(ctx, nil))
+	assert.Error(t, p.UpdatePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
+	assert.Error(t, p.CreatePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
+	assert.Error(t, p.DeletePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
 	_, err := p.GetPod(ctx, "", "")
 	assert.Error(t, err)
 	_, err = p.GetPodStatus(ctx, "", "")
@@ -96,15 +98,15 @@ func TestCancelContextWhileRunningLatency(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
-	assert.Error(t, p.UpdatePod(ctx, nil))
+	assert.Error(t, p.UpdatePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
 
 	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
-	assert.Error(t, p.CreatePod(ctx, nil))
+	assert.Error(t, p.CreatePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
 
 	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
-	assert.Error(t, p.DeletePod(ctx, nil))
+	assert.Error(t, p.DeletePod(ctx, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "Test", Namespace: "Test"}}))
 
 	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()

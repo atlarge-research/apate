@@ -28,6 +28,9 @@ type Store interface {
 	// RemoveNode removes the given Node from the Apate cluster by uuid
 	RemoveNode(uuid.UUID) error
 
+	// RemoveNodes removes the given Nodes from the Apate cluster by uuids
+	RemoveNodes([]uuid.UUID) error
+
 	// GetNode returns the node with the given uuid
 	GetNode(uuid.UUID) (Node, error)
 
@@ -104,10 +107,7 @@ func (s *store) AddNode(node *Node) error {
 	return nil
 }
 
-func (s *store) RemoveNode(uuid uuid.UUID) error {
-	s.nodeLock.Lock()
-	defer s.nodeLock.Unlock()
-
+func (s *store) removeNodeByUUID(uuid uuid.UUID) error {
 	node := s.nodes[uuid]
 	if node == (Node{}) {
 		return nil
@@ -128,8 +128,27 @@ func (s *store) RemoveNode(uuid uuid.UUID) error {
 	}
 
 	delete(s.nodes, node.UUID)
-
 	return nil
+}
+
+func (s *store) RemoveNode(uuid uuid.UUID) error {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
+
+	return s.removeNodeByUUID(uuid)
+}
+
+func (s *store) RemoveNodes(uuids []uuid.UUID) (err error) {
+	s.nodeLock.Lock()
+	defer s.nodeLock.Unlock()
+
+	for _, id := range uuids {
+		if remErr := s.removeNodeByUUID(id); err == nil && remErr != nil {
+			err = remErr
+		}
+	}
+
+	return errors.Wrap(err, "failed to remove nodes")
 }
 
 func (s *store) GetNode(uuid uuid.UUID) (Node, error) {
