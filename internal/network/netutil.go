@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 )
 
 // GetExternalAddress will return the detected external IP address based on the env var, then network interfaces
@@ -21,9 +19,9 @@ func GetExternalAddress() (string, error) {
 		return "", errors.Wrap(err, "failed to get interface addresses")
 	}
 
-	// Get first 172.17.0.0/16 address, if any
+	// Get first local address
 	for _, address := range addresses {
-		if strings.Contains(address.String(), env.DockerAddressPrefix) {
+		if strings.HasPrefix(address.String(), "172.") || strings.HasPrefix(address.String(), "192.168.") || strings.HasPrefix(address.String(), "10.") {
 			ip := strings.Split(address.String(), "/")[0]
 
 			return ip, nil

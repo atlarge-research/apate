@@ -1,0 +1,52 @@
+tests definitions:
+  stage: build
+  variables:
+    PARALLEL_TESTS_LIMIT: 1
+  before_script:
+    - source ./ci/env.sh
+  script:
+    - ./ci/go_test_with_coverage_report.sh prepare
+  artifacts:
+    paths:
+      - testsdefinitions.txt
+    expire_in: 7d
+
+test suite:
+  stage: test
+  parallel: 8
+  variables:
+    CP_DOCKER_HOSTNAME: "true"
+    FF_NETWORK_PER_BUILD: "true"
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
+  script:
+    - source ./ci/env.sh
+    - ./ci/go_test_with_coverage_report.sh execute
+  artifacts:
+    paths:
+      - .cover/*
+      - .testoutput/*
+    when: always
+    expire_in: 7d
+
+test coverage report:
+  stage: verify
+  coverage: /regular total:\s+\(statements\)\s+\d+.\d+\%/
+  script:
+    - source ./ci/env.sh
+    - ./ci/go_test_with_coverage_report.sh coverage
+  artifacts:
+    paths:
+      - out/coverage/*
+    expire_in: 7d
+
+race:
+  stage: test
+  needs: [build]
+  image: golang:1.14
+  before_script:
+    - go mod download
+  script: # Test for race conditions in small tests as race condition testing is slow
+    - go test -race -short ./...

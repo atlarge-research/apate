@@ -46,7 +46,9 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	st := store.NewStore()
 
-	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, &node.Info{}, &st, true, env.DefaultApateletEnvironment())
+	e, err := env.ApateletEnv()
+	assert.NoError(t, err)
+	prov := NewProvider(podmanager.New(), NewStats(), &resources, &provider.InitConfig{}, &node.Info{}, &st, true, e)
 
 	fakeNode := corev1.Node{}
 
@@ -415,7 +417,9 @@ func TestNewProvider(t *testing.T) {
 
 	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	p, ok := NewProvider(pm, sts, &resources, &cfg, &ni, &s, true, env.DefaultApateletEnvironment()).(*Provider)
+	e, err := env.ApateletEnv()
+	assert.NoError(t, err)
+	p, ok := NewProvider(pm, sts, &resources, &cfg, &ni, &s, true, e).(*Provider)
 
 	assert.True(t, ok)
 

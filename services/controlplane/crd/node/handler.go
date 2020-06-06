@@ -4,6 +4,8 @@ package node
 import (
 	"context"
 	"log"
+	"net"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -115,7 +117,20 @@ func (a *apateletHandler) SpawnApatelets(ctx context.Context, desired int64, res
 	}
 
 	// Create environment for apatelets
-	environment := env.DefaultApateletEnvironment()
+	environment, err := env.ApateletEnv()
+	if err != nil {
+		return errors.Wrap(err, "getting apatelet environment failed")
+	}
+
+	// Part of the fixes for DinD CI
+	if os.Getenv("CI_COMMIT_REF_SLUG") != "" {
+		addr, resolvError := net.ResolveIPAddr("ip", "docker")
+		if resolvError != nil {
+			log.Fatalf("Resolving ip of docker failed: %v", resolvError)
+		}
+		environment.CIKubernetesAddress = addr.String()
+	}
+
 	environment.AddConnectionInfo(a.connectionInfo.Address, a.connectionInfo.Port)
 	environment.DebugEnabled = env.ControlPlaneEnv().DebugEnabled
 

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/pkg/errors"
 
@@ -27,6 +28,21 @@ func main() {
 	environment, err := env.ApateletEnv()
 	if err != nil {
 		panicf(errors.Wrap(err, "error while creating apatelet environment"))
+	}
+
+	// This should be only set in ci to fix DinD problems
+	k8sAddr := environment.CIKubernetesAddress
+	if k8sAddr != "" {
+		f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Printf("Error opening hosts file: %v\n", err)
+		}
+		if _, err = f.WriteString("\n" + k8sAddr + " docker"); err != nil {
+			log.Printf("Error appending hosts file: %v\n", err)
+		}
+		if err := f.Close(); err != nil {
+			log.Printf("Error closing hosts file: %v\n", err)
+		}
 	}
 
 	// Set the certificates to communicate with the kubelet API

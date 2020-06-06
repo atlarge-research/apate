@@ -80,6 +80,11 @@ func Create(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
 	return errors.Wrapf(ExecuteWithNamespace("create", resourceConfig, kubeConfig, ""), "failed to create resource in default namespace")
 }
 
+// CreateWithNamespace calls Create but with a namespace set
+func CreateWithNamespace(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig, namespace string) error {
+	return errors.Wrapf(ExecuteWithNamespace("create", resourceConfig, kubeConfig, namespace), "failed to create resource in default namespace")
+}
+
 // Apply calls `kubectl apply` with the given resourceConfig
 // When this config is empty, it will not be called
 func Apply(resourceConfig []byte, kubeConfig *kubeconfig.KubeConfig) error {
