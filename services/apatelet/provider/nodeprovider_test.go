@@ -2,12 +2,11 @@ package provider
 
 import (
 	"context"
+	"github.com/finitum/node-cli/provider"
 	"testing"
 	"time"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
-
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
