@@ -5,11 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner/mock_runner"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner/mock_runner"
 )
 
 const MyRunType env.RunType = "newRunType"

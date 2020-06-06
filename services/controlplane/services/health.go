@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"io"
 	"log"
 	"sync/atomic"
 	"time"
@@ -21,8 +22,8 @@ type healthService struct {
 }
 
 const (
-	sendInterval     = 1 * time.Second
-	recvTimeout      = 5 * time.Second
+	sendInterval     = 20 * time.Second
+	recvTimeout      = 30 * time.Second
 	maxNetworkErrors = 3
 )
 
@@ -41,16 +42,24 @@ func (h *healthService) HealthStream(server health.Health_HealthStreamServer) er
 	go h.sendHeartbeat(ctx, server, &cnt)
 
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if atomic.LoadInt32(&cnt) >= maxNetworkErrors {
 			break
 		}
 
-		c := make(chan struct{})
+		c := make(chan struct{}, 1)
 		go func() {
+			timeoutDelay := time.NewTimer(recvTimeout)
+			defer timeoutDelay.Stop()
+
+			timeoutDelay.Reset(recvTimeout)
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(recvTimeout):
+			case <-timeoutDelay.C:
 				atomic.AddInt32(&cnt, 1)
 				_ = (*h.store).SetNodeStatus(id, health.Status_UNKNOWN)
 			case <-c:
@@ -60,6 +69,10 @@ func (h *healthService) HealthStream(server health.Health_HealthStreamServer) er
 		// receive data
 		req, err := server.Recv()
 		c <- struct{}{}
+
+		if err == io.EOF {
+			break
+		}
 
 		if err != nil {
 			log.Printf("Receive error: %v\n", err)
@@ -74,12 +87,13 @@ func (h *healthService) HealthStream(server health.Health_HealthStreamServer) er
 		}
 
 		if err = (*h.store).SetNodeStatus(id, req.Status); err != nil {
-			log.Printf("%v\n", err)
+			log.Printf("error while setting node status: %v\n", err)
+			break
 		}
 	}
 
-	// If the loop is broken -> node status unknown
-	if err := (*h.store).SetNodeStatus(id, health.Status_UNKNOWN); err != nil {
+	// If the loop is broken -> node status unhealthy
+	if err := (*h.store).SetNodeStatus(id, health.Status_UNHEALTHY); err != nil {
 		log.Println(errors.Wrap(err, "failed to set node status"))
 		return nil
 	}
@@ -89,20 +103,26 @@ func (h *healthService) HealthStream(server health.Health_HealthStreamServer) er
 }
 
 func (h *healthService) sendHeartbeat(ctx context.Context, server health.Health_HealthStreamServer, cnt *int32) {
+	timeoutDuration := sendInterval
+	timeoutDelay := time.NewTimer(timeoutDuration)
+	defer timeoutDelay.Stop()
+	e := empty.Empty{}
+
 	for {
 		if atomic.LoadInt32(cnt) >= maxNetworkErrors {
 			break
 		}
 
-		if err := server.Send(&empty.Empty{}); err != nil {
+		if err := server.Send(&e); err != nil {
 			log.Println("send error")
 			atomic.AddInt32(cnt, 1)
 		}
 
+		timeoutDelay.Reset(timeoutDuration)
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(sendInterval):
+		case <-timeoutDelay.C:
 		}
 	}
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/phayes/freeport"
-
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -21,25 +19,18 @@ func (d *RoutineRunner) SpawnApatelets(ctx context.Context, amountOfNodes int, e
 		return errors.Wrap(err, "failed to set certificates")
 	}
 
-	readyCh := make(chan struct{})
-
 	environment.KubeConfigLocation = env.ControlPlaneEnv().KubeConfigLocation
 
 	for i := 0; i < amountOfNodes; i++ {
 		apateletEnv := environment
+		readyCh := make(chan struct{}, 1)
 
-		const numports = 3
-		ports, err := freeport.GetFreePorts(numports)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get %v free ports", numports)
-		}
-
-		apateletEnv.ListenPort = ports[0]
-		apateletEnv.MetricsPort = ports[1]
-		apateletEnv.KubernetesPort = ports[2]
+		// Apatelets should figure out their own ports when running in go routines
+		apateletEnv.KubernetesPort = 0
+		apateletEnv.MetricsPort = 0
+		apateletEnv.ListenPort = 0
 
 		go func() {
-			// TODO: Add retry logic
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("Apatelet failed to start: %v\n", r)

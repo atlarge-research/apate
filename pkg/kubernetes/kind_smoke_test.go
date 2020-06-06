@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
@@ -20,6 +22,7 @@ func setup(t *testing.T) {
 	}
 
 	initEnv := env.ControlPlaneEnv()
+	initEnv.KubeConfigLocation = "/tmp/apate/test-" + uuid.New().String()
 	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
 	env.SetEnv(initEnv)
 }

@@ -3,6 +3,7 @@ package health
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
@@ -12,6 +13,11 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+)
+
+const (
+	sendInterval = 20 * time.Second
+	recvTimeout  = 30 * time.Second
 )
 
 // Client holds all the information used to communicate with the server
@@ -24,10 +30,13 @@ type Client struct {
 	statusLock sync.RWMutex
 }
 
-const (
-	sendInterval = 1 * time.Second
-	recvTimeout  = 5 * time.Second
-)
+func (c *Client) close() error {
+	if c.Conn != nil {
+		return c.Conn.Close()
+	}
+
+	return nil
+}
 
 // GetClient creates a new health client
 func GetClient(info *service.ConnectionInfo, uuid string) (*Client, error) {
@@ -46,57 +55,108 @@ func GetClient(info *service.ConnectionInfo, uuid string) (*Client, error) {
 }
 
 // StartStream starts the bidirectional health stream, errCallback is called upon any error
-func (c *Client) StartStream(ctx context.Context, errCallback func(error)) {
+func (c *Client) StartStream(ctx context.Context, errCallback func(error) bool) {
 	stream, err := c.Client.HealthStream(ctx)
 	if err != nil {
 		errCallback(errors.Wrap(err, "failed to set up health stream"))
 	}
 
+	go c.sendLoop(ctx, errCallback, stream)
+	go c.recvLoop(ctx, errCallback, stream)
+}
+
+func (c *Client) sendLoop(ctx context.Context, errCallback func(error) bool, stream health.Health_HealthStreamClient) {
 	// Send health status
-	go func() {
-		for {
-			c.statusLock.RLock()
-			err = stream.Send(&health.NodeStatus{
-				NodeUuid: c.uuid,
-				Status:   c.status,
-			})
-			c.statusLock.RUnlock()
+	timeoutDelay := time.NewTimer(sendInterval)
+	defer timeoutDelay.Stop()
 
-			if err != nil {
-				errCallback(errors.Wrap(err, "failed to send health status message over stream"))
-			}
+	for {
+		c.statusLock.RLock()
+		err := stream.Send(&health.NodeStatus{
+			NodeUuid: c.uuid,
+			Status:   c.status,
+		})
+		c.statusLock.RUnlock()
 
-			select {
-			case <-ctx.Done():
-				errCallback(errors.Wrap(ctx.Err(), "context cancelled"))
-			case <-time.After(sendInterval):
+		if err != nil {
+			if c.cancelSend(errCallback, err, stream, "failed to send health status message over stream") {
+				return
 			}
 		}
-	}()
 
+		timeoutDelay.Reset(sendInterval)
+		select {
+		case <-ctx.Done():
+			if c.cancelSend(errCallback, err, stream, "unable to send heartbeat to server") {
+				return
+			}
+		case <-timeoutDelay.C:
+		}
+	}
+}
+
+func (c *Client) cancelSend(errCallback func(error) bool, err error, stream health.Health_HealthStreamClient, msg string) bool {
+	if errCallback(errors.Wrap(err, msg)) {
+		if err := stream.CloseSend(); err != nil {
+			log.Printf("%v\n", errors.Wrap(err, "error while closing health stream client (send)"))
+		}
+		return true
+	}
+	return false
+}
+
+func (c *Client) recvLoop(ctx context.Context, errCallback func(error) bool, stream health.Health_HealthStreamClient) {
 	// Receive heartbeat from server
-	go func() {
-		for {
-			r := make(chan struct{})
+	timeoutDelay := time.NewTimer(recvTimeout)
+	defer timeoutDelay.Stop()
 
-			go func() {
-				_, err := stream.Recv()
-				if err != nil {
-					errCallback(errors.Wrap(ctx.Err(), "health stream timed out"))
-				}
-				r <- struct{}{}
-			}()
+	for {
+		r := make(chan struct{}, 1)
+		go c.recv(ctx, stream, errCallback, r)
 
-			select {
-			case <-ctx.Done():
-				// On context cancel stop
-				errCallback(errors.Wrap(ctx.Err(), "context cancelled"))
-			case <-time.After(time.Second * recvTimeout):
-				errCallback(errors.Errorf("health stream died"))
-			case <-r:
+		timeoutDelay.Reset(recvTimeout)
+		select {
+		case <-ctx.Done():
+			// On context cancel stop
+			if c.cancelRecv(ctx, errCallback, "unable to receive heartbeat from server") {
+				return
 			}
+		case <-timeoutDelay.C:
+			if c.cancelRecv(ctx, errCallback, "health stream died") {
+				return
+			}
+		case <-r:
 		}
-	}()
+	}
+}
+
+func (c *Client) cancelRecv(ctx context.Context, errCallback func(error) bool, msg string) bool {
+	if errCallback(errors.Wrap(ctx.Err(), msg)) {
+		if err := c.close(); err != nil {
+			log.Printf("%v\n", errors.Wrap(err, "error while closing health stream client (recv)"))
+		}
+		return true
+	}
+	return false
+}
+
+func (c *Client) recv(ctx context.Context, stream health.Health_HealthStreamClient, errCallback func(error) bool, r chan struct{}) {
+	_, err := stream.Recv()
+
+	if err != nil {
+		if errCallback(errors.Wrap(err, "health stream timed out")) {
+			return
+		}
+	}
+
+	select {
+	case <-ctx.Done():
+		if errCallback(errors.Wrap(ctx.Err(), "unable to receive heartbeat from server")) {
+			return
+		}
+	case r <- struct{}{}:
+		//
+	}
 }
 
 // SetStatus sets the internal health status which is reported back to the control plane
