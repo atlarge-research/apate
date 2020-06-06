@@ -45,6 +45,8 @@ func TestRegisterRunner(t *testing.T) {
 }
 
 func TestRegisterRunnerUnknownType(t *testing.T) {
+	t.Parallel()
+
 	setEnv()
 
 	ctrl := gomock.NewController(t)
@@ -56,6 +58,8 @@ func TestRegisterRunnerUnknownType(t *testing.T) {
 }
 
 func TestRegisterRunnerReturnsError(t *testing.T) {
+	t.Parallel()
+
 	setEnv()
 
 	ctrl := gomock.NewController(t)

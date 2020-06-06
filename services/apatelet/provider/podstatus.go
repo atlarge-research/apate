@@ -157,7 +157,7 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 		return false, errors.Wrap(err, "failed to get pod resources flag while getting pod status")
 	}
 
-	podResources, ok := podResourcesFlag.(stats.PodStats)
+	podResources, ok := podResourcesFlag.(*stats.PodStats)
 	if !ok {
 		return false, errors.Wrapf(err, "unable to convert '%v' to PodStats", podResourcesFlag)
 	}

@@ -33,6 +33,8 @@ func TestSetNodeFlagsUnsetDirect(t *testing.T) {
 
 	var s store.Store = ms
 
+	ms.EXPECT().SetNodeFlags(store.Flags{})
+
 	SetNodeFlags(&s, &nodeconfigv1.NodeConfigurationState{
 		NetworkLatency: "unset", // default in types.go
 		CustomState: &nodeconfigv1.NodeConfigurationCustomState{

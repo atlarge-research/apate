@@ -3,13 +3,14 @@ package pod
 import (
 	"testing"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
@@ -100,6 +101,8 @@ func TestSetPodFlagsUnset(t *testing.T) {
 
 	var s store.Store = ms
 
+	ms.EXPECT().SetPodFlags("test", store.Flags{})
+
 	err := SetPodFlags(&s, "test", &podconfigv1.PodConfigurationState{
 		CreatePodResponse:    podconfigv1.ResponseUnset,
 		UpdatePodResponse:    podconfigv1.ResponseUnset,
@@ -122,15 +125,14 @@ func TestSetPodFlags(t *testing.T) {
 
 	var s store.Store = ms
 
-	ms.EXPECT().SetPodFlags("test", store.Flags{
-		events.PodCreatePodResponse:    translateResponse(podconfigv1.ResponseNormal),
-		events.PodUpdatePodResponse:    translateResponse(podconfigv1.ResponseNormal),
-		events.PodDeletePodResponse:    translateResponse(podconfigv1.ResponseNormal),
-		events.PodGetPodResponse:       translateResponse(podconfigv1.ResponseNormal),
-		events.PodGetPodStatusResponse: translateResponse(podconfigv1.ResponseNormal),
-		// Any here because the resource usage has times which can't be compared. This is tested better in TestTranslatePodResources
-		events.PodResources: gomock.Any(),
-		events.PodStatus:    translatePodStatus(podconfigv1.PodStatusRunning),
+	ms.EXPECT().SetPodFlags("test", gomock.Any()).Do(func(_ string, flags store.Flags) {
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodCreatePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodUpdatePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodDeletePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodGetPodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodGetPodStatusResponse])
+		assert.NotNil(t, flags[events.PodResources])
+		assert.Equal(t, translatePodStatus(podconfigv1.PodStatusRunning), flags[events.PodStatus])
 	})
 
 	err := SetPodFlags(&s, "test", &podconfigv1.PodConfigurationState{

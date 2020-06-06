@@ -100,13 +100,13 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	}
 
 	ms.EXPECT().SetNodeFlags(gomock.Any()).Do(func(flags store.Flags) {
-		assert.Equal(t, events.NodeCreatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
-		assert.Equal(t, events.NodeUpdatePodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
-		assert.Equal(t, events.NodeDeletePodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
-		assert.Equal(t, events.NodeGetPodResponse, translateResponse(nodeconfigv1.ResponseTimeout))
-		assert.Equal(t, events.NodeGetPodStatusResponse, translateResponse(nodeconfigv1.ResponseTimeout))
-		assert.Equal(t, events.NodeGetPodsResponse, translateResponse(nodeconfigv1.ResponseTimeout))
-		assert.Equal(t, events.NodePingResponse, translateResponse(nodeconfigv1.ResponseTimeout))
+		assert.Equal(t, translateResponse(nodeconfigv1.ResponseTimeout), flags[events.NodeCreatePodResponse])
+		assert.Equal(t, translateResponse(nodeconfigv1.ResponseTimeout), flags[events.NodeUpdatePodResponse])
+		assert.Equal(t, translateResponse(nodeconfigv1.ResponseTimeout), flags[events.NodeDeletePodResponse])
+		assert.Equal(t, translateResponse(nodeconfigv1.ResponseTimeout), flags[events.NodeGetPodResponse])
+		assert.Equal(t, translateResponse(nodeconfigv1.ResponseTimeout), flags[events.NodeGetPodStatusResponse])
+		assert.Equal(t, translateResponse(nodeconfigv1.ResponseTimeout), flags[events.NodeGetPodsResponse])
+		assert.Equal(t, translateResponse(nodeconfigv1.ResponseTimeout), flags[events.NodePingResponse])
 	})
 
 	ms.EXPECT().SetNodeTasks(gomock.Any()).Do(func(arr []*store.Task) {
