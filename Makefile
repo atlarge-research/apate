@@ -20,7 +20,7 @@ lint_fix:
 	golangci-lint run --fix
 
 .PHONY: test
-test:
+test: docker_build
 	go test --timeout 30m -p 24 -v ./...
 
 .PHONY: test_short
