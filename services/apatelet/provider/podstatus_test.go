@@ -59,6 +59,7 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 		expectedResourceGets = 2 // First by updateStatsSummary and then in getPodStatus limitReached
 	}
 
+	// Because we compute the resources up front
 	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{
 		CPU: &stats.CPUStats{
 			UsageNanoCores: &podResources,
@@ -200,4 +201,54 @@ func TestGetPodStatusEmulationError(t *testing.T) {
 	// assert
 	assert.Error(t, err)
 	assert.True(t, IsExpected(err))
+}
+
+func TestGetPodStatusDefault(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ms := mock_store.NewMockStore(ctrl)
+	pod := corev1.Pod{}
+	pod.Namespace = podNamespace
+	pod.Name = podName
+	pod.Labels = map[string]string{
+		podconfigv1.PodConfigurationLabel: podLabel,
+	}
+
+	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodGetPodStatusResponse).Return(scenario.ResponseUnset, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeGetPodStatusResponse).Return(scenario.ResponseUnset, nil)
+
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{}, nil).Times(2)
+	ms.EXPECT().GetPodFlag(&pod, events.PodStatus).Return(scenario.PodStatusUnset, nil)
+
+	var s store.Store = ms
+	nodeResources := int64(1000)
+	prov := Provider{
+		Store: &s,
+		Pods:  podmanager.New(),
+		Resources: &scenario.NodeResources{
+			CPU:              nodeResources,
+			Memory:           nodeResources,
+			EphemeralStorage: nodeResources,
+		},
+		NodeInfo: &node.Info{},
+		Stats: &Stats{
+			statsSummary: &stats.Summary{},
+		},
+	}
+	prov.Pods.AddPod(&pod)
+
+	prov.updateStatsSummary()
+
+	ps, err := prov.GetPodStatus(context.Background(), podNamespace, podName)
+
+	// assert
+	assert.NoError(t, err)
+	assert.Equal(t, corev1.PodRunning, ps.Phase)
+	assert.Equal(t, corev1.PodReady, ps.Conditions[0].Type)
+	assert.Equal(t, corev1.ConditionTrue, ps.Conditions[0].Status)
+	assert.Len(t, prov.Pods.GetAllPods(), 1)
 }
