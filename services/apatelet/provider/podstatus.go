@@ -162,11 +162,9 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 		return false, errors.Wrapf(err, "unable to convert '%v' to PodStats", podResourcesFlag)
 	}
 
-	usageCores := podResources.CPU.UsageNanoCores
-	usageMemory := podResources.Memory.UsageBytes
-	usageEphemeralStorage := podResources.EphemeralStorage.UsedBytes
+	resources := p.getPodResources(podResources)
 
-	podExceedsPodLimit := *usageCores > limits.cpu || *usageMemory > limits.memory || *usageEphemeralStorage > limits.ephemeralStorage
+	podExceedsPodLimit := resources.cpu > limits.cpu || resources.memory > limits.memory || resources.ephemeralStorage > limits.ephemeralStorage
 
 	// If the total amount of all pods resources exceed the resources on the node, just kill the current one
 	// TODO implement k8s OOM handling (much more complicated)
@@ -177,6 +175,30 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 		*nodeStats.Fs.UsedBytes > uint64(p.Resources.EphemeralStorage)
 
 	return podExceedsPodLimit || totalLimitExceeded, nil
+}
+
+func (p *Provider) getPodResources(podResources *stats.PodStats) resources {
+	usageCores := uint64(0)
+	usageMemory := uint64(0)
+	usageEphemeralStorage := uint64(0)
+
+	if podResources.CPU != nil && podResources.CPU.UsageNanoCores != nil {
+		usageCores = *podResources.CPU.UsageNanoCores
+	}
+
+	if podResources.Memory != nil && podResources.Memory.UsageBytes != nil {
+		usageMemory = *podResources.Memory.UsageBytes
+	}
+
+	if podResources.EphemeralStorage != nil && podResources.EphemeralStorage.UsedBytes != nil {
+		usageMemory = *podResources.EphemeralStorage.UsedBytes
+	}
+
+	return resources{
+		usageCores,
+		usageMemory,
+		usageEphemeralStorage,
+	}
 }
 
 func (p *Provider) getPodResourceLimits(pod *corev1.Pod) resources {
