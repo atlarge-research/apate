@@ -6,16 +6,37 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 )
 
+// GetNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
+func (c Cluster) GetNodes() (*corev1.NodeList, error) {
+	nodes, err := c.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve nodes list from kubernetes")
+	}
+
+	return nodes, nil
+}
+
+// GetPods gets a list of pods from kubernetes using the specified namespace
+func (c Cluster) GetPods(namespace string) (*corev1.PodList, error) {
+	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve pod list from kubernetes")
+	}
+
+	return pods, nil
+}
+
 const nodeDeletionGracePeriod int64 = 0
 
 // GetNumberOfPods returns the number of pods in the cluster, or an error if it couldn't get these.
 func (c *Cluster) GetNumberOfPods(namespace string) (int, error) {
-	pods, err := c.clientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	pods, err := c.GetPods(namespace)
 	if err != nil {
 		return -1, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
 	}
@@ -66,10 +87,27 @@ func (c *Cluster) RemoveAllApateletsFromCluster() error {
 
 // GetNumberOfNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
 func (c *Cluster) GetNumberOfNodes() (int, error) {
-	nodes, err := c.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodes, err := c.GetNodes()
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
 	}
 
 	return len(nodes.Items), nil
+}
+
+// GetNumberOfPendingPods will return the number of pods in the pending state.
+func (c Cluster) GetNumberOfPendingPods(namespace string) (int, error) {
+	pods, err := c.GetPods(namespace)
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to retrieve pods list from GetPods")
+	}
+
+	cnt := 0
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == corev1.PodPending {
+			cnt++
+		}
+	}
+
+	return cnt, nil
 }

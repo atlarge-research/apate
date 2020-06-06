@@ -46,7 +46,9 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (*Provider, *gomock.Contro
 
 	ms.EXPECT().AddPodFlagListener(events.PodResources, gomock.Any())
 
-	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, &info, &s, true, env.DefaultApateletEnvironment())
+	e, err := env.ApateletEnv()
+	assert.NoError(t, err)
+	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, &info, &s, true, e)
 	p := prov.(*Provider)
 	return p, ctrl, ms, pm
 }

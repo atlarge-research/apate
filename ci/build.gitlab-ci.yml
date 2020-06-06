@@ -1,0 +1,43 @@
+generate:
+  stage: build
+  before_script:
+    - go mod download
+  script:
+    - make crd_gen mock_gen
+    # Had to add -I /go/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ in order to make it work
+    - protoc -I ./api -I $GOPATH/pkg/mod/github.com/gogo/protobuf@v1.2.1/protobuf/ --go_opt=paths=source_relative --go_out=plugins=grpc:./api/ `find ./api/ -type f -name "*.proto" -print`
+
+build:
+  stage: build
+  before_script:
+    - go mod download
+  script:
+    - go install ./...
+
+build apatelet container:
+  stage: build
+  image: docker:latest
+  variables:
+    DOCKER_DRIVER: overlay
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
+  script:
+    - docker pull $VK_IMAGE || true
+    - docker build --cache-from $VK_IMAGE -f services/apatelet/Dockerfile -t $VK_IMAGE .
+    - docker push "$VK_IMAGE"
+
+build cp container:
+  stage: build
+  image: docker:latest
+  variables:
+    DOCKER_DRIVER: overlay
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
+  script:
+    - docker pull $CP_IMAGE || true
+    - docker build --cache-from $CP_IMAGE -f services/controlplane/Dockerfile -t $CP_IMAGE .
+    - docker push "$CP_IMAGE"

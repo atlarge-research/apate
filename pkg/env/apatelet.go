@@ -31,6 +31,9 @@ const (
 	// ApateletDisableTaintsDefault is the default for DisableTaints
 	ApateletDisableTaintsDefault = false
 
+	// CIKubernetesAddress is the default for CIKubernetesAddress
+	CIKubernetesAddressDefault = ""
+
 	// ApateletDebugEnabledDefault default for DebugEnabled
 	ApateletDebugEnabledDefault = false
 )
@@ -50,6 +53,10 @@ type ApateletEnvironment struct {
 	// KubeConfigLocation is the path to the kube config
 	KubeConfigLocation string `env:"APATELET_KUBE_CONFIG"`
 
+	// CIKubernetesAddress is to add an entry to the /etc/hosts file of an apatelet to ensure it can find the k8s cluster
+	// this can be used to fix bugs when running apate in a DinD
+	CIKubernetesAddress string `env:"CI_APATELET_K8S_ADDRESS"`
+
 	// ControlPlaneAddress is the address of the control plane which will be used to connect to
 	ControlPlaneAddress string `env:"APATELET_CP_ADDRESS"`
 	// ControlPlanePort is the port of the control plane
@@ -62,8 +69,8 @@ type ApateletEnvironment struct {
 	DebugEnabled bool `env:"APATELET_ENABLE_DEBUG"`
 }
 
-// DefaultApateletEnvironment returns the default apate environment
-func DefaultApateletEnvironment() ApateletEnvironment {
+// defaultApateletEnvironment returns the default apate environment
+func defaultApateletEnvironment() ApateletEnvironment {
 	return ApateletEnvironment{
 		ListenAddress: ApateletListenAddressDefault,
 		ListenPort:    ApateletListenPortDefault,
@@ -71,7 +78,8 @@ func DefaultApateletEnvironment() ApateletEnvironment {
 		KubernetesPort: ApateletKubernetesPortDefault,
 		MetricsPort:    ApateletMetricsPortDefault,
 
-		KubeConfigLocation: ApateletKubeConfigLocationDefault,
+		KubeConfigLocation:  ApateletKubeConfigLocationDefault,
+		CIKubernetesAddress: CIKubernetesAddressDefault,
 
 		ControlPlaneAddress: ApateletControlPlaneAddressDefault,
 		ControlPlanePort:    ApateletControlPlanePortDefault,
@@ -84,7 +92,7 @@ func DefaultApateletEnvironment() ApateletEnvironment {
 
 // ApateletEnv builds an ApateletEnvironment based on the actual environment
 func ApateletEnv() (ApateletEnvironment, error) {
-	c := DefaultApateletEnvironment()
+	c := defaultApateletEnvironment()
 	if err := env.Bind(&c); err != nil {
 		return ApateletEnvironment{}, errors.Wrap(err, "invalid environment variables")
 	}
