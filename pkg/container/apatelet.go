@@ -38,7 +38,7 @@ func SpawnApateletContainers(ctx context.Context, amountOfNodes int, pullPolicy 
 	// Set spawn information
 	spawnInfo := NewSpawnInformation(pullPolicy, env.ApateletFullImage, env.ApateletContainerPrefix, amountOfNodes, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
-			Image:        env.ApateletImageName,
+			Image:        env.ApateletImageName, // apatelet:latest
 			Env:          envArray,
 			ExposedPorts: ports,
 		}, nil, nil, env.ApateletContainerPrefix+strconv.Itoa(i))

@@ -7,7 +7,6 @@ package mock_store
 import (
 	apatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
 	health "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	kubeconfig "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 	scenario "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	store "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
 	gomock "github.com/golang/mock/gomock"
@@ -93,21 +92,6 @@ func (m *MockStore) GetApateletScenario() (*apatelet.ApateletScenario, error) {
 func (mr *MockStoreMockRecorder) GetApateletScenario() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApateletScenario", reflect.TypeOf((*MockStore)(nil).GetApateletScenario))
-}
-
-// GetKubeConfig mocks base method
-func (m *MockStore) GetKubeConfig() (kubeconfig.KubeConfig, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKubeConfig")
-	ret0, _ := ret[0].(kubeconfig.KubeConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetKubeConfig indicates an expected call of GetKubeConfig
-func (mr *MockStoreMockRecorder) GetKubeConfig() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKubeConfig", reflect.TypeOf((*MockStore)(nil).GetKubeConfig))
 }
 
 // GetNode mocks base method
@@ -210,20 +194,6 @@ func (m *MockStore) SetApateletScenario(arg0 *apatelet.ApateletScenario) error {
 func (mr *MockStoreMockRecorder) SetApateletScenario(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetApateletScenario", reflect.TypeOf((*MockStore)(nil).SetApateletScenario), arg0)
-}
-
-// SetKubeConfig mocks base method
-func (m *MockStore) SetKubeConfig(arg0 kubeconfig.KubeConfig) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetKubeConfig", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetKubeConfig indicates an expected call of SetKubeConfig
-func (mr *MockStoreMockRecorder) SetKubeConfig(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetKubeConfig", reflect.TypeOf((*MockStore)(nil).SetKubeConfig), arg0)
 }
 
 // SetNodeStatus mocks base method

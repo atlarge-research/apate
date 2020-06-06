@@ -1,0 +1,33 @@
+
+dependency_scanning:
+  stage: verify
+  needs: [build]
+
+license_scanning:
+  stage: verify
+  needs: [build]
+
+sast:
+  stage: verify
+  needs: [build]
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    # If there were cache, SAST would also check the cache.
+    #The SAST_EXCLUDED_PATHS / DS_EXCLUDED_PATHS only remove it from the final report, not from scanning
+    paths: []
+
+
+static-analysis:
+  stage: verify
+  needs: [build]
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+  before_script:
+    # Use default .golangci.yml file from the image if one is not present in the project root.
+    - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'
+  script:
+    - golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+    paths:
+      - gl-code-quality-report.json

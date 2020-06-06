@@ -52,7 +52,9 @@ func TestNewProvider(t *testing.T) {
 
 	ms.EXPECT().AddPodFlagListener(events.PodResources, gomock.Any())
 
-	p, ok := NewProvider(pm, sts, &resources, &cfg, &ni, &s, true, env.DefaultApateletEnvironment()).(*Provider)
+	e, err := env.ApateletEnv()
+	assert.NoError(t, err)
+	p, ok := NewProvider(pm, sts, &resources, &cfg, &ni, &s, true, e).(*Provider)
 
 	assert.True(t, ok)
 
