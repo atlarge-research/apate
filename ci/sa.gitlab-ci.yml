@@ -21,7 +21,6 @@ static-analysis:
   stage: verify
   needs: [build]
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
-  allow_failure: true
   before_script:
     # Use default .golangci.yml file from the image if one is not present in the project root.
     - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'

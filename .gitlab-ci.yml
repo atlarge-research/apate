@@ -9,7 +9,7 @@ stages:
 variables:
   REGISTRY_URL: "registry.planning.nl"
   REGISTRY_IMAGE: "registry.planning.nl/emulating-k8s/emulating-k8s"
-  BUILD_IMAGE: "$REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
+  CI_IMAGE: "$REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
   VK_IMAGE: "$REGISTRY_IMAGE/apatelet-$CI_COMMIT_REF_SLUG"
   CP_IMAGE: "$REGISTRY_IMAGE/controlplane-$CI_COMMIT_REF_SLUG"
   GOPATH: "$CI_PROJECT_DIR/.go"
@@ -20,7 +20,7 @@ variables:
   SAST_DEFAULT_ANALYZERS: "brakeman, gosec, flawfinder, security-code-scan, secrets, sobelow"
   DOCKER_BUILDKIT: 1
 
-prepare-build-image:
+prepare-ci-image:
   stage: prepare-ci-image
   image: docker:latest
   only:
@@ -33,11 +33,12 @@ prepare-build-image:
     - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
     - cd ./ci/build-image
   script:
-    - docker build --pull -t "$BUILD_IMAGE" .
-    - docker push "$BUILD_IMAGE"
+    - docker pull "$CI_IMAGE" || true
+    - docker build --cache-from $CI_IMAGE -t "$CI_IMAGE" .
+    - docker push "$CI_IMAGE"
 
 default:
-  image: $BUILD_IMAGE
+  image: $CI_IMAGE
   before_script:
     - mkdir -p .go
   cache:

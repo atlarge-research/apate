@@ -49,7 +49,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
 	initEnv.KinDClusterName = kindClusterName
 	initEnv.ApateletRunType = runType
-	initEnv.PrometheusStackEnabled = true // Disable this if testings is unbearably slow
+	initEnv.PrometheusStackEnabled = false // Disable this if testings is unbearably slow
 	env.SetEnv(initEnv)
 }
 
