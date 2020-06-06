@@ -168,6 +168,20 @@ func (mr *MockStoreMockRecorder) RemoveNode(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNode", reflect.TypeOf((*MockStore)(nil).RemoveNode), arg0)
 }
 
+// RemoveNodes mocks base method
+func (m *MockStore) RemoveNodes(arg0 []uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveNodes", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveNodes indicates an expected call of RemoveNodes
+func (mr *MockStoreMockRecorder) RemoveNodes(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNodes", reflect.TypeOf((*MockStore)(nil).RemoveNodes), arg0)
+}
+
 // SetApateletScenario mocks base method
 func (m *MockStore) SetApateletScenario(arg0 *apatelet.ApateletScenario) error {
 	m.ctrl.T.Helper()

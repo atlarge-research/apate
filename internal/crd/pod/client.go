@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -21,7 +21,13 @@ import (
 
 const resource = "podconfigurations"
 
-var once sync.Once
+type podClient struct {
+	schemeLock         sync.Once
+	sharedInformerLock sync.Once
+	sharedInformer     *cache.SharedIndexInformer
+}
+
+var client podClient
 
 // ConfigurationClient is the client for the PodConfiguration CRD
 type ConfigurationClient struct {
@@ -29,9 +35,16 @@ type ConfigurationClient struct {
 	namespace  string
 }
 
+// Reset will reset the sharedInformerLock, resulting in a new informer being created the next time resources are
+// being watched. This is mostly for tests.
+// Warning: Calling this during normal runtime will result in unpredictable behaviour, and possibly memory + routine leaks
+func Reset() {
+	client.sharedInformerLock = sync.Once{}
+}
+
 // NewForConfig creates a new ConfigurationClient based on the given restConfig and namespace
 func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error) {
-	once.Do(func() {
+	client.schemeLock.Do(func() {
 		if err := podconfigv1.AddToScheme(scheme.Scheme); err != nil {
 			log.Panicf("%+v", errors.Wrap(err, "failed to add crd information to the scheme"))
 		}
@@ -53,23 +66,28 @@ func NewForConfig(c *rest.Config, namespace string) (*ConfigurationClient, error
 
 // WatchResources creates an informer which watches for new or updated PodConfigurations and updates the returned store accordingly
 func (e *ConfigurationClient) WatchResources(addFunc func(obj interface{}), updateFunc func(oldObj, newObj interface{}), deleteFunc func(obj interface{}), stopCh <-chan struct{}) {
-	_, podConfigurationController := cache.NewInformer(
-		&cache.ListWatch{
-			ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
-				return e.list(lo)
+	client.sharedInformerLock.Do(func() {
+		informer := cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(lo metav1.ListOptions) (result runtime.Object, err error) {
+					return e.list(lo)
+				},
+				WatchFunc: e.watch,
 			},
-			WatchFunc: e.watch,
-		},
-		&podconfigv1.PodConfiguration{},
-		1*time.Minute,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc:    addFunc,
-			UpdateFunc: updateFunc,
-			DeleteFunc: deleteFunc,
-		},
-	)
+			&podconfigv1.PodConfiguration{},
+			1*time.Minute,
+			cache.Indexers{},
+		)
 
-	go podConfigurationController.Run(stopCh)
+		client.sharedInformer = &informer
+		go informer.Run(stopCh)
+	})
+
+	(*client.sharedInformer).AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
+		AddFunc:    addFunc,
+		UpdateFunc: updateFunc,
+		DeleteFunc: deleteFunc,
+	}, time.Minute)
 }
 
 func (e *ConfigurationClient) list(opts metav1.ListOptions) (*podconfigv1.PodConfigurationList, error) {

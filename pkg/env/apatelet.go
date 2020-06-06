@@ -33,6 +33,9 @@ const (
 
 	// CIKubernetesAddress is the default for CIKubernetesAddress
 	CIKubernetesAddressDefault = ""
+
+	// ApateletDebugEnabledDefault default for DebugEnabled
+	ApateletDebugEnabledDefault = false
 )
 
 // ApateletEnvironment represents the environment variables of the apatelet
@@ -61,6 +64,9 @@ type ApateletEnvironment struct {
 
 	// DisableTaints determines whether to disable taints on this node or not
 	DisableTaints bool `env:"APATELET_DISABLE_TAINTS"`
+
+	// DebugEnabled determines if extra messages and profiling tools should be enabled
+	DebugEnabled bool `env:"APATELET_ENABLE_DEBUG"`
 }
 
 // defaultApateletEnvironment returns the default apate environment
@@ -79,6 +85,8 @@ func defaultApateletEnvironment() ApateletEnvironment {
 		ControlPlanePort:    ApateletControlPlanePortDefault,
 
 		DisableTaints: ApateletDisableTaintsDefault,
+
+		DebugEnabled: ApateletDebugEnabledDefault,
 	}
 }
 

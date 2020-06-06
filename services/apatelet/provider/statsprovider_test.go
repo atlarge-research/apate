@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
-	"github.com/virtual-kubelet/node-cli/provider"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
@@ -26,7 +28,6 @@ import (
 
 const (
 	name      = "name"
-	port      = 42
 	label     = "label"
 	namespace = "namespace"
 	event     = events.PodResources
@@ -40,12 +41,12 @@ func createProvider(t *testing.T, cpu, mem, fs int64) (*Provider, *gomock.Contro
 	pm := podmanager.New() // TODO mock?
 
 	res := scenario.NodeResources{CPU: cpu, Memory: mem, EphemeralStorage: fs}
-	info, err := node.NewInfo("", "", name, "", "a/b", port)
+	info, err := node.NewInfo("", "", name, "", "a/b")
 	assert.NoError(t, err)
 
 	ms.EXPECT().AddPodListener(events.PodResources, gomock.Any())
 
-	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, info, &s, true)
+	prov := NewProvider(pm, NewStats(), &res, &provider.InitConfig{}, &info, &s, true, env.DefaultApateletEnvironment())
 	p := prov.(*Provider)
 	return p, ctrl, ms, pm
 }
