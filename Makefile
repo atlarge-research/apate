@@ -20,8 +20,8 @@ lint_fix:
 	golangci-lint run --fix
 
 .PHONY: test
-test:
-	go test -p 24 -v ./...
+test: docker_build
+	go test --timeout 30m -p 24 -v ./...
 
 .PHONY: test_short
 test_short:
@@ -32,14 +32,14 @@ test_race:
 	go test -race -short ./...
 
 .PHONY: test_cover
-test_cover:
-	go test -coverprofile cover.out ./...
-	go tool cover -html=cover.out
+test_cover: docker_build
+	go test --timeout 30m -v -coverpkg=./... -coverprofile=cover.cov ./...
+	go tool cover -func=cover.cov
 
 .PHONY: test_cover_short
 test_cover_short:
-	go test -short -coverprofile cover.out ./...
-	go tool cover -html=cover.out
+	go test -short -coverprofile cover.cov ./...
+	go tool cover -func=cover.cov
 
 .PHONY: docker_build_apatelet
 docker_build_apatelet:
@@ -47,7 +47,7 @@ docker_build_apatelet:
 	docker tag apatelet apatekubernetes/apatelet
 
 .PHONY: docker_build_cp
-docker_build_cp:
+docker_build_cp: 
 	docker build -f ./services/controlplane/Dockerfile -t controlplane .
 	docker tag controlplane apatekubernetes/controlplane
 

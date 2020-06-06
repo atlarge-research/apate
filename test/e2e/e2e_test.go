@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -11,26 +12,31 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
-
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 
 	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/run"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
+
+func detectCI() bool {
+	return os.Getenv("CI_COMMIT_REF_SLUG") != ""
+}
 
 // Please set the `$CI_PROJECT_DIR` to the root of the project
 func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	if testing.Short() {
 		t.Skip("Skipping E2E")
+	}
+
+	if detectCI() {
+		log.Println("WARNING: Docker tests disabled!")
 	}
 
 	os.Args = []string{"apate-cp"}
@@ -47,10 +53,17 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
 	initEnv.KinDClusterName = kindClusterName
 	initEnv.ApateletRunType = runType
+	// Disable this  by default, testRunPrometheus tests this, but otherwise it's just very slow
+	initEnv.PrometheusStackEnabled = false
 	env.SetEnv(initEnv)
 }
 
 func teardown(t *testing.T) {
+	// #nosec
+	_ = exec.Command("sh", "-c", "docker ps --filter name=apate --format \"{{.ID}}\" | xargs docker kill").Run()
+	// #nosec
+	// _ = exec.Command("sh", "-c", "docker ps -a --filter name=apate --format \"{{.ID}}\" | xargs docker rm").Run()
+
 	// #nosec
 	_ = exec.Command("docker", "kill", "apate-cp").Run()
 	time.Sleep(time.Second * 5)
@@ -60,63 +73,6 @@ func teardown(t *testing.T) {
 
 	node.Reset()
 	pod.Reset()
-}
-
-func TestSimplePodDeployment(t *testing.T) {
-	testSimplePodDeployment(t, env.Routine)
-	//testSimplePodDeployment(t, env.Docker)
-}
-
-func testSimplePodDeployment(t *testing.T, rt env.RunType) {
-	setup(t, strings.ToLower("testSimplePodDeployment_"+string(rt)), rt)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	go cp.StartControlPlane(ctx, runner.New())
-
-	waitForCP(t)
-
-	kcfg := getKubeConfig(t)
-
-	// Setup some nodes
-	simpleNodeDeployment(t, kcfg)
-	time.Sleep(time.Second * 5)
-
-	// Test pods
-	simpleReplicaSet(t, kcfg)
-
-	cancel()
-
-	teardown(t)
-}
-
-func TestSimpleNodeDeployment(t *testing.T) {
-	testSimpleNodeDeployment(t, env.Routine)
-	//testSimpleNodeDeployment(t, env.Docker)
-}
-
-// To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
-// or the env var CP_MANAGER_CONFIG_LOCATION point to it
-func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
-	setup(t, "TestSimpleNodeDeployment_"+string(rt), rt)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	// Start CP
-	go cp.StartControlPlane(ctx, runner.New())
-
-	// Wait
-	waitForCP(t)
-
-	kcfg := getKubeConfig(t)
-	time.Sleep(time.Second * 5)
-
-	// Test simple deployment
-	simpleNodeDeployment(t, kcfg)
-
-	cancel()
-
-	teardown(t)
 }
 
 func waitForCP(t *testing.T) {
@@ -145,75 +101,65 @@ func getKubeConfig(t *testing.T) *kubeconfig.KubeConfig {
 	return kcfg
 }
 
-func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-	rc := `
-apiVersion: apate.opendc.org/v1
-kind: NodeConfiguration
-metadata:
-    name: e2e-deployment
-spec:
-    replicas: 2
-    resources:
-        memory: 5G
-        cpu: 1000
-        storage: 5T
-        ephemeral_storage: 120G
-        max_pods: 150
-`
+func runScenario(t *testing.T) {
+	args := []string{
+		"apatectl",
+		"run",
+	}
 
-	err := kubectl.Create([]byte(rc), kcfg)
-	assert.NoError(t, err)
-	time.Sleep(time.Second * 15)
-
-	cmh := kubernetes.NewClusterManagerHandler()
-	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	r, w, err := os.Pipe()
 	assert.NoError(t, err)
 
-	nodes, err := cluster.GetNumberOfNodes()
-	assert.NoError(t, err)
-	assert.Equal(t, 3, nodes)
+	os.Stdin = r
+	go cmd.StartCmd(args)
+	w.Write([]byte("\n"))
 }
 
-func simpleReplicaSet(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-	pods := `
-apiVersion: apps/v1
-kind: ReplicaSet
-metadata:
-  name: frontend
-  labels:
-    app: guestbook
-    tier: frontend
-spec:
-  # modify replicas according to your case
-  replicas: 3
-  selector:
-    matchLabels:
-      tier: frontend
-  template:
-    metadata:
-      labels:
-        tier: frontend
-    spec:
-      containers:
-      - name: php-redis
-        image: gcr.io/google_samples/gb-frontend:v3
-`
+func getApateletWaitForCondition(t *testing.T, cluster *kubernetes.Cluster, numApatelets int, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
+	for i := 0; i <= 10; i++ {
+		// get nodes and check that there are 2
+		nodes, err := cluster.GetNodes()
+		assert.NoError(t, err)
+		assert.Equal(t, numApatelets+1, len(nodes.Items))
 
-	namespace := "simple-replica-set"
+		apatelets := getApatelets(nodes)
+		assert.Equal(t, numApatelets, len(apatelets))
 
-	err := kubectl.CreateNameSpace(namespace, kcfg)
-	assert.NoError(t, err)
-	time.Sleep(time.Second * 5)
+		if check(apatelets) {
+			return true, apatelets
+		}
 
-	err = kubectl.ExecuteWithNamespace("create", []byte(pods), kcfg, namespace)
-	assert.NoError(t, err)
-	time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 10)
+	}
 
-	cmh := kubernetes.NewClusterManagerHandler()
-	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
-	assert.NoError(t, err)
+	return false, nil
+}
 
-	numpods, err := cluster.GetNumberOfPods(namespace)
-	assert.NoError(t, err)
-	assert.Equal(t, 3, numpods)
+func getApatelets(nodes *corev1.NodeList) (node []*corev1.Node) {
+	for _, v := range nodes.Items {
+		v := v
+		if strings.HasPrefix(v.Name, "apatelet-") {
+			node = append(node, &v)
+		}
+	}
+	return
+}
+
+func createApateletConditionFunction(t *testing.T, numapatelets int, status corev1.ConditionStatus) func([]*corev1.Node) bool {
+	return func(apatelets []*corev1.Node) bool {
+		assert.Equal(t, numapatelets, len(apatelets))
+
+		for _, apatelet := range apatelets {
+			for _, c := range apatelet.Status.Conditions {
+				if c.Type == corev1.NodeReady && c.Status == status {
+					numapatelets--
+					if numapatelets <= 0 {
+						return true
+					}
+				}
+			}
+		}
+
+		return false
+	}
 }

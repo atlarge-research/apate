@@ -20,9 +20,6 @@ const (
 	ControlPlaneContainerName = "apate-cp"
 	ControlPlaneImageName     = "controlplane:latest"
 	ControlPlaneFullImage     = ApateDocker + "/" + ControlPlaneImageName
-
-	// DockerAddressPrefix specifies the docker address prefix, used for determining the docker address
-	DockerAddressPrefix = "172.17."
 )
 
 // PullPolicy defines the pull policy used for
