@@ -71,18 +71,35 @@ func (s *store) getPodTimeFlag(pod *corev1.Pod, flag events.PodEventFlag, label 
 	}
 
 	timeFlags := s.podTimeFlags[label]
-	lastIndexWithFlag := podTimeIndex
+	previousIndex := podTimeIndex
 	for i := podTimeIndex; i < len(timeFlags); i++ {
 		flags := timeFlags[i]
 
-		if podStartTime.Add(flags.TimeSincePodStart).Before(time.Now()) {
-			currentPodFlags := timeFlags[lastIndexWithFlag]
-			s.podTimeIndexCache[pod][flag] = lastIndexWithFlag
-			return currentPodFlags.Flags[flag], true
+		podSinceStart := podStartTime.Add(flags.TimeSincePodStart)
+
+		// The current index contains the expected flag and is still before the podSinceStart
+		if _, ok := flags.Flags[flag]; ok && podSinceStart.Before(time.Now()) {
+			previousIndex = i
 		}
 
-		if _, ok := flags.Flags[flag]; ok {
-			lastIndexWithFlag = i
+		// If the current flag is set too late or we are in the last iteration
+		// We check for last iteration because there are no further flags to test afterwards
+		if podSinceStart.After(time.Now()) || i == len(timeFlags)-1 {
+			// Look at the previous index
+			currentPodFlags := timeFlags[previousIndex]
+
+			// If this index has time flags before now (it might not have if this is the first iteration)
+			if podStartTime.Add(currentPodFlags.TimeSincePodStart).Before(time.Now()) {
+				if pf, ok := currentPodFlags.Flags[flag]; ok {
+					// Set cache and return it
+					s.podTimeIndexCache[pod][flag] = previousIndex
+					return pf, true
+				}
+			}
+
+			// Else set the current index, as the next iteration can skip every index thus far
+			s.podTimeIndexCache[pod][flag] = i
+			break
 		}
 	}
 

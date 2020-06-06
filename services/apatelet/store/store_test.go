@@ -307,7 +307,7 @@ func TestSetNodeFlag(t *testing.T) {
 
 	// Set flag
 	st.SetNodeFlags(Flags{
-		42: "k82",
+		42: "k8s",
 	})
 
 	// Retrieve unset flag and verify default value and err
@@ -529,8 +529,169 @@ func TestAddPodListener(t *testing.T) {
 	assert.True(t, cb3Called)
 }
 
+func TestSetPodTimeFlags(t *testing.T) {
+	t.Parallel()
+
+	newStore := NewStore()
+	st := newStore.(*store)
+
+	pod1 := createPodWithLabel("a", "b")
+	st.podTimeIndexCache[pod1] = make(map[events.EventFlag]int)
+	st.podTimeIndexCache[pod1][42] = 100
+
+	pod2 := createPodWithLabel("a", "b")
+	st.podTimeIndexCache[pod2] = make(map[events.EventFlag]int)
+	st.podTimeIndexCache[pod2][42] = 1
+
+	tf1, tf2, tf3 := insertTimeFlags(st)
+
+	// Verify the flags are set correctly & sorted
+	ptf := st.podTimeFlags["a/b"]
+	assert.Equal(t, tf2, ptf[0])
+	assert.Equal(t, tf1, ptf[1])
+	assert.Equal(t, tf3, ptf[2])
+
+	// Verify the cache for these pods have been reset
+	assert.Empty(t, st.podTimeIndexCache[pod1])
+	assert.Empty(t, st.podTimeIndexCache[pod2])
+}
+
+// This test will take 3 seconds!
+func TestGetPodTimeFlag(t *testing.T) {
+	t.Parallel()
+
+	newStore := NewStore()
+	st := newStore.(*store)
+
+	tf1, tf2, tf3 := insertTimeFlags(st)
+
+	pod := createPodWithLabel("a", "b")
+
+	// Assert that we get false now and indices are not updated
+	flag, ok := st.getPodTimeFlag(pod, 42, "a/b")
+	assert.False(t, ok)
+	assert.Nil(t, flag)
+	assert.Equal(t, 0, st.podTimeIndexCache[pod][42])
+
+	// After 1 second we expect tf2 to become active
+	time.Sleep(1 * time.Second)
+
+	// Test that we get an actual flag now
+	flag, ok = st.getPodTimeFlag(pod, 42, "a/b")
+	assert.True(t, ok)
+	assert.Equal(t, tf2.Flags[42], flag)
+	assert.Equal(t, 0, st.podTimeIndexCache[pod][42])
+
+	flag, ok = st.getPodTimeFlag(pod, 11, "a/b")
+	assert.False(t, ok)
+	assert.Nil(t, flag)
+	assert.Equal(t, 1, st.podTimeIndexCache[pod][11])
+
+	// After 1 more second we expect tf2 to become active
+	time.Sleep(1 * time.Second)
+
+	// Test that we get an actual flag now
+	flag, ok = st.getPodTimeFlag(pod, 42, "a/b")
+	assert.True(t, ok)
+	assert.Equal(t, tf1.Flags[42], flag)
+	assert.Equal(t, 1, st.podTimeIndexCache[pod][42])
+
+	flag, ok = st.getPodTimeFlag(pod, 11, "a/b")
+	assert.True(t, ok)
+	assert.Equal(t, tf1.Flags[11], flag)
+	assert.Equal(t, 1, st.podTimeIndexCache[pod][11])
+
+	// After 1 more second we expect tf2 to become active
+	time.Sleep(1 * time.Second)
+
+	flag, ok = st.getPodTimeFlag(pod, 42, "a/b")
+	assert.True(t, ok)
+	assert.Equal(t, tf3.Flags[42], flag)
+	assert.Equal(t, 2, st.podTimeIndexCache[pod][42])
+
+	flag, ok = st.getPodTimeFlag(pod, 11, "a/b")
+	assert.True(t, ok)
+	assert.Equal(t, tf1.Flags[11], flag)
+	assert.Equal(t, 1, st.podTimeIndexCache[pod][11])
+}
+
+func TestScenarioMoreImportantThanPodTime(t *testing.T) {
+	t.Parallel()
+
+	newStore := NewStore()
+	st := newStore.(*store)
+
+	tf1 := &TimeFlags{
+		TimeSincePodStart: 0 * time.Second,
+		Flags: Flags{
+			42: "k8s",
+		},
+	}
+	st.SetPodTimeFlags("a/b", []*TimeFlags{tf1})
+
+	st.SetPodFlags("a/b", Flags{
+		42: "k9s",
+	})
+
+	flag, err := st.GetPodFlag(createPodWithLabel("a", "b"), 42)
+	assert.NoError(t, err)
+	assert.Equal(t, "k9s", flag)
+}
+
+func TestPodTimeMoreImportantThanDefault(t *testing.T) {
+	t.Parallel()
+
+	newStore := NewStore()
+	st := newStore.(*store)
+
+	tf1 := &TimeFlags{
+		TimeSincePodStart: 0 * time.Second,
+		Flags: Flags{
+			42: "k8s",
+		},
+	}
+	st.SetPodTimeFlags("a/b", []*TimeFlags{tf1})
+
+	flag, err := st.GetPodFlag(createPodWithLabel("a", "b"), 42)
+	assert.NoError(t, err)
+	assert.Equal(t, "k8s", flag)
+}
+
+func insertTimeFlags(st *store) (*TimeFlags, *TimeFlags, *TimeFlags) {
+	tf1 := &TimeFlags{
+		TimeSincePodStart: 2 * time.Second,
+		Flags: Flags{
+			42: "k8s",
+			11: "k9s",
+		},
+	}
+
+	tf2 := &TimeFlags{
+		TimeSincePodStart: 1 * time.Second,
+		Flags: Flags{
+			42: "k3s",
+		},
+	}
+
+	tf3 := &TimeFlags{
+		TimeSincePodStart: 3 * time.Second,
+		Flags: Flags{
+			42: "k6s?",
+		},
+	}
+
+	// Set flag
+	st.SetPodTimeFlags("a/b", []*TimeFlags{
+		tf1,
+		tf2,
+		tf3,
+	})
+
+	return tf1, tf2, tf3
+}
+
 func createPodWithLabel(ns string, label string) *corev1.Pod {
-	return &corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				podconfigv1.PodConfigurationLabel: label,
@@ -538,4 +699,7 @@ func createPodWithLabel(ns string, label string) *corev1.Pod {
 			Namespace: ns,
 		},
 	}
+	now := metav1.Now()
+	pod.Status.StartTime = &now
+	return pod
 }
