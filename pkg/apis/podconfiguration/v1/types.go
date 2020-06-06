@@ -48,6 +48,8 @@ type PodConfigurationTask struct {
 	// +kubebuilder:validation:Required
 	Timestamp string `json:"timestamp"`
 
+	// Indicates whether the timestamp is relative to the start of the pod or not.
+	// If set to true, a timestamp of 10s means this task will be executed 10 seconds after the pod started.
 	// +kubebuilder:default=false
 	// +kubebuilder:validation:Optional
 	RelativeToPod bool `json:"relative_to_pod"`

@@ -150,11 +150,11 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	ephStorage := uint64(100 * units.MiB)
 
 	ms.EXPECT().SetPodFlags("TestNamespace/TestName", gomock.Any()).Do(func(_ string, flags store.Flags) {
-		assert.Equal(t, events.PodCreatePodResponse, translateResponse(podconfigv1.ResponseNormal))
-		assert.Equal(t, events.PodUpdatePodResponse, translateResponse(podconfigv1.ResponseNormal))
-		assert.Equal(t, events.PodDeletePodResponse, translateResponse(podconfigv1.ResponseNormal))
-		assert.Equal(t, events.PodGetPodResponse, translateResponse(podconfigv1.ResponseNormal))
-		assert.Equal(t, events.PodGetPodStatusResponse, translateResponse(podconfigv1.ResponseNormal))
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodCreatePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodUpdatePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodDeletePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodGetPodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodGetPodStatusResponse])
 
 		stat := flags[events.PodResources].(*stats.PodStats)
 
@@ -170,7 +170,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		assert.EqualValues(t, ephStorage, *stat.EphemeralStorage.UsedBytes)
 		assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
 
-		assert.Equal(t, events.PodStatus, translatePodStatus(podconfigv1.PodStatusRunning))
+		assert.Equal(t, translatePodStatus(podconfigv1.PodStatusRunning), flags[events.PodStatus])
 	})
 
 	ms.EXPECT().SetPodTasks(
@@ -179,6 +179,13 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	).Do(func(_ string, arr []*store.Task) {
 		// Test if the array is empty when no spec tasks are given
 		assert.Equal(t, 0, len(arr))
+	})
+
+	ms.EXPECT().SetPodTimeFlags(
+		"TestNamespace/TestName",
+		gomock.Any(),
+	).Do(func(_ string, arr []*store.TimeFlags) {
+		assert.Empty(t, arr)
 	})
 
 	err := setPodTasks(&ep, &s)

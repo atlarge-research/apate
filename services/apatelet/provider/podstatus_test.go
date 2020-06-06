@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -22,8 +24,6 @@ import (
 )
 
 func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMaxResources int64, podStatus scenario.PodStatus, response scenario.Response) (Provider, *gomock.Controller) {
-	t.Parallel()
-
 	ctrl := gomock.NewController(t)
 	ms := mock_store.NewMockStore(ctrl)
 
@@ -49,7 +49,8 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(response, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodGetPodStatusResponse).Return(response, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeGetPodStatusResponse).Return(scenario.ResponseUnset, nil)
 
 	isNormal := response == scenario.ResponseNormal || response == scenario.ResponseUnset
 
@@ -58,7 +59,7 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 		expectedResourceGets = 2 // First by updateStatsSummary and then in getPodStatus limitReached
 	}
 
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(stats.PodStats{
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{
 		CPU: &stats.CPUStats{
 			UsageNanoCores: &podResources,
 		},
@@ -71,7 +72,7 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 	}, nil).Times(expectedResourceGets)
 
 	if isNormal {
-		ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(podStatus, nil)
+		ms.EXPECT().GetPodFlag(&pod, events.PodStatus).Return(podStatus, nil)
 	}
 
 	// sot
@@ -84,6 +85,7 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 			Memory:           nodeResources,
 			EphemeralStorage: nodeResources,
 		},
+		NodeInfo: &node.Info{},
 		Stats: &Stats{
 			statsSummary: &stats.Summary{},
 		},
@@ -95,6 +97,8 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 }
 
 func TestGetPodStatus(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := prepareState(t, 1000, 1, 1000, scenario.PodStatusRunning, scenario.ResponseNormal)
 	defer ctrl.Finish()
 
@@ -109,6 +113,8 @@ func TestGetPodStatus(t *testing.T) {
 }
 
 func TestGetPodStatusPodLimitReached(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := prepareState(t, 1000, 128, 64, scenario.PodStatusRunning, scenario.ResponseNormal)
 	defer ctrl.Finish()
 
@@ -119,10 +125,12 @@ func TestGetPodStatusPodLimitReached(t *testing.T) {
 	assert.Equal(t, corev1.PodFailed, ps.Phase)
 	assert.Equal(t, corev1.PodReady, ps.Conditions[0].Type)
 	assert.Equal(t, corev1.ConditionFalse, ps.Conditions[0].Status)
-	assert.Empty(t, prov.Pods.GetAllPods())
+	assert.Len(t, prov.Pods.GetAllPods(), 1)
 }
 
 func TestGetPodStatusNodeLimitReached(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := prepareState(t, 64, 128, 1000, scenario.PodStatusRunning, scenario.ResponseNormal)
 	defer ctrl.Finish()
 
@@ -133,10 +141,12 @@ func TestGetPodStatusNodeLimitReached(t *testing.T) {
 	assert.Equal(t, corev1.PodFailed, ps.Phase)
 	assert.Equal(t, corev1.PodReady, ps.Conditions[0].Type)
 	assert.Equal(t, corev1.ConditionFalse, ps.Conditions[0].Status)
-	assert.Empty(t, prov.Pods.GetAllPods())
+	assert.Len(t, prov.Pods.GetAllPods(), 1)
 }
 
 func TestGetPodStatusSucceeded(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := prepareState(t, 1000, 128, 1000, scenario.PodStatusSucceeded, scenario.ResponseNormal)
 	defer ctrl.Finish()
 
@@ -146,10 +156,12 @@ func TestGetPodStatusSucceeded(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, corev1.PodSucceeded, ps.Phase)
 	assert.Empty(t, ps.Conditions)
-	assert.Empty(t, prov.Pods.GetAllPods())
+	assert.Len(t, prov.Pods.GetAllPods(), 1)
 }
 
 func TestGetPodStatusPending(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := prepareState(t, 1000, 128, 1000, scenario.PodStatusPending, scenario.ResponseNormal)
 	defer ctrl.Finish()
 
@@ -164,6 +176,8 @@ func TestGetPodStatusPending(t *testing.T) {
 }
 
 func TestGetPodStatusUnknown(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := prepareState(t, 1000, 128, 1000, scenario.PodStatusUnknown, scenario.ResponseNormal)
 	defer ctrl.Finish()
 
@@ -176,6 +190,8 @@ func TestGetPodStatusUnknown(t *testing.T) {
 }
 
 func TestGetPodStatusEmulationError(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := prepareState(t, 1000, 128, 1000, scenario.PodStatusUnknown, scenario.ResponseError)
 	defer ctrl.Finish()
 

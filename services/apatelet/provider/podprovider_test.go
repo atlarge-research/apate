@@ -138,11 +138,11 @@ func TestCreatePod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodCreatePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -177,11 +177,11 @@ func TestUpdatePod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodUpdatePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodUpdatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeUpdatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -214,11 +214,11 @@ func TestDeletePod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodDeletePodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodDeletePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeDeletePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
@@ -249,11 +249,11 @@ func TestGetPod(t *testing.T) {
 		podconfigv1.PodConfigurationLabel: podLabel,
 	}
 	pod.UID = types.UID(uuid.New().String())
-	PCPRF := events.PodGetPodResponse
 
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
-	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, PCPRF).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodGetPodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetNodeFlag(events.NodeGetPodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
