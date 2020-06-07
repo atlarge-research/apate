@@ -2,10 +2,11 @@ package provider
 
 import (
 	"context"
-	"github.com/finitum/node-cli/opts"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/finitum/node-cli/opts"
 
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 

@@ -2,8 +2,9 @@ package provider
 
 import (
 	"context"
-	"github.com/finitum/node-cli/provider"
 	"testing"
+
+	"github.com/finitum/node-cli/provider"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
