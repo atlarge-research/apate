@@ -8,10 +8,10 @@ require (
 	github.com/docker/go-connections v0.3.0
 	github.com/docker/go-units v0.3.3
 	github.com/fatih/color v1.9.0
+	github.com/finitum/node-cli v0.1.3-0.20200606182932-0e2e8984bb54
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.4.0
 	github.com/google/uuid v1.1.1
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/cli/v2 v2.2.0

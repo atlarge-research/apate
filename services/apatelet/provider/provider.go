@@ -4,13 +4,13 @@ package provider
 import (
 	"context"
 
+	cli "github.com/finitum/node-cli"
+	"github.com/finitum/node-cli/opts"
+	"github.com/finitum/node-cli/provider"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-
-	root "github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/commands"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/opts"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
@@ -61,7 +61,7 @@ type VirtualKubelet struct {
 //nolint as lint does not recognise the first context is indeed the correct context
 // Run starts the virtual kubelet
 func (vk *VirtualKubelet) Run(ctx context.Context, originalCtx context.Context) (int, int, error) {
-	metricsPort, k8sPort, err := root.RunRootCommand(originalCtx, ctx, vk.st, vk.opts)
+	metricsPort, k8sPort, err := cli.Run(originalCtx, ctx, vk.st, vk.opts)
 
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "error while running virtual kubelet")
