@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/finitum/node-cli/provider"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/node-cli/provider"
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
