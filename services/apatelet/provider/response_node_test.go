@@ -23,7 +23,7 @@ func TestNodeNormal(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations

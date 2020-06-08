@@ -145,7 +145,7 @@ func TestDeletePod(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
@@ -258,7 +258,7 @@ func TestGetPodStatus(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
@@ -332,7 +332,7 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
@@ -402,7 +402,7 @@ func TestNewProvider(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	pm := podmanager.New()

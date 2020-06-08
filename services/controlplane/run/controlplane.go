@@ -40,6 +40,12 @@ func panicf(err error) {
 
 // StartControlPlane is the main control plane entrypoint
 func StartControlPlane(ctx context.Context, registry *runner.Registry) {
+	stop := make(chan os.Signal, 1)
+	StartControlPlaneWithStopChannel(ctx, registry, stop)
+}
+
+// StartControlPlaneWithStopChannel starts the controlplane with a channel to stop it again.
+func StartControlPlaneWithStopChannel(ctx context.Context, registry *runner.Registry, stop chan os.Signal) {
 	cpEnv := env.ControlPlaneEnv()
 
 	log.Println("starting Apate control plane")
@@ -98,7 +104,6 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	}
 
 	// Handle signals
-	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start serving request
