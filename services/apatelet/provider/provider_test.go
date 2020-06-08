@@ -44,6 +44,8 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	st := store.NewStore()
 
 	e, err := env.ApateletEnv()
@@ -58,14 +60,14 @@ func TestConfigureNodeWithCreate(t *testing.T) {
 	assert.EqualValues(t, resources.CPU, fakeNode.Status.Capacity.Cpu().Value())
 	assert.EqualValues(t, resources.Memory, fakeNode.Status.Capacity.Memory().Value())
 	assert.EqualValues(t, resources.MaxPods, fakeNode.Status.Capacity.Pods().Value())
-
-	ctrl.Finish()
 }
 
 func TestCreatePod(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
@@ -98,13 +100,14 @@ func TestCreatePod(t *testing.T) {
 	uid, ok := p.Pods.GetPodByUID(pod.UID)
 	assert.True(t, ok)
 	assert.Equal(t, &pod, uid)
-	ctrl.Finish()
 }
 
 func TestUpdatePod(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
@@ -135,13 +138,14 @@ func TestUpdatePod(t *testing.T) {
 	uid, ok := p.Pods.GetPodByUID(pod.UID)
 	assert.True(t, ok)
 	assert.Equal(t, &pod, uid)
-	ctrl.Finish()
 }
 
 func TestDeletePod(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
@@ -170,13 +174,14 @@ func TestDeletePod(t *testing.T) {
 	// assert
 	assert.NoError(t, err)
 	assert.NotContains(t, p.Pods.GetAllPods(), &pod)
-	ctrl.Finish()
 }
 
 func TestGetPod(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
@@ -207,13 +212,14 @@ func TestGetPod(t *testing.T) {
 	// assert
 	assert.NoError(t, err)
 	assert.Equal(t, &pod, np)
-	ctrl.Finish()
 }
 
 func TestGetPods(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	/// vars
@@ -245,7 +251,6 @@ func TestGetPods(t *testing.T) {
 	uid, ok := prov.Pods.GetPodByUID(pod.UID)
 	assert.True(t, ok)
 	assert.Contains(t, ps, uid)
-	ctrl.Finish()
 }
 
 func TestGetPodStatus(t *testing.T) {
@@ -253,6 +258,7 @@ func TestGetPodStatus(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
@@ -326,6 +332,7 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
@@ -395,6 +402,7 @@ func TestNewProvider(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 
 	pm := podmanager.New()

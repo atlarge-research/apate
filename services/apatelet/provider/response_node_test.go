@@ -22,6 +22,8 @@ func TestNodeNormal(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
@@ -42,14 +44,14 @@ func TestNodeNormal(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, tStr, out)
-
-	ctrl.Finish()
 }
 
 func TestNodeStoreError1(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// vars
@@ -73,14 +75,14 @@ func TestNodeStoreError1(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, out)
-
-	ctrl.Finish()
 }
 
 func TestNodeErrorAction(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
@@ -101,14 +103,14 @@ func TestNodeErrorAction(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, out)
-
-	ctrl.Finish()
 }
 
 func TestNodeInvalidResponseType(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
@@ -129,14 +131,14 @@ func TestNodeInvalidResponseType(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, out)
-
-	ctrl.Finish()
 }
 
 func TestNodeInvalidResponse(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
@@ -157,8 +159,6 @@ func TestNodeInvalidResponse(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, tStr, out)
-
-	ctrl.Finish()
 }
 
 func TestNodeTimeOut(t *testing.T) {
@@ -168,6 +168,8 @@ func TestNodeTimeOut(t *testing.T) {
 	defer cancel()
 
 	ctrl, ctx := gomock.WithContext(ctx, t)
+	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	// Expectations
@@ -188,6 +190,4 @@ func TestNodeTimeOut(t *testing.T) {
 	// Assert
 	assert.Nil(t, err)
 	assert.Nil(t, out)
-
-	ctrl.Finish()
 }

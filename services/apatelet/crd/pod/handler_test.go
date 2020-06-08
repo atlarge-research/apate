@@ -37,6 +37,7 @@ func TestEnqueueCRD(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -94,6 +95,7 @@ func TestEnqueueCRDDirect(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
