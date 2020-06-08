@@ -55,6 +55,10 @@ func (s *store) GetPodFlag(pod *corev1.Pod, flag events.PodEventFlag) (interface
 	return nil, errors.New("flag not found in get pod flag")
 }
 
+// getPodTimeFlag returns the pod time flag that is currently active for the given pod
+// Meaning, given the current time, the pod (from which its start time is retrieved) and the flag, what is the expected state?
+// It does this by retrieving the index cache for the flag/pod combination: the last index in the podTimeFlags that is checked for the current pod
+// From this index it will continue to check next indices for the flag
 func (s *store) getPodTimeFlag(pod *corev1.Pod, flag events.PodEventFlag, label string) (interface{}, bool) {
 	if _, ok := s.podTimeIndexCache[pod]; !ok {
 		s.podTimeIndexCache[pod] = make(map[events.EventFlag]int)
