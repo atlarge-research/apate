@@ -19,7 +19,10 @@ import (
 
 func setup(t *testing.T) (*mock_store.MockStore, *gomock.Controller, func(podFlag events.PodEventFlag) (interface{}, error)) {
 	t.Parallel()
+
 	ctrl := gomock.NewController(t)
+	// no defer ctrl.Finish() here because this function returns the ctrl
+
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 
@@ -143,8 +146,10 @@ func TestPodTimeOut(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
+	
 	ctrl, _ := gomock.WithContext(ctx, t)
 	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 
@@ -178,8 +183,10 @@ func TestTimeoutMostImportant(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
+	
 	ctrl, ctx := gomock.WithContext(ctx, t)
 	defer ctrl.Finish()
+	
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 

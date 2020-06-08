@@ -20,6 +20,7 @@ func TestStatusSimple(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	// Created mocked store
 	ms := mock_store.NewMockStore(ctrl)
@@ -43,6 +44,7 @@ func TestStatusSimple(t *testing.T) {
 
 func TestStatusExtensive(t *testing.T) {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
 	// Created mocked store
 	ms := mock_store.NewMockStore(ctrl)
