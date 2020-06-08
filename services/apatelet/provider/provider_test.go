@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/finitum/node-cli/stats"
+
 	"github.com/finitum/node-cli/provider"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
