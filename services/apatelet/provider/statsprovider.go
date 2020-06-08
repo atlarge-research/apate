@@ -6,12 +6,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/finitum/node-cli/stats"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 )
 
 type resources struct {
@@ -55,17 +56,15 @@ func (p *Provider) updateStatsSummary() {
 // Node statistics
 func (p *Provider) getNodeStats(pods []stats.PodStats) stats.NodeStats {
 	return stats.NodeStats{
-		NodeName:         p.NodeInfo.Name,
-		SystemContainers: []stats.ContainerStats{},
-		StartTime:        p.Stats.startTime,
-		CPU:              p.cpuStats(pods),
-		Memory:           p.memoryStats(pods),
-		Fs:               p.filesystemStats(pods),
+		NodeName:  p.NodeInfo.Name,
+		StartTime: p.Stats.startTime,
+		CPU:       p.cpuStats(pods),
+		Memory:    p.memoryStats(pods),
+		Fs:        p.filesystemStats(pods),
 	}
 }
 
 func (p *Provider) cpuStats(pods []stats.PodStats) *stats.CPUStats {
-	zero := uint64(0)
 	usage := uint64(0)
 
 	for _, pod := range pods {
@@ -75,14 +74,12 @@ func (p *Provider) cpuStats(pods []stats.PodStats) *stats.CPUStats {
 	}
 
 	return &stats.CPUStats{
-		Time:                 p.now(),
-		UsageNanoCores:       &usage,
-		UsageCoreNanoSeconds: &zero,
+		Time:           p.now(),
+		UsageNanoCores: &usage,
 	}
 }
 
 func (p *Provider) memoryStats(pods []stats.PodStats) *stats.MemoryStats {
-	zero := uint64(0)
 	usage := uint64(0)
 
 	for _, pod := range pods {
@@ -94,18 +91,13 @@ func (p *Provider) memoryStats(pods []stats.PodStats) *stats.MemoryStats {
 	available := uint64(p.Resources.Memory) - usage
 
 	return &stats.MemoryStats{
-		Time:            p.now(),
-		AvailableBytes:  &available,
-		UsageBytes:      &usage,
-		WorkingSetBytes: &zero,
-		RSSBytes:        &zero,
-		PageFaults:      &zero,
-		MajorPageFaults: &zero,
+		Time:           p.now(),
+		AvailableBytes: &available,
+		UsageBytes:     &usage,
 	}
 }
 
 func (p *Provider) filesystemStats(pods []stats.PodStats) *stats.FsStats {
-	zero := uint64(0)
 	capacity := uint64(p.Resources.EphemeralStorage)
 	usage := uint64(0)
 
@@ -121,9 +113,6 @@ func (p *Provider) filesystemStats(pods []stats.PodStats) *stats.FsStats {
 		AvailableBytes: &free,
 		CapacityBytes:  &capacity,
 		UsedBytes:      &usage,
-		InodesFree:     &zero,
-		Inodes:         &zero,
-		InodesUsed:     &zero,
 	}
 }
 
