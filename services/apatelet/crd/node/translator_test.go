@@ -29,7 +29,7 @@ func TestSetNodeFlagsUnsetDirect(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -53,7 +53,7 @@ func TestSetNodeFlagsDirect(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -87,7 +87,7 @@ func TestSetNodeFlagsHeartbeat(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -107,7 +107,7 @@ func TestSetNodeFlagsLatency(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -128,7 +128,7 @@ func TestSetNodeFlagsNodeFailure(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms

@@ -257,7 +257,7 @@ func TestUpdateConditionDiskFull(t *testing.T) {
 func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podStorage int64) (Provider, *gomock.Controller) {
 	ctrl := gomock.NewController(t)
 	// no defer ctrl.Finish() here because this function returns the ctrl
-	
+
 	ms := mock_store.NewMockStore(ctrl)
 	var st store.Store = ms
 
