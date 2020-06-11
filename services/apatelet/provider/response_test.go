@@ -9,6 +9,8 @@ import (
 )
 
 func TestGetCorrespondingNodeEventFlag(t *testing.T) {
+	t.Parallel()
+
 	nodeFlag, err := getCorrespondingNodeEventFlag(events.PodCreatePodResponse)
 	assert.Equal(t, events.NodeCreatePodResponse, nodeFlag)
 	assert.NoError(t, err)
