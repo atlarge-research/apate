@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+
 	"github.com/pkg/errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -24,11 +26,11 @@ const amountOfSecondsToWait = 5
 type scenarioService struct {
 	store          *store.Store
 	info           *service.ConnectionInfo
-	stopInformerCh chan<- struct{}
+	stopInformerCh *channel.StopChannel
 }
 
 // RegisterScenarioService registers a new scenarioService with the given gRPC server
-func RegisterScenarioService(server *service.GRPCServer, store *store.Store, info *service.ConnectionInfo, stopInformerCh chan<- struct{}) {
+func RegisterScenarioService(server *service.GRPCServer, store *store.Store, info *service.ConnectionInfo, stopInformerCh *channel.StopChannel) {
 	controlplane.RegisterScenarioServer(server.Server, &scenarioService{
 		store:          store,
 		info:           info,
@@ -54,6 +56,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, startScenario *cont
 		return nil, err
 	}
 
+	log.Println("Starting scenario on nodes")
 	if err = startOnNodes(ctx, nodes, apateletScenario); err != nil {
 		err = errors.Wrap(err, "failed to get start scenario on nodes")
 		log.Println(err)
@@ -61,7 +64,7 @@ func (s *scenarioService) StartScenario(ctx context.Context, startScenario *cont
 	}
 
 	if startScenario.DisableWatchers {
-		s.stopInformerCh <- struct{}{}
+		s.stopInformerCh.Close()
 	}
 
 	return new(empty.Empty), nil

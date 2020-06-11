@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
@@ -42,13 +44,13 @@ func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInf
 	return cfg, res, startTime, nil
 }
 
-func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformer <-chan struct{}, sch *scheduler.Scheduler, res *scenario.NodeResources) error {
-	err := crdPod.CreatePodInformer(config, &st, stopInformer, sch.WakeScheduler)
+func createInformers(config *kubeconfig.KubeConfig, st store.Store, stopInformerCh *channel.StopChannel, sch *scheduler.Scheduler, res *scenario.NodeResources) error {
+	err := crdPod.CreatePodInformer(config, &st, stopInformerCh.GetChannel(), sch.WakeScheduler)
 	if err != nil {
 		return errors.Wrap(err, "failed creating crd pod informer")
 	}
 
-	err = crdNode.CreateNodeInformer(config, &st, res.Label, stopInformer, sch.WakeScheduler)
+	err = crdNode.CreateNodeInformer(config, &st, res.Label, stopInformerCh.GetChannel(), sch.WakeScheduler)
 	if err != nil {
 		return errors.Wrap(err, "failed creating crd node informer")
 	}
