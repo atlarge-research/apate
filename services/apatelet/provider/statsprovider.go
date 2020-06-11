@@ -138,8 +138,7 @@ func (p *Provider) getAggregatePodStats() []stats.PodStats {
 }
 
 func (p *Provider) getPodStats(pod *corev1.Pod) *stats.PodStats {
-	label := getPodLabelByPod(pod)
-	unconvertedStats, err := (*p.Store).GetPodFlag(label, events.PodResources)
+	unconvertedStats, err := (*p.Store).GetPodFlag(pod, events.PodResources)
 	if err != nil {
 		log.Printf("error while retrieving pod flag for resources: %v\n", err)
 		return addPodSpecificStats(pod, &stats.PodStats{})

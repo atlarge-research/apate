@@ -114,6 +114,13 @@ spec:
                   description: PodConfigurationTask is a single task which updates
                     a pod state and is executed at a timestamp
                   properties:
+                    relative_to_pod:
+                      default: false
+                      description: Indicates whether the timestamp is relative to
+                        the start of the pod or not. If set to true, a timestamp of
+                        10s means this task will be executed 10 seconds after the
+                        pod started.
+                      type: boolean
                     state:
                       description: The state to be set
                       properties:
