@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/pod"
 
 	"github.com/pkg/errors"
@@ -73,13 +75,13 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	}
 
 	// Create node informer
-	stopInformer := make(chan struct{})
+	stopInformer := channel.NewStopChannel()
 	nodeHandler := node.NewHandler(&createdStore, registry, externalInformation, cluster)
-	if err = node.WatchHandler(ctx, cluster.KubeConfig, nodeHandler, stopInformer); err != nil {
+	if err = node.WatchHandler(ctx, cluster.KubeConfig, nodeHandler, stopInformer.GetChannel()); err != nil {
 		panicf(errors.Wrap(err, "failed to watch node handler"))
 	}
 
-	if err = pod.NoopWatchHandler(cluster.KubeConfig, stopInformer); err != nil {
+	if err = pod.NoopWatchHandler(cluster.KubeConfig, stopInformer.GetChannel()); err != nil {
 		panicf(errors.Wrap(err, "failed to watch pod handler"))
 	}
 
@@ -126,7 +128,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	case <-ctx.Done():
 		//
 	}
-	close(stopInformer)
+	stopInformer.Close()
 	shutdown(&createdStore, cluster, server)
 	log.Printf("apate control plane stopped")
 }
@@ -183,7 +185,7 @@ func getExternalAddress() (string, error) {
 	return res, nil
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster *kubernetes.Cluster, info *service.ConnectionInfo, stopInformerCh chan<- struct{}) (*service.GRPCServer, error) {
+func createGRPC(createdStore *store.Store, kubernetesCluster *kubernetes.Cluster, info *service.ConnectionInfo, stopInformerCh *channel.StopChannel) (*service.GRPCServer, error) {
 	// Retrieve from environment
 	listenAddress := env.ControlPlaneEnv().ListenAddress
 

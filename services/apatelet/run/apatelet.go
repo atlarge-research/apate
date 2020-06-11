@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+
 	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
 
@@ -35,7 +37,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 	// Create stop channels
 	stop := make(chan os.Signal, 1)
 	forcedStop := make(chan struct{}, 1)
-	stopInformer := make(chan struct{})
+	stopInformer := channel.NewStopChannel()
 
 	// Create store
 	st := store.NewStore()
@@ -117,7 +119,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 	case <-forcedStop:
 		leaveCluster = false
 	}
-	close(stopInformer)
+	stopInformer.Close()
 	if err = shutdown(ctx, server, connectionInfo, res.UUID.String(), leaveCluster); err != nil {
 		log.Println(err)
 	}
