@@ -38,7 +38,7 @@ func TestTaskHandlerSimpleNode(t *testing.T) {
 	}
 
 	// Set up expectations
-	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
+	ms.EXPECT().SetNodeFlags(store.Flags{events.NodeCreatePodResponse: scenario.ResponseError})
 
 	var s store.Store = ms
 	sched := New(&s)
@@ -69,7 +69,7 @@ func TestTaskHandlerSimplePod(t *testing.T) {
 	})
 
 	// Set up expectations
-	ms.EXPECT().SetPodFlag("la/clappe", events.PodStatus, scenario.PodStatusFailed)
+	ms.EXPECT().SetPodFlags("la/clappe", store.Flags{events.PodStatus: scenario.PodStatusFailed})
 
 	var s store.Store = ms
 	sched := New(&s)
@@ -104,8 +104,10 @@ func TestTaskHandlerMultiple(t *testing.T) {
 
 	// Set up expectations
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil).AnyTimes()
-	ms.EXPECT().SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseError)
-	ms.EXPECT().SetNodeFlag(events.NodeAddedLatency, 42*time.Second)
+	ms.EXPECT().SetNodeFlags(store.Flags{
+		events.NodeCreatePodResponse: scenario.ResponseError,
+		events.NodeAddedLatency:      42 * time.Second,
+	})
 
 	var s store.Store = ms
 	sched := New(&s)
@@ -140,7 +142,7 @@ func TestRunner(t *testing.T) {
 	// Expectations
 	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
-	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+	ms.EXPECT().SetNodeFlags(gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
 	sched := New(&s)
@@ -179,7 +181,7 @@ func TestRunnerDelay(t *testing.T) {
 	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
 	ms.EXPECT().PeekTask().Return(secondDelay, true, nil)
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
-	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+	ms.EXPECT().SetNodeFlags(gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
 	sched := New(&s)
@@ -220,7 +222,7 @@ func TestRunnerSleep(t *testing.T) {
 	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
 	ms.EXPECT().PeekTask().Return(time.Duration(0), false, nil).Times(3)
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
-	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+	ms.EXPECT().SetNodeFlags(gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
 	sched := New(&s)
@@ -350,7 +352,7 @@ func TestStartScheduler(t *testing.T) {
 	ms.EXPECT().PeekTask().Return(time.Duration(0), true, nil)
 	ms.EXPECT().PeekTask().Return(time.Duration(0), false, nil).AnyTimes()
 	ms.EXPECT().PopTask().Return(store.NewNodeTask(0, &task), nil)
-	ms.EXPECT().SetNodeFlag(gomock.Any(), gomock.Any()).AnyTimes()
+	ms.EXPECT().SetNodeFlags(gomock.Any()).AnyTimes()
 
 	var s store.Store = ms
 	sched := New(&s)
