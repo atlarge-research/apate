@@ -30,6 +30,8 @@ import (
 )
 
 func TestPing(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -52,6 +54,8 @@ func TestPing(t *testing.T) {
 }
 
 func TestPingError(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -74,6 +78,8 @@ func TestPingError(t *testing.T) {
 }
 
 func TestConfigureNode(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -174,6 +180,8 @@ func TestConfigureNode(t *testing.T) {
 }
 
 func TestUpdateConditionNoPressure(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := createProviderForUpdateConditionTests(t, 500, 2048, 1024)
 	defer ctrl.Finish()
 
@@ -199,6 +207,8 @@ func TestUpdateConditionNoPressure(t *testing.T) {
 }
 
 func TestUpdateConditionMemoryAndDiskPressure(t *testing.T) {
+	t.Parallel()
+
 	mt := memThresh * 4096
 	dt := diskThresh * 2048
 
@@ -227,6 +237,8 @@ func TestUpdateConditionMemoryAndDiskPressure(t *testing.T) {
 }
 
 func TestUpdateConditionDiskFull(t *testing.T) {
+	t.Parallel()
+
 	mtf := memThresh * 4096
 	dtf := diskFullThresh * 2048
 
@@ -276,7 +288,7 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	cores := uint64(podCPU)
 	memory := uint64(podMemory)
 	storage := uint64(podStorage)
-	ms.EXPECT().GetPodFlag("a/pod1", events.PodResources).Return(&stats.PodStats{
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{
 		UsageNanoCores:     cores,
 		UsageBytesMemory:   memory,
 		UsedBytesEphemeral: storage,
@@ -324,6 +336,8 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 }
 
 func TestNotifyNodeStatusNoPing(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
