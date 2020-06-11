@@ -61,8 +61,8 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 
 	// Because we compute the resources up front
 	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{
-		UsageNanoCores: podResources,
-		UsageBytesMemory: podResources,
+		UsageNanoCores:     podResources,
+		UsageBytesMemory:   podResources,
 		UsedBytesEphemeral: podResources,
 	}, nil).Times(expectedResourceGets)
 
