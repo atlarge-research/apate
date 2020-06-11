@@ -61,8 +61,11 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 	args = append(args, "--namespace", prometheusNamespace)
 	args = append(args, "--kubeconfig", kubecfg.Path)
 
-	// Values args
-	args = append(args, "--set", "nodeExporter.enabled=false")
+	//// Values args
+	//args = append(args, "--set", "nodeExporter.enabled=false")
+
+	// Add settings
+	args = append(args, "-f", env.ControlPlaneEnv().PrometheusConfigLocation)
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
