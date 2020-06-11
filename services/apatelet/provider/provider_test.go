@@ -282,15 +282,9 @@ func TestGetPodStatus(t *testing.T) {
 	ms.EXPECT().GetNodeFlag(events.NodeGetPodStatusResponse).Return(scenario.ResponseUnset, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(stats.PodStats{
-		CPU: &stats.CPUStats{
-			UsageNanoCores: &one,
-		},
-		Memory: &stats.MemoryStats{
-			UsageBytes: &one,
-		},
-		EphemeralStorage: &stats.FsStats{
-			UsedBytes: &one,
-		},
+		UsageNanoCores:     one,
+		UsageBytesMemory:   one,
+		UsedBytesEphemeral: one,
 	}, nil).Times(2)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)
@@ -354,15 +348,9 @@ func TestGetPodStatusLimitReached(t *testing.T) {
 
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodResources).Return(&stats.PodStats{
-		CPU: &stats.CPUStats{
-			UsageNanoCores: &moreThan64,
-		},
-		Memory: &stats.MemoryStats{
-			UsageBytes: &moreThan64,
-		},
-		EphemeralStorage: &stats.FsStats{
-			UsedBytes: &moreThan64,
-		},
+		UsageNanoCores:     moreThan64,
+		UsageBytesMemory:   moreThan64,
+		UsedBytesEphemeral: moreThan64,
 	}, nil).Times(2)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodGetPodStatusResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetPodFlag(podNamespace+"/"+podLabel, events.PodStatus).Return(scenario.PodStatusSucceeded, nil)

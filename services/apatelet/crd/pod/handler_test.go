@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/docker/go-units"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/finitum/node-cli/stats"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -136,17 +137,10 @@ func TestEnqueueCRDDirect(t *testing.T) {
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodResources, gomock.Any()).Do(func(label string, flag events.EventFlag, f interface{}) {
 			stat := f.(*stats.PodStats)
 
-			assert.EqualValues(t, cores, *stat.CPU.UsageNanoCores)
-			assert.WithinDuration(t, time.Now(), stat.CPU.Time.Time, 1*time.Minute)
-
-			assert.EqualValues(t, memory, *stat.Memory.UsageBytes)
-			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
-
-			assert.EqualValues(t, storage, *stat.VolumeStats[0].UsedBytes)
-			assert.WithinDuration(t, time.Now(), stat.VolumeStats[0].Time.Time, 1*time.Minute)
-
-			assert.EqualValues(t, ephStorage, *stat.EphemeralStorage.UsedBytes)
-			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
+			assert.EqualValues(t, cores, stat.UsageNanoCores)
+			assert.EqualValues(t, memory, stat.UsageBytesMemory)
+			assert.EqualValues(t, storage, stat.UsedBytesStorage)
+			assert.EqualValues(t, ephStorage, stat.UsedBytesEphemeral)
 		}),
 		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(podconfigv1.PodStatusRunning)),
 	)

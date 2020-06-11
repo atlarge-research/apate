@@ -8,7 +8,7 @@ require (
 	github.com/docker/go-connections v0.3.0
 	github.com/docker/go-units v0.3.3
 	github.com/fatih/color v1.9.0
-	github.com/finitum/node-cli v0.1.3-0.20200608101054-5348b083ce4e
+	github.com/finitum/node-cli v0.1.3-0.20200611095742-0bf9cf7cee8e
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.4.0
 	github.com/google/uuid v1.1.1
