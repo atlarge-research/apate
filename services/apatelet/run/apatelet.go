@@ -44,7 +44,7 @@ func StartApatelet(originalCtx context.Context, apateletEnv env.ApateletEnvironm
 	sch := createScheduler(ctx, st)
 
 	// Start gRPC server
-	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, apateletEnv.ListenPort, forcedStop)
+	server, err := createGRPC(&st, sch, apateletEnv.ListenAddress, apateletEnv.ListenPort, forcedStop, stopInformer)
 	if err != nil {
 		return errors.Wrap(err, "failed to set up GRPC endpoints")
 	}
