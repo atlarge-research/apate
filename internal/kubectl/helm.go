@@ -54,7 +54,7 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 	}
 
 	// Basic args
-	args = append(args, "--namespace", env.ControlPlaneEnv().PrometheusStackNamespace)
+	args = append(args, "--namespace", env.ControlPlaneEnv().PrometheusNamespace)
 	args = append(args, "--kubeconfig", kubecfg.Path)
 
 	// Add settings
@@ -75,7 +75,7 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 // CreatePrometheusStack attempts to create the prometheus operator in the kubernetes cluster
 func CreatePrometheusStack(kubecfg *kubeconfig.KubeConfig) {
 	log.Println("enabling prometheus stack")
-	if err := CreateNameSpace(env.ControlPlaneEnv().PrometheusStackNamespace, kubecfg); err != nil {
+	if err := CreateNameSpace(env.ControlPlaneEnv().PrometheusNamespace, kubecfg); err != nil {
 		log.Printf("error while creating prometheus namespace: %v", err)
 		return
 	}
