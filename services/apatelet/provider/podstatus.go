@@ -163,7 +163,11 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 		return false, errors.Wrapf(err, "unable to convert '%v' to PodStats", podResourcesFlag)
 	}
 
-	resources := p.getPodResources(podResources)
+	resources := resources{
+		podResources.UsageNanoCores,
+		podResources.UsageBytesMemory,
+		podResources.UsedBytesEphemeral,
+	}
 
 	podExceedsPodLimit := resources.cpu > limits.cpu || resources.memory > limits.memory || resources.ephemeralStorage > limits.ephemeralStorage
 
@@ -176,14 +180,6 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 		nodeStats.UsedBytesEphemeral > uint64(p.Resources.EphemeralStorage)
 
 	return podExceedsPodLimit || totalLimitExceeded, nil
-}
-
-func (p *Provider) getPodResources(podResources *stats.PodStats) resources {
-	return resources{
-		podResources.UsageNanoCores,
-		podResources.UsageBytesMemory,
-		podResources.UsedBytesEphemeral,
-	}
 }
 
 func (p *Provider) getPodResourceLimits(pod *corev1.Pod) resources {

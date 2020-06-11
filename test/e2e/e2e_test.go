@@ -56,7 +56,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	initEnv.KinDClusterName = kindClusterName
 	initEnv.ApateletRunType = runType
 	// Disable this  by default, testRunPrometheus tests this, but otherwise it's just very slow
-	initEnv.PrometheusStackEnabled = false
+	initEnv.PrometheusEnabled = false
 	env.SetEnv(initEnv)
 }
 

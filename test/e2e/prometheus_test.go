@@ -41,7 +41,7 @@ func TestRunPrometheusDocker(t *testing.T) {
 func testRunPrometheus(t *testing.T) {
 	// By default, setup disables prometheus, but in this test it's enabled
 	e := env.ControlPlaneEnv()
-	e.PrometheusStackEnabled = true
+	e.PrometheusEnabled = true
 	env.SetEnv(e)
 
 	ctx, cancel := context.WithCancel(context.Background())
