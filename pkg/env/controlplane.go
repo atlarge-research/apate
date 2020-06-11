@@ -35,6 +35,8 @@ const (
 
 	// CPPrometheusStackEnabledDefault is the default for PrometheusStackEnabled
 	CPPrometheusStackEnabledDefault = true
+	// CPPrometheusStackNamespace is the default for PrometheusStackNamespace
+	CPPrometheusStackNamespace = "apate-prometheus"
 	// CPPrometheusConfigLocation is the default for PrometheusConfigLocation
 	CPPrometheusConfigLocation = "config/prometheus.yml"
 
@@ -90,6 +92,8 @@ type ControlPlaneEnvironment struct {
 
 	// PrometheusStackEnabled specifies if the control plane should create a prometheus stack on startup
 	PrometheusStackEnabled bool `env:"CP_PROMETHEUS"`
+	// PrometheusStackNamespace specifies the namespace the prom
+	PrometheusStackNamespace string `env:"CP_PROMETHEUS_NAMESPACE"`
 	// PrometheusConfigLocation is the path to the config of the prometheus helm chart, if applicable
 	PrometheusConfigLocation string `env:"CP_PROMETHEUS_CONFIG_LOCATION"`
 
@@ -126,6 +130,7 @@ func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 		ApateletRunType: CPApateletRunTypeDefault,
 
 		PrometheusStackEnabled:   CPPrometheusStackEnabledDefault,
+		PrometheusStackNamespace: CPPrometheusStackNamespace,
 		PrometheusConfigLocation: CPPrometheusConfigLocation,
 
 		NodeCRDLocation: CPNodeCRDLocationDefault,
