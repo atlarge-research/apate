@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+
 	"github.com/pkg/errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -22,19 +24,21 @@ import (
 const amountOfSecondsToWait = 5
 
 type scenarioService struct {
-	store *store.Store
-	info  *service.ConnectionInfo
+	store          *store.Store
+	info           *service.ConnectionInfo
+	stopInformerCh *channel.StopChannel
 }
 
 // RegisterScenarioService registers a new scenarioService with the given gRPC server
-func RegisterScenarioService(server *service.GRPCServer, store *store.Store, info *service.ConnectionInfo) {
+func RegisterScenarioService(server *service.GRPCServer, store *store.Store, info *service.ConnectionInfo, stopInformerCh *channel.StopChannel) {
 	controlplane.RegisterScenarioServer(server.Server, &scenarioService{
-		store: store,
-		info:  info,
+		store:          store,
+		info:           info,
+		stopInformerCh: stopInformerCh,
 	})
 }
 
-func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+func (s *scenarioService) StartScenario(ctx context.Context, startScenario *controlplane.StartScenario) (*empty.Empty, error) {
 	nodes, err := (*s.store).GetNodes()
 	if err != nil {
 		log.Println(err)
@@ -42,7 +46,8 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 	}
 
 	apateletScenario := &apiApatelet.ApateletScenario{
-		StartTime: time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano(),
+		StartTime:       time.Now().Add(time.Second * amountOfSecondsToWait).UnixNano(),
+		DisableWatchers: startScenario.DisableWatchers,
 	}
 
 	if err = (*s.store).SetApateletScenario(apateletScenario); err != nil {
@@ -51,10 +56,15 @@ func (s *scenarioService) StartScenario(ctx context.Context, _ *empty.Empty) (*e
 		return nil, err
 	}
 
+	log.Println("Starting scenario on nodes")
 	if err = startOnNodes(ctx, nodes, apateletScenario); err != nil {
 		err = errors.Wrap(err, "failed to get start scenario on nodes")
 		log.Println(err)
 		return nil, err
+	}
+
+	if startScenario.DisableWatchers {
+		s.stopInformerCh.Close()
 	}
 
 	return new(empty.Empty), nil

@@ -12,7 +12,7 @@ import (
 )
 
 // WatchHandler watches a newly created informer for updates and calls functions on apateletHandler on updates
-func WatchHandler(ctx context.Context, config *kubeconfig.KubeConfig, handler *ApateletHandler, stopCh <-chan struct{}) error {
+func WatchHandler(ctx context.Context, config *kubeconfig.KubeConfig, handler *ApateletHandler, stopInformerCh <-chan struct{}) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get kubeconfig for node informer")
@@ -49,7 +49,7 @@ func WatchHandler(ctx context.Context, config *kubeconfig.KubeConfig, handler *A
 				log.Printf("error while stopping apatelets: %v\n", err)
 			}
 		}()
-	}, stopCh)
+	}, stopInformerCh)
 
 	return nil
 }
