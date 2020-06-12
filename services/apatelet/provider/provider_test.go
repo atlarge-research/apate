@@ -24,6 +24,8 @@ import (
 const podNamespace = "podnamespace"
 const podName = "pod"
 const podLabel = "label"
+const podContainerName = "container"
+const podImageName = "image"
 
 func TestNewProvider(t *testing.T) {
 	t.Parallel()

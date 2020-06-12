@@ -37,6 +37,8 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 	pod.UID = types.UID(uuid.New().String())
 	pod.Spec.Containers = []corev1.Container{
 		{
+			Name:  podContainerName,
+			Image: podImageName,
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:              *resource.NewQuantity(podMaxResources, ""),
@@ -102,8 +104,23 @@ func TestGetPodStatus(t *testing.T) {
 	// assert
 	assert.NoError(t, err)
 	assert.Equal(t, corev1.PodRunning, ps.Phase)
+
+	assert.Len(t, ps.Conditions, 1)
 	assert.Equal(t, corev1.PodReady, ps.Conditions[0].Type)
 	assert.Equal(t, corev1.ConditionTrue, ps.Conditions[0].Status)
+
+	assert.Len(t, ps.ContainerStatuses, 1)
+	assert.EqualValues(t, corev1.ContainerStatus{
+		Name: podContainerName,
+		State: corev1.ContainerState{
+			Running: &corev1.ContainerStateRunning{},
+		},
+		Ready:       true,
+		Image:       podImageName,
+		ImageID:     "",
+		ContainerID: "",
+	}, ps.ContainerStatuses[0])
+
 	assert.Len(t, prov.Pods.GetAllPods(), 1)
 }
 
@@ -137,6 +154,21 @@ func TestGetPodStatusNodeLimitReached(t *testing.T) {
 	assert.Equal(t, corev1.PodReady, ps.Conditions[0].Type)
 	assert.Equal(t, corev1.ConditionFalse, ps.Conditions[0].Status)
 	assert.Len(t, prov.Pods.GetAllPods(), 1)
+
+	assert.Len(t, ps.ContainerStatuses, 1)
+	assert.EqualValues(t, corev1.ContainerStatus{
+		Name: podContainerName,
+		State: corev1.ContainerState{
+			Terminated: &corev1.ContainerStateTerminated{
+				ExitCode: 1,
+				Reason:   "Pod status is failed, for reason Pod used too many resources and was then killed",
+			},
+		},
+		Ready:       false,
+		Image:       podImageName,
+		ImageID:     "",
+		ContainerID: "",
+	}, ps.ContainerStatuses[0])
 }
 
 func TestGetPodStatusSucceeded(t *testing.T) {
@@ -152,6 +184,21 @@ func TestGetPodStatusSucceeded(t *testing.T) {
 	assert.Equal(t, corev1.PodSucceeded, ps.Phase)
 	assert.Empty(t, ps.Conditions)
 	assert.Len(t, prov.Pods.GetAllPods(), 1)
+
+	assert.Len(t, ps.ContainerStatuses, 1)
+	assert.EqualValues(t, corev1.ContainerStatus{
+		Name: podContainerName,
+		State: corev1.ContainerState{
+			Terminated: &corev1.ContainerStateTerminated{
+				ExitCode: 0,
+				Reason:   "Pod status is succeeded",
+			},
+		},
+		Ready:       false,
+		Image:       podImageName,
+		ImageID:     "",
+		ContainerID: "",
+	}, ps.ContainerStatuses[0])
 }
 
 func TestGetPodStatusPending(t *testing.T) {
@@ -168,6 +215,20 @@ func TestGetPodStatusPending(t *testing.T) {
 	assert.Equal(t, corev1.PodScheduled, ps.Conditions[0].Type)
 	assert.Equal(t, corev1.ConditionTrue, ps.Conditions[0].Status)
 	assert.Len(t, prov.Pods.GetAllPods(), 1)
+
+	assert.Len(t, ps.ContainerStatuses, 1)
+	assert.EqualValues(t, corev1.ContainerStatus{
+		Name: podContainerName,
+		State: corev1.ContainerState{
+			Waiting: &corev1.ContainerStateWaiting{
+				Reason: "Pod status is pending",
+			},
+		},
+		Ready:       false,
+		Image:       podImageName,
+		ImageID:     "",
+		ContainerID: "",
+	}, ps.ContainerStatuses[0])
 }
 
 func TestGetPodStatusUnknown(t *testing.T) {
@@ -182,6 +243,20 @@ func TestGetPodStatusUnknown(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, corev1.PodUnknown, ps.Phase)
 	assert.Empty(t, ps.Conditions)
+
+	assert.Len(t, ps.ContainerStatuses, 1)
+	assert.EqualValues(t, corev1.ContainerStatus{
+		Name: podContainerName,
+		State: corev1.ContainerState{
+			Waiting: &corev1.ContainerStateWaiting{
+				Reason: "Pod status is unknown",
+			},
+		},
+		Ready:       false,
+		Image:       podImageName,
+		ImageID:     "",
+		ContainerID: "",
+	}, ps.ContainerStatuses[0])
 }
 
 func TestGetPodStatusEmulationError(t *testing.T) {

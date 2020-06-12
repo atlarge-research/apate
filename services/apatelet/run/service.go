@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -18,7 +20,7 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
 )
 
-func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress string, listenPort int, stopChannel chan<- struct{}) (*service.GRPCServer, error) {
+func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress string, listenPort int, stopCh chan<- struct{}, stopInformerCh *channel.StopChannel) (*service.GRPCServer, error) {
 	// Connection settings
 	connectionInfo := service.NewConnectionInfo(listenAddress, listenPort)
 
@@ -29,8 +31,8 @@ func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress stri
 	}
 
 	// Add services
-	vkService.RegisterScenarioService(server, store, sch)
-	vkService.RegisterApateletService(server, stopChannel)
+	vkService.RegisterScenarioService(server, store, sch, stopInformerCh)
+	vkService.RegisterApateletService(server, stopCh)
 
 	return server, nil
 }

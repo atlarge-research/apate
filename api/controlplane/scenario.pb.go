@@ -16,6 +16,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -29,6 +30,57 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
+// The top level object which defines how the different Apatelet will emulate certain deployments
+type StartScenario struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Whether to disable watchers before starting the scenario.
+	// This will reduce the overhead of the informers significantly.
+	// Enabling this option will require a restart before the informers will work again
+	DisableWatchers bool `protobuf:"varint,1,opt,name=disable_watchers,json=disableWatchers,proto3" json:"disable_watchers,omitempty"`
+}
+
+func (x *StartScenario) Reset() {
+	*x = StartScenario{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_controlplane_scenario_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StartScenario) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartScenario) ProtoMessage() {}
+
+func (x *StartScenario) ProtoReflect() protoreflect.Message {
+	mi := &file_controlplane_scenario_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartScenario.ProtoReflect.Descriptor instead.
+func (*StartScenario) Descriptor() ([]byte, []int) {
+	return file_controlplane_scenario_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *StartScenario) GetDisableWatchers() bool {
+	if x != nil {
+		return x.DisableWatchers
+	}
+	return false
+}
+
 var File_controlplane_scenario_proto protoreflect.FileDescriptor
 
 var file_controlplane_scenario_proto_rawDesc = []byte{
@@ -36,25 +88,44 @@ var file_controlplane_scenario_proto_rawDesc = []byte{
 	0x63, 0x65, 0x6e, 0x61, 0x72, 0x69, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x12, 0x61,
 	0x70, 0x61, 0x74, 0x65, 0x2e, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x70, 0x6c, 0x61, 0x6e,
 	0x65, 0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
-	0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0x4d,
-	0x0a, 0x08, 0x53, 0x63, 0x65, 0x6e, 0x61, 0x72, 0x69, 0x6f, 0x12, 0x41, 0x0a, 0x0d, 0x73, 0x74,
-	0x61, 0x72, 0x74, 0x53, 0x63, 0x65, 0x6e, 0x61, 0x72, 0x69, 0x6f, 0x12, 0x16, 0x2e, 0x67, 0x6f,
-	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d,
-	0x70, 0x74, 0x79, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x42, 0x48, 0x5a,
-	0x46, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x74, 0x6c, 0x61,
-	0x72, 0x67, 0x65, 0x2d, 0x72, 0x65, 0x73, 0x65, 0x61, 0x72, 0x63, 0x68, 0x2f, 0x6f, 0x70, 0x65,
-	0x6e, 0x64, 0x63, 0x2d, 0x65, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x65, 0x2d, 0x6b, 0x75, 0x62, 0x65,
-	0x72, 0x6e, 0x65, 0x74, 0x65, 0x73, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x63, 0x6f, 0x6e, 0x74, 0x72,
-	0x6f, 0x6c, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3a,
+	0x0a, 0x0d, 0x53, 0x74, 0x61, 0x72, 0x74, 0x53, 0x63, 0x65, 0x6e, 0x61, 0x72, 0x69, 0x6f, 0x12,
+	0x29, 0x0a, 0x10, 0x64, 0x69, 0x73, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x77, 0x61, 0x74, 0x63, 0x68,
+	0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0f, 0x64, 0x69, 0x73, 0x61, 0x62,
+	0x6c, 0x65, 0x57, 0x61, 0x74, 0x63, 0x68, 0x65, 0x72, 0x73, 0x32, 0x58, 0x0a, 0x08, 0x53, 0x63,
+	0x65, 0x6e, 0x61, 0x72, 0x69, 0x6f, 0x12, 0x4c, 0x0a, 0x0d, 0x73, 0x74, 0x61, 0x72, 0x74, 0x53,
+	0x63, 0x65, 0x6e, 0x61, 0x72, 0x69, 0x6f, 0x12, 0x21, 0x2e, 0x61, 0x70, 0x61, 0x74, 0x65, 0x2e,
+	0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x53, 0x74, 0x61,
+	0x72, 0x74, 0x53, 0x63, 0x65, 0x6e, 0x61, 0x72, 0x69, 0x6f, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70,
+	0x74, 0x79, 0x22, 0x00, 0x42, 0x48, 0x5a, 0x46, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x61, 0x74, 0x6c, 0x61, 0x72, 0x67, 0x65, 0x2d, 0x72, 0x65, 0x73, 0x65, 0x61,
+	0x72, 0x63, 0x68, 0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x64, 0x63, 0x2d, 0x65, 0x6d, 0x75, 0x6c, 0x61,
+	0x74, 0x65, 0x2d, 0x6b, 0x75, 0x62, 0x65, 0x72, 0x6e, 0x65, 0x74, 0x65, 0x73, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
+var (
+	file_controlplane_scenario_proto_rawDescOnce sync.Once
+	file_controlplane_scenario_proto_rawDescData = file_controlplane_scenario_proto_rawDesc
+)
+
+func file_controlplane_scenario_proto_rawDescGZIP() []byte {
+	file_controlplane_scenario_proto_rawDescOnce.Do(func() {
+		file_controlplane_scenario_proto_rawDescData = protoimpl.X.CompressGZIP(file_controlplane_scenario_proto_rawDescData)
+	})
+	return file_controlplane_scenario_proto_rawDescData
+}
+
+var file_controlplane_scenario_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_controlplane_scenario_proto_goTypes = []interface{}{
-	(*empty.Empty)(nil), // 0: google.protobuf.Empty
+	(*StartScenario)(nil), // 0: apate.controlplane.StartScenario
+	(*empty.Empty)(nil),   // 1: google.protobuf.Empty
 }
 var file_controlplane_scenario_proto_depIdxs = []int32{
-	0, // 0: apate.controlplane.Scenario.startScenario:input_type -> google.protobuf.Empty
-	0, // 1: apate.controlplane.Scenario.startScenario:output_type -> google.protobuf.Empty
+	0, // 0: apate.controlplane.Scenario.startScenario:input_type -> apate.controlplane.StartScenario
+	1, // 1: apate.controlplane.Scenario.startScenario:output_type -> google.protobuf.Empty
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -67,18 +138,33 @@ func file_controlplane_scenario_proto_init() {
 	if File_controlplane_scenario_proto != nil {
 		return
 	}
+	if !protoimpl.UnsafeEnabled {
+		file_controlplane_scenario_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StartScenario); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_controlplane_scenario_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_controlplane_scenario_proto_goTypes,
 		DependencyIndexes: file_controlplane_scenario_proto_depIdxs,
+		MessageInfos:      file_controlplane_scenario_proto_msgTypes,
 	}.Build()
 	File_controlplane_scenario_proto = out.File
 	file_controlplane_scenario_proto_rawDesc = nil
@@ -98,7 +184,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ScenarioClient interface {
-	StartScenario(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
+	StartScenario(ctx context.Context, in *StartScenario, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type scenarioClient struct {
@@ -109,7 +195,7 @@ func NewScenarioClient(cc grpc.ClientConnInterface) ScenarioClient {
 	return &scenarioClient{cc}
 }
 
-func (c *scenarioClient) StartScenario(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *scenarioClient) StartScenario(ctx context.Context, in *StartScenario, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/apate.controlplane.Scenario/startScenario", in, out, opts...)
 	if err != nil {
@@ -120,14 +206,14 @@ func (c *scenarioClient) StartScenario(ctx context.Context, in *empty.Empty, opt
 
 // ScenarioServer is the server API for Scenario service.
 type ScenarioServer interface {
-	StartScenario(context.Context, *empty.Empty) (*empty.Empty, error)
+	StartScenario(context.Context, *StartScenario) (*empty.Empty, error)
 }
 
 // UnimplementedScenarioServer can be embedded to have forward compatible implementations.
 type UnimplementedScenarioServer struct {
 }
 
-func (*UnimplementedScenarioServer) StartScenario(context.Context, *empty.Empty) (*empty.Empty, error) {
+func (*UnimplementedScenarioServer) StartScenario(context.Context, *StartScenario) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartScenario not implemented")
 }
 
@@ -136,7 +222,7 @@ func RegisterScenarioServer(s *grpc.Server, srv ScenarioServer) {
 }
 
 func _Scenario_StartScenario_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(StartScenario)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -148,7 +234,7 @@ func _Scenario_StartScenario_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: "/apate.controlplane.Scenario/StartScenario",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ScenarioServer).StartScenario(ctx, req.(*empty.Empty))
+		return srv.(ScenarioServer).StartScenario(ctx, req.(*StartScenario))
 	}
 	return interceptor(ctx, in, info, handler)
 }
