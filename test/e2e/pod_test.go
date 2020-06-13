@@ -42,7 +42,7 @@ func TestSimplePodDeploymentRoutine(t *testing.T) {
 }
 
 func testSimplePodDeployment(t *testing.T, rt env.RunType) {
-	setup(t, strings.ToLower("testSimplePodDeployment_"+string(rt)), rt)
+	setup(t, strings.ToLower("TestSimplePodDeployment"+string(rt)), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 

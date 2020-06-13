@@ -47,6 +47,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	}
 
 	initEnv := env.ControlPlaneEnv()
+	initEnv.DebugEnabled = true
 	initEnv.KubeConfigLocation = "/tmp/apate/test-" + uuid.New().String()
 	initEnv.PodCRDLocation = dir + "/config/crd/apate.opendc.org_podconfigurations.yaml"
 	initEnv.NodeCRDLocation = dir + "/config/crd/apate.opendc.org_nodeconfigurations.yaml"
