@@ -12,13 +12,13 @@ import (
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
+	"github.com/finitum/node-cli/stats"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -185,7 +185,7 @@ func TestUpdateConditionNoPressure(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 500, 2048, 1024)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -215,7 +215,7 @@ func TestUpdateConditionMemoryAndDiskPressure(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mt)+2, int64(dt)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -245,7 +245,7 @@ func TestUpdateConditionDiskFull(t *testing.T) {
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mtf)+2, int64(dtf)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionFalse, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -289,18 +289,9 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	memory := uint64(podMemory)
 	storage := uint64(podStorage)
 	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{
-		CPU: &stats.CPUStats{
-			Time:           metav1.Time{},
-			UsageNanoCores: &cores,
-		},
-		Memory: &stats.MemoryStats{
-			Time:       metav1.Time{},
-			UsageBytes: &memory,
-		},
-		EphemeralStorage: &stats.FsStats{
-			Time:      metav1.Time{},
-			UsedBytes: &storage,
-		},
+		UsageNanoCores:     cores,
+		UsageBytesMemory:   memory,
+		UsedBytesEphemeral: storage,
 	}, nil)
 
 	ms.EXPECT().GetNodeFlag(events.NodePingResponse).Return(scenario.ResponseNormal, nil)
@@ -364,7 +355,7 @@ func TestNotifyNodeStatusNoPing(t *testing.T) {
 		Node:  &corev1.Node{},
 	}
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, &corev1.Node{}, node)
 	})
 }

@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"context"
 	"testing"
 
 	"github.com/finitum/node-cli/provider"
@@ -14,11 +13,11 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
+	"github.com/finitum/node-cli/stats"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
@@ -59,15 +58,15 @@ func TestEmpty(t *testing.T) {
 	mem := int64(34)
 	prov, ctrl, _, _ := createProvider(t, 12, mem, 0)
 
-	result, err := prov.GetStatsSummary(context.Background())
+	result, err := prov.GetStatsSummary()
 	assert.NoError(t, err)
 
 	// Verify node
 	zero := uint64(0)
-	assert.Equal(t, name, result.Node.NodeName)
-	assert.Equal(t, zero, *result.Node.CPU.UsageNanoCores)
-	assert.Equal(t, zero, *result.Node.Memory.UsageBytes)
-	assert.Equal(t, uint64(mem), *result.Node.Memory.AvailableBytes)
+	assert.Equal(t, name, result.Node.Name)
+	assert.Equal(t, zero, result.Node.UsageNanoCores)
+	assert.Equal(t, zero, result.Node.UsageBytesMemory)
+	assert.Equal(t, uint64(mem), result.Node.AvailableBytesMemory)
 
 	// Verify pods
 	assert.Empty(t, result.Pods)
@@ -98,13 +97,8 @@ func TestSinglePod(t *testing.T) {
 	// Create stats
 	statistics := &stats.PodStats{
 		PodRef:           stats.PodReference{Namespace: namespace},
-		StartTime:        metav1.Time{},
-		Containers:       nil,
-		CPU:              &stats.CPUStats{UsageNanoCores: &cpuUsage},
-		Memory:           &stats.MemoryStats{UsageBytes: &memUsage},
-		Network:          nil,
-		VolumeStats:      nil,
-		EphemeralStorage: nil,
+		UsageNanoCores:   cpuUsage,
+		UsageBytesMemory: memUsage,
 	}
 
 	// Setup store
@@ -112,15 +106,15 @@ func TestSinglePod(t *testing.T) {
 
 	prov.updateStatsSummary()
 
-	result, err := prov.GetStatsSummary(context.Background())
+	result, err := prov.GetStatsSummary()
 	assert.NoError(t, err)
 
 	// Verify node
 	left := uint64(mem) - memUsage
-	assert.Equal(t, name, result.Node.NodeName)
-	assert.Equal(t, cpuUsage, *result.Node.CPU.UsageNanoCores)
-	assert.Equal(t, memUsage, *result.Node.Memory.UsageBytes)
-	assert.Equal(t, left, *result.Node.Memory.AvailableBytes)
+	assert.Equal(t, name, result.Node.Name)
+	assert.Equal(t, cpuUsage, result.Node.UsageNanoCores)
+	assert.Equal(t, memUsage, result.Node.UsageBytesMemory)
+	assert.Equal(t, left, result.Node.AvailableBytesMemory)
 
 	// Verify pod
 	podStats := []stats.PodStats{*statistics}
@@ -184,47 +178,22 @@ func TestUnspecifiedPods(t *testing.T) {
 
 	// Create stats
 	statistics := &stats.PodStats{
-		PodRef:           stats.PodReference{UID: label, Namespace: namespace},
-		StartTime:        metav1.Time{},
-		Containers:       nil,
-		CPU:              nil,
-		Memory:           nil,
-		Network:          nil,
-		VolumeStats:      nil,
-		EphemeralStorage: nil,
+		PodRef: stats.PodReference{UID: label, Namespace: namespace},
 	}
 
 	statistics2 := &stats.PodStats{
-		PodRef:           stats.PodReference{UID: label + "2", Namespace: namespace},
-		StartTime:        metav1.Time{},
-		Containers:       nil,
-		CPU:              &stats.CPUStats{},
-		Memory:           &stats.MemoryStats{},
-		Network:          nil,
-		VolumeStats:      nil,
-		EphemeralStorage: &stats.FsStats{UsedBytes: &fsUsage},
+		PodRef:             stats.PodReference{UID: label + "2", Namespace: namespace},
+		UsedBytesEphemeral: fsUsage,
 	}
 
 	statistics3 := &stats.PodStats{
 		PodRef:           stats.PodReference{UID: label + "3", Namespace: namespace},
-		StartTime:        metav1.Time{},
-		Containers:       nil,
-		CPU:              &stats.CPUStats{UsageNanoCores: &cpuUsage},
-		Memory:           &stats.MemoryStats{UsageBytes: &memUsage},
-		Network:          nil,
-		VolumeStats:      nil,
-		EphemeralStorage: nil,
+		UsageNanoCores:   cpuUsage,
+		UsageBytesMemory: memUsage,
 	}
 
 	statistics4 := &stats.PodStats{
-		PodRef:           stats.PodReference{UID: label + "4", Namespace: namespace},
-		StartTime:        metav1.Time{},
-		Containers:       nil,
-		CPU:              nil,
-		Memory:           nil,
-		Network:          nil,
-		VolumeStats:      nil,
-		EphemeralStorage: nil,
+		PodRef: stats.PodReference{UID: label + "4", Namespace: namespace},
 	}
 
 	statMap := make(map[string]*stats.PodStats)
@@ -240,19 +209,19 @@ func TestUnspecifiedPods(t *testing.T) {
 	ms.EXPECT().GetPodFlag(pod4, event).Return(statistics4, nil)
 
 	prov.updateStatsSummary()
-	result, err := prov.GetStatsSummary(context.Background())
+	result, err := prov.GetStatsSummary()
 	assert.NoError(t, err)
 
 	// Verify node
 	memLeft := uint64(mem) - memUsage
 	fsLeft := uint64(fs) - fsUsage
-	assert.Equal(t, name, result.Node.NodeName)
-	assert.Equal(t, cpuUsage, *result.Node.CPU.UsageNanoCores)
-	assert.Equal(t, memUsage, *result.Node.Memory.UsageBytes)
-	assert.Equal(t, memLeft, *result.Node.Memory.AvailableBytes)
-	assert.Equal(t, fsUsage, *result.Node.Fs.UsedBytes)
-	assert.Equal(t, fsLeft, *result.Node.Fs.AvailableBytes)
-	assert.Equal(t, uint64(fs), *result.Node.Fs.CapacityBytes)
+	assert.Equal(t, name, result.Node.Name)
+	assert.Equal(t, cpuUsage, result.Node.UsageNanoCores)
+	assert.Equal(t, memUsage, result.Node.UsageBytesMemory)
+	assert.Equal(t, memLeft, result.Node.AvailableBytesMemory)
+	assert.Equal(t, fsUsage, result.Node.UsedBytesEphemeral)
+	assert.Equal(t, fsLeft, result.Node.AvailableBytesEphemeral)
+	assert.Equal(t, uint64(fs), result.Node.CapacityBytesEphemeral)
 
 	// Verify pod
 	for _, podStat := range result.Pods {

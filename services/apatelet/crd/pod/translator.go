@@ -2,14 +2,11 @@
 package pod
 
 import (
-	"time"
+	"github.com/finitum/node-cli/stats"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/pkg/errors"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -113,48 +110,22 @@ func translatePodResources(input *podconfigv1.PodResources) (*stats.PodStats, er
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to translate memory bytes (was %v)", input.EphemeralStorage)
 	}
-	memoryUint := uint64(memory)
 
 	storage, err := scenario.GetInBytes(input.Storage, "storage")
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to translate storage bytes (was %v)", input.EphemeralStorage)
 	}
-	storageUint := uint64(storage)
 
 	ephemeralStorage, err := scenario.GetInBytes(input.EphemeralStorage, "ephemeral storage")
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to translate ephemeral storage bytes (was %v)", input.EphemeralStorage)
 	}
-	ephemeralStorageUint := uint64(ephemeralStorage)
 
 	return &stats.PodStats{
-		CPU: &stats.CPUStats{
-			Time: metav1.Time{
-				Time: time.Now(),
-			},
-			UsageNanoCores: &input.CPU,
-		},
-		Memory: &stats.MemoryStats{
-			Time: metav1.Time{
-				Time: time.Now(),
-			},
-			UsageBytes: &memoryUint,
-		},
-		VolumeStats: []stats.VolumeStats{
-			{
-				FsStats: stats.FsStats{
-					Time: metav1.Time{
-						Time: time.Now(),
-					},
-					UsedBytes: &storageUint,
-				},
-			},
-		},
-		EphemeralStorage: &stats.FsStats{
-			Time: metav1.Time{
-				Time: time.Now(),
-			},
-			UsedBytes: &ephemeralStorageUint,
-		},
+		PodRef:             stats.PodReference{},
+		UsageNanoCores:     input.CPU,
+		UsageBytesMemory:   uint64(memory),
+		UsedBytesEphemeral: uint64(ephemeralStorage),
+		UsedBytesStorage:   uint64(storage),
 	}, nil
 }

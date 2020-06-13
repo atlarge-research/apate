@@ -10,8 +10,7 @@ import (
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
-
+	"github.com/finitum/node-cli/stats"
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"

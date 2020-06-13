@@ -9,7 +9,8 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+
+	"github.com/finitum/node-cli/stats"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -212,7 +213,11 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 		return false, errors.Wrapf(err, "unable to convert '%v' to PodStats", podResourcesFlag)
 	}
 
-	resources := p.getPodResources(podResources)
+	resources := resources{
+		podResources.UsageNanoCores,
+		podResources.UsageBytesMemory,
+		podResources.UsedBytesEphemeral,
+	}
 
 	podExceedsPodLimit := (resources.cpu > limits.cpu && limits.cpu > 0) ||
 		(resources.memory > limits.memory && limits.memory > 0) ||
@@ -222,35 +227,11 @@ func (p *Provider) doesPodExceedLimit(pod *corev1.Pod) (bool, error) {
 	// TODO implement k8s OOM handling (much more complicated)
 	nodeStats := p.Stats.statsSummary.Node
 
-	totalLimitExceeded := *nodeStats.CPU.UsageNanoCores > uint64(p.Resources.CPU) ||
-		*nodeStats.Memory.UsageBytes > uint64(p.Resources.Memory) ||
-		*nodeStats.Fs.UsedBytes > uint64(p.Resources.EphemeralStorage)
+	totalLimitExceeded := nodeStats.UsageNanoCores > uint64(p.Resources.CPU) ||
+		nodeStats.UsageBytesMemory > uint64(p.Resources.Memory) ||
+		nodeStats.UsedBytesEphemeral > uint64(p.Resources.EphemeralStorage)
 
 	return podExceedsPodLimit || totalLimitExceeded, nil
-}
-
-func (p *Provider) getPodResources(podResources *stats.PodStats) resources {
-	usageCores := uint64(0)
-	usageMemory := uint64(0)
-	usageEphemeralStorage := uint64(0)
-
-	if podResources.CPU != nil && podResources.CPU.UsageNanoCores != nil {
-		usageCores = *podResources.CPU.UsageNanoCores
-	}
-
-	if podResources.Memory != nil && podResources.Memory.UsageBytes != nil {
-		usageMemory = *podResources.Memory.UsageBytes
-	}
-
-	if podResources.EphemeralStorage != nil && podResources.EphemeralStorage.UsedBytes != nil {
-		usageEphemeralStorage = *podResources.EphemeralStorage.UsedBytes
-	}
-
-	return resources{
-		usageCores,
-		usageMemory,
-		usageEphemeralStorage,
-	}
 }
 
 func (p *Provider) getPodResourceLimits(pod *corev1.Pod) resources {

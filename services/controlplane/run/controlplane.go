@@ -86,7 +86,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	}
 
 	// Create prometheus stack
-	createPrometheus := cpEnv.PrometheusStackEnabled
+	createPrometheus := cpEnv.PrometheusEnabled
 	if createPrometheus {
 		go kubectl.CreatePrometheusStack(cluster.KubeConfig)
 	}

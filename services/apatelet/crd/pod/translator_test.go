@@ -49,11 +49,10 @@ func TestTranslatePodResources(t *testing.T) {
 
 	assert.NoError(t, err)
 	// All these asserts are necessary because time fields contain time.Now() which are impossible to compare.
-	assert.Equal(t, uint64(50), *r.CPU.UsageNanoCores)
-	assert.Equal(t, uint64(1), *r.Memory.UsageBytes)
-	assert.Equal(t, 1, len(r.VolumeStats))
-	assert.Equal(t, uint64(1), *r.VolumeStats[0].UsedBytes)
-	assert.Equal(t, uint64(1), *r.EphemeralStorage.UsedBytes)
+	assert.Equal(t, uint64(50), r.UsageNanoCores)
+	assert.Equal(t, uint64(1), r.UsageBytesMemory)
+	assert.Equal(t, uint64(1), r.UsedBytesStorage)
+	assert.Equal(t, uint64(1), r.UsedBytesEphemeral)
 }
 
 func TestTranslatePodResourcesErrorMemory(t *testing.T) {
