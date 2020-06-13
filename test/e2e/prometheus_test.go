@@ -18,7 +18,7 @@ import (
 
 func TestRunPrometheusRoutines(t *testing.T) {
 	rt := env.Routine
-	setup(t, "TestRunPrometheus_"+string(rt), rt)
+	setup(t, "TestRunPrometheus"+string(rt), rt)
 
 	testRunPrometheus(t)
 
@@ -31,7 +31,7 @@ func TestRunPrometheusDocker(t *testing.T) {
 	}
 
 	rt := env.Docker
-	setup(t, "TestRunPrometheus_"+string(rt), rt)
+	setup(t, "TestRunPrometheus"+string(rt), rt)
 
 	testRunPrometheus(t)
 
