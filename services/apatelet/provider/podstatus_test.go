@@ -7,13 +7,13 @@ import (
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
+	"github.com/finitum/node-cli/stats"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
@@ -63,15 +63,9 @@ func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMax
 
 	// Because we compute the resources up front
 	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{
-		CPU: &stats.CPUStats{
-			UsageNanoCores: &podResources,
-		},
-		Memory: &stats.MemoryStats{
-			UsageBytes: &podResources,
-		},
-		EphemeralStorage: &stats.FsStats{
-			UsedBytes: &podResources,
-		},
+		UsageNanoCores:     podResources,
+		UsageBytesMemory:   podResources,
+		UsedBytesEphemeral: podResources,
 	}, nil).Times(expectedResourceGets)
 
 	if isNormal {

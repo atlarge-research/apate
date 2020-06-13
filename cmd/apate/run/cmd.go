@@ -163,8 +163,8 @@ func StartCmd(cmdArgs []string) {
 					&cli.BoolFlag{
 						Name:        "prometheus-enabled",
 						Usage:       "If the control plane start a Prometheus stack. Can be TRUE or FALSE.",
-						Destination: &cpEnv.PrometheusStackEnabled,
-						Value:       cpEnv.PrometheusStackEnabled,
+						Destination: &cpEnv.PrometheusEnabled,
+						Value:       cpEnv.PrometheusEnabled,
 						Required:    false,
 					},
 				},

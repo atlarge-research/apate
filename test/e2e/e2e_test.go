@@ -43,6 +43,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 
 	dir := os.Getenv("CI_PROJECT_DIR")
 	if len(dir) == 0 {
+		// If not set, fallback to a relative path (which must be updated every time this file is moved)
 		dir = "../../"
 	}
 
@@ -52,10 +53,11 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	initEnv.PodCRDLocation = dir + "/config/crd/apate.opendc.org_podconfigurations.yaml"
 	initEnv.NodeCRDLocation = dir + "/config/crd/apate.opendc.org_nodeconfigurations.yaml"
 	initEnv.ManagerConfigLocation = dir + "/config/gitlab-kind.yml"
+	initEnv.PrometheusConfigLocation = dir + "/config/prometheus.yml"
 	initEnv.KinDClusterName = kindClusterName
 	initEnv.ApateletRunType = runType
 	// Disable this  by default, testRunPrometheus tests this, but otherwise it's just very slow
-	initEnv.PrometheusStackEnabled = false
+	initEnv.PrometheusEnabled = false
 	env.SetEnv(initEnv)
 }
 
@@ -113,7 +115,7 @@ func runScenario(t *testing.T) {
 
 	os.Stdin = r
 	go cmd.StartCmd(args)
-	w.Write([]byte("\n"))
+	_, _ = w.Write([]byte("\n"))
 }
 
 func getApateletWaitForCondition(t *testing.T, cluster *kubernetes.Cluster, numApatelets int, check func([]*corev1.Node) bool) (bool, []*corev1.Node) {
