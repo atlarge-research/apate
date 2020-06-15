@@ -95,6 +95,26 @@ func (c *Cluster) GetNumberOfNodes() (int, error) {
 	return len(nodes.Items), nil
 }
 
+// GetNumberOfReadyNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
+func (c *Cluster) GetNumberOfReadyNodes() (int, error) {
+	nodes, err := c.GetNodes()
+
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
+	}
+
+	i := 0
+	for _, node := range nodes.Items {
+		for _, c := range node.Status.Conditions {
+			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
+				i++
+			}
+		}
+	}
+
+	return i, nil
+}
+
 // GetNumberOfPendingPods will return the number of pods in the pending state.
 func (c Cluster) GetNumberOfPendingPods(namespace string) (int, error) {
 	pods, err := c.GetPods(namespace)
