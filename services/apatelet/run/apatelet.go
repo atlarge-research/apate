@@ -33,7 +33,6 @@ func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, rea
 
 // StartApateletInternal starts the apatelet with a stop channel
 func StartApateletInternal(originalCtx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}, stop chan os.Signal) error {
-
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
@@ -42,7 +41,7 @@ func StartApateletInternal(originalCtx context.Context, apateletEnv env.Apatelet
 	defer cancel()
 
 	// Create stop channels
-	
+
 	forcedStop := make(chan struct{}, 1)
 	stopInformer := channel.NewStopChannel()
 

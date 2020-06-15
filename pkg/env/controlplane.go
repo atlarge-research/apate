@@ -65,7 +65,7 @@ const (
 	// Docker uses docker containers for the creation of apatelets
 	Docker RunType = "DOCKER"
 
-	// Docker uses docker containers for the creation of apatelets
+	// Test nops the spawning of apatelets
 	Test RunType = "TEST"
 )
 
