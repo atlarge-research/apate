@@ -19,7 +19,7 @@ import (
 
 func TestShutdownCPRoutines(t *testing.T) {
 	rt := env.Routine
-	setup(t, "TestShutdownCP_"+string(rt), rt)
+	setup(t, "TestShutdownCP-"+string(rt), rt)
 
 	testShutdownCp(t)
 
@@ -32,7 +32,7 @@ func TestShutdownCPDocker(t *testing.T) {
 	}
 
 	rt := env.Docker
-	setup(t, "TestShutdownCP_"+string(rt), rt)
+	setup(t, "TestShutdownCP-"+string(rt), rt)
 
 	testShutdownCp(t)
 

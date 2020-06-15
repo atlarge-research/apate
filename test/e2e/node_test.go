@@ -184,3 +184,54 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	stopped, _ := getApateletWaitForCondition(t, cluster, num, createApateletConditionFunction(t, num, corev1.ConditionUnknown))
 	assert.True(t, stopped)
 }
+
+func TestShutdownApatelet(t *testing.T) {
+	setup(t, "TestShutdownApatelet", env.Routine)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start CP
+	go cp.StartControlPlane(ctx, runner.New())
+
+	// Wait
+	waitForCP(t)
+
+	kcfg := getKubeConfig(t)
+	time.Sleep(time.Second * 5)
+
+	rc := `
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: e2e-deployment
+spec:
+    replicas: 2
+    resources:
+        memory: 5G
+        cpu: 1000
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+`
+
+	err := kubectl.Create([]byte(rc), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
+	time.Sleep(time.Second * 60)
+
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	assert.NoError(t, err)
+
+	log.Println("Getting number of nodes from k8s")
+	nodes, err := cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+	assert.Equal(t, 3, nodes)
+	
+	cancel()
+	
+	time.Sleep(time.Second * 30)
+	
+	teardown(t)
+}
+
