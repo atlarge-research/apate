@@ -1,4 +1,4 @@
-package runner
+package e2e
 
 import (
 	"context"

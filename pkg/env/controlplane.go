@@ -64,9 +64,6 @@ const (
 
 	// Docker uses docker containers for the creation of apatelets
 	Docker RunType = "DOCKER"
-
-	// Test nops the spawning of apatelets
-	Test RunType = "TEST"
 )
 
 // ControlPlaneEnvironment represents the environment variables of the control plane

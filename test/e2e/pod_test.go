@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"context"
-	"log"
 	"strings"
 	"testing"
 	"time"
@@ -18,18 +17,7 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
-func arePodsAreRunning(pods *corev1.PodList) bool {
-	for _, pod := range pods.Items {
-		log.Printf("Pod: %v has phase: %v", pod.Name, pod.Status.Phase)
-
-		if pod.Status.Phase != corev1.PodRunning {
-			return false
-		}
-	}
-
-	return true
-}
-
+// POD DEPLOYMENT
 func TestSimplePodDeployment(t *testing.T) {
 	if detectCI() {
 		t.Skip()
@@ -128,6 +116,7 @@ spec:
 	assert.True(t, running)
 }
 
+// POD FAILURE
 func TestPodFailureDocker(t *testing.T) {
 	if detectCI() {
 		t.Skip()

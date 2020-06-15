@@ -22,6 +22,7 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
+// NODE DEPLOYMENT
 func TestSimpleNodeDeploymentRoutine(t *testing.T) {
 	testSimpleNodeDeployment(t, env.Routine)
 }
@@ -90,6 +91,7 @@ func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.Equal(t, 3, nodes)
 }
 
+// NODE FAILURE
 func TestNodeFailureDocker(t *testing.T) {
 	if detectCI() {
 		t.Skip()
@@ -191,8 +193,20 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.True(t, stopped)
 }
 
-func TestShutdownApatelet(t *testing.T) {
-	setup(t, "TestShutdownApatelet", env.Routine)
+// SHUTDOWN APATELET
+func TestShutdownApateletRoutine(t *testing.T) {
+	testShutdownApatelet(t, env.Routine)
+}
+
+func TestShutdownApateletDocker(t *testing.T) {
+	if detectCI() {
+		t.Skip()
+	}
+	testShutdownApatelet(t, env.Docker)
+}
+
+func testShutdownApatelet(t *testing.T, rt env.RunType) {
+	setup(t, "TestShutdownApatelet", rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -241,13 +255,22 @@ spec:
 	teardown(t)
 }
 
+// Test nops the spawning of apatelets
+const Test env.RunType = "TEST"
+
+// SHUTDOWN APATELETS
 func TestShutdownApateletApateletSide(t *testing.T) {
-	setup(t, "TestShutdownApateletApateletSide", env.Test)
+	setup(t, "TestShutdownApateletApateletSide", Test)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Start CP
-	go cp.StartControlPlane(ctx, runner.New())
+	registry := runner.New()
+
+	var testRoutineRunner runner.ApateletRunner = &TestRoutineRunner{}
+	registry.RegisterRunner(Test, &testRoutineRunner)
+
+	go cp.StartControlPlane(ctx, registry)
 
 	// Wait
 	waitForCP(t)
@@ -333,8 +356,20 @@ spec:
 	teardown(t)
 }
 
-func TestScale5000(t *testing.T) {
-	setup(t, "TestScale5000", env.Routine)
+// UP-DOWN SCALE
+func TestUpDownScaleRoutine(t *testing.T) {
+	testUpDownScale(t, env.Routine)
+}
+
+func TestUpDownScaleDocker(t *testing.T) {
+	if detectCI() {
+		t.Skip()
+	}
+	testUpDownScale(t, env.Docker)
+}
+
+func testUpDownScale(t *testing.T, rt env.RunType) {
+	setup(t, "TestScale5000", rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -371,22 +406,7 @@ spec:
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
 	assert.NoError(t, err)
 
-	done := false
-	for i := 0; i < 10; i++ {
-		log.Println("Getting number of nodes from k8s")
-		nodes, err1 := cluster.GetNumberOfReadyNodes()
-		assert.NoError(t, err1)
-
-		log.Printf("nodes: %v", nodes)
-
-		if nodes == 3 {
-			done = true
-			break
-		}
-
-		time.Sleep(10 * time.Second)
-	}
-	assert.True(t, done)
+	checkNodes(t, cluster, 3)
 
 	err = kubectl.Apply([]byte(rc2), kcfg)
 	assert.NoError(t, err)
@@ -394,22 +414,7 @@ spec:
 
 	println("UPSCALING")
 
-	done = false
-	for i := 0; i < 100; i++ {
-		log.Println("Getting number of nodes from k8s")
-		nodes, err1 := cluster.GetNumberOfReadyNodes()
-		assert.NoError(t, err1)
-
-		log.Printf("nodes: %v", nodes)
-
-		if nodes == 101 {
-			done = true
-			break
-		}
-
-		time.Sleep(10 * time.Second)
-	}
-	assert.True(t, done)
+	checkNodes(t, cluster, 101)
 
 	println("DOWNSCALING")
 
@@ -417,22 +422,15 @@ spec:
 	assert.NoError(t, err)
 	log.Println("Waiting before querying k8s")
 
-	done = false
-	for i := 0; i < 100; i++ {
-		log.Println("Getting number of nodes from k8s")
-		nodes, err1 := cluster.GetNumberOfReadyNodes()
-		assert.NoError(t, err1)
+	checkNodes(t, cluster, 3)
 
-		log.Printf("nodes: %v", nodes)
+	println("DELETING")
 
-		if nodes == 3 {
-			done = true
-			break
-		}
+	err = kubectl.Delete([]byte(rc1), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
 
-		time.Sleep(10 * time.Second)
-	}
-	assert.True(t, done)
+	checkNodes(t, cluster, 1)
 
 	cancel()
 
