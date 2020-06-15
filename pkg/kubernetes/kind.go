@@ -30,10 +30,8 @@ func (k *KinDClusterManager) GetKubeConfig() (*kubeconfig.KubeConfig, error) {
 		return nil, errors.Wrap(err, "failure to delete kind cluster to prepare for creating a new one")
 	}
 
-	err = k.prepareCluster()
-	if err != nil {
-		err = errors.Wrap(err, "failed to create kind cluster")
-		return nil, errors.Wrapf(k.deleteCluster(), "failed to delete kind cluster to clean up earlier failure (%v)", err)
+	if err = k.prepareCluster(); err != nil {
+		return nil, errors.Wrapf(err, "failed to start kind cluster. Possible cleanup error: %v", k.deleteCluster())
 	}
 
 	err = k.writeKubeConfig()
@@ -82,6 +80,11 @@ func (k *KinDClusterManager) prepareCluster() error {
 	args = append(args, "--name", strings.ToLower(env.ControlPlaneEnv().KinDClusterName))
 	args = append(args, "--kubeconfig", env.ControlPlaneEnv().KubeConfigLocation)
 	args = append(args, "--config", env.ControlPlaneEnv().ManagerConfigLocation)
+
+	if env.ControlPlaneEnv().DebugEnabled {
+		// This number is also used in KinD internally to denote trace.
+		args = append(args, "--verbosity=2147483647")
+	}
 
 	// Set up a cluster
 	// Can't simply call Run as is done in Delete since we want to get error messages back.

@@ -91,7 +91,7 @@ func (p *Provider) NotifyNodeStatus(ctx context.Context, cb func(*corev1.Node)) 
 			case <-ctx.Done():
 				return
 			case <-time.After(updateInterval):
-				p.updateConditions(ctx, cb)
+				p.updateConditions(cb)
 			}
 		}
 	}()
@@ -110,7 +110,7 @@ func (p *Provider) ConfigureNode(ctx context.Context, node *corev1.Node) {
 	p.Node = node.DeepCopy()
 }
 
-func (p *Provider) updateConditions(ctx context.Context, cb func(*corev1.Node)) {
+func (p *Provider) updateConditions(cb func(*corev1.Node)) {
 	// First check if the conditions should be updated
 	flag, err := p.getPingResponse()
 	if err != nil {
@@ -121,16 +121,16 @@ func (p *Provider) updateConditions(ctx context.Context, cb func(*corev1.Node)) 
 		return
 	}
 
-	stats, err := p.GetStatsSummary(ctx)
+	stats, err := p.GetStatsSummary()
 	if err != nil {
 		log.Printf("failed to update node conditions: %v", err)
 		return
 	}
 
 	// Set bools
-	memPressure := float32(*stats.Node.Memory.UsageBytes) > float32(p.Resources.Memory)*memThresh
-	diskPressure := float32(*stats.Node.Fs.UsedBytes) > float32(p.Resources.Storage)*diskThresh
-	diskFull := float32(*stats.Node.Fs.UsedBytes) > float32(p.Resources.Storage)*diskFullThresh
+	memPressure := float32(stats.Node.UsageBytesMemory) > float32(p.Resources.Memory)*memThresh
+	diskPressure := float32(stats.Node.UsedBytesEphemeral) > float32(p.Resources.Storage)*diskThresh
+	diskFull := float32(stats.Node.UsedBytesEphemeral) > float32(p.Resources.Storage)*diskFullThresh
 
 	// Set conditions and update node
 	p.Node.Status.Conditions = []corev1.NodeCondition{

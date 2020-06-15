@@ -22,8 +22,6 @@ func setEnv() {
 }
 
 func TestRegisterRunner(t *testing.T) {
-	t.Parallel()
-
 	setEnv()
 
 	ctrl := gomock.NewController(t)

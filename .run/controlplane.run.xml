@@ -3,8 +3,8 @@
     <module name="emulating-k8s" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
-      <env name="CP_MANAGER_CONFIG_LOCATION" value="./config/kind" />
-      <env name="CP_APATELET_RUN_TYPE" value="DOCKER" />
+      <env name="CP_MANAGER_CONFIG_LOCATION" value="./config/kind.yml" />
+      <env name="CP_APATELET_RUN_TYPE" value="ROUTINES" />
     </envs>
     <kind value="PACKAGE" />
     <filePath value="$PROJECT_DIR$/services/controlplane/main.go" />

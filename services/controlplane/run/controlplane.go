@@ -10,6 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/pod"
+
 	"github.com/pkg/errors"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
@@ -77,20 +81,24 @@ func StartControlPlaneWithStopChannel(ctx context.Context, registry *runner.Regi
 	}
 
 	// Create node informer
-	stopInformer := make(chan struct{})
-	handler := node.NewHandler(&createdStore, registry, externalInformation, cluster)
-	if err = node.WatchHandler(ctx, cluster.KubeConfig, handler, stopInformer); err != nil {
+	stopInformer := channel.NewStopChannel()
+	nodeHandler := node.NewHandler(&createdStore, registry, externalInformation, cluster)
+	if err = node.WatchHandler(ctx, cluster.KubeConfig, nodeHandler, stopInformer.GetChannel()); err != nil {
 		panicf(errors.Wrap(err, "failed to watch node handler"))
 	}
 
+	if err = pod.NoopWatchHandler(cluster.KubeConfig, stopInformer.GetChannel()); err != nil {
+		panicf(errors.Wrap(err, "failed to watch pod handler"))
+	}
+
 	// Create prometheus stack
-	createPrometheus := cpEnv.PrometheusStackEnabled
+	createPrometheus := cpEnv.PrometheusEnabled
 	if createPrometheus {
 		go kubectl.CreatePrometheusStack(cluster.KubeConfig)
 	}
 
 	// Start gRPC server
-	server, err := createGRPC(&createdStore, cluster, externalInformation)
+	server, err := createGRPC(&createdStore, cluster, externalInformation, stopInformer)
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to start GRPC server"))
 	}
@@ -125,7 +133,7 @@ func StartControlPlaneWithStopChannel(ctx context.Context, registry *runner.Regi
 	case <-ctx.Done():
 		//
 	}
-	close(stopInformer)
+	stopInformer.Close()
 	shutdown(&createdStore, cluster, server)
 	log.Printf("apate control plane stopped")
 }
@@ -182,7 +190,7 @@ func getExternalAddress() (string, error) {
 	return res, nil
 }
 
-func createGRPC(createdStore *store.Store, kubernetesCluster *kubernetes.Cluster, info *service.ConnectionInfo) (*service.GRPCServer, error) {
+func createGRPC(createdStore *store.Store, kubernetesCluster *kubernetes.Cluster, info *service.ConnectionInfo, stopInformerCh *channel.StopChannel) (*service.GRPCServer, error) {
 	// Retrieve from environment
 	listenAddress := env.ControlPlaneEnv().ListenAddress
 
@@ -197,7 +205,7 @@ func createGRPC(createdStore *store.Store, kubernetesCluster *kubernetes.Cluster
 
 	// Add services
 	services.RegisterStatusService(server, createdStore)
-	services.RegisterScenarioService(server, createdStore, info)
+	services.RegisterScenarioService(server, createdStore, info, stopInformerCh)
 	services.RegisterClusterOperationService(server, createdStore, kubernetesCluster)
 	services.RegisterHealthService(server, createdStore)
 

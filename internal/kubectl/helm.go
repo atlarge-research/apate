@@ -13,10 +13,6 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
-const (
-	prometheusNamespace = "apate-prometheus"
-)
-
 func prepareHelm() error {
 	// helm repo add google https://kubernetes-charts.storage.googleapis.com/
 	// helm repo update
@@ -58,11 +54,11 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 	}
 
 	// Basic args
-	args = append(args, "--namespace", prometheusNamespace)
+	args = append(args, "--namespace", env.ControlPlaneEnv().PrometheusNamespace)
 	args = append(args, "--kubeconfig", kubecfg.Path)
 
-	// Values args
-	args = append(args, "--set", "nodeExporter.enabled=false")
+	// Add settings
+	args = append(args, "-f", env.ControlPlaneEnv().PrometheusConfigLocation)
 
 	// #nosec as the arguments are controlled this is not a security problem
 	cmd := exec.Command("helm", args...)
@@ -79,7 +75,7 @@ func installPrometheus(kubecfg *kubeconfig.KubeConfig) error {
 // CreatePrometheusStack attempts to create the prometheus operator in the kubernetes cluster
 func CreatePrometheusStack(kubecfg *kubeconfig.KubeConfig) {
 	log.Println("enabling prometheus stack")
-	if err := CreateNameSpace(prometheusNamespace, kubecfg); err != nil {
+	if err := CreateNameSpace(env.ControlPlaneEnv().PrometheusNamespace, kubecfg); err != nil {
 		log.Printf("error while creating prometheus namespace: %v", err)
 		return
 	}

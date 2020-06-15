@@ -33,8 +33,12 @@ const (
 	// CPApateletRunTypeDefault is the default for ControlPlaneApateletRunType
 	CPApateletRunTypeDefault = Routine
 
-	// CPPrometheusStackEnabledDefault is the default for PrometheusStackEnabled
-	CPPrometheusStackEnabledDefault = true
+	// CPPrometheusEnabledDefault is the default for PrometheusEnabled
+	CPPrometheusEnabledDefault = true
+	// CPPrometheusNamespace is the default for PrometheusNamespace
+	CPPrometheusNamespace = "apate-prometheus"
+	// CPPrometheusConfigLocation is the default for PrometheusConfigLocation
+	CPPrometheusConfigLocation = "config/prometheus.yml"
 
 	// CPNodeCRDLocationDefault CRD default location
 	CPNodeCRDLocationDefault = "config/crd/apate.opendc.org_nodeconfigurations.yaml"
@@ -86,8 +90,12 @@ type ControlPlaneEnvironment struct {
 	// ApateletRunType specifies how the control plane runs new apatelets
 	ApateletRunType RunType `env:"CP_APATELET_RUN_TYPE"`
 
-	// PrometheusStackEnabled specifies if the control plane should create a prometheus stack on startup
-	PrometheusStackEnabled bool `env:"CP_PROMETHEUS"`
+	// PrometheusEnabled specifies if the control plane should create a prometheus stack on startup
+	PrometheusEnabled bool `env:"CP_PROMETHEUS"`
+	// PrometheusNamespace specifies the namespace the prom
+	PrometheusNamespace string `env:"CP_PROMETHEUS_NAMESPACE"`
+	// PrometheusConfigLocation is the path to the config of the prometheus helm chart, if applicable
+	PrometheusConfigLocation string `env:"CP_PROMETHEUS_CONFIG_LOCATION"`
 
 	// CRD Locations
 	PodCRDLocation  string `env:"CP_POD_CRD_LOCATION"`
@@ -121,7 +129,9 @@ func DefaultControlPlaneEnvironment() ControlPlaneEnvironment {
 		DockerPolicy:    CPDockerPolicyDefault,
 		ApateletRunType: CPApateletRunTypeDefault,
 
-		PrometheusStackEnabled: CPPrometheusStackEnabledDefault,
+		PrometheusEnabled:        CPPrometheusEnabledDefault,
+		PrometheusNamespace:      CPPrometheusNamespace,
+		PrometheusConfigLocation: CPPrometheusConfigLocation,
 
 		NodeCRDLocation: CPNodeCRDLocationDefault,
 		PodCRDLocation:  CPPodCRDLocationDefault,
