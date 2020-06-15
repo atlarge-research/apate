@@ -3,7 +3,10 @@ package e2e
 import (
 	"context"
 	"fmt"
+	apateRun "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 	"log"
+	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -227,11 +230,104 @@ spec:
 	nodes, err := cluster.GetNumberOfNodes()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, nodes)
-	
+
 	cancel()
-	
+
 	time.Sleep(time.Second * 30)
-	
+
 	teardown(t)
 }
 
+
+
+func TestShutdownApateletApateletSide(t *testing.T) {
+	setup(t, "TestShutdownApateletApateletSide", env.Test)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start CP
+	go cp.StartControlPlane(ctx, runner.New())
+
+	// Wait
+	waitForCP(t)
+
+	kcfg := getKubeConfig(t)
+	time.Sleep(time.Second * 5)
+
+	rc := `
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: e2e-deployment
+spec:
+    replicas: 1
+    resources:
+        memory: 5G
+        cpu: 1000
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+`
+
+	err := kubectl.Create([]byte(rc), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
+	
+	environment, err := env.ApateletEnv()
+	assert.NoError(t, err)
+	environment.KubeConfigLocation = env.ControlPlaneEnv().KubeConfigLocation
+
+	apctx, apcancel := context.WithCancel(context.Background())
+	
+	apateletEnv := environment
+
+	// Apatelets should figure out their own ports when running in go routines
+	apateletEnv.KubernetesPort = 0
+	apateletEnv.MetricsPort = 0
+	apateletEnv.ListenPort = 0
+	
+	readyCh := make(chan struct{}, 1)
+	stop := make(chan os.Signal, 1)
+
+	readyCh <- struct{}{}
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Apatelet failed to start: %v\n", r)
+				readyCh <- struct{}{} // Just continue to next one. Don't retry, as the resources may have been removed from the queue already
+			}
+		}()
+		err := apateRun.StartApateletInternal(apctx, apateletEnv, readyCh, stop)
+		if err != nil {
+			log.Printf("Apatelet failed to start: %v\n", err)
+			readyCh <- struct{}{}
+		}
+	}()
+
+	<-readyCh
+	
+	time.Sleep(time.Second * 30)
+	
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	assert.NoError(t, err)
+
+	log.Println("Getting number of nodes from k8s")
+	nodes, err := cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, nodes)
+
+	stop <- syscall.SIGTERM
+	time.Sleep(time.Second * 30)
+	
+	log.Println("Getting number of nodes from k8s")
+	nodes, err = cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, nodes)
+
+	apcancel()
+	cancel()
+
+	teardown(t)
+}

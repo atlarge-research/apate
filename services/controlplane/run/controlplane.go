@@ -156,6 +156,9 @@ func registerRunners(registry *runner.Registry) {
 
 	var routineRunner runner.ApateletRunner = &runner.RoutineRunner{}
 	registry.RegisterRunner(env.Routine, &routineRunner)
+
+	var testRoutineRunner runner.ApateletRunner = &runner.TestRoutineRunner{}
+	registry.RegisterRunner(env.Test, &testRoutineRunner)
 }
 
 func shutdown(store *store.Store, cluster *kubernetes.Cluster, server *service.GRPCServer) {
