@@ -5,6 +5,11 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 
 	"github.com/pkg/errors"
@@ -17,16 +22,16 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
 )
 
-func setup(t *testing.T) (*mock_store.MockStore, *gomock.Controller, func(podFlag events.PodEventFlag) (interface{}, error)) {
-	t.Parallel()
-
+func setup(t *testing.T) (*mock_store.MockStore, *gomock.Controller, *corev1.Pod, func(podFlag events.PodEventFlag) (interface{}, error)) {
 	ctrl := gomock.NewController(t)
 	// no defer ctrl.Finish() here because this function returns the ctrl
 
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 
-	return ms, ctrl, func(podFlag events.PodEventFlag) (interface{}, error) {
+	pod := createPodWithLabel(podNamespace, podLabel)
+
+	return ms, ctrl, pod, func(podFlag events.PodEventFlag) (interface{}, error) {
 		// Run code under test
 		return podResponse(responseArgs{
 			ctx:      context.Background(),
@@ -34,18 +39,31 @@ func setup(t *testing.T) (*mock_store.MockStore, *gomock.Controller, func(podFla
 			action: func() (i interface{}, err error) {
 				return tStr, nil
 			}},
-			podName,
+			pod,
 			podFlag,
 		)
 	}
 }
 
+func createPodWithLabel(ns string, label string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				podconfigv1.PodConfigurationLabel: label,
+			},
+			Namespace: ns,
+		},
+	}
+}
+
 func TestPodNormal(t *testing.T) {
-	ms, ctrl, executor := setup(t)
+	t.Parallel()
+
+	ms, ctrl, pod, executor := setup(t)
 	defer ctrl.Finish()
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// Execute
@@ -57,14 +75,16 @@ func TestPodNormal(t *testing.T) {
 }
 
 func TestPodStoreError1(t *testing.T) {
-	ms, ctrl, executor := setup(t)
+	t.Parallel()
+
+	ms, ctrl, pod, executor := setup(t)
 	defer ctrl.Finish()
 
 	// vars
 	genericError := errors.New("some error")
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(nil, genericError)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(nil, genericError)
 
 	// Run code under test
 	out, err := executor(events.PodCreatePodResponse)
@@ -76,11 +96,13 @@ func TestPodStoreError1(t *testing.T) {
 }
 
 func TestPodStoreError2(t *testing.T) {
-	ms, ctrl, executor := setup(t)
+	t.Parallel()
+
+	ms, ctrl, pod, executor := setup(t)
 	defer ctrl.Finish()
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(scenario.ResponseError, nil)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(scenario.ResponseError, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// Run code under test
@@ -93,11 +115,13 @@ func TestPodStoreError2(t *testing.T) {
 }
 
 func TestPodUnset(t *testing.T) {
-	ms, ctrl, executor := setup(t)
+	t.Parallel()
+
+	ms, ctrl, pod, executor := setup(t)
 	defer ctrl.Finish()
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(scenario.ResponseUnset, nil)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(scenario.ResponseUnset, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// Run code under test
@@ -109,11 +133,13 @@ func TestPodUnset(t *testing.T) {
 }
 
 func TestPodInvalidResponseType(t *testing.T) {
-	ms, ctrl, executor := setup(t)
+	t.Parallel()
+
+	ms, ctrl, pod, executor := setup(t)
 	defer ctrl.Finish()
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(42, nil)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(42, nil)
 
 	// Run code under test
 	out, err := executor(events.PodCreatePodResponse)
@@ -125,11 +151,13 @@ func TestPodInvalidResponseType(t *testing.T) {
 }
 
 func TestPodInvalidResponse(t *testing.T) {
-	ms, ctrl, executor := setup(t)
+	t.Parallel()
+
+	ms, ctrl, pod, executor := setup(t)
 	defer ctrl.Finish()
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(scenario.Response(42), nil)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(scenario.Response(42), nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// Run code under test
@@ -153,8 +181,10 @@ func TestPodTimeOut(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 
+	pod := createPodWithLabel(podNamespace, podLabel)
+
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(scenario.ResponseTimeout, nil)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(scenario.ResponseTimeout, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	assert.NoError(t, ctx.Err())
@@ -167,7 +197,7 @@ func TestPodTimeOut(t *testing.T) {
 			return tStr, nil
 		},
 	},
-		podName,
+		pod,
 		events.PodCreatePodResponse,
 	)
 
@@ -190,11 +220,13 @@ func TestTimeoutMostImportant(t *testing.T) {
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 
+	pod := createPodWithLabel(podNamespace, podLabel)
+
 	// vars
 	podFlag := events.PodCreatePodResponse
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, podFlag).Return(scenario.ResponseError, nil)
+	ms.EXPECT().GetPodFlag(pod, podFlag).Return(scenario.ResponseError, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseTimeout, nil)
 
 	assert.NoError(t, ctx.Err())
@@ -207,7 +239,7 @@ func TestTimeoutMostImportant(t *testing.T) {
 			return tStr, nil
 		},
 	},
-		podName,
+		pod,
 		podFlag,
 	)
 
@@ -219,11 +251,13 @@ func TestTimeoutMostImportant(t *testing.T) {
 }
 
 func TestErrorVsNormal(t *testing.T) {
-	ms, ctrl, executor := setup(t)
+	t.Parallel()
+
+	ms, ctrl, pod, executor := setup(t)
 	defer ctrl.Finish()
 
 	// Expectations
-	ms.EXPECT().GetPodFlag(podName, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(pod, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseError, nil)
 
 	// Run code under test

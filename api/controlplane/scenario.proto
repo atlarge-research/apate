@@ -5,6 +5,15 @@ package apate.controlplane;
 
 import "google/protobuf/empty.proto";
 
+// The scenario service running on the control plane to start the scenario
 service Scenario {
-    rpc startScenario (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    rpc startScenario (StartScenario) returns (google.protobuf.Empty) {}
+}
+
+// The top level object which defines how the different Apatelet will emulate certain deployments
+message StartScenario {
+	// Whether to disable watchers before starting the scenario.
+	// This will reduce the overhead of the informers significantly.
+	// Enabling this option will require a restart before the informers will work again
+	bool disable_watchers = 1;
 }

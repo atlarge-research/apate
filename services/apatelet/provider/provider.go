@@ -129,7 +129,7 @@ func NewProvider(pods podmanager.PodManager, nodeStats *Stats, resources *scenar
 		},
 	}
 
-	(*store).AddPodListener(events.PodResources, func(obj interface{}) {
+	(*store).AddPodFlagListener(events.PodResources, func(obj interface{}) {
 		p.updateStatsSummary()
 	})
 

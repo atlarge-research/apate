@@ -30,8 +30,7 @@ RUN apk del curl
 WORKDIR /app
 COPY --from=build /build/controlplane /app/controlplane
 COPY --from=build /build/config/kind.yml /app/config/kind.yml
+COPY --from=build /build/config/prometheus.yml /app/config/prometheus.yml
 COPY --from=build /build/config/crd /app/config/crd
-
-
 
 CMD ["/app/controlplane"]

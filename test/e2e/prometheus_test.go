@@ -18,7 +18,7 @@ import (
 
 func TestRunPrometheusRoutines(t *testing.T) {
 	rt := env.Routine
-	setup(t, "TestRunPrometheus_"+string(rt), rt)
+	setup(t, "TestRunPrometheus"+string(rt), rt)
 
 	testRunPrometheus(t)
 
@@ -31,7 +31,7 @@ func TestRunPrometheusDocker(t *testing.T) {
 	}
 
 	rt := env.Docker
-	setup(t, "TestRunPrometheus_"+string(rt), rt)
+	setup(t, "TestRunPrometheus"+string(rt), rt)
 
 	testRunPrometheus(t)
 
@@ -41,7 +41,7 @@ func TestRunPrometheusDocker(t *testing.T) {
 func testRunPrometheus(t *testing.T) {
 	// By default, setup disables prometheus, but in this test it's enabled
 	e := env.ControlPlaneEnv()
-	e.PrometheusStackEnabled = true
+	e.PrometheusEnabled = true
 	env.SetEnv(e)
 
 	ctx, cancel := context.WithCancel(context.Background())

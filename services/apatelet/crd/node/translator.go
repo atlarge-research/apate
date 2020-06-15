@@ -12,65 +12,69 @@ import (
 
 // SetNodeFlags sets the correct flags for the apatelet
 func SetNodeFlags(st *store.Store, state *nodeconfigv1.NodeConfigurationState) {
+	flags := make(store.Flags)
+
 	// Set custom flags
-	setCustomFlags(st, state.CustomState)
+	setCustomFlags(flags, state.CustomState)
 
 	// Check if the node should no longer respond to heartbeat
 	if state.HeartbeatFailed {
-		(*st).SetNodeFlag(events.NodePingResponse, scenario.ResponseTimeout)
+		flags[events.NodePingResponse] = scenario.ResponseTimeout
 	}
 
 	// Set latency
 	latency, err := time.ParseDuration(state.NetworkLatency)
 	if err == nil && latency >= 0 {
 		// Ignore errors explicitly, only valid ints are seen as updates
-		(*st).SetNodeFlag(events.NodeAddedLatency, latency)
+		flags[events.NodeAddedLatency] = latency
 	}
 
 	// Check if the node should fail
 	if state.NodeFailed {
-		(*st).SetNodeFlag(events.NodeCreatePodResponse, scenario.ResponseTimeout)
-		(*st).SetNodeFlag(events.NodeUpdatePodResponse, scenario.ResponseTimeout)
-		(*st).SetNodeFlag(events.NodeDeletePodResponse, scenario.ResponseTimeout)
-		(*st).SetNodeFlag(events.NodeGetPodResponse, scenario.ResponseTimeout)
-		(*st).SetNodeFlag(events.NodeGetPodStatusResponse, scenario.ResponseTimeout)
-		(*st).SetNodeFlag(events.NodeGetPodsResponse, scenario.ResponseTimeout)
-		(*st).SetNodeFlag(events.NodePingResponse, scenario.ResponseTimeout)
+		flags[events.NodeCreatePodResponse] = scenario.ResponseTimeout
+		flags[events.NodeUpdatePodResponse] = scenario.ResponseTimeout
+		flags[events.NodeDeletePodResponse] = scenario.ResponseTimeout
+		flags[events.NodeGetPodResponse] = scenario.ResponseTimeout
+		flags[events.NodeGetPodStatusResponse] = scenario.ResponseTimeout
+		flags[events.NodeGetPodsResponse] = scenario.ResponseTimeout
+		flags[events.NodePingResponse] = scenario.ResponseTimeout
 	}
+
+	(*st).SetNodeFlags(flags)
 }
 
-func setCustomFlags(st *store.Store, state *nodeconfigv1.NodeConfigurationCustomState) {
+func setCustomFlags(flags store.Flags, state *nodeconfigv1.NodeConfigurationCustomState) {
 	// Check if there were no custom flags
 	if state == nil {
 		return
 	}
 
 	if !isResponseUnset(state.CreatePodResponse) {
-		(*st).SetNodeFlag(events.NodeCreatePodResponse, translateResponse(state.CreatePodResponse))
+		flags[events.NodeCreatePodResponse] = translateResponse(state.CreatePodResponse)
 	}
 
 	if !isResponseUnset(state.UpdatePodResponse) {
-		(*st).SetNodeFlag(events.NodeUpdatePodResponse, translateResponse(state.UpdatePodResponse))
+		flags[events.NodeUpdatePodResponse] = translateResponse(state.UpdatePodResponse)
 	}
 
 	if !isResponseUnset(state.DeletePodResponse) {
-		(*st).SetNodeFlag(events.NodeDeletePodResponse, translateResponse(state.DeletePodResponse))
+		flags[events.NodeDeletePodResponse] = translateResponse(state.DeletePodResponse)
 	}
 
 	if !isResponseUnset(state.GetPodResponse) {
-		(*st).SetNodeFlag(events.NodeGetPodResponse, translateResponse(state.GetPodResponse))
+		flags[events.NodeGetPodResponse] = translateResponse(state.GetPodResponse)
 	}
 
 	if !isResponseUnset(state.GetPodStatusResponse) {
-		(*st).SetNodeFlag(events.NodeGetPodStatusResponse, translateResponse(state.GetPodStatusResponse))
+		flags[events.NodeGetPodStatusResponse] = translateResponse(state.GetPodStatusResponse)
 	}
 
 	if !isResponseUnset(state.GetPodsResponse) {
-		(*st).SetNodeFlag(events.NodeGetPodsResponse, translateResponse(state.GetPodsResponse))
+		flags[events.NodeGetPodsResponse] = translateResponse(state.GetPodsResponse)
 	}
 
 	if !isResponseUnset(state.NodePingResponse) {
-		(*st).SetNodeFlag(events.NodePingResponse, translateResponse(state.NodePingResponse))
+		flags[events.NodePingResponse] = translateResponse(state.NodePingResponse)
 	}
 }
 

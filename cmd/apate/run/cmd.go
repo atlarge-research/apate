@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	cpApi "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
@@ -29,6 +29,8 @@ type commandLineArgs struct {
 	controlPlaneAddress string
 	controlPlanePort    int
 	controlPlaneTimeout int
+
+	scenarioDisableWatchers bool
 
 	apateletRunType        string
 	pullPolicyControlPlane string
@@ -76,6 +78,13 @@ func StartCmd(cmdArgs []string) {
 						Destination: &args.controlPlanePort,
 						Value:       defaultControlPlanePort,
 						Required:    false,
+					},
+					&cli.BoolFlag{
+						Name:        "disable-watchers",
+						Usage:       "Whether to disable watchers before starting the scenario. This will reduce resource usage. Enabling this option will require a restart of the control plane and Apatelets before the informers will work again",
+						Required:    false,
+						Value:       false,
+						Destination: &args.scenarioDisableWatchers,
 					},
 				},
 			},
@@ -154,8 +163,8 @@ func StartCmd(cmdArgs []string) {
 					&cli.BoolFlag{
 						Name:        "prometheus-enabled",
 						Usage:       "If the control plane start a Prometheus stack. Can be TRUE or FALSE.",
-						Destination: &cpEnv.PrometheusStackEnabled,
-						Value:       cpEnv.PrometheusStackEnabled,
+						Destination: &cpEnv.PrometheusEnabled,
+						Value:       cpEnv.PrometheusEnabled,
 						Required:    false,
 					},
 				},
@@ -294,7 +303,7 @@ func runScenario(ctx context.Context, args *commandLineArgs) error {
 	fmt.Printf("Starting scenario ")
 
 	//Finally: actually start the scenario
-	if _, err = scenarioClient.Client.StartScenario(ctx, &empty.Empty{}); err != nil {
+	if _, err = scenarioClient.Client.StartScenario(ctx, &cpApi.StartScenario{DisableWatchers: args.scenarioDisableWatchers}); err != nil {
 		return errors.Wrap(err, "couldn't start scenario")
 	}
 	err = scenarioClient.Conn.Close()

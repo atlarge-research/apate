@@ -12,13 +12,13 @@ import (
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 
+	"github.com/finitum/node-cli/stats"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -30,6 +30,8 @@ import (
 )
 
 func TestPing(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -52,6 +54,8 @@ func TestPing(t *testing.T) {
 }
 
 func TestPingError(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -74,6 +78,8 @@ func TestPingError(t *testing.T) {
 }
 
 func TestConfigureNode(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -174,10 +180,12 @@ func TestConfigureNode(t *testing.T) {
 }
 
 func TestUpdateConditionNoPressure(t *testing.T) {
+	t.Parallel()
+
 	prov, ctrl := createProviderForUpdateConditionTests(t, 500, 2048, 1024)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -199,13 +207,15 @@ func TestUpdateConditionNoPressure(t *testing.T) {
 }
 
 func TestUpdateConditionMemoryAndDiskPressure(t *testing.T) {
+	t.Parallel()
+
 	mt := memThresh * 4096
 	dt := diskThresh * 2048
 
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mt)+2, int64(dt)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionTrue, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -227,13 +237,15 @@ func TestUpdateConditionMemoryAndDiskPressure(t *testing.T) {
 }
 
 func TestUpdateConditionDiskFull(t *testing.T) {
+	t.Parallel()
+
 	mtf := memThresh * 4096
 	dtf := diskFullThresh * 2048
 
 	prov, ctrl := createProviderForUpdateConditionTests(t, 5000, int64(mtf)+2, int64(dtf)+2)
 	defer ctrl.Finish()
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, corev1.ConditionFalse, node.Status.Conditions[0].Status)
 		assert.EqualValues(t, corev1.NodeReady, node.Status.Conditions[0].Type)
 
@@ -277,19 +289,10 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 	cores := uint64(podCPU)
 	memory := uint64(podMemory)
 	storage := uint64(podStorage)
-	ms.EXPECT().GetPodFlag("a/pod1", events.PodResources).Return(&stats.PodStats{
-		CPU: &stats.CPUStats{
-			Time:           metav1.Time{},
-			UsageNanoCores: &cores,
-		},
-		Memory: &stats.MemoryStats{
-			Time:       metav1.Time{},
-			UsageBytes: &memory,
-		},
-		EphemeralStorage: &stats.FsStats{
-			Time:      metav1.Time{},
-			UsedBytes: &storage,
-		},
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{
+		UsageNanoCores:     cores,
+		UsageBytesMemory:   memory,
+		UsedBytesEphemeral: storage,
 	}, nil)
 
 	ms.EXPECT().GetNodeFlag(events.NodePingResponse).Return(scenario.ResponseNormal, nil)
@@ -334,6 +337,8 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 }
 
 func TestNotifyNodeStatusNoPing(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -351,7 +356,7 @@ func TestNotifyNodeStatusNoPing(t *testing.T) {
 		Node:  &corev1.Node{},
 	}
 
-	prov.updateConditions(context.Background(), func(node *corev1.Node) {
+	prov.updateConditions(func(node *corev1.Node) {
 		assert.EqualValues(t, &corev1.Node{}, node)
 	})
 }

@@ -4,12 +4,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+
 	"github.com/docker/go-units"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/finitum/node-cli/stats"
 
 	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
@@ -73,6 +76,13 @@ func TestEnqueueCRD(t *testing.T) {
 						PodStatus: podconfigv1.PodStatusPending,
 					},
 				},
+				{
+					Timestamp:     "1s",
+					RelativeToPod: true,
+					State: podconfigv1.PodConfigurationState{
+						PodStatus: podconfigv1.PodStatusRunning,
+					},
+				},
 			},
 		},
 	}
@@ -82,8 +92,21 @@ func TestEnqueueCRD(t *testing.T) {
 		gomock.Any(),
 	).Do(func(_ string, arr []*store.Task) {
 		assert.Equal(t, 2, len(arr))
-		assert.EqualValues(t, arr[0], et1)
-		assert.EqualValues(t, arr[1], et2)
+		assert.EqualValues(t, et1, arr[0])
+		assert.EqualValues(t, et2, arr[1])
+	})
+
+	ms.EXPECT().SetPodTimeFlags(
+		"TestNamespace/TestName",
+		gomock.Any(),
+	).Do(func(_ string, arr []*store.TimeFlags) {
+		assert.Equal(t, 1, len(arr))
+		assert.EqualValues(t, &store.TimeFlags{
+			TimeSincePodStart: 1 * time.Second,
+			Flags: store.Flags{
+				events.PodStatus: scenario.PodStatusRunning,
+			},
+		}, arr[0])
 	})
 
 	err := setPodTasks(&ep, &s)
@@ -129,29 +152,21 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	storage := uint64(5 * units.KiB)
 	ephStorage := uint64(100 * units.MiB)
 
-	gomock.InOrder(
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodCreatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodUpdatePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodDeletePodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodGetPodStatusResponse, translateResponse(podconfigv1.ResponseNormal)),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodResources, gomock.Any()).Do(func(label string, flag events.EventFlag, f interface{}) {
-			stat := f.(*stats.PodStats)
+	ms.EXPECT().SetPodFlags("TestNamespace/TestName", gomock.Any()).Do(func(_ string, flags store.Flags) {
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodCreatePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodUpdatePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodDeletePodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodGetPodResponse])
+		assert.Equal(t, translateResponse(podconfigv1.ResponseNormal), flags[events.PodGetPodStatusResponse])
 
-			assert.EqualValues(t, cores, *stat.CPU.UsageNanoCores)
-			assert.WithinDuration(t, time.Now(), stat.CPU.Time.Time, 1*time.Minute)
+		stat := flags[events.PodResources].(*stats.PodStats)
 
-			assert.EqualValues(t, memory, *stat.Memory.UsageBytes)
-			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
-
-			assert.EqualValues(t, storage, *stat.VolumeStats[0].UsedBytes)
-			assert.WithinDuration(t, time.Now(), stat.VolumeStats[0].Time.Time, 1*time.Minute)
-
-			assert.EqualValues(t, ephStorage, *stat.EphemeralStorage.UsedBytes)
-			assert.WithinDuration(t, time.Now(), stat.Memory.Time.Time, 1*time.Minute)
-		}),
-		ms.EXPECT().SetPodFlag("TestNamespace/TestName", events.PodStatus, translatePodStatus(podconfigv1.PodStatusRunning)),
-	)
+		assert.EqualValues(t, cores, stat.UsageNanoCores)
+		assert.EqualValues(t, memory, stat.UsageBytesMemory)
+		assert.EqualValues(t, storage, stat.UsedBytesStorage)
+		assert.EqualValues(t, ephStorage, stat.UsedBytesEphemeral)
+		assert.Equal(t, translatePodStatus(podconfigv1.PodStatusRunning), flags[events.PodStatus])
+	})
 
 	ms.EXPECT().SetPodTasks(
 		"TestNamespace/TestName",
@@ -159,6 +174,13 @@ func TestEnqueueCRDDirect(t *testing.T) {
 	).Do(func(_ string, arr []*store.Task) {
 		// Test if the array is empty when no spec tasks are given
 		assert.Equal(t, 0, len(arr))
+	})
+
+	ms.EXPECT().SetPodTimeFlags(
+		"TestNamespace/TestName",
+		gomock.Any(),
+	).Do(func(_ string, arr []*store.TimeFlags) {
+		assert.Empty(t, arr)
 	})
 
 	err := setPodTasks(&ep, &s)

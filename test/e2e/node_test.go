@@ -32,7 +32,7 @@ func TestSimpleNodeDeploymentDocker(t *testing.T) {
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
 // or the env var CP_MANAGER_CONFIG_LOCATION point to it
 func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
-	setup(t, "TestSimpleNodeDeployment_"+string(rt), rt)
+	setup(t, "TestSimpleNodeDeployment"+string(rt), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -96,7 +96,7 @@ func TestNodeFailureRoutine(t *testing.T) {
 }
 
 func testNodeFailure(t *testing.T, rt env.RunType) {
-	setup(t, "testNodeFailure_"+string(rt), rt)
+	setup(t, "TestNodeFailure"+string(rt), rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 

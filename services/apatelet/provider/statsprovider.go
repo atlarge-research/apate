@@ -1,17 +1,17 @@
 package provider
 
 import (
-	"context"
 	"errors"
 	"log"
 	"time"
+
+	"github.com/finitum/node-cli/stats"
 
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	stats "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 )
 
 type resources struct {
@@ -22,13 +22,12 @@ type resources struct {
 
 // Stats is a simple wrapper for statistics fields
 type Stats struct {
-	startTime    metav1.Time
 	statsSummary *stats.Summary
 }
 
 // NewStats creates a new Stats instance
 func NewStats() *Stats {
-	return &Stats{startTime: metav1.NewTime(time.Now())}
+	return &Stats{}
 }
 
 func (p *Provider) now() metav1.Time {
@@ -36,7 +35,7 @@ func (p *Provider) now() metav1.Time {
 }
 
 // GetStatsSummary should return a node level statistic report
-func (p *Provider) GetStatsSummary(context.Context) (*stats.Summary, error) {
+func (p *Provider) GetStatsSummary() (*stats.Summary, error) {
 	if p.Stats.statsSummary == nil {
 		return nil, errors.New("statsSummary is nil, please call updateStatsSummary first")
 	}
@@ -54,77 +53,70 @@ func (p *Provider) updateStatsSummary() {
 
 // Node statistics
 func (p *Provider) getNodeStats(pods []stats.PodStats) stats.NodeStats {
+	aMem, uMem := p.memoryStats(pods)
+	aEph, cEph, uEph := p.ephemeralStats(pods)
+	aSto, cSto, uSto := p.storageStats(pods)
+
 	return stats.NodeStats{
-		NodeName:         p.NodeInfo.Name,
-		SystemContainers: []stats.ContainerStats{},
-		StartTime:        p.Stats.startTime,
-		CPU:              p.cpuStats(pods),
-		Memory:           p.memoryStats(pods),
-		Fs:               p.filesystemStats(pods),
+		Name:                 p.NodeInfo.Name,
+		UsageNanoCores:       p.cpuStats(pods),
+		AvailableBytesMemory: aMem,
+		UsageBytesMemory:     uMem,
+
+		AvailableBytesEphemeral: aEph,
+		CapacityBytesEphemeral:  cEph,
+		UsedBytesEphemeral:      uEph,
+
+		AvailableBytesStorage: aSto,
+		CapacityBytesStorage:  cSto,
+		UsedBytesStorage:      uSto,
 	}
 }
 
-func (p *Provider) cpuStats(pods []stats.PodStats) *stats.CPUStats {
-	zero := uint64(0)
+func (p *Provider) cpuStats(pods []stats.PodStats) uint64 {
 	usage := uint64(0)
 
 	for _, pod := range pods {
-		if pod.CPU != nil && pod.CPU.UsageNanoCores != nil {
-			usage += *pod.CPU.UsageNanoCores
-		}
+		usage += pod.UsageNanoCores
 	}
 
-	return &stats.CPUStats{
-		Time:                 p.now(),
-		UsageNanoCores:       &usage,
-		UsageCoreNanoSeconds: &zero,
-	}
+	return usage
 }
 
-func (p *Provider) memoryStats(pods []stats.PodStats) *stats.MemoryStats {
-	zero := uint64(0)
+func (p *Provider) memoryStats(pods []stats.PodStats) (uint64, uint64) {
 	usage := uint64(0)
 
 	for _, pod := range pods {
-		if pod.Memory != nil && pod.Memory.UsageBytes != nil {
-			usage += *pod.Memory.UsageBytes
-		}
+		usage += pod.UsageBytesMemory
 	}
 
 	available := uint64(p.Resources.Memory) - usage
 
-	return &stats.MemoryStats{
-		Time:            p.now(),
-		AvailableBytes:  &available,
-		UsageBytes:      &usage,
-		WorkingSetBytes: &zero,
-		RSSBytes:        &zero,
-		PageFaults:      &zero,
-		MajorPageFaults: &zero,
-	}
+	return available, usage
 }
 
-func (p *Provider) filesystemStats(pods []stats.PodStats) *stats.FsStats {
-	zero := uint64(0)
+func (p *Provider) ephemeralStats(pods []stats.PodStats) (uint64, uint64, uint64) {
 	capacity := uint64(p.Resources.EphemeralStorage)
 	usage := uint64(0)
 
 	for _, pod := range pods {
-		if pod.EphemeralStorage != nil && pod.EphemeralStorage.UsedBytes != nil {
-			usage += *pod.EphemeralStorage.UsedBytes
-		}
+		usage += pod.UsedBytesEphemeral
 	}
 
 	free := capacity - usage
-	return &stats.FsStats{
-		Time:           p.now(),
-		AvailableBytes: &free,
-		CapacityBytes:  &capacity,
-		UsedBytes:      &usage,
-		InodesFree:     &zero,
-		Inodes:         &zero,
-		InodesUsed:     &zero,
+	return free, capacity, usage
+}
+
+func (p *Provider) storageStats(pods []stats.PodStats) (uint64, uint64, uint64) {
+	capacity := uint64(p.Resources.Storage)
+	usage := uint64(0)
+
+	for _, pod := range pods {
+		usage += pod.UsedBytesStorage
 	}
+
+	free := capacity - usage
+	return free, capacity, usage
 }
 
 func (p *Provider) getAggregatePodStats() []stats.PodStats {
@@ -138,8 +130,7 @@ func (p *Provider) getAggregatePodStats() []stats.PodStats {
 }
 
 func (p *Provider) getPodStats(pod *corev1.Pod) *stats.PodStats {
-	label := getPodLabelByPod(pod)
-	unconvertedStats, err := (*p.Store).GetPodFlag(label, events.PodResources)
+	unconvertedStats, err := (*p.Store).GetPodFlag(pod, events.PodResources)
 	if err != nil {
 		log.Printf("error while retrieving pod flag for resources: %v\n", err)
 		return addPodSpecificStats(pod, &stats.PodStats{})
@@ -159,10 +150,6 @@ func addPodSpecificStats(pod *corev1.Pod, statistics *stats.PodStats) *stats.Pod
 		Name:      pod.Name,
 		Namespace: pod.Namespace,
 		UID:       string(pod.UID),
-	}
-
-	if pod.Status.StartTime != nil {
-		statistics.StartTime = *pod.Status.StartTime
 	}
 
 	return statistics

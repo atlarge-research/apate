@@ -17,4 +17,9 @@ service Scenario {
 message ApateletScenario {
     // The absolute timestamp at which the scenario will start
     int64 start_time = 1;
+	
+	// Whether to disable watchers before starting the scenario.
+	// This will reduce the overhead of the informers significantly.
+	// Enabling this option will require a restart before the informers will work again
+	bool disable_watchers = 2;
 }
