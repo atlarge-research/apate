@@ -6,6 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/finitum/node-cli/stats"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/google/uuid"
@@ -145,14 +149,18 @@ func TestCreatePod(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetPodFlag(&pod, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{}, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
 
 	p := Provider{
-		Store: &s,
-		Pods:  podmanager.New(),
+		Store:     &s,
+		Pods:      podmanager.New(),
+		NodeInfo:  &node.Info{},
+		Resources: &scenario.NodeResources{},
+		Stats:     NewStats(),
 	}
 
 	err := p.CreatePod(context.Background(), &pod)
@@ -184,13 +192,17 @@ func TestUpdatePod(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetPodFlag(&pod, events.PodUpdatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{}, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeUpdatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
 	p := Provider{
-		Store: &s,
-		Pods:  podmanager.New(),
+		Store:     &s,
+		Pods:      podmanager.New(),
+		NodeInfo:  &node.Info{},
+		Resources: &scenario.NodeResources{},
+		Stats:     NewStats(),
 	}
 
 	err := p.UpdatePod(context.Background(), &pod)
