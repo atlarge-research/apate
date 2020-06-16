@@ -79,7 +79,7 @@ func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	err := kubectl.Create([]byte(rc), kcfg)
 	assert.NoError(t, err)
 	log.Println("Waiting before querying k8s")
-	time.Sleep(time.Second * 60)
+	time.Sleep(waitTimeout)
 
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)

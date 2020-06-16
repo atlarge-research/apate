@@ -57,6 +57,8 @@ func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf event
 		pf,
 	)
 
+	p.updateStatsSummary()
+
 	if IsExpected(err) {
 		return err
 	}
