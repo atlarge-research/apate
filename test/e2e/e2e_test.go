@@ -25,11 +25,15 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
-var waitTimeout = 10 * time.Second
+var waitTimeout time.Duration
 
 func init() {
 	if detectCI() {
+		log.Println("CI DETECTED: using timeout of 60 seconds!")
 		waitTimeout = 60 * time.Second
+	} else {
+		log.Println("NO CI DETECTED: using timeout of 10 seconds!")
+		waitTimeout = 10 * time.Second
 	}
 }
 
@@ -72,8 +76,6 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 func teardown(t *testing.T) {
 	// #nosec
 	_ = exec.Command("sh", "-c", "docker ps --filter name=apate --format \"{{.ID}}\" | xargs docker kill").Run()
-	// #nosec
-	// _ = exec.Command("sh", "-c", "docker ps -a --filter name=apate --format \"{{.ID}}\" | xargs docker rm").Run()
 
 	// #nosec
 	_ = exec.Command("docker", "kill", "apate-cp").Run()

@@ -173,7 +173,8 @@ func (a *apateletHandler) StopApatelets(ctx context.Context, desired int64, labe
 	// Stop all apatelets before removing them from the cluster (VK might add them)
 	time.Sleep(2 * time.Second)
 
-	err = cluster.RemoveNodesWithUUID(ids, a.store, a.cluster)
+	var clusterAPI kubernetes.ClusterAPI = a.cluster
+	err = cluster.RemoveNodesWithUUID(ids, a.store, &clusterAPI)
 	if err != nil {
 		log.Printf("error while stopping apatelets: %v", err)
 	}

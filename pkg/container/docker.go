@@ -3,6 +3,8 @@ package container
 
 import (
 	"context"
+	"io/ioutil"
+	"log"
 
 	"github.com/pkg/errors"
 
@@ -97,7 +99,6 @@ func removeOldContainers(ctx context.Context, cli *client.Client, name string) e
 	// Remove old apatelet containers
 	for _, cnt := range containers {
 		err := cli.ContainerRemove(ctx, cnt.ID, types.ContainerRemoveOptions{Force: true, RemoveVolumes: true, RemoveLinks: false})
-
 		if err != nil {
 			return errors.Wrapf(err, "failed to remove old container %v", name)
 		}
@@ -126,7 +127,6 @@ func alwaysPull(ctx context.Context, cli *client.Client, imageName string) error
 func pullIfNotLocal(ctx context.Context, cli *client.Client, imageName string) error {
 	// Check if the image is locally available
 	localAvailable, err := checkLocalImage(ctx, cli, imageName)
-
 	if err != nil {
 		return errors.Wrap(err, "failed to check local image")
 	}
@@ -143,7 +143,6 @@ func pullIfNotLocal(ctx context.Context, cli *client.Client, imageName string) e
 
 func alwaysCache(ctx context.Context, cli *client.Client, imageName string) error {
 	localAvailable, err := checkLocalImage(ctx, cli, imageName)
-
 	if err != nil {
 		return errors.Wrapf(err, "failed to check local image %v", imageName)
 	}
@@ -157,10 +156,16 @@ func alwaysCache(ctx context.Context, cli *client.Client, imageName string) erro
 
 func pullImage(ctx context.Context, cli *client.Client, imageName string) error {
 	readCloser, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
-
 	if err != nil {
 		return errors.Wrapf(err, "failed to pull image %v", imageName)
 	}
+
+	all, err := ioutil.ReadAll(readCloser)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read response after pulling image %v", imageName)
+	}
+
+	log.Printf("result from pulling image: %v", string(all))
 
 	return errors.Wrap(readCloser.Close(), "failed to close image pull reader")
 }

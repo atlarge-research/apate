@@ -12,6 +12,21 @@ import (
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 )
 
+// ClusterAPI are API calls for a cluster connection
+type ClusterAPI interface {
+	GetNodes() (*corev1.NodeList, error)
+	GetPods(namespace string) (*corev1.PodList, error)
+
+	GetNumberOfNodes() (int, error)
+	GetNumberOfReadyNodes() (int, error)
+	GetNumberOfPods(namespace string) (int, error)
+	GetNumberOfPendingPods(namespace string) (int, error)
+
+	RemoveAllApateletsFromCluster() error
+	RemoveNodesFromCluster(uuids []uuid.UUID) error
+	RemoveNodeFromCluster(nodename string) error
+}
+
 // GetNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
 func (c Cluster) GetNodes() (*corev1.NodeList, error) {
 	nodes, err := c.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
