@@ -25,7 +25,7 @@ test suite:
     - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
     - apk add curl
-    - curl k3s-service:8081?service=k3s-service > k3s.yaml
+    - curl k3s-service:8081?service=k3s-service > k3s.yml
     - export K3S_KUBE_CONFIG=$(pwd)/k3s.yml
     - source ./ci/env.sh
     - ./ci/go_test_with_coverage_report.sh execute

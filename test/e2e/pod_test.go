@@ -303,6 +303,7 @@ spec:
 	assert.NoError(t, err)
 
 	// Currently no way to actually assert resource usage through the API :(
+	// So this is basically a smoke test, to see whether updating pod resources doesn't crash the CP
 	// See https://github.com/kubernetes/community/blob/master/contributors/design-proposals/scheduling/resources.md#usage-data
-	assert.Equal(t, 2, len(nodes.Items))
+	assert.Equal(t, 3, len(nodes.Items))
 }

@@ -63,6 +63,8 @@ func StartControlPlaneWithStopChannel(ctx context.Context, registry *runner.Regi
 		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
 
+	var clusterAPI kubernetes.ClusterAPI = cluster
+
 	// Create apate cluster state
 	createdStore := store.NewStore()
 
@@ -124,7 +126,7 @@ func StartControlPlaneWithStopChannel(ctx context.Context, registry *runner.Regi
 	}()
 
 	// Start watchdog
-	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, cluster)
+	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, &clusterAPI)
 
 	// Stop the server on signal
 	select {

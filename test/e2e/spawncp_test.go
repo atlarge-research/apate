@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -20,8 +19,6 @@ func TestSpawnControlPlaneDocker(t *testing.T) {
 
 	err := container.SpawnControlPlaneContainer(ctx, env.PullIfNotLocal, env.ControlPlaneEnv())
 	assert.NoError(t, err)
-
-	time.Sleep(waitTimeout * 2)
 
 	waitForCP(t)
 
