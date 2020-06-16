@@ -25,6 +25,14 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
+var waitTimeout = 10 * time.Second
+
+func init() {
+	if detectCI() {
+		waitTimeout = 60 * time.Second
+	}
+}
+
 func detectCI() bool {
 	return os.Getenv("CI_COMMIT_REF_SLUG") != ""
 }
