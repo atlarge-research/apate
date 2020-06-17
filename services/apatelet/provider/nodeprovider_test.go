@@ -89,6 +89,8 @@ func TestConfigureNode(t *testing.T) {
 	pmm := mock_podmanager.NewMockPodManager(ctrl)
 	var pm podmanager.PodManager = pmm
 
+	pmm.EXPECT().GetAllPods().Return([]*corev1.Pod{})
+
 	u := uuid.UUID{}
 	prov := Provider{
 		Pods:  pm,
@@ -129,9 +131,11 @@ func TestConfigureNode(t *testing.T) {
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
 		},
 		DisableTaints: false,
+		Stats:         &Stats{},
 	}
 
 	newNode := &corev1.Node{}
+	prov.updateStatsSummary()
 	prov.ConfigureNode(context.Background(), newNode)
 
 	assert.EqualValues(t, corev1.NodeSpec{
@@ -164,6 +168,14 @@ func TestConfigureNode(t *testing.T) {
 		corev1.ResourceEphemeralStorage: *resource.NewQuantity(8192, ""),
 		corev1.ResourcePods:             *resource.NewQuantity(42, ""),
 	}, newNode.Status.Capacity)
+
+	assert.EqualValues(t, corev1.ResourceList{
+		corev1.ResourceCPU:              *resource.NewQuantity(1000, ""),
+		corev1.ResourceMemory:           *resource.NewQuantity(4096, ""),
+		corev1.ResourceStorage:          *resource.NewQuantity(2048, ""),
+		corev1.ResourceEphemeralStorage: *resource.NewQuantity(8192, ""),
+		corev1.ResourcePods:             *resource.NewQuantity(42, ""),
+	}, newNode.Status.Allocatable)
 
 	assert.EqualValues(t, 2, len(newNode.Status.Addresses))
 
@@ -328,6 +340,9 @@ func createProviderForUpdateConditionTests(t *testing.T, podCPU, podMemory, podS
 			diskPressure:       condition.New(false, corev1.NodeDiskPressure),
 			networkUnavailable: condition.New(false, corev1.NodeNetworkUnavailable),
 			pidPressure:        condition.New(false, corev1.NodePIDPressure),
+		},
+		Cfg: &provider.InitConfig{
+			DaemonPort: 100,
 		},
 	}
 
