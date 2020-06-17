@@ -20,7 +20,6 @@ type ClusterAPI interface {
 	GetNumberOfNodes() (int, error)
 	GetNumberOfReadyNodes() (int, error)
 	GetNumberOfPods(namespace string) (int, error)
-	GetNumberOfPendingPods(namespace string) (int, error)
 
 	RemoveAllApateletsFromCluster() error
 	RemoveNodesFromCluster(uuids []uuid.UUID) error
@@ -128,21 +127,4 @@ func (c *Cluster) GetNumberOfReadyNodes() (int, error) {
 	}
 
 	return i, nil
-}
-
-// GetNumberOfPendingPods will return the number of pods in the pending state.
-func (c Cluster) GetNumberOfPendingPods(namespace string) (int, error) {
-	pods, err := c.GetPods(namespace)
-	if err != nil {
-		return -1, errors.Wrap(err, "failed to retrieve pods list from GetPods")
-	}
-
-	cnt := 0
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodPending {
-			cnt++
-		}
-	}
-
-	return cnt, nil
 }

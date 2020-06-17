@@ -64,21 +64,6 @@ func (mr *MockClusterAPIMockRecorder) GetNumberOfNodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumberOfNodes", reflect.TypeOf((*MockClusterAPI)(nil).GetNumberOfNodes))
 }
 
-// GetNumberOfPendingPods mocks base method
-func (m *MockClusterAPI) GetNumberOfPendingPods(arg0 string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumberOfPendingPods", arg0)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNumberOfPendingPods indicates an expected call of GetNumberOfPendingPods
-func (mr *MockClusterAPIMockRecorder) GetNumberOfPendingPods(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumberOfPendingPods", reflect.TypeOf((*MockClusterAPI)(nil).GetNumberOfPendingPods), arg0)
-}
-
 // GetNumberOfPods mocks base method
 func (m *MockClusterAPI) GetNumberOfPods(arg0 string) (int, error) {
 	m.ctrl.T.Helper()
