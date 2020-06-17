@@ -3,8 +3,12 @@ package provider
 import (
 	"context"
 	"errors"
+	"io"
+	"io/ioutil"
 	"testing"
 	"time"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node/api"
 
 	"github.com/finitum/node-cli/stats"
 
@@ -323,4 +327,43 @@ func TestGetPods(t *testing.T) {
 	assert.True(t, ok)
 	assert.Contains(t, ps, uid)
 	ctrl.Finish()
+}
+
+func TestGetContainerLogs(t *testing.T) {
+	prov := Provider{}
+	logs, err := prov.GetContainerLogs(context.Background(), "ns", "name", "", api.ContainerLogOpts{})
+	assert.NoError(t, err)
+
+	all, err := ioutil.ReadAll(logs)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "This container is emulated by Apate\n", string(all))
+}
+
+type fakeAttachIO struct{}
+
+func (f fakeAttachIO) Stdin() io.Reader {
+	return nil
+}
+
+func (f fakeAttachIO) Stdout() io.WriteCloser {
+	return nil
+}
+
+func (f fakeAttachIO) Stderr() io.WriteCloser {
+	return nil
+}
+
+func (f fakeAttachIO) TTY() bool {
+	return false
+}
+
+func (f fakeAttachIO) Resize() <-chan api.TermSize {
+	return make(chan api.TermSize)
+}
+
+func TestRunInContainerNoError(t *testing.T) {
+	prov := Provider{}
+	err := prov.RunInContainer(context.Background(), "ns", "name", "", []string{}, fakeAttachIO{})
+	assert.NoError(t, err)
 }
