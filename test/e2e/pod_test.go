@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/go-units"
+
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -41,7 +43,7 @@ func testSimplePodDeployment(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 
 	// Setup some nodes
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 2)
 	time.Sleep(time.Second * 5)
 
 	// Test pods
@@ -171,7 +173,7 @@ func testPodFailure(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 
 	// test
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 2)
 	time.Sleep(time.Second * 5)
 
 	podFailure(t, kcfg)
@@ -255,7 +257,7 @@ func testPodResource(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 
 	// test
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 1)
 	time.Sleep(time.Second * 5)
 
 	podResource(t, kcfg)
@@ -289,7 +291,7 @@ spec:
 	assert.NoError(t, err)
 
 	// Check if everything is ready
-	ready, _ := getApateletWaitForCondition(t, cluster, 2, createApateletConditionFunction(t, 2, corev1.ConditionTrue))
+	ready, _ := getApateletWaitForCondition(t, cluster, 1, createApateletConditionFunction(t, 1, corev1.ConditionTrue))
 
 	assert.True(t, ready)
 
@@ -298,12 +300,22 @@ spec:
 	assert.NoError(t, err)
 	time.Sleep(waitTimeout)
 
+	time.Sleep(30 * time.Second) // Once every 30 seconds an update in status is scheduled
+
 	// assert state
 	nodes, err := cluster.GetNodes()
 	assert.NoError(t, err)
 
-	// Currently no way to actually assert resource usage through the API :(
-	// So this is basically a smoke test, to see whether updating pod resources doesn't crash the CP
-	// See https://github.com/kubernetes/community/blob/master/contributors/design-proposals/scheduling/resources.md#usage-data
-	assert.Equal(t, 3, len(nodes.Items))
+	for _, node := range nodes.Items {
+		if strings.HasPrefix(node.Name, "apatelet-") {
+			allocatable := node.Status.Allocatable
+			assert.Equal(t, int64(990), allocatable.Cpu().Value())
+			assert.Equal(t, int64(5*units.GiB-2*units.GiB), allocatable.Memory().Value())
+			assert.Equal(t, int64(149), allocatable.Pods().Value())
+			assert.Equal(t, int64(120*units.GiB), allocatable.StorageEphemeral().Value())
+
+			storage := allocatable[corev1.ResourceStorage]
+			assert.Equal(t, int64(5*units.TiB), storage.Value())
+		}
+	}
 }

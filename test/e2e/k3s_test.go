@@ -57,7 +57,7 @@ func testK3s(t *testing.T, rt env.RunType) {
 	time.Sleep(time.Second * 5)
 
 	// Test simple deployment
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 2)
 
 	cancel()
 

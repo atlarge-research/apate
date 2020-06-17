@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"syscall"
 	"testing"
 	"time"
@@ -34,13 +35,14 @@ func TestSimpleNodeDeploymentDocker(t *testing.T) {
 	testSimpleNodeDeployment(t, env.Docker)
 }
 
-const SimpleNodeDeployment = `
+func getSimpleNodeDeployment(replicas int) string {
+	return `
 apiVersion: apate.opendc.org/v1
 kind: NodeConfiguration
 metadata:
     name: e2e-deployment
 spec:
-    replicas: 2
+    replicas: ` + strconv.Itoa(replicas) + `
     resources:
         memory: 5G
         cpu: 1000
@@ -48,6 +50,7 @@ spec:
         ephemeral_storage: 120G
         max_pods: 150
 `
+}
 
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
 // or the env var CP_MANAGER_CONFIG_LOCATION point to it
@@ -66,15 +69,15 @@ func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
 	time.Sleep(time.Second * 5)
 
 	// Test simple deployment
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 2)
 
 	cancel()
 
 	teardown(t)
 }
 
-func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-	rc := SimpleNodeDeployment
+func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig, replicas int) {
+	rc := getSimpleNodeDeployment(replicas)
 
 	err := kubectl.Create([]byte(rc), kcfg)
 	assert.NoError(t, err)
@@ -88,7 +91,7 @@ func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	log.Println("Getting number of nodes from k8s")
 	nodes, err := cluster.GetNumberOfNodes()
 	assert.NoError(t, err)
-	assert.Equal(t, 3, nodes)
+	assert.Equal(t, replicas+1, nodes)
 }
 
 // NODE FAILURE
@@ -382,7 +385,7 @@ func testUpDownScale(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 	time.Sleep(time.Second * 5)
 
-	rc1 := SimpleNodeDeployment
+	rc1 := getSimpleNodeDeployment(2)
 
 	rc2 := `
 apiVersion: apate.opendc.org/v1
