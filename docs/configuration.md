@@ -1,8 +1,8 @@
 # CRD Configuration
-Apate makes uses of CRDs (<- TODO: Link) to provide an easy way of configuring the emulated nodes and pods. 
+Apate makes uses of [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) to provide an easy way of configuring the emulated nodes and pods. 
 
 ## Nodes
-`NodeConfiguration` describes a set of emulated nodes in the Kubernetes cluster. The specification describes a list of tasks 
+A `NodeConfiguration` describes a set of emulated nodes in the Kubernetes cluster. The specification describes a list of tasks 
 for the scenario, a resource definition, and the amount of nodes. Optionally, one can provide a direct state, as opposed to a set
 of tasks. 
 
@@ -11,9 +11,8 @@ All of the nodes will 'fail' one second after the scenario has started:
 
 ```yaml
 todo: yes
-```   
-  
-  
+```
+
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |
 | \<inline> | [State](#state) | A state to immediately apply| No |
