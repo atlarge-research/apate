@@ -3,44 +3,59 @@ Apate makes uses of [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes
 
 ## Nodes
 A `NodeConfiguration` describes a set of emulated nodes in the Kubernetes cluster. The specification describes a list of tasks 
-for the scenario, a resource definition, and the amount of nodes. Optionally, one can provide a direct state, as opposed to a set
+for the scenario, a resource definition, and the amount of nodes. Optionally, one can provide a direct state, as opposed to a list
 of tasks. 
 
-For example, the following NodeConfiguration will create ten worker nodes, all with 5G of memory etc etc etc. 
-All of the nodes will 'fail' one second after the scenario has started:
+For example, the following `NodeConfiguration` will create ten worker nodes, all with 5G memory, 5 cores, 5T storage, 120G ephemeral storage,
+and a maximum of 150 pods. All nodes will 'fail' one second after the scenario has started:
 
 ```yaml
-todo: yes
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: test-deployment
+spec:
+    replicas: 10
+    resources:
+        memory: 5G
+        cpu: 5
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+    tasks:
+        - timestamp: 1s
+          state:
+              node_failed: true
 ```
 
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |
-| \<inline> | [State](#state) | A state to immediately apply| No |
+| \<inline> | [State](#node-state) | A state to immediately apply| No |
 | replicas | int64 | The amount of nodes that are required| Yes
-| resources | [Resources](#resources) | A resource specification| Yes |
-| tasks | [Task\[\]](#task) | A list of tasks for these nodes | No |
+| resources | [Resources](#node-resources) | A resource specification| Yes |
+| tasks | [Task\[\]](#node-task) | A list of tasks for these nodes | No |
 
-### Resources
-Resources describes the amount of emulated resources this node has.
+### Node resources
+Resources describe the amount of emulated resources this node has.
 
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |
 | memory | [Bytes](#bytes) | Amount of memory | Yes |
-| cpu | int64 | Amount of CPU | Yes |
+| cpu | int64 | Amount of [CPU cores](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu) | Yes |
 | storage | [Bytes](#bytes) | Amount of storage | Yes |
 | ephemeral_storage | [Bytes](#bytes) | Amount of ephemeral storage | Yes | 
 | max_pods | in64 | Maximum amount of pods | Yes |
 
 
-### Task
+### Node task
 Task is a combination of a timestamp and a state.
 
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |
 | timestamp | [Time](#time) | Time at which this task will be executed| Yes |
-| state | [State](#state) | Desired state after this task | Yes |
+| state | [State](#node-state) | Desired state after this task | Yes |
 
-### State
+### Node state
 State is the desired state of the node. 
 
 | Field | Type | Description | Required |
@@ -62,6 +77,68 @@ Custom state can be used to directly modify the internal flags. This allows user
 | get_pod_status_response | [Response](#response) | Response to pod status requests | No |
 | node_ping_response | [Response](#response) | Response to node heartbeats | No |
 
+## Pods
+A `PodConfiguration` describes a set of emulated pods in the Kuber  netes cluster. The specification simply contains a list 
+of tasks for the pods. Optionally, one can provide a direct state, as opposed to a list of tasks. 
+
+For example, the following `PodConfiguration` will ensure all pods with the label pair `<key, value>` (given this CRD is
+deployed in the namespace `namespace`, start with a memory usage of 1G. After one second has passed after the start of the 
+scenario, its usage will increase to 5G of memory and 1 core. Finally, it will fail after five seconds:
+```yaml
+apiVersion: apate.opendc.org/v1
+kind: PodConfiguration
+metadata:
+    name: crd-deployment
+spec:
+    pod_resources:
+        memory: 1G
+    tasks:
+        - timestamp: 1s
+          state:
+              pod_resources:
+                  cpu: 1
+                  memory: 5G
+        - timestamp: 5s
+          state:
+              pod_status: FAILED
+```
+
+| Field | Type | Description | Required |
+| --- | --- | --- | --- |
+| \<inline> | [State](#pod-state) | A state to immediately apply| No |
+| tasks | [Task\[\]](#pod-task) | A list of tasks for these pods | No |
+
+### Pod resources
+Resources describe the amount of emulated resources this pod uses.
+
+| Field | Type | Description | Required |
+| --- | --- | --- | --- |
+| memory | [Bytes](#bytes) | Amount of memory | No |
+| cpu | int64 | Amount of CPU | No |
+| storage | [Bytes](#bytes) | Amount of storage | No |
+| ephemeral_storage | [Bytes](#bytes) | Amount of ephemeral storage | No | 
+
+### Pod task
+Task is a combination of a timestamp and a state
+
+| Field | Type | Description | Required |
+| --- | --- | --- | --- |
+| timestamp | [Time](#time) | Time at which this task will be executed | Yes |
+| relative_to_pod | bool | If true, the timestamp will be relative to the start time of the pod, instead of the start time of the scenarion | No |
+| state | [State](#pod-state) | Desired state after this task | Yes |
+
+### Pod state
+State is the desired state of the pod.
+
+| Field | Type | Description | Required |
+| --- | --- | --- | --- |
+| create_pod_response | [Response](#response) | Response to creation of pods | No |
+| update_pod_response | [Response](#response) | Response to updates of pods | No | 
+| delete_pod_response | [Response](#response) | Response to deletion of pods  | No |
+| get_pod_response | [Response](#response) | Response to pod requests  | No |
+| get_pod_status_response | [Response](#response) | Response to pod status requests | No |
+| pod_resources | [Resources](#pod-resources) | Pod resource usage | No |
+| pod_status | [Status](#status) | Pod status | No |
 
 ## Types
 To more easily work with our CRD, we have added a few extra types.
@@ -98,4 +175,13 @@ This type can be used to easily work with response types.
 | TIMEOUT | The request will timeout |
 | ERROR | The node will return an error | 
 
-## Pods
+### Status
+This type can be used to determine the status of a pod.
+
+| Type | Description |
+| --- | --- |
+| PENDING | Pod is pending |
+| RUNNING | Pod is running |
+| SUCCEEDED | Pod stopped successfully |
+| FAILED | Pod stopped with an exit code signaling failure |  
+| UNKNOWN | Pod status is unknown |
