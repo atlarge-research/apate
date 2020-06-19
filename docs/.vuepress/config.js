@@ -7,6 +7,7 @@ module.exports = {
 	  nav: [
 		{ text: 'Home', link: '/' },
 		{ text: 'Usage', link: '/usage/' },
+		{ text: 'CRD Configuration', link: '/configuration' },
 	  ]
 	}
   }
