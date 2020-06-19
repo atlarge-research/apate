@@ -77,11 +77,7 @@ This _will_ overwrite your existing kube config, back it up if necessary
 ## Using Apate
 Now that Apate is up and running it is time to run some experiments!
 
-TODO: explain two emu modes
-
-### Direct Emulation
-Direct Emulation is the easiest way of experimenting with Apate and is done by applying and modifying various CRDs.
-#### Nodes
+### Nodes
 First up we need to spin up some fake nodes (Apatelets). 
 
 To do so first make a `.yml` with appropriate settings:
@@ -98,7 +94,7 @@ spec:
         cpu: 4000
         storage: 3T
         ephemeral_storage: 500G
-        max_pods: 110"
+        max_pods: 110
 ```
 
 Now just use `kubectl` to spawn these Apatelets:
@@ -107,15 +103,23 @@ Now just use `kubectl` to spawn these Apatelets:
 kubectl create -f ./example_node.yml
 ```
 
- To view all configuration options with explanations have look at the relevant sections of the [CRD Documentation](./configuration.md#nodes).
+Now you can use `kubectl get nodes` to see if the node was actually created. It should look something like this:
+```zsh
+NAME                                            STATUS   ROLES    AGE     VERSION
+apate-control-plane                             Ready    master   6m51s   v1.17.0
+apatelet-f97ae5b6-97d3-4e6f-8f20-bfbe724a8bd2   Ready    agent    2s      v1.15.2
+```
 
+::: tip  
+To view all configuration options with explanations have look at the relevant sections of the [CRD Documentation](./configuration.md#nodes).
+:::
 
-#### Pods
+### Pods
 Now that we have spawned some nodes we are ready to run some pods.
 
 You could just run some pods now and Apate would emulate them, however they wouldn't do anything and would perpetually in the running state.
 
-To configure pod behaviour we need to create a custom PodConfiguration resource.
+To configure pod behaviour we need to create a custom [`PodConfiguration`](./configuration.html#pods) resource.
 
 ```yml
 # ./example_pod.yml
@@ -124,9 +128,64 @@ kind: PodConfiguration
 metadata:
     name: crd-deployment
 spec:
-	# TODO
+    pod_status: "SUCCEEDED"
 ```
 
+This status dictates that a pod should succeed immediately.
 
+Now we need to make a config for some pods actually using this CRD.
 
-### Planned Emulation
+This configuration is fairly typical except for a couple of points.
+```yml
+# ./emulated_nginx.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+        apate: crd-deployment
+    spec:
+      nodeSelector:
+        emulated: "yes"
+      tolerations:
+        -   key: emulated
+            operator: Exists
+            effect: NoSchedule
+      containers:
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+            - containerPort: 80
+```
+The `apate: crd-deployment` label is to select which CRD this pod should use and should therefore match the name you defined in the PodConfigration.
+The other difference from your typical deployment is the `nodeSelector` and `tolerations` these are to specify that this pod should be ran on emulated nodes.
+
+Now let's run this:
+```sh
+kubectl apply -f example_pod.yml
+kubectl apply -f emulated_nginx.yml
+```
+
+If you now check the status of these pods you should see the pods have succeeded.
+```
+NAME                                READY   STATUS      RESTARTS   AGE
+nginx-deployment-6cbf99798f-55b9k   0/1     Succeeded   0          37s
+nginx-deployment-6cbf99798f-5jrdr   0/1     Succeeded   0          18s
+nginx-deployment-6cbf99798f-62ftl   0/1     Pending     0          3s
+```
+
+Because this is a deployment you can see the controlelr is trying to start new pods up covering for the succeeded ones. Make sure to stop the deployment using `kubectl delete -f emulated_nginx.yml` otherwise you might end up with a lot of pods.
+
+::: tip Emulation Methods  
+This example used so-called direct emulation, to view how to do planned emulation and for other configuration options please look at the [CRD Configuration](./configuration.md) page.
+:::
