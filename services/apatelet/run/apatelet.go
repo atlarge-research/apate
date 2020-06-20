@@ -28,11 +28,11 @@ import (
 // StartApatelet starts the apatelet
 func StartApatelet(ctx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}) error {
 	stop := make(chan os.Signal, 1)
-	return StartApateletInternal(ctx, apateletEnv, readyCh, stop)
+	return StartApateletInternalWithStopCh(ctx, apateletEnv, readyCh, stop)
 }
 
-// StartApateletInternal starts the apatelet with a stop channel
-func StartApateletInternal(originalCtx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}, stop chan os.Signal) error {
+// StartApateletInternalWithStopCh starts the apatelet with a stop channel
+func StartApateletInternalWithStopCh(originalCtx context.Context, apateletEnv env.ApateletEnvironment, readyCh chan<- struct{}, stopCh chan os.Signal) error {
 	log.Println("Starting Apatelet")
 
 	// Retrieving connection information
@@ -71,7 +71,7 @@ func StartApateletInternal(originalCtx context.Context, apateletEnv env.Apatelet
 	}
 
 	// Setup health status
-	hc, err := startHealth(ctx, connectionInfo, res.UUID, stop)
+	hc, err := startHealth(ctx, connectionInfo, res.UUID, stopCh)
 	if err != nil {
 		return errors.Wrap(err, "failed to start health client")
 	}
@@ -96,7 +96,7 @@ func StartApateletInternal(originalCtx context.Context, apateletEnv env.Apatelet
 	log.Printf("now listening on :%d for kube api and :%d for metrics", apateletEnv.KubernetesPort, apateletEnv.MetricsPort)
 
 	// Handle stop
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(stopCh, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start serving requests
 	go func() {
@@ -120,7 +120,7 @@ func StartApateletInternal(originalCtx context.Context, apateletEnv env.Apatelet
 		err = errors.Wrap(read, "apatelet stopped because of an error")
 	case <-ctx.Done():
 		//
-	case <-stop:
+	case <-stopCh:
 		//
 	case <-forcedStop:
 		leaveCluster = false

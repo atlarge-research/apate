@@ -2,7 +2,7 @@
 # But switched out alpine for docker as base image
 FROM docker
 
-RUN apk add --no-cache ca-certificates go git make protobuf bash
+RUN apk add --no-cache ca-certificates go git make protobuf bash curl
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH

@@ -25,15 +25,15 @@ import (
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
-var waitTimeout time.Duration
+var longTimeout time.Duration
 
 func init() {
 	if detectCI() {
 		log.Println("CI DETECTED: using timeout of 60 seconds!")
-		waitTimeout = 60 * time.Second
+		longTimeout = 60 * time.Second
 	} else {
 		log.Println("NO CI DETECTED: using timeout of 10 seconds!")
-		waitTimeout = 10 * time.Second
+		longTimeout = 10 * time.Second
 	}
 }
 
