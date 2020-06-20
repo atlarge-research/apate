@@ -7,7 +7,10 @@ module.exports = {
 	  nav: [
 		{ text: 'Home', link: '/' },
 		{ text: 'Usage', link: '/usage/' },
-		{ text: 'CRD Configuration', link: '/configuration' },
+		{ text: 'Build', link: '/build/' },
+		{ text: 'CRD Configuration', link: '/configuration' }, 
+		{ text: 'Environment variables', link: '/env' },
+		{ text: 'Examples', link: '/examples' },
 	  ]
 	}
   }

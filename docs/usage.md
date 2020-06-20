@@ -64,6 +64,10 @@ After this exits sucessfully you are ready to use Apate.
 It is also possible to use an already existing kubernetes cluser by providing `--kubeconfig-location` to the create command.
 :::
 
+::: details Starting Control plane manually
+You can start the control plane docker container manually like so: `docker run -v /var/run/docker.sock:/var/run/docker.sock -p 8085:8085 apatekubernetes/controlplane`
+:::
+
 ### Kubeconfig
 If you want to get the kubeconfig to connect to Apate run the following command:
 ```sh

@@ -1,6 +1,18 @@
 # CRD Configuration
 Apate makes uses of [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) to provide an easy way of configuring the emulated nodes and pods. 
 
+## Planned and direct emulation
+Apate supports both planned and direct emulation. Both have their advantages and disadvantages, and serve specific use-cases.
+
+Planned emulation is our regular scenario. It consists of a list of tasks that should be executed at a specific time relative 
+to the start of the scenario. 
+
+::: warning
+Even though most use-cases are covered by either planned or direct emulation, some edge-cases might require both.
+However, this is not supported in the initial version of Apate, and might lead to unexpected results in some cases.  
+We invite others to contribute to Apate and add this feature, as it should be a good first issue.
+:::  
+
 ## Nodes
 A `NodeConfiguration` describes a set of emulated nodes in the Kubernetes cluster. The specification describes a list of tasks 
 for the scenario, a resource definition, and the amount of nodes. Optionally, one can provide a direct state, as opposed to a list
@@ -61,9 +73,14 @@ State is the desired state of the node.
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |
 | node_failed | bool | If true, will no longer react to any requests and will no longer send heartbeats | No |
-| network_latency | int64 | Applies extra latency to request from Kubernetes| No |
+| network_latency | [Time](#time) | Applies extra latency to request from Kubernetes| No |
 | heartbeat_failed | bool | If true, will no longer send heartbeats to Kubernetes| No |
 | custom_state | [Custom state](#custom-state) | A custom state | No |
+
+::: warning  
+In the initial version of Apate, it is not possible to revert `node_failed` or `heartbeat_failed`. 
+We invite others to contribute to Apate and add this feature, as it should be a good first issue.  
+:::
 
 #### Custom state
 Custom state can be used to directly modify the internal flags. This allows users to create a custom state.
