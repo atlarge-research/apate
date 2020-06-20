@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
+	nodeCrd "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+	podCrd "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
 
 	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
@@ -24,6 +24,18 @@ import (
 	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/run"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
+
+var longTimeout time.Duration
+
+func init() {
+	if detectCI() {
+		log.Println("CI DETECTED: using timeout of 60 seconds!")
+		longTimeout = 60 * time.Second
+	} else {
+		log.Println("NO CI DETECTED: using timeout of 10 seconds!")
+		longTimeout = 10 * time.Second
+	}
+}
 
 func detectCI() bool {
 	return os.Getenv("CI_COMMIT_REF_SLUG") != ""
@@ -48,7 +60,7 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 	}
 
 	initEnv := env.ControlPlaneEnv()
-	initEnv.DebugEnabled = true
+	initEnv.DebugEnabled = false
 	initEnv.KubeConfigLocation = "/tmp/apate/test-" + uuid.New().String()
 	initEnv.PodCRDLocation = dir + "/config/crd/apate.opendc.org_podconfigurations.yaml"
 	initEnv.NodeCRDLocation = dir + "/config/crd/apate.opendc.org_nodeconfigurations.yaml"
@@ -64,8 +76,6 @@ func setup(t *testing.T, kindClusterName string, runType env.RunType) {
 func teardown(t *testing.T) {
 	// #nosec
 	_ = exec.Command("sh", "-c", "docker ps --filter name=apate --format \"{{.ID}}\" | xargs docker kill").Run()
-	// #nosec
-	// _ = exec.Command("sh", "-c", "docker ps -a --filter name=apate --format \"{{.ID}}\" | xargs docker rm").Run()
 
 	// #nosec
 	_ = exec.Command("docker", "kill", "apate-cp").Run()
@@ -74,8 +84,8 @@ func teardown(t *testing.T) {
 	err := os.Remove(env.ControlPlaneEnv().KubeConfigLocation)
 	assert.NoError(t, err)
 
-	node.Reset()
-	pod.Reset()
+	nodeCrd.Reset()
+	podCrd.Reset()
 }
 
 func waitForCP(t *testing.T) {
@@ -165,4 +175,35 @@ func createApateletConditionFunction(t *testing.T, numapatelets int, status core
 
 		return false
 	}
+}
+
+func arePodsAreRunning(pods *corev1.PodList) bool {
+	for _, pod := range pods.Items {
+		log.Printf("Pod: %v has phase: %v", pod.Name, pod.Status.Phase)
+
+		if pod.Status.Phase != corev1.PodRunning {
+			return false
+		}
+	}
+
+	return true
+}
+
+func checkNodes(t *testing.T, cluster *kubernetes.Cluster, amountOfNodes int) {
+	done := false
+	for i := 0; i < 100; i++ {
+		log.Println("Getting number of nodes from k8s")
+		nodes, err1 := cluster.GetNumberOfReadyNodes()
+		assert.NoError(t, err1)
+
+		log.Printf("nodes: %v", nodes)
+
+		if nodes == amountOfNodes {
+			done = true
+			break
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+	assert.True(t, done)
 }

@@ -32,6 +32,7 @@ func TestNewProvider(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	pm := podmanager.New()

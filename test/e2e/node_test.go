@@ -4,8 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
+	"syscall"
 	"testing"
 	"time"
+
+	apateRun "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -29,6 +34,23 @@ func TestSimpleNodeDeploymentDocker(t *testing.T) {
 	testSimpleNodeDeployment(t, env.Docker)
 }
 
+func getSimpleNodeDeployment(replicas int) string {
+	return `
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: e2e-deployment
+spec:
+    replicas: ` + strconv.Itoa(replicas) + `
+    resources:
+        memory: 5G
+        cpu: 1000
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+`
+}
+
 // To run this, make sure ./config/kind.yml is put in the right directory (/tmp/apate/manager)
 // or the env var CP_MANAGER_CONFIG_LOCATION point to it
 func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
@@ -46,33 +68,20 @@ func testSimpleNodeDeployment(t *testing.T, rt env.RunType) {
 	time.Sleep(time.Second * 5)
 
 	// Test simple deployment
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 2)
 
 	cancel()
 
 	teardown(t)
 }
 
-func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig) {
-	rc := `
-apiVersion: apate.opendc.org/v1
-kind: NodeConfiguration
-metadata:
-    name: e2e-deployment
-spec:
-    replicas: 2
-    resources:
-        memory: 5G
-        cpu: 1000
-        storage: 5T
-        ephemeral_storage: 120G
-        max_pods: 150
-`
+func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig, replicas int) {
+	rc := getSimpleNodeDeployment(replicas)
 
 	err := kubectl.Create([]byte(rc), kcfg)
 	assert.NoError(t, err)
 	log.Println("Waiting before querying k8s")
-	time.Sleep(time.Second * 60)
+	time.Sleep(longTimeout)
 
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
@@ -81,7 +90,7 @@ spec:
 	log.Println("Getting number of nodes from k8s")
 	nodes, err := cluster.GetNumberOfNodes()
 	assert.NoError(t, err)
-	assert.Equal(t, 3, nodes)
+	assert.Equal(t, replicas+1, nodes)
 }
 
 func TestNodeFailureDocker(t *testing.T) {
@@ -141,7 +150,7 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 
 	err := kubectl.Create([]byte(ncfg), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(time.Second * 60)
+	time.Sleep(longTimeout)
 
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
@@ -183,4 +192,248 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 
 	stopped, _ := getApateletWaitForCondition(t, cluster, num, createApateletConditionFunction(t, num, corev1.ConditionUnknown))
 	assert.True(t, stopped)
+}
+
+func TestShutdownApateletRoutine(t *testing.T) {
+	testShutdownApatelet(t, env.Routine)
+}
+
+func TestShutdownApateletDocker(t *testing.T) {
+	if detectCI() {
+		t.Skip()
+	}
+	testShutdownApatelet(t, env.Docker)
+}
+
+func testShutdownApatelet(t *testing.T, rt env.RunType) {
+	setup(t, "TestShutdownApatelet", rt)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start CP
+	go cp.StartControlPlane(ctx, runner.New())
+
+	// Wait
+	waitForCP(t)
+
+	kcfg := getKubeConfig(t)
+	time.Sleep(time.Second * 5)
+
+	rc := `
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: e2e-deployment
+spec:
+    replicas: 2
+    resources:
+        memory: 5G
+        cpu: 1000
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+`
+
+	err := kubectl.Create([]byte(rc), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
+	time.Sleep(longTimeout)
+
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	assert.NoError(t, err)
+
+	log.Println("Getting number of nodes from k8s")
+	nodes, err := cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+	assert.Equal(t, 3, nodes)
+
+	cancel()
+
+	time.Sleep(time.Second * 30)
+
+	teardown(t)
+}
+
+// Test nops the spawning of apatelets
+const Test env.RunType = "TEST"
+
+func TestShutdownApateletApateletSide(t *testing.T) {
+	setup(t, "TestShutdownApateletApateletSide", Test)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start CP
+	registry := runner.New()
+
+	var testRoutineRunner runner.ApateletRunner = &TestRoutineRunner{}
+	registry.RegisterRunner(Test, &testRoutineRunner)
+
+	go cp.StartControlPlane(ctx, registry)
+
+	// Wait
+	waitForCP(t)
+
+	kcfg := getKubeConfig(t)
+	time.Sleep(time.Second * 5)
+
+	rc := `
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: e2e-deployment
+spec:
+    replicas: 1
+    resources:
+        memory: 5G
+        cpu: 1000
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+`
+
+	err := kubectl.Create([]byte(rc), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
+
+	environment, err := env.ApateletEnv()
+	assert.NoError(t, err)
+	environment.KubeConfigLocation = env.ControlPlaneEnv().KubeConfigLocation
+
+	apctx, apcancel := context.WithCancel(context.Background())
+
+	apateletEnv := environment
+
+	// Apatelets should figure out their own ports when running in go routines
+	apateletEnv.KubernetesPort = 0
+	apateletEnv.MetricsPort = 0
+	apateletEnv.ListenPort = 0
+
+	readyCh := make(chan struct{}, 1)
+	stop := make(chan os.Signal, 1)
+
+	readyCh <- struct{}{}
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Apatelet failed to start: %v\n", r)
+				readyCh <- struct{}{} // Just continue to next one. Don't retry, as the resources may have been removed from the queue already
+			}
+		}()
+		err1 := apateRun.StartApateletInternalWithStopCh(apctx, apateletEnv, readyCh, stop)
+		if err1 != nil {
+			log.Printf("Apatelet failed to start: %v\n", err1)
+			readyCh <- struct{}{}
+		}
+	}()
+
+	<-readyCh
+
+	time.Sleep(time.Second * 30)
+
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	assert.NoError(t, err)
+
+	log.Println("Getting number of nodes from k8s")
+	nodes, err := cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, nodes)
+
+	stop <- syscall.SIGTERM
+	time.Sleep(time.Second * 30)
+
+	log.Println("Getting number of nodes from k8s")
+	nodes, err = cluster.GetNumberOfNodes()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, nodes)
+
+	apcancel()
+	cancel()
+
+	teardown(t)
+}
+
+// UP-DOWN SCALE
+func TestUpDownScaleRoutine(t *testing.T) {
+	testUpDownScale(t, env.Routine)
+}
+
+func TestUpDownScaleDocker(t *testing.T) {
+	if detectCI() {
+		t.Skip()
+	}
+	testUpDownScale(t, env.Docker)
+}
+
+func testUpDownScale(t *testing.T, rt env.RunType) {
+	setup(t, "testUpDownScale", rt)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start CP
+	go cp.StartControlPlane(ctx, runner.New())
+
+	// Wait
+	waitForCP(t)
+
+	kcfg := getKubeConfig(t)
+	time.Sleep(time.Second * 5)
+
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	assert.NoError(t, err)
+
+	checkNodes(t, cluster, 1)
+
+	rc1 := getSimpleNodeDeployment(2)
+
+	rc2 := `
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: e2e-deployment
+spec:
+    replicas: 10
+    resources:
+        memory: 5G
+        cpu: 1000
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+`
+
+	err = kubectl.Apply([]byte(rc1), kcfg)
+	assert.NoError(t, err)
+
+	checkNodes(t, cluster, 3)
+
+	err = kubectl.Apply([]byte(rc2), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
+
+	println("UPSCALING")
+
+	checkNodes(t, cluster, 11)
+
+	println("DOWNSCALING")
+
+	err = kubectl.Apply([]byte(rc1), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
+
+	checkNodes(t, cluster, 3)
+
+	println("DELETING")
+
+	err = kubectl.Delete([]byte(rc1), kcfg)
+	assert.NoError(t, err)
+	log.Println("Waiting before querying k8s")
+
+	checkNodes(t, cluster, 1)
+
+	cancel()
+
+	teardown(t)
 }

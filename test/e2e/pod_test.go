@@ -2,10 +2,11 @@ package e2e
 
 import (
 	"context"
-	"log"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/docker/go-units"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -18,18 +19,7 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
-func arePodsAreRunning(pods *corev1.PodList) bool {
-	for _, pod := range pods.Items {
-		log.Printf("Pod: %v has phase: %v", pod.Name, pod.Status.Phase)
-
-		if pod.Status.Phase != corev1.PodRunning {
-			return false
-		}
-	}
-
-	return true
-}
-
+// POD DEPLOYMENT
 func TestSimplePodDeployment(t *testing.T) {
 	if detectCI() {
 		t.Skip()
@@ -53,7 +43,7 @@ func testSimplePodDeployment(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 
 	// Setup some nodes
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 2)
 	time.Sleep(time.Second * 5)
 
 	// Test pods
@@ -128,6 +118,38 @@ spec:
 	assert.True(t, running)
 }
 
+var nginx = `
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: nginx-deployment3
+    labels:
+      app: nginx
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: nginx
+    template:
+      metadata:
+        labels:
+          app: nginx
+          apate: test-pod1
+      spec:
+        nodeSelector:
+          emulated: "yes"
+        tolerations:
+          -   key: emulated
+              operator: Exists
+              effect: NoSchedule
+        containers:
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+          - containerPort: 80
+`
+
+// POD FAILURE
 func TestPodFailureDocker(t *testing.T) {
 	if detectCI() {
 		t.Skip()
@@ -151,7 +173,7 @@ func testPodFailure(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 
 	// test
-	simpleNodeDeployment(t, kcfg)
+	simpleNodeDeployment(t, kcfg, 2)
 	time.Sleep(time.Second * 5)
 
 	podFailure(t, kcfg)
@@ -174,7 +196,7 @@ spec:
 	// Create pod CRDs
 	err := kubectl.Create([]byte(pcfg), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(time.Second * 60)
+	time.Sleep(longTimeout)
 
 	// Get cluster object
 	cmh := kubernetes.NewClusterManagerHandler()
@@ -188,31 +210,7 @@ spec:
 	assert.True(t, ready)
 
 	// Deploy pods
-	deployment := `
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: nginx-deployment3
-    labels:
-      app: nginx
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: nginx
-    template:
-      metadata:
-        labels:
-          app: nginx
-          apate: test-pod1
-      spec:
-        containers:
-        - name: nginx
-          image: nginx:1.14.2
-          ports:
-          - containerPort: 80
-`
-	err = kubectl.Create([]byte(deployment), kcfg)
+	err = kubectl.Create([]byte(nginx), kcfg)
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 5)
 
@@ -233,4 +231,91 @@ spec:
 	}
 
 	assert.GreaterOrEqual(t, 1, numFailed)
+}
+
+// POD RESOURCE UPDATE
+func TestPodResourceDocker(t *testing.T) {
+	if detectCI() {
+		t.Skip()
+	}
+	testPodResource(t, env.Docker)
+}
+
+func TestPodResourceRoutine(t *testing.T) {
+	testPodResource(t, env.Routine)
+}
+
+func testPodResource(t *testing.T, rt env.RunType) {
+	setup(t, strings.ToLower("testPodResourceUpdate"+string(rt)), rt)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go cp.StartControlPlane(ctx, runner.New())
+
+	waitForCP(t)
+
+	kcfg := getKubeConfig(t)
+
+	// test
+	simpleNodeDeployment(t, kcfg, 1)
+	time.Sleep(time.Second * 5)
+
+	podResource(t, kcfg)
+
+	cancel()
+
+	teardown(t)
+}
+
+func podResource(t *testing.T, kcfg *kubeconfig.KubeConfig) {
+	pcfg := `
+apiVersion: apate.opendc.org/v1
+kind: PodConfiguration
+metadata:
+  name: test-pod1
+spec:
+  pod_resources:
+    memory: 2G
+    cpu: 10
+`
+
+	// Create pod CRDs
+	err := kubectl.Create([]byte(pcfg), kcfg)
+	assert.NoError(t, err)
+	time.Sleep(longTimeout)
+
+	// Get cluster object
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+
+	assert.NoError(t, err)
+
+	// Check if everything is ready
+	ready, _ := getApateletWaitForCondition(t, cluster, 1, createApateletConditionFunction(t, 1, corev1.ConditionTrue))
+
+	assert.True(t, ready)
+
+	// Deploy pods
+	err = kubectl.Create([]byte(nginx), kcfg)
+	assert.NoError(t, err)
+	time.Sleep(longTimeout)
+
+	time.Sleep(30 * time.Second) // Once every 30 seconds an update in status is scheduled
+
+	// assert state
+	nodes, err := cluster.GetNodes()
+	assert.NoError(t, err)
+
+	for _, node := range nodes.Items {
+		if strings.HasPrefix(node.Name, "apatelet-") {
+			allocatable := node.Status.Allocatable
+			assert.Equal(t, int64(990), allocatable.Cpu().Value())
+			assert.Equal(t, int64(5*units.GiB-2*units.GiB), allocatable.Memory().Value())
+			assert.Equal(t, int64(149), allocatable.Pods().Value())
+			assert.Equal(t, int64(120*units.GiB), allocatable.StorageEphemeral().Value())
+
+			storage := allocatable[corev1.ResourceStorage]
+			assert.Equal(t, int64(5*units.TiB), storage.Value())
+		}
+	}
 }

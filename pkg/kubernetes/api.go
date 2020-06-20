@@ -12,6 +12,20 @@ import (
 	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
 )
 
+// ClusterAPI are API calls for a cluster connection
+type ClusterAPI interface {
+	GetNodes() (*corev1.NodeList, error)
+	GetPods(namespace string) (*corev1.PodList, error)
+
+	GetNumberOfNodes() (int, error)
+	GetNumberOfReadyNodes() (int, error)
+	GetNumberOfPods(namespace string) (int, error)
+
+	RemoveAllApateletsFromCluster() error
+	RemoveNodesFromCluster(uuids []uuid.UUID) error
+	RemoveNodeFromCluster(nodename string) error
+}
+
 // GetNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
 func (c Cluster) GetNodes() (*corev1.NodeList, error) {
 	nodes, err := c.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
@@ -95,19 +109,22 @@ func (c *Cluster) GetNumberOfNodes() (int, error) {
 	return len(nodes.Items), nil
 }
 
-// GetNumberOfPendingPods will return the number of pods in the pending state.
-func (c Cluster) GetNumberOfPendingPods(namespace string) (int, error) {
-	pods, err := c.GetPods(namespace)
+// GetNumberOfReadyNodes returns the number of nodes in the cluster, or an error if it couldn't get these.
+func (c *Cluster) GetNumberOfReadyNodes() (int, error) {
+	nodes, err := c.GetNodes()
+
 	if err != nil {
-		return -1, errors.Wrap(err, "failed to retrieve pods list from GetPods")
+		return 0, errors.Wrap(err, "failed to retrieve pods list from kubernetes")
 	}
 
-	cnt := 0
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodPending {
-			cnt++
+	i := 0
+	for _, node := range nodes.Items {
+		for _, c := range node.Status.Conditions {
+			if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
+				i++
+			}
 		}
 	}
 
-	return cnt, nil
+	return i, nil
 }

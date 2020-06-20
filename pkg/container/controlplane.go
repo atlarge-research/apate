@@ -40,7 +40,7 @@ func SpawnControlPlaneContainer(ctx context.Context, pullPolicy env.PullPolicy, 
 	// Set spawn information
 	spawnInfo := NewSpawnInformation(pullPolicy, env.ControlPlaneFullImage, env.ControlPlaneContainerName, 1, func(i int, ctx context.Context) error {
 		c, err := cli.ContainerCreate(ctx, &container.Config{
-			Image: env.ControlPlaneImageName,
+			Image: env.ControlPlaneFullImage,
 			Env:   envArray,
 			ExposedPorts: nat.PortSet{
 				port: struct{}{},

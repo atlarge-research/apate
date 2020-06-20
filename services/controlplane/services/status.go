@@ -29,7 +29,7 @@ func (s *statusService) Status(_ context.Context, _ *empty.Empty) (*controlplane
 		return nil, errors.Wrap(err, "failed to get nodes list")
 	}
 
-	// OPTIMISE
+	// TODO: OPTIMISE
 	var cnt int32
 	for _, node := range nodes {
 		if node.Status == health.Status_HEALTHY {
