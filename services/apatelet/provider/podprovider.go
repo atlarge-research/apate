@@ -61,6 +61,8 @@ func (p *Provider) createOrUpdate(ctx context.Context, pod *corev1.Pod, pf event
 		return err
 	}
 
+	p.updateStatsSummary()
+
 	err = errors.Wrap(err, "failed to execute pod and node response (Create or Update)")
 	if err != nil {
 		log.Println(err)

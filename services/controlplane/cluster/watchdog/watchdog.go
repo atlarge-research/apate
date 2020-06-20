@@ -18,7 +18,7 @@ import (
 
 // StartWatchDog starts the watchdog
 // The watchdog checks for unhealthy nodes, and removes them
-func StartWatchDog(ctx context.Context, delay time.Duration, st *store.Store, cl *kubernetes.Cluster) {
+func StartWatchDog(ctx context.Context, delay time.Duration, st *store.Store, cl *kubernetes.ClusterAPI) {
 	go func() {
 		for {
 			select {
@@ -31,7 +31,7 @@ func StartWatchDog(ctx context.Context, delay time.Duration, st *store.Store, cl
 	}()
 }
 
-func checkUnhealthyApatelets(st *store.Store, cl *kubernetes.Cluster) {
+func checkUnhealthyApatelets(st *store.Store, cl *kubernetes.ClusterAPI) {
 	apatelets, err := (*st).GetNodes()
 
 	if err != nil {

@@ -19,9 +19,13 @@ test suite:
     FF_NETWORK_PER_BUILD: "true"
   services:
     - docker:dind
+    - name: registry.gitlab.com/gitlab-org/cluster-integration/test-utils/k3s-gitlab-ci/releases/v1.16.7-k3s1
+      alias: k3s-service
   before_script:
     - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
+    - curl k3s-service:8081?service=k3s-service > k3s.yml
+    - export K3S_KUBE_CONFIG=$(pwd)/k3s.yml
     - source ./ci/env.sh
     - ./ci/go_test_with_coverage_report.sh execute
   artifacts:
