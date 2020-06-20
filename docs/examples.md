@@ -58,7 +58,9 @@ spec:
 
 ## Pod failure
 In this example, we will create a simple cluster of three worker nodes. We will run an nginx deployment on this cluster, which 
-will fail ten seconds after the scenario has started.
+will fail ten seconds after the scenario has started.  
+Note that Kubernetes will try to reschedule the failed pods, but they will fail again, resulting in an infinite loop. 
+This is expected behaviour for deployments.
 
 ```yaml
 apiVersion: apate.opendc.org/v1
@@ -156,3 +158,5 @@ spec:
           state:
               network_latency: 100ms
 ```
+
+## Node failure with direct emulation
