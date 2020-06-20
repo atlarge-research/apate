@@ -17,7 +17,6 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
-// SHUTDOWN
 func TestShutdownCPRoutines(t *testing.T) {
 	rt := env.Routine
 	setup(t, "TestShutdownCP"+string(rt), rt)

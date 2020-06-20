@@ -23,7 +23,6 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
-// NODE DEPLOYMENT
 func TestSimpleNodeDeploymentRoutine(t *testing.T) {
 	testSimpleNodeDeployment(t, env.Routine)
 }
@@ -94,7 +93,6 @@ func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig, replicas in
 	assert.Equal(t, replicas+1, nodes)
 }
 
-// NODE FAILURE
 func TestNodeFailureDocker(t *testing.T) {
 	if detectCI() {
 		t.Skip()
@@ -196,7 +194,6 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 	assert.True(t, stopped)
 }
 
-// SHUTDOWN APATELET
 func TestShutdownApateletRoutine(t *testing.T) {
 	testShutdownApatelet(t, env.Routine)
 }
@@ -261,7 +258,6 @@ spec:
 // Test nops the spawning of apatelets
 const Test env.RunType = "TEST"
 
-// SHUTDOWN APATELETS
 func TestShutdownApateletApateletSide(t *testing.T) {
 	setup(t, "TestShutdownApateletApateletSide", Test)
 
