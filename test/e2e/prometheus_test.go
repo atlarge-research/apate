@@ -16,7 +16,6 @@ import (
 	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
 )
 
-// PROMETHEUS
 func TestRunPrometheusRoutines(t *testing.T) {
 	rt := env.Routine
 	setup(t, "TestRunPrometheus"+string(rt), rt)
