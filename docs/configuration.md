@@ -5,7 +5,12 @@ Apate makes uses of [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes
 Apate supports both planned and direct emulation. Both have their advantages and disadvantages, and serve specific use-cases.
 
 Planned emulation is our regular scenario. It consists of a list of tasks that should be executed at a specific time relative 
-to the start of the scenario. 
+to the start of the scenario. This option should cover most use-cases, but for some it might be a bit overkill.
+
+Besides planned emulation, we also support direct emulation. This form of emulation is not tied to a scenario, or timestamps. 
+Direct emulation is much simpler to configure than planned emulation. You can simply inline the desired state (something you
+would normally put in a task), and it will be executed immediately. This option might cover simple use cases, and can be very useful
+for automation. 
 
 ::: warning
 Even though most use-cases are covered by either planned or direct emulation, some edge-cases might require both.
