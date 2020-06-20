@@ -82,7 +82,7 @@ func simpleNodeDeployment(t *testing.T, kcfg *kubeconfig.KubeConfig, replicas in
 	err := kubectl.Create([]byte(rc), kcfg)
 	assert.NoError(t, err)
 	log.Println("Waiting before querying k8s")
-	time.Sleep(waitTimeout)
+	time.Sleep(longTimeout)
 
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
@@ -152,7 +152,7 @@ func nodeFailure(t *testing.T, kcfg *kubeconfig.KubeConfig) {
 
 	err := kubectl.Create([]byte(ncfg), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(time.Second * 60)
+	time.Sleep(longTimeout)
 
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
@@ -240,7 +240,7 @@ spec:
 	err := kubectl.Create([]byte(rc), kcfg)
 	assert.NoError(t, err)
 	log.Println("Waiting before querying k8s")
-	time.Sleep(time.Second * 60)
+	time.Sleep(longTimeout)
 
 	cmh := kubernetes.NewClusterManagerHandler()
 	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
@@ -325,7 +325,7 @@ spec:
 				readyCh <- struct{}{} // Just continue to next one. Don't retry, as the resources may have been removed from the queue already
 			}
 		}()
-		err1 := apateRun.StartApateletInternal(apctx, apateletEnv, readyCh, stop)
+		err1 := apateRun.StartApateletInternalWithStopCh(apctx, apateletEnv, readyCh, stop)
 		if err1 != nil {
 			log.Printf("Apatelet failed to start: %v\n", err1)
 			readyCh <- struct{}{}
@@ -372,7 +372,7 @@ func TestUpDownScaleDocker(t *testing.T) {
 }
 
 func testUpDownScale(t *testing.T, rt env.RunType) {
-	setup(t, "TestScale5000", rt)
+	setup(t, "testUpDownScale", rt)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -385,6 +385,12 @@ func testUpDownScale(t *testing.T, rt env.RunType) {
 	kcfg := getKubeConfig(t)
 	time.Sleep(time.Second * 5)
 
+	cmh := kubernetes.NewClusterManagerHandler()
+	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	assert.NoError(t, err)
+
+	checkNodes(t, cluster, 1)
+
 	rc1 := getSimpleNodeDeployment(2)
 
 	rc2 := `
@@ -393,7 +399,7 @@ kind: NodeConfiguration
 metadata:
     name: e2e-deployment
 spec:
-    replicas: 100
+    replicas: 10
     resources:
         memory: 5G
         cpu: 1000
@@ -402,11 +408,7 @@ spec:
         max_pods: 150
 `
 
-	err := kubectl.Apply([]byte(rc1), kcfg)
-	assert.NoError(t, err)
-
-	cmh := kubernetes.NewClusterManagerHandler()
-	cluster, err := cmh.NewClusterFromKubeConfig(kcfg)
+	err = kubectl.Apply([]byte(rc1), kcfg)
 	assert.NoError(t, err)
 
 	checkNodes(t, cluster, 3)
@@ -417,7 +419,7 @@ spec:
 
 	println("UPSCALING")
 
-	checkNodes(t, cluster, 101)
+	checkNodes(t, cluster, 11)
 
 	println("DOWNSCALING")
 

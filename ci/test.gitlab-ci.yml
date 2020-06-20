@@ -24,7 +24,6 @@ test suite:
   before_script:
     - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
-    - apk add curl
     - curl k3s-service:8081?service=k3s-service > k3s.yml
     - export K3S_KUBE_CONFIG=$(pwd)/k3s.yml
     - source ./ci/env.sh

@@ -196,7 +196,7 @@ spec:
 	// Create pod CRDs
 	err := kubectl.Create([]byte(pcfg), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(time.Second * 60)
+	time.Sleep(longTimeout)
 
 	// Get cluster object
 	cmh := kubernetes.NewClusterManagerHandler()
@@ -282,7 +282,7 @@ spec:
 	// Create pod CRDs
 	err := kubectl.Create([]byte(pcfg), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(waitTimeout)
+	time.Sleep(longTimeout)
 
 	// Get cluster object
 	cmh := kubernetes.NewClusterManagerHandler()
@@ -298,7 +298,7 @@ spec:
 	// Deploy pods
 	err = kubectl.Create([]byte(nginx), kcfg)
 	assert.NoError(t, err)
-	time.Sleep(waitTimeout)
+	time.Sleep(longTimeout)
 
 	time.Sleep(30 * time.Second) // Once every 30 seconds an update in status is scheduled
 

@@ -21,7 +21,7 @@ lint_fix:
 
 .PHONY: test
 test: docker_build
-	go test --timeout 30m -p 24 -v ./...
+	go test --timeout 60m -p 24 -v ./...
 
 .PHONY: test_short
 test_short:
@@ -33,7 +33,7 @@ test_race:
 
 .PHONY: test_cover
 test_cover: docker_build
-	go test --timeout 30m -v -coverpkg=./... -coverprofile=cover.cov ./...
+	go test --timeout 60m -v -coverpkg=./... -coverprofile=cover.cov ./...
 	go tool cover -func=cover.cov
 
 .PHONY: test_cover_short

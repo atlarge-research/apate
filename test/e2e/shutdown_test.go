@@ -46,7 +46,7 @@ func testShutdownCp(t *testing.T) {
 	stop := make(chan os.Signal, 1)
 
 	// Start CP
-	go cp.StartControlPlaneWithStopChannel(ctx, runner.New(), stop)
+	go cp.StartControlPlaneWithStopCh(ctx, runner.New(), stop)
 
 	// Wait
 	waitForCP(t)
