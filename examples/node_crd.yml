@@ -6,7 +6,7 @@ spec:
     replicas: 1
     resources:
         memory: 5G
-        cpu: 5000
+        cpu: 5
         storage: 5T
         ephemeral_storage: 120G
         max_pods: 150

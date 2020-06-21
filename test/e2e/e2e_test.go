@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate/run"
+	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate-cli/run"
 	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
 )
 
