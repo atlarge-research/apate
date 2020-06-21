@@ -141,7 +141,9 @@ func (p *Provider) updateConditions(cb func(*corev1.Node)) {
 		p.Conditions.networkUnavailable.Update(false),
 		p.Conditions.pidPressure.Update(false),
 	}
-	cb(p.Node)
+	p.Node.Status = p.nodeStatus()
+
+	cb(p.Node.DeepCopy())
 }
 
 func (p *Provider) nodeConditions() []corev1.NodeCondition {
@@ -166,6 +168,7 @@ func (p *Provider) nodeStatus() corev1.NodeStatus {
 		Addresses:       p.addresses(),
 		Capacity:        p.capacity(),
 		Conditions:      p.nodeConditions(),
+		Allocatable:     p.allocatable(),
 	}
 }
 
@@ -243,6 +246,37 @@ func (p *Provider) capacity() corev1.ResourceList {
 
 	var ephemeralStorage resource.Quantity
 	ephemeralStorage.Set(p.Resources.EphemeralStorage)
+
+	return corev1.ResourceList{
+		corev1.ResourceCPU:              cpu,
+		corev1.ResourceMemory:           mem,
+		corev1.ResourcePods:             pods,
+		corev1.ResourceStorage:          storage,
+		corev1.ResourceEphemeralStorage: ephemeralStorage,
+	}
+}
+
+func (p *Provider) allocatable() corev1.ResourceList {
+	summary, err := p.GetStatsSummary()
+	if err != nil {
+		log.Printf("error while retrieving stats summary for node: %v\n", err)
+		return corev1.ResourceList{}
+	}
+
+	var cpu resource.Quantity
+	cpu.Set(p.Resources.CPU - int64(summary.Node.UsageNanoCores))
+
+	var mem resource.Quantity
+	mem.Set(int64(summary.Node.AvailableBytesMemory))
+
+	var pods resource.Quantity
+	pods.Set(p.Resources.MaxPods - int64(summary.Node.Pods))
+
+	var storage resource.Quantity
+	storage.Set(int64(summary.Node.AvailableBytesStorage))
+
+	var ephemeralStorage resource.Quantity
+	ephemeralStorage.Set(int64(summary.Node.AvailableBytesEphemeral))
 
 	return corev1.ResourceList{
 		corev1.ResourceCPU:              cpu,
