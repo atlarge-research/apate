@@ -2,6 +2,8 @@
 For your convenience we provide some small examples here. This should be able to help you understand Apate's configuration.
 If not, feel free to create an issue and we are glad to help!
 
+[[toc]]
+
 ## Simple cluster
 In this example, we will spin up a simple kubernetes cluster of ten worker nodes. There will be no node failure or anything of the sort.
 This cluster can be used to simply emulated pods.
