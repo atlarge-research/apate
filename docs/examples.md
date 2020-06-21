@@ -116,6 +116,42 @@ spec:
             - containerPort: 80
 ```
 
+## Node failure with direct emulation
+This example will showcase direct emulation. Initially we will create a simple deployment of one worker node with no tasks.
+```yaml
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: test-deployment-1
+spec:
+    replicas: 1
+    resources:
+        memory: 5G
+        cpu: 5
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+```
+
+Once you are ready for node failure, you can simply change the file to include the direct state, and update the CRD in Kubernetes.
+This will result in the node failing, without using the scenario.
+
+```yaml
+apiVersion: apate.opendc.org/v1
+kind: NodeConfiguration
+metadata:
+    name: test-deployment-1
+spec:
+    replicas: 1
+    node_failed: true
+    resources:
+        memory: 5G
+        cpu: 5
+        storage: 5T
+        ephemeral_storage: 120G
+        max_pods: 150
+```
+
 ## Slow network and node failure
 For the final example, we will emulate a cluster of five worker nodes. Immediately after the scenario starts all of them
 will suddenly have a slow network with an added delay of 100ms. Five seconds after this, one of the nodes will fail.
@@ -158,5 +194,3 @@ spec:
           state:
               network_latency: 100ms
 ```
-
-## Node failure with direct emulation

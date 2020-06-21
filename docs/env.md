@@ -15,7 +15,7 @@ Only change these when you know what you are doing!
 | CP_DOCKER_POLICY | [Docker policy](#docker-policy) | Docker pull policy for apatelet images | pull-if-not-local |   
 | CP_PROMETHEUS | Boolean | Enable prometheus installation | true |   
 | CP_PROMETHEUS_NAMESPACE | String | The namespace where prometheus will be installed | apate-prometheus |   
-| CP_KUBE_CONFIG | String | The kube config used for interacting with the Kubernetes cluster |  |   
+| CP_KUBE_CONFIG | String | The kube config used for interacting with the Kubernetes cluster | \<unset> |   
 | CP_KUBE_CONFIG_LOCATION | String | Path to the kube config | /tmp/apate/config |   
 | CP_APATELET_RUN_TYPE | [Run type](#run-type) | The run type used for running new Apatelets | ROUTINES |   
 | CP_KIND_CLUSTER_NAME | String | Cluster name | apate |   
@@ -54,10 +54,6 @@ these variables are important!
 All environment variables are set by the Apatelet runner when spawning Apatelets.
 Changing these outside of the runner might have unforeseen consequences!  
 :::  
-::: warning  
-Some environment variables should almost never be changed, these are marked with a `*`.   
-Only change these when you know what you are doing!   
-:::  
 
 | Variable name | Type | Description | Default value |  
 | --- | --- | --- | --- |   
@@ -70,4 +66,4 @@ Only change these when you know what you are doing!
 | APATELET_CP_PORT | Integer | Port that should be used when connecting to the control plane | 8085 |
 | APATELET_DISABLE_TAINTS | Boolean | Determines whether to disable taints on this node or not | false |
 | APATELET_ENABLE_DEBUG* | Boolean | Enable extra debug messages | false |
-| CI_APATELET_K8S_ADDRESS* | String | CIKubernetesAddress is to add an entry to the /etc/hosts file of an apatelet to ensure it can find the k8s cluster. This can be used to fix bugs when running apate in a DinD |  |
+| CI_APATELET_K8S_ADDRESS* | String | CIKubernetesAddress is to add an entry to the /etc/hosts file of an apatelet to ensure it can find the k8s cluster. This can be used to fix bugs when running apate in a DinD | \<unset> |

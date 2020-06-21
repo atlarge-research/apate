@@ -143,3 +143,5 @@ tags
 
 # End of https://www.gitignore.io/api/go,vim,jetbrains
 
+# Ignore vuepress
+**/.vuepress/dist
