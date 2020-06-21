@@ -1,6 +1,8 @@
 # CRD Configuration
 Apate makes uses of [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) to provide an easy way of configuring the emulated nodes and pods. 
 
+[[toc]]
+
 ## Planned and direct emulation
 Apate supports both planned and direct emulation. Both have their advantages and disadvantages, and serve specific use-cases.
 
