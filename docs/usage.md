@@ -15,15 +15,29 @@ We have only tested Apate on Linux. However it is likely other operating systems
 There are two ways of installing Apate. The recommended way is just by downloading and installing the pre-built binary. The other way is to download the source code and compile the binary.
 
 ### Pre-built binary <Badge text="recommended"/>
-To install the `apate-cli` globally simply download the binary and put it in a `bin` directory:
-```sh
-curl -LO https://github.com/atlarge-research/opendc-emulate-kubernetes/releases/download/v0.1.0/apate-cli /usr/bin/apate-cli
-```
+To install `apate-cli` binary with curl, you should do the following:
+1. Download the latest release with the command:
 
-You can also use the CLI relatively:
-```sh
-curl -LO https://github.com/atlarge-research/opendc-emulate-kubernetes/releases/download/v0.1.0/apate-cli
-```
+    ```sh
+    curl -LO https://github.com/atlarge-research/opendc-emulate-kubernetes/releases/download/v0.1.0/apate-cli
+    ```
+
+2. Make the `apate-cli` binary executable.
+
+    ```sh
+    chmod +x ./apate-cli
+    ```
+
+3. Move the binary in to your PATH.
+
+    ```sh
+    sudo mv ./apate-cli /usr/local/bin/apate-cli
+    ```
+4. To test whether `apate-cli` is properly installed, run:
+
+    ```sh
+    apate-cli
+    ```
 
 ### From source
 To install the `apate-cli` from source first clone the repo:
@@ -51,7 +65,7 @@ It is also possible to build the controlplane and run it outside of a Docker con
 ## Starting Apate
 Starting up a kubernetes cluster and Apate control plane is as easy as just running:
 ```sh
-apate-cli create # or ./apate-cli create if used relatively
+apate-cli create
 ```
 
 After this exits sucessfully you are ready to use Apate.
