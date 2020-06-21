@@ -34,6 +34,8 @@ const (
 
 func createProvider(t *testing.T, cpu, mem, fs int64) (*Provider, *gomock.Controller, *mock_store.MockStore, podmanager.PodManager) {
 	ctrl := gomock.NewController(t)
+	// no defer ctrl.Finish() here because this function returns the ctrl
+
 	ms := mock_store.NewMockStore(ctrl)
 	var s store.Store = ms
 
@@ -56,7 +58,9 @@ func TestEmpty(t *testing.T) {
 	t.Parallel()
 
 	mem := int64(34)
+
 	prov, ctrl, _, _ := createProvider(t, 12, mem, 0)
+	defer ctrl.Finish()
 
 	result, err := prov.GetStatsSummary()
 	assert.NoError(t, err)
@@ -70,8 +74,6 @@ func TestEmpty(t *testing.T) {
 
 	// Verify pods
 	assert.Empty(t, result.Pods)
-
-	ctrl.Finish()
 }
 
 func TestSinglePod(t *testing.T) {
@@ -81,7 +83,9 @@ func TestSinglePod(t *testing.T) {
 	mem := int64(52562)
 	memUsage := uint64(15)
 	cpuUsage := uint64(16)
+
 	prov, ctrl, ms, pm := createProvider(t, cpu, mem, 0)
+	defer ctrl.Finish()
 
 	// Create pod
 	lbl := make(map[string]string)
@@ -119,8 +123,6 @@ func TestSinglePod(t *testing.T) {
 	// Verify pod
 	podStats := []stats.PodStats{*statistics}
 	assert.EqualValues(t, podStats, result.Pods)
-
-	ctrl.Finish()
 }
 
 func TestUnspecifiedPods(t *testing.T) {
@@ -132,6 +134,7 @@ func TestUnspecifiedPods(t *testing.T) {
 	memUsage := uint64(1)
 	cpuUsage := uint64(1)
 	fsUsage := uint64(12)
+
 	prov, ctrl, ms, pm := createProvider(t, cpu, mem, fs)
 	defer ctrl.Finish()
 

@@ -58,8 +58,10 @@ func (p *Provider) getNodeStats(pods []stats.PodStats) stats.NodeStats {
 	aSto, cSto, uSto := p.storageStats(pods)
 
 	return stats.NodeStats{
-		Name:                 p.NodeInfo.Name,
-		UsageNanoCores:       p.cpuStats(pods),
+		Name: p.NodeInfo.Name,
+
+		UsageNanoCores: p.cpuStats(pods),
+
 		AvailableBytesMemory: aMem,
 		UsageBytesMemory:     uMem,
 
@@ -70,6 +72,8 @@ func (p *Provider) getNodeStats(pods []stats.PodStats) stats.NodeStats {
 		AvailableBytesStorage: aSto,
 		CapacityBytesStorage:  cSto,
 		UsedBytesStorage:      uSto,
+
+		Pods: uint64(len(pods)),
 	}
 }
 

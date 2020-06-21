@@ -44,6 +44,12 @@ func panicf(err error) {
 
 // StartControlPlane is the main control plane entrypoint
 func StartControlPlane(ctx context.Context, registry *runner.Registry) {
+	stop := make(chan os.Signal, 1)
+	StartControlPlaneWithStopCh(ctx, registry, stop)
+}
+
+// StartControlPlaneWithStopCh starts the controlplane with a stop channel.
+func StartControlPlaneWithStopCh(ctx context.Context, registry *runner.Registry, stopCh chan os.Signal) {
 	cpEnv := env.ControlPlaneEnv()
 
 	log.Println("starting Apate control plane")
@@ -56,6 +62,8 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	if err != nil {
 		panicf(errors.Wrap(err, "failed to create cluster"))
 	}
+
+	var clusterAPI kubernetes.ClusterAPI = cluster
 
 	// Create apate cluster state
 	createdStore := store.NewStore()
@@ -106,8 +114,7 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	}
 
 	// Handle signals
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(stopCh, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start serving request
 	go func() {
@@ -119,11 +126,11 @@ func StartControlPlane(ctx context.Context, registry *runner.Registry) {
 	}()
 
 	// Start watchdog
-	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, cluster)
+	watchdog.StartWatchDog(ctx, time.Second*30, &createdStore, &clusterAPI)
 
 	// Stop the server on signal
 	select {
-	case <-stop:
+	case <-stopCh:
 		//
 	case <-ctx.Done():
 		//

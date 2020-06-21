@@ -3,8 +3,16 @@ package provider
 import (
 	"context"
 	"errors"
+	"io"
+	"io/ioutil"
 	"testing"
 	"time"
+
+	"github.com/virtual-kubelet/virtual-kubelet/node/api"
+
+	"github.com/finitum/node-cli/stats"
+
+	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -33,6 +41,7 @@ func TestRunLatencyError(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -62,6 +71,7 @@ func TestCancelContextEarlyReturn(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -86,6 +96,7 @@ func TestCancelContextWhileRunningLatency(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
 	ms := mock_store.NewMockStore(ctrl)
 
 	var s store.Store = ms
@@ -142,14 +153,18 @@ func TestCreatePod(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetPodFlag(&pod, events.PodCreatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{}, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeCreatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
 
 	p := Provider{
-		Store: &s,
-		Pods:  podmanager.New(),
+		Store:     &s,
+		Pods:      podmanager.New(),
+		NodeInfo:  &node.Info{},
+		Resources: &scenario.NodeResources{},
+		Stats:     NewStats(),
 	}
 
 	err := p.CreatePod(context.Background(), &pod)
@@ -181,13 +196,17 @@ func TestUpdatePod(t *testing.T) {
 	// expect
 	ms.EXPECT().GetNodeFlag(events.NodeAddedLatency).Return(time.Duration(0), nil)
 	ms.EXPECT().GetPodFlag(&pod, events.PodUpdatePodResponse).Return(scenario.ResponseNormal, nil)
+	ms.EXPECT().GetPodFlag(&pod, events.PodResources).Return(&stats.PodStats{}, nil)
 	ms.EXPECT().GetNodeFlag(events.NodeUpdatePodResponse).Return(scenario.ResponseUnset, nil)
 
 	// sot
 	var s store.Store = ms
 	p := Provider{
-		Store: &s,
-		Pods:  podmanager.New(),
+		Store:     &s,
+		Pods:      podmanager.New(),
+		NodeInfo:  &node.Info{},
+		Resources: &scenario.NodeResources{},
+		Stats:     NewStats(),
 	}
 
 	err := p.UpdatePod(context.Background(), &pod)
@@ -308,4 +327,43 @@ func TestGetPods(t *testing.T) {
 	assert.True(t, ok)
 	assert.Contains(t, ps, uid)
 	ctrl.Finish()
+}
+
+func TestGetContainerLogs(t *testing.T) {
+	prov := Provider{}
+	logs, err := prov.GetContainerLogs(context.Background(), "ns", "name", "", api.ContainerLogOpts{})
+	assert.NoError(t, err)
+
+	all, err := ioutil.ReadAll(logs)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "This container is emulated by Apate\n", string(all))
+}
+
+type fakeAttachIO struct{}
+
+func (f fakeAttachIO) Stdin() io.Reader {
+	return nil
+}
+
+func (f fakeAttachIO) Stdout() io.WriteCloser {
+	return nil
+}
+
+func (f fakeAttachIO) Stderr() io.WriteCloser {
+	return nil
+}
+
+func (f fakeAttachIO) TTY() bool {
+	return false
+}
+
+func (f fakeAttachIO) Resize() <-chan api.TermSize {
+	return make(chan api.TermSize)
+}
+
+func TestRunInContainerNoError(t *testing.T) {
+	prov := Provider{}
+	err := prov.RunInContainer(context.Background(), "ns", "name", "", []string{}, fakeAttachIO{})
+	assert.NoError(t, err)
 }
