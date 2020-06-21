@@ -4,6 +4,8 @@ Apate makes uses of [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes
 ## Planned and direct emulation
 Apate supports both planned and direct emulation. Both have their advantages and disadvantages, and serve specific use-cases.
 
+In order to control how the Apatelets and pods act towards Kubernetes, we use a "scenario". This scenario consists of different "tasks" which can be applied on the Apatelet / pods running on the Apatelet.
+
 Planned emulation is our regular scenario. It consists of a list of tasks that should be executed at a specific time relative 
 to the start of the scenario. This option should cover most use-cases, but for some it might be a bit overkill.
 
