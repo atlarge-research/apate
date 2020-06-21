@@ -2,7 +2,7 @@
 home: true
 heroText: Apate
 heroImage: /logo.png
-tagline: "An OpenDC Project"
+tagline: "An OpenDC Project for emulating Kubernetes"
 actionText: Get Started →
 actionLink: /usage/
 features:

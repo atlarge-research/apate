@@ -1,6 +1,8 @@
 # Metrics
 Apate automatically starts up a prometheus stack to provide monitoring capabilities.
 
+[[toc]]
+
 ## Accessing Grafana
 The Grafana web interface can be found in the `apate-prometheus` namespace by default. You need to port forward the grafana pod, it will be called something like: `prometheus-operator-grafana-xxx`. So port forwarding is done like this:
 

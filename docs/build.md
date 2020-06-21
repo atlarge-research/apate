@@ -1,4 +1,7 @@
 # Build Guide
+
+[[toc]]
+
 ## Regenerating code
 To regenerate generated code, which you don't have to do unless you protobuf / structs which are mocked, you need a few dependencies, namely: 
 * `controller-gen`, which can be installed by running `go get -v -u sigs.k8s.io/controller-tools/cmd/controller-gen`
