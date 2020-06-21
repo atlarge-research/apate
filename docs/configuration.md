@@ -14,7 +14,8 @@ for automation.
 
 ::: warning
 Even though most use-cases are covered by either planned or direct emulation, some edge-cases might require both.
-However, this is not supported in the initial version of Apate, and might lead to unexpected results in some cases.  
+However, this is not supported in the initial version of Apate, and might lead to unexpected results in some cases, 
+due to CRD resync.  
 We invite others to contribute to Apate and add this feature, as it should be a good first issue.
 :::  
 
@@ -61,7 +62,7 @@ Resources describe the amount of emulated resources this node has.
 | cpu | int64 | Amount of [CPU cores](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu) | Yes |
 | storage | [Bytes](#bytes) | Amount of storage | Yes |
 | ephemeral_storage | [Bytes](#bytes) | Amount of ephemeral storage | Yes | 
-| max_pods | in64 | Maximum amount of pods | Yes |
+| max_pods | int64 | Maximum amount of pods | Yes |
 
 
 ### Node task
@@ -83,7 +84,8 @@ State is the desired state of the node.
 | custom_state | [Custom state](#custom-state) | A custom state | No |
 
 ::: warning  
-In the initial version of Apate, it is not possible to revert `node_failed` or `heartbeat_failed`. 
+In the initial version of Apate, it is not possible to revert `node_failed` or `heartbeat_failed` directly. 
+However, this can still be achieved using a custom state, and reverting the timout responses manually.   
 We invite others to contribute to Apate and add this feature, as it should be a good first issue.  
 :::
 
@@ -100,17 +102,17 @@ Custom state can be used to directly modify the internal flags. This allows user
 | node_ping_response | [Response](#response) | Response to node heartbeats | No |
 
 ## Pods
-A `PodConfiguration` describes a set of emulated pods in the Kuber  netes cluster. The specification simply contains a list 
+A `PodConfiguration` describes a set of emulated pods in the Kubernetes cluster. The specification simply contains a list 
 of tasks for the pods. Optionally, one can provide a direct state, as opposed to a list of tasks. 
 
-For example, the following `PodConfiguration` will ensure all pods with the label pair `<key, value>` (given this CRD is
-deployed in the namespace `namespace`, start with a memory usage of 1G. After one second has passed after the start of the 
+For example, the following `PodConfiguration` will ensure all pods with the label `apate: crd-deployment-name` (given this CRD 
+is created in the same namespace as the pod), start with a memory usage of 1G. After one second has passed after the start of the 
 scenario, its usage will increase to 5G of memory and 1 core. Finally, it will fail after five seconds:
 ```yaml
 apiVersion: apate.opendc.org/v1
 kind: PodConfiguration
 metadata:
-    name: crd-deployment
+    name: crd-deployment-name
 spec:
     pod_resources:
         memory: 1G
@@ -146,11 +148,12 @@ Task is a combination of a timestamp and a state
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |
 | timestamp | [Time](#time) | Time at which this task will be executed | Yes |
-| relative_to_pod | bool | If true, the timestamp will be relative to the start time of the pod, instead of the start time of the scenarion | No |
+| relative_to_pod | bool | If true, the timestamp will be relative to the start time of the pod, instead of the start time of the scenario | No |
 | state | [State](#pod-state) | Desired state after this task | Yes |
 
 ### Pod state
-State is the desired state of the pod.
+State is the desired state of the pod. For pods this state is a direct mapping to the [interface](https://godoc.org/github.com/virtual-kubelet/virtual-kubelet/node#PodLifecycleHandler) we implement for 
+interacting with Kubernetes.
 
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |

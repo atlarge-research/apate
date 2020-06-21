@@ -1,7 +1,8 @@
 ---
 home: true
 heroText: Apate
-tagline: "Works on my machine™"
+heroImage: /logo.png
+tagline: "Low-resource Kubernetes emulation"
 actionText: Get Started →
 actionLink: /usage/
 ---

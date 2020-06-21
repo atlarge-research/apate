@@ -22,9 +22,8 @@ There are two ways of installing Apate. The recommended way is just by downloadi
 To install the `apate-cli` simply download the binary and put it in a `bin` directory.
 
 To install it globally use this command
-<!-- TODO: add url -->
 ```sh
-curl -LO TODO_URL /usr/bin/apate-cli 
+curl -LO https://github.com/atlarge-research/opendc-emulate-kubernetes/releases/download/v0.1.0/apate-cli /usr/bin/apate-cli 
 ```
 
 ### From source
@@ -47,7 +46,7 @@ go install ./cmd/apate-cli/
 Now `apate-cli` should be available under `$GOPATH/bin/apate-cli`.
 
 ::: tip  
-It is also possible to build the controlplane and run it outside of a docker container. However that is out of scope for this guide.
+It is also possible to build the controlplane and run it outside of a Docker container. However that is out of scope for this guide.
 :::
 
 ## Starting Apate
@@ -61,11 +60,11 @@ apate-cli create
 After this exits sucessfully you are ready to use Apate.
 
 ::: tip
-It is also possible to use an already existing kubernetes cluser by providing `--kubeconfig-location` to the create command.
+It is also possible to use an already existing kubernetes cluster by providing `--kubeconfig-location` to the create command.
 :::
 
 ::: details Starting Control plane manually
-You can start the control plane docker container manually like so: `docker run -v /var/run/docker.sock:/var/run/docker.sock -p 8085:8085 apatekubernetes/controlplane`
+You can start the control plane Docker container manually like so: `docker run -v /var/run/docker.sock:/var/run/docker.sock -p 8085:8085 apatekubernetes/controlplane`
 :::
 
 ### Kubeconfig
@@ -108,7 +107,7 @@ kubectl create -f ./example_node.yml
 ```
 
 Now you can use `kubectl get nodes` to see if the node was actually created. It should look something like this:
-```zsh
+```
 NAME                                            STATUS   ROLES    AGE     VERSION
 apate-control-plane                             Ready    master   6m51s   v1.17.0
 apatelet-f97ae5b6-97d3-4e6f-8f20-bfbe724a8bd2   Ready    agent    2s      v1.15.2
@@ -123,7 +122,7 @@ Now that we have spawned some nodes we are ready to run some pods.
 
 You could just run some pods now and Apate would emulate them, however they wouldn't do anything and would perpetually in the running state.
 
-To configure pod behaviour we need to create a custom [`PodConfiguration`](./configuration.html#pods) resource.
+To configure pod behaviour we need to create a custom [`PodConfiguration`](./configuration.md#pods) resource.
 
 ```yml
 # ./example_pod.yml
@@ -188,7 +187,7 @@ nginx-deployment-6cbf99798f-5jrdr   0/1     Succeeded   0          18s
 nginx-deployment-6cbf99798f-62ftl   0/1     Pending     0          3s
 ```
 
-Because this is a deployment you can see the controlelr is trying to start new pods up covering for the succeeded ones. Make sure to stop the deployment using `kubectl delete -f emulated_nginx.yml` otherwise you might end up with a lot of pods.
+Because this is a deployment you can see the controller is trying to start new pods up covering for the succeeded ones. Make sure to stop the deployment using `kubectl delete -f emulated_nginx.yml` otherwise you might end up with a lot of pods.
 
 ::: tip Emulation Methods  
 This example used so-called direct emulation, to view how to do planned emulation and for other configuration options please look at the [CRD Configuration](./configuration.md) page.
