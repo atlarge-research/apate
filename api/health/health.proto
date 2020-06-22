@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/health";
+option go_package = "github.com/atlarge-research/apate/api/health";
 package apate.health;
 
 import "google/protobuf/empty.proto";

@@ -3,7 +3,7 @@ package v1
 import (
 	"io/ioutil"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/env"
 
 	"github.com/pkg/errors"
 
@@ -12,9 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/internal/kubectl"
+	"github.com/atlarge-research/apate/pkg/apis/podconfiguration"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 )
 
 // SchemeGroupVersion is group version used to register these objects

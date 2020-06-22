@@ -5,17 +5,17 @@ import (
 	"context"
 	"log"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+	"github.com/atlarge-research/apate/pkg/channel"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
+	"github.com/atlarge-research/apate/services/apatelet/scheduler"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/apate/api/apatelet"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 // scenarioHandlerService will contain the implementation for the scenarioService

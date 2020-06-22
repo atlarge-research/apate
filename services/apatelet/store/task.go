@@ -3,8 +3,8 @@ package store
 import (
 	"time"
 
-	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/apate/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/apate/pkg/apis/podconfiguration/v1"
 
 	"github.com/pkg/errors"
 )

@@ -9,20 +9,20 @@ import (
 	"testing"
 	"time"
 
-	nodeCrd "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
-	podCrd "github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
+	nodeCrd "github.com/atlarge-research/apate/internal/crd/node"
+	podCrd "github.com/atlarge-research/apate/internal/crd/pod"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/pkg/clients/controlplane"
+	"github.com/atlarge-research/apate/pkg/env"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	cmd "github.com/atlarge-research/opendc-emulate-kubernetes/cmd/apate-cli/run"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	cmd "github.com/atlarge-research/apate/cmd/apate-cli/run"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 )
 
 var longTimeout time.Duration

@@ -7,10 +7,10 @@ import (
 
 	"github.com/finitum/node-cli/provider"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+	"github.com/atlarge-research/apate/pkg/kubernetes/node"
 
-	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	nodeconfigv1 "github.com/atlarge-research/apate/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/apate/pkg/apis/podconfiguration/v1"
 
 	"github.com/finitum/node-cli/stats"
 	"github.com/golang/mock/gomock"
@@ -20,13 +20,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/condition"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager/mock_podmanager"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+	"github.com/atlarge-research/apate/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
+	"github.com/atlarge-research/apate/services/apatelet/provider/condition"
+	"github.com/atlarge-research/apate/services/apatelet/provider/podmanager"
+	"github.com/atlarge-research/apate/services/apatelet/provider/podmanager/mock_podmanager"
+	"github.com/atlarge-research/apate/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/store/mock_store"
 )
 
 func TestPing(t *testing.T) {

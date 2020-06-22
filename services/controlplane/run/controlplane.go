@@ -10,24 +10,24 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+	"github.com/atlarge-research/apate/pkg/channel"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/pod"
+	"github.com/atlarge-research/apate/services/controlplane/crd/pod"
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/network"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster/watchdog"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/crd/node"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/services"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+	"github.com/atlarge-research/apate/internal/kubectl"
+	"github.com/atlarge-research/apate/internal/network"
+	"github.com/atlarge-research/apate/internal/service"
+	nodeconfigv1 "github.com/atlarge-research/apate/pkg/apis/nodeconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/apate/pkg/apis/podconfiguration/v1"
+	"github.com/atlarge-research/apate/pkg/env"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
+	"github.com/atlarge-research/apate/pkg/runner"
+	"github.com/atlarge-research/apate/services/controlplane/cluster/watchdog"
+	"github.com/atlarge-research/apate/services/controlplane/crd/node"
+	"github.com/atlarge-research/apate/services/controlplane/services"
+	"github.com/atlarge-research/apate/services/controlplane/store"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Needed to connect with different providers, such as GKE
 )

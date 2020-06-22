@@ -12,7 +12,7 @@ lint:
 
 .PHONY: lint_fix_imports
 lint_fix_imports:
-	goimports -local github.com/atlarge-research/opendc-emulate-kubernetes -w **/*.go
+	goimports -local github.com/atlarge-research/apate -w **/*.go
 	golangci-lint run
 
 .PHONY: lint_fix
@@ -65,25 +65,25 @@ protobuf:
 mock_gen: ./pkg/runner/mock_runner/mock_runner.go ./api/health/mock_health/health_mock.go ./services/controlplane/store/mock_store/store_mock.go ./services/apatelet/store/mock_store/store_mock.go ./services/apatelet/provider/mock_cache_store/mock_cache_store.go ./services/apatelet/provider/podmanager/mock_podmanager/mock_podmanager.go pkg/kubernetes/mock_kubernetes/mock_api.go
 
 ./api/health/mock_health/health_mock.go: ./api/health/health.pb.go
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/api/health Health_HealthStreamClient,HealthClient,Health_HealthStreamServer > $@
+	mockgen github.com/atlarge-research/apate/api/health Health_HealthStreamClient,HealthClient,Health_HealthStreamServer > $@
 
 ./services/controlplane/store/mock_store/store_mock.go: ./services/controlplane/store/store.go
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store Store > $@
+	mockgen github.com/atlarge-research/apate/services/controlplane/store Store > $@
 
 ./services/apatelet/store/mock_store/store_mock.go: ./services/apatelet/store/store.go
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store Store > $@
+	mockgen github.com/atlarge-research/apate/services/apatelet/store Store > $@
 
 ./services/apatelet/provider/mock_cache_store/mock_cache_store.go: FORCE
 	mockgen k8s.io/client-go/tools/cache Store > $@
 
 ./services/apatelet/provider/podmanager/mock_podmanager/mock_podmanager.go:
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager PodManager > $@
+	mockgen github.com/atlarge-research/apate/services/apatelet/provider/podmanager PodManager > $@
 
 ./pkg/runner/mock_runner/mock_runner.go:
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner ApateletRunner > $@
+	mockgen github.com/atlarge-research/apate/pkg/runner ApateletRunner > $@
 
 ./pkg/kubernetes/mock_kubernetes/mock_api.go:
-	mockgen github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes ClusterAPI > $@
+	mockgen github.com/atlarge-research/apate/pkg/kubernetes ClusterAPI > $@
 
 crd_gen:
 	controller-gen object paths=./pkg/apis/...

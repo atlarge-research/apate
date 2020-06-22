@@ -19,7 +19,7 @@ To install `apate-cli` binary with curl, you should do the following:
 1. Download the latest release with the command:
 
     ```sh
-    curl -LO https://github.com/atlarge-research/opendc-emulate-kubernetes/releases/download/v0.1.0/apate-cli
+    curl -LO https://github.com/atlarge-research/apate/releases/download/v0.1.0/apate-cli
     ```
 
 2. Make the `apate-cli` binary executable.
@@ -43,12 +43,12 @@ To install `apate-cli` binary with curl, you should do the following:
 To install the `apate-cli` from source first clone the repo:
 
 ```bash
-git clone https://github.com/atlarge-research/opendc-emulate-kubernetes
+git clone https://github.com/atlarge-research/apate
 ```
 
 then move into the dir:
 ```bash
-cd opendc-emulate-kubernetes
+cd apate
 ```
 
 Finally you can install the `apate-cli` like this:

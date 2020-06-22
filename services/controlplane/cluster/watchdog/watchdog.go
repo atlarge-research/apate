@@ -7,13 +7,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster"
+	"github.com/atlarge-research/apate/services/controlplane/cluster"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+	"github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
+	"github.com/atlarge-research/apate/services/controlplane/store"
 )
 
 // StartWatchDog starts the watchdog

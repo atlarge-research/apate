@@ -9,8 +9,8 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/api/controlplane"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 // StatusClient is the client for the StatusService containing the connection and gRPC client

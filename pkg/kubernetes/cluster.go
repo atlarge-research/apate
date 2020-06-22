@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/pkg/env"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 )
 
 // Cluster object can be used to interact with kubernetes clusters.

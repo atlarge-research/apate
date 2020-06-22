@@ -4,8 +4,8 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/api/apatelet"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 //ApateClient is the client used for the Apatelet service on the apatelets
