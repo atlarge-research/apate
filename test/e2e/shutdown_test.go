@@ -10,11 +10,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
-	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
+	"github.com/atlarge-research/apate/pkg/env"
+	"github.com/atlarge-research/apate/pkg/runner"
+	cp "github.com/atlarge-research/apate/services/controlplane/run"
 )
 
 func TestShutdownCPRoutines(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

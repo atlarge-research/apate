@@ -36,7 +36,7 @@ CI_NODE_INDEX=${CI_NODE_INDEX:-0}
 output="regular"
 coverMode="count"
 coverPkg="./..."
-srcPkg="github.com/atlarge-research/opendc-emulate-kubernetes"
+srcPkg="github.com/atlarge-research/apate"
 
 if [[ ${TESTFLAGS} = *"-race"* ]]; then
     output="race"

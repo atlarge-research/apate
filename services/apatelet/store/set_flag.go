@@ -3,7 +3,7 @@ package store
 import (
 	"sort"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
 )
 
 // FlagSetter defines function aiding in setting flags

@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/api/apatelet"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 type apateletService struct {

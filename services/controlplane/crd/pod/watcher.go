@@ -4,8 +4,8 @@ package pod
 import (
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/internal/crd/pod"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 )
 
 // NoopWatchHandler watches a newly created informer for updates and does nothing with this.

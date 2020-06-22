@@ -4,21 +4,21 @@ package controlplane
 import (
 	"context"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario"
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/google/uuid"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
+	"github.com/atlarge-research/apate/api/controlplane"
 
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 // ClusterOperationClient is the client for the ClusterOperationService containing the connection and gRPC client

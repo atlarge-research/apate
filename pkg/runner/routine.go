@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	apateRun "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
+	"github.com/atlarge-research/apate/pkg/env"
+	apateRun "github.com/atlarge-research/apate/services/apatelet/run"
 )
 
 // RoutineRunner spawns apatelets using go routines

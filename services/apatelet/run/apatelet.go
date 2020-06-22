@@ -9,20 +9,20 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+	"github.com/atlarge-research/apate/pkg/channel"
 
-	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
+	healthpb "github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/pkg/clients/controlplane"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/env"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
+	"github.com/atlarge-research/apate/services/apatelet/scheduler"
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	vkProvider "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	"github.com/atlarge-research/apate/internal/service"
+	vkProvider "github.com/atlarge-research/apate/services/apatelet/provider"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 )
 
 // StartApatelet starts the apatelet

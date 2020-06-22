@@ -1,4 +1,4 @@
-module github.com/atlarge-research/opendc-emulate-kubernetes
+module github.com/atlarge-research/apate
 
 go 1.14
 

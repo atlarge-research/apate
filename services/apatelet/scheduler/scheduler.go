@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/crd/node"
+	"github.com/atlarge-research/apate/services/apatelet/crd/pod"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 )
 
 const (

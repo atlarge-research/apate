@@ -12,26 +12,26 @@ import (
 
 	"github.com/finitum/node-cli/stats"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+	"github.com/atlarge-research/apate/pkg/kubernetes/node"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario"
 
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/apate/pkg/apis/podconfiguration/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
+	"github.com/atlarge-research/apate/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/store/mock_store"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
+	"github.com/atlarge-research/apate/services/apatelet/provider/podmanager"
 )
 
 func TestRunLatencyError(t *testing.T) {

@@ -4,10 +4,10 @@ package node
 import (
 	"time"
 
-	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	nodeconfigv1 "github.com/atlarge-research/apate/pkg/apis/nodeconfiguration/v1"
+	"github.com/atlarge-research/apate/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 )
 
 // SetNodeFlags sets the correct flags for the apatelet

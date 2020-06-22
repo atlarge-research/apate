@@ -21,7 +21,7 @@ module.exports = {
 			}
 		],
 		// Edit links
-		repo: 'atlarge-research/opendc-emulate-kubernetes',
+		repo: 'atlarge-research/apate',
 		docsDir: 'docs',
 		editLinks: true,
 	}

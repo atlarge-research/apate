@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet";
+option go_package = "github.com/atlarge-research/apate/api/apatelet";
 package apate.apatelet;
 
 import "google/protobuf/empty.proto";

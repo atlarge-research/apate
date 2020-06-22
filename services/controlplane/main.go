@@ -5,13 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/env"
 
 	// #nosec exposing debug statistics is not a problem for this application
 	_ "net/http/pprof"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
+	"github.com/atlarge-research/apate/pkg/runner"
+	"github.com/atlarge-research/apate/services/controlplane/run"
 )
 
 func main() {

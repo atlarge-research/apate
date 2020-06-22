@@ -6,9 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
-	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/internal/crd/node"
+	nodeconfigv1 "github.com/atlarge-research/apate/pkg/apis/nodeconfiguration/v1"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 )
 
 // WatchHandler watches a newly created informer for updates and calls functions on apateletHandler on updates

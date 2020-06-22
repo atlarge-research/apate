@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
+	"github.com/atlarge-research/apate/services/controlplane/store"
 )
 
 // RemoveNodesWithUUID removes the apatelets with the given uuids from the cluster (both apate and k8s)

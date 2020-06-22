@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+	"github.com/atlarge-research/apate/pkg/kubernetes/node"
 
 	"github.com/finitum/node-cli/stats"
 	"github.com/golang/mock/gomock"
@@ -15,12 +15,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+	podconfigv1 "github.com/atlarge-research/apate/pkg/apis/podconfiguration/v1"
+	"github.com/atlarge-research/apate/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
+	"github.com/atlarge-research/apate/services/apatelet/provider/podmanager"
+	"github.com/atlarge-research/apate/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/store/mock_store"
 )
 
 func prepareState(t *testing.T, nodeResources int64, podResources uint64, podMaxResources int64, podStatus scenario.PodStatus, response scenario.Response) (Provider, *gomock.Controller) {

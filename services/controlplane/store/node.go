@@ -1,9 +1,9 @@
 package store
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/pkg/scenario"
 
 	"github.com/google/uuid"
 )

@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
 )
 
 // FlagGetter defines function aiding in retrieving flags
