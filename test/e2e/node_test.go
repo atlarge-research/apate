@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
-	apateRun "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/run"
+	apateRun "github.com/atlarge-research/apate/services/apatelet/run"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/kubectl"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/runner"
-	cp "github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/run"
+	"github.com/atlarge-research/apate/internal/kubectl"
+	"github.com/atlarge-research/apate/pkg/env"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/pkg/runner"
+	cp "github.com/atlarge-research/apate/services/controlplane/run"
 )
 
 func TestSimpleNodeDeploymentRoutine(t *testing.T) {

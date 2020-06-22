@@ -5,18 +5,18 @@ import (
 	"log"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+	"github.com/atlarge-research/apate/pkg/channel"
 
 	"github.com/pkg/errors"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/sync/errgroup"
 
-	apiApatelet "github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/apatelet"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+	apiApatelet "github.com/atlarge-research/apate/api/apatelet"
+	"github.com/atlarge-research/apate/api/controlplane"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/pkg/clients/apatelet"
+	"github.com/atlarge-research/apate/services/controlplane/store"
 )
 
 // The amount of seconds to wait with starting the scenario

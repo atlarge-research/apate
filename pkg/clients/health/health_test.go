@@ -3,8 +3,8 @@ package health
 import (
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health/mock_health"
+	"github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/api/health/mock_health"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes/empty"

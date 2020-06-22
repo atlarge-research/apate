@@ -8,18 +8,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
+	podconfigv1 "github.com/atlarge-research/apate/pkg/apis/podconfiguration/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario"
 
 	"github.com/pkg/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
+	"github.com/atlarge-research/apate/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/store/mock_store"
 )
 
 func setup(t *testing.T) (*mock_store.MockStore, *gomock.Controller, *corev1.Pod, func(podFlag events.PodEventFlag) (interface{}, error)) {

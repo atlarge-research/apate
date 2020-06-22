@@ -3,12 +3,12 @@ package store
 import (
 	"testing"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 // TestEnqueue ensures adding a single node resources results in a single allocation

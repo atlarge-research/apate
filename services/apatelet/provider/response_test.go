@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
 )
 
 func TestGetCorrespondingNodeEventFlag(t *testing.T) {

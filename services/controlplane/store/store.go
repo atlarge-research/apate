@@ -5,15 +5,15 @@ import (
 	"container/list"
 	"sync"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario"
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
+	"github.com/atlarge-research/apate/api/health"
 
 	"github.com/google/uuid"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/apate/api/apatelet"
 )
 
 //TODO: Multi-master not soon :tm:

@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store/mock_store"
+	"github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/services/controlplane/store"
+	"github.com/atlarge-research/apate/services/controlplane/store/mock_store"
 )
 
 //go:generate sh -c "cd ../../../ && make mockgen"

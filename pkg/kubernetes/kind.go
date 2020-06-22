@@ -5,9 +5,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/env"
 
 	"github.com/pkg/errors"
 

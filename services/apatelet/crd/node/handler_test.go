@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+	nodeconfigv1 "github.com/atlarge-research/apate/pkg/apis/nodeconfiguration/v1"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
+	"github.com/atlarge-research/apate/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/store/mock_store"
 )
 
 func TestEnqueueNodeTasks(t *testing.T) {

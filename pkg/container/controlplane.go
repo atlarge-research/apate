@@ -10,7 +10,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/env"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"

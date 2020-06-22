@@ -6,21 +6,21 @@ import (
 	"log"
 	"net"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/cluster"
+	"github.com/atlarge-research/apate/services/controlplane/cluster"
 
 	"github.com/google/uuid"
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
+	"github.com/atlarge-research/apate/api/controlplane"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
 
 	"google.golang.org/grpc/peer"
 
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/services/controlplane/store"
 )
 
 type clusterOperationService struct {

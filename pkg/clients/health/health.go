@@ -11,8 +11,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 const (
