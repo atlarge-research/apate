@@ -4,18 +4,18 @@ import (
 	"context"
 	"log"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+	"github.com/atlarge-research/apate/pkg/channel"
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-	crdNode "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/node"
-	crdPod "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/crd/pod"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/pkg/clients/controlplane"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/pkg/scenario"
+	crdNode "github.com/atlarge-research/apate/services/apatelet/crd/node"
+	crdPod "github.com/atlarge-research/apate/services/apatelet/crd/pod"
+	"github.com/atlarge-research/apate/services/apatelet/scheduler"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 )
 
 func joinApateCluster(ctx context.Context, connectionInfo *service.ConnectionInfo, listenPort int, kubeConfigPath string) (*kubeconfig.KubeConfig, *scenario.NodeResources, int64, error) {

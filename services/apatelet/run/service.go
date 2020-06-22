@@ -7,17 +7,17 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/channel"
+	"github.com/atlarge-research/apate/pkg/channel"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	healthpb "github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/scheduler"
-	vkService "github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/services"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	healthpb "github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/pkg/clients/health"
+	"github.com/atlarge-research/apate/services/apatelet/scheduler"
+	vkService "github.com/atlarge-research/apate/services/apatelet/services"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 )
 
 func createGRPC(store *store.Store, sch *scheduler.Scheduler, listenAddress string, listenPort int, stopCh chan<- struct{}, stopInformerCh *channel.StopChannel) (*service.GRPCServer, error) {

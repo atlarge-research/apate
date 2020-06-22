@@ -4,13 +4,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/pod"
+	"github.com/atlarge-research/apate/internal/crd/pod"
 
 	"github.com/pkg/errors"
 
-	podconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/podconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	podconfigv1 "github.com/atlarge-research/apate/pkg/apis/podconfiguration/v1"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 )
 
 // CreatePodInformer creates a new crd informer.

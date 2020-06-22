@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/container"
+	"github.com/atlarge-research/apate/pkg/env"
 )
 
 // DockerRunner runs the apatelets using docker containers

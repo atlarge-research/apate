@@ -1,10 +1,10 @@
 package services
 
 import (
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health/mock_health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store/mock_store"
+	"github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/api/health/mock_health"
+	"github.com/atlarge-research/apate/services/controlplane/store"
+	"github.com/atlarge-research/apate/services/controlplane/store/mock_store"
 
 	"github.com/pkg/errors"
 

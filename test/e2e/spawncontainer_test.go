@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/container"
+	"github.com/atlarge-research/apate/pkg/env"
 )
 
 func TestSpawnControlPlaneDocker(t *testing.T) {

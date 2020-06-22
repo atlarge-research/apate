@@ -5,9 +5,9 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/apatelet"
+	"github.com/atlarge-research/apate/api/apatelet"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
+	"github.com/atlarge-research/apate/internal/service"
 )
 
 // ScenarioClient is the client for the ScenarioHandler containing the connection and gRPC client

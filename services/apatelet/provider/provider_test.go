@@ -5,20 +5,20 @@ import (
 
 	"github.com/finitum/node-cli/provider"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/pkg/env"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/node"
+	"github.com/atlarge-research/apate/pkg/kubernetes/node"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/provider/podmanager"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store/mock_store"
+	"github.com/atlarge-research/apate/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
+	"github.com/atlarge-research/apate/services/apatelet/provider/podmanager"
+	"github.com/atlarge-research/apate/services/apatelet/store"
+	"github.com/atlarge-research/apate/services/apatelet/store/mock_store"
 )
 
 const podNamespace = "podnamespace"

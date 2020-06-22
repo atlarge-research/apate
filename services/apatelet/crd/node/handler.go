@@ -4,13 +4,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/crd/node"
+	"github.com/atlarge-research/apate/internal/crd/node"
 
 	"github.com/pkg/errors"
 
-	nodeconfigv1 "github.com/atlarge-research/opendc-emulate-kubernetes/pkg/apis/nodeconfiguration/v1"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/apatelet/store"
+	nodeconfigv1 "github.com/atlarge-research/apate/pkg/apis/nodeconfiguration/v1"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/services/apatelet/store"
 )
 
 // CreateNodeInformer creates a new node informer

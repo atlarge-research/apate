@@ -9,12 +9,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/api/health"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/mock_kubernetes"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/services/controlplane/store/mock_store"
+	"github.com/atlarge-research/apate/api/health"
+	"github.com/atlarge-research/apate/pkg/kubernetes"
+	"github.com/atlarge-research/apate/pkg/kubernetes/mock_kubernetes"
+	"github.com/atlarge-research/apate/pkg/scenario"
+	"github.com/atlarge-research/apate/services/controlplane/store"
+	"github.com/atlarge-research/apate/services/controlplane/store/mock_store"
 )
 
 func TestWatchdogNoApateError(t *testing.T) {

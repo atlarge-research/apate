@@ -11,16 +11,16 @@ import (
 	"path/filepath"
 	"time"
 
-	cpApi "github.com/atlarge-research/opendc-emulate-kubernetes/api/controlplane"
+	cpApi "github.com/atlarge-research/apate/api/controlplane"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/internal/service"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/clients/controlplane"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/container"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/env"
+	"github.com/atlarge-research/apate/internal/service"
+	"github.com/atlarge-research/apate/pkg/clients/controlplane"
+	"github.com/atlarge-research/apate/pkg/container"
+	"github.com/atlarge-research/apate/pkg/env"
 )
 
 type commandLineArgs struct {

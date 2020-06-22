@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/kubernetes/kubeconfig"
+	"github.com/atlarge-research/apate/pkg/kubernetes/kubeconfig"
 )
 
 // CreateNameSpace creates a namespace on the cluster

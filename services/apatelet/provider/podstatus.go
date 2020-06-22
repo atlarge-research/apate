@@ -12,8 +12,8 @@ import (
 
 	"github.com/finitum/node-cli/stats"
 
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario"
-	"github.com/atlarge-research/opendc-emulate-kubernetes/pkg/scenario/events"
+	"github.com/atlarge-research/apate/pkg/scenario"
+	"github.com/atlarge-research/apate/pkg/scenario/events"
 )
 
 // GetPodStatus retrieves the status of a pod by label.
