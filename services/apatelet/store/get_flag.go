@@ -39,11 +39,11 @@ func (s *store) GetPodFlag(pod *corev1.Pod, flag events.PodEventFlag) (interface
 
 	label, ok := getPodLabelByPod(pod)
 	if ok {
-		if val, ok := s.podFlags[label][flag]; ok {
+		if val, ok := s.getPodTimeFlag(pod, flag, label); ok {
 			return val, nil
 		}
 
-		if val, ok := s.getPodTimeFlag(pod, flag, label); ok {
+		if val, ok := s.podFlags[label][flag]; ok {
 			return val, nil
 		}
 	}
@@ -92,20 +92,33 @@ func (s *store) getPodTimeFlag(pod *corev1.Pod, flag events.PodEventFlag, label 
 			// Look at the previous index
 			currentPodFlags := timeFlags[previousIndex]
 
-			// If this index has time flags before now (it might not have if this is the first iteration)
-			if podStartTime.Add(currentPodFlags.TimeSincePodStart).Before(time.Now()) {
-				if pf, ok := currentPodFlags.Flags[flag]; ok {
-					// Set cache and return it
-					s.podTimeIndexCache[pod][flag] = previousIndex
+			if pf, ok := currentPodFlags.Flags[flag]; ok {
+				if podStartTime.Add(currentPodFlags.TimeSincePodStart).Before(time.Now()) {
+					// If this index has time flags before now (it might not have if this is the first iteration)
+					s.updateCache(pf, pod, flag, previousIndex)
 					return pf, true
 				}
 			}
 
-			// Else set the current index, as the next iteration can skip every index thus far
-			s.podTimeIndexCache[pod][flag] = i
 			break
 		}
 	}
 
 	return nil, false
+}
+
+func (s *store) updateCache(flagValue interface{}, pod *corev1.Pod, flag events.EventFlag, newIndex int) {
+	prevIndex, ok := s.podTimeIndexCache[pod][flag]
+	s.podTimeIndexCache[pod][flag] = newIndex
+
+	// Trigger an update in pod resources
+	if (!ok || prevIndex != newIndex) && flag == events.PodResources {
+		s.podListenersLock.RLock()
+		if listeners, ok := s.podListeners[events.PodResources]; ok {
+			for _, listener := range listeners {
+				go listener(flagValue)
+			}
+		}
+		s.podListenersLock.RUnlock()
+	}
 }

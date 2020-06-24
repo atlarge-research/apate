@@ -42,7 +42,7 @@ func (s *store) SetPodFlags(label string, flags Flags) {
 	for flag, val := range flags {
 		if listeners, ok := s.podListeners[flag]; ok {
 			for _, listener := range listeners {
-				listener(val)
+				go listener(val)
 			}
 		}
 	}
