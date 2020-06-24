@@ -20,7 +20,7 @@ for automation.
 Even though most use-cases are covered by either planned or direct emulation, some edge-cases might require both.
 However, this is not supported in the initial version of Apate, and might lead to unexpected results in some cases, 
 due to CRD resync.  
-We invite others to contribute to Apate and add this feature, as it should be a good first issue.
+We invite others to contribute to Apate and add this feature, as it should be a [good first issue](https://github.com/atlarge-research/apate/issues/5).
 :::  
 
 ## Nodes
@@ -90,7 +90,7 @@ State is the desired state of the node.
 ::: warning  
 In the initial version of Apate, it is not possible to revert `node_failed` or `heartbeat_failed` directly. 
 However, this can still be achieved using a custom state, and reverting the timout responses manually.   
-We invite others to contribute to Apate and add this feature, as it should be a good first issue.  
+We invite others to contribute to Apate and add this feature, as it should be a [good first issue](https://github.com/atlarge-research/apate/issues/6).
 :::
 
 #### Custom state
@@ -152,7 +152,7 @@ Task is a combination of a timestamp and a state
 | Field | Type | Description | Required |
 | --- | --- | --- | --- |
 | timestamp | [Time](#time) | Time at which this task will be executed | Yes |
-| relative_to_pod | bool | If true, the timestamp will be relative to the start time of the pod, instead of the start time of the scenario | No |
+| relative_to_pod | bool | If true, the timestamp will be relative to the start time of the pod, instead of the start time of the scenario. Note that currently, if this setting is used once for a certain flag, further updates of this flag relative to the scenario will not be used. This is a limitation we aim to solve [in the future](https://github.com/atlarge-research/apate/issues/7). | No |
 | state | [State](#pod-state) | Desired state after this task | Yes |
 
 ### Pod state

@@ -7,11 +7,9 @@ stages:
   - deploy
 
 variables:
-  REGISTRY_URL: "registry.planning.nl"
-  REGISTRY_IMAGE: "registry.planning.nl/emulating-k8s/emulating-k8s"
-  CI_IMAGE: "$REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
-  VK_IMAGE: "$REGISTRY_IMAGE/apatelet-$CI_COMMIT_REF_SLUG"
-  CP_IMAGE: "$REGISTRY_IMAGE/controlplane-$CI_COMMIT_REF_SLUG"
+  CI_IMAGE: "$CI_REGISTRY_IMAGE/build-image-$CI_COMMIT_REF_SLUG"
+  VK_IMAGE: "$CI_REGISTRY_IMAGE/apatelet-$CI_COMMIT_REF_SLUG"
+  CP_IMAGE: "$CI_REGISTRY_IMAGE/controlplane-$CI_COMMIT_REF_SLUG"
   GOPATH: "$CI_PROJECT_DIR/.go"
   DS_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans (doesn't work for now, https://gitlab.com/gitlab-org/gitlab/-/issues/10030)
   SAST_EXCLUDED_PATHS: ".go" # Exclude the caching dir from scans (doesn't work for now, https://gitlab.com/gitlab-org/gitlab/-/issues/10030)
@@ -30,7 +28,7 @@ prepare-ci-image:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - cd ./ci/build-image
   script:
     - docker pull "$CI_IMAGE" || true

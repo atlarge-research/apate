@@ -515,6 +515,8 @@ func TestAddPodListener(t *testing.T) {
 	st.SetPodFlags("a/b", Flags{events.PodCreatePodResponse: scenario.ResponseTimeout})
 	st.SetPodFlags("b/c", Flags{events.PodUpdatePodResponse: scenario.ResponseError})
 
+	time.Sleep(100 * time.Millisecond) // Sleep a bit as the listeners are executed in goroutines
+
 	// Retrieve unset flag and verify default value and err
 	val, err := st.GetPodFlag(createPodWithLabel("a", "b"), events.PodCreatePodResponse)
 	assert.NoError(t, err)
@@ -585,7 +587,7 @@ func TestGetPodTimeFlag(t *testing.T) {
 	flag, ok = st.getPodTimeFlag(pod, 11, "a/b")
 	assert.False(t, ok)
 	assert.Nil(t, flag)
-	assert.Equal(t, 1, st.podTimeIndexCache[pod][11])
+	assert.Equal(t, 0, st.podTimeIndexCache[pod][11])
 
 	// After 1 more second we expect tf2 to become active
 	time.Sleep(1 * time.Second)
@@ -615,7 +617,7 @@ func TestGetPodTimeFlag(t *testing.T) {
 	assert.Equal(t, 1, st.podTimeIndexCache[pod][11])
 }
 
-func TestScenarioMoreImportantThanPodTime(t *testing.T) {
+func TestPodTimeMoreImportantThanScenario(t *testing.T) {
 	t.Parallel()
 
 	newStore := NewStore()
@@ -635,7 +637,7 @@ func TestScenarioMoreImportantThanPodTime(t *testing.T) {
 
 	flag, err := st.GetPodFlag(createPodWithLabel("a", "b"), 42)
 	assert.NoError(t, err)
-	assert.Equal(t, "k9s", flag)
+	assert.Equal(t, "k8s", flag)
 }
 
 func TestPodTimeMoreImportantThanDefault(t *testing.T) {
